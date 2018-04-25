@@ -28,6 +28,10 @@ void init_stream(const char *buf) {
   token.line = 1;
 }
 
+void error(const char *str) {
+  fprintf(stderr, "Error: %s at line %d, stream char '%c'.\n", str, token.line, *stream);
+}
+
 void scan_identifier(void) {
   token.sVal = stream;
   // Already did first letter, so letter or digit
@@ -64,6 +68,10 @@ void next_token(void) {
     case 'W': case 'X': case 'Y': case 'Z':
       scan_identifier();
       break;
+    default:
+      error("Unknown token");
+      token.kind = TOKEN_EOF;
+      break;
     }
   }
 }
@@ -81,4 +89,7 @@ void lex_test(void) {
   }
   next_token();
   assert(token.kind == TOKEN_EOF);
+  init_stream("alpha   912     beta gamma");
+  next_token();
+  next_token();
 }
