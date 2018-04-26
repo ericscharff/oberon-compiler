@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-Wall -Wextra -Wpedantic
+CFLAGS=-Wall -Wextra -Wpedantic -g
 
 run: oberon
 	./oberon
