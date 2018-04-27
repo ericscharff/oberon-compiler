@@ -407,18 +407,21 @@ void next_token(void) {
 void assert_token_real(float expected) {
   next_token();
   assert(token.kind == TOKEN_REAL);
+  printf("Checking real token %f against %f\n", token.rVal, expected);
   assert(token.rVal == expected);
 }
 
 void assert_token_int(int expected) {
   next_token();
   assert(token.kind == TOKEN_INT);
+  printf("Checking int token %d against %d\n", token.iVal, expected);
   assert(token.iVal == expected);
 }
 
 void assert_token_char(char expected) {
   next_token();
   assert(token.kind == TOKEN_CHAR);
+  printf("Checking char token %c against %c\n", token.iVal, expected);
   assert(token.iVal == expected);
 }
 
@@ -433,6 +436,7 @@ void lex_test(void) {
   for (int i=0; i < 3; i++) {
     next_token();
     assert(token.kind == TOKEN_IDENT);
+    printf("Ident %s\n", token.sVal);
   }
   next_token();
   assert(token.kind == TOKEN_EOF);
@@ -472,7 +476,7 @@ void lex_test(void) {
   assert(token.kind == TOKEN_KEYWORD);
   assert(token.sVal == procedure_keyword);
   use_lowercase_keywords = true;
-  init_stream("for repeat procedure");
+  init_stream("for repeat\n procedure");
   next_token();
   assert(token.kind == TOKEN_KEYWORD);
   assert(token.sVal == for_keyword);
@@ -486,8 +490,11 @@ void lex_test(void) {
   init_stream("for repeat procedure");
   next_token();
   assert(token.kind == TOKEN_IDENT);
+  printf("Ident %s\n", token.sVal);
   next_token();
   assert(token.kind == TOKEN_IDENT);
+  printf("Ident %s\n", token.sVal);
   next_token();
   assert(token.kind == TOKEN_IDENT);
+  printf("Ident %s\n", token.sVal);
 }
