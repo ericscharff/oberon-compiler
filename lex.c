@@ -3,7 +3,7 @@
 // Avoid dumb problems with const
 #define G_HASH_INSERT(t, k, v) g_hash_table_insert(t, (void*)k, (void*)v)
 
-#define STRING_POOL_SIZE 1024
+#define STRING_POOL_SIZE 256*1024
 
 typedef enum TokenKind {
   TOKEN_UNKNOWN,
