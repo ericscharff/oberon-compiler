@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-Wall -Wextra -Wpedantic $(shell pkg-config glib-2.0 --cflags)
+CFLAGS=-g -Wall -Wextra -Wpedantic $(shell pkg-config glib-2.0 --cflags)
 LIBS=$(shell pkg-config glib-2.0 --libs)
 
 run: oberon

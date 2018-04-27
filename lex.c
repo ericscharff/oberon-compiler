@@ -3,17 +3,41 @@
 // Avoid dumb problems with const
 #define G_HASH_INSERT(t, k, v) g_hash_table_insert(t, (void*)k, (void*)v)
 
-#define STRING_POOL_SIZE 256*1024
 
 typedef enum TokenKind {
   TOKEN_UNKNOWN,
   TOKEN_EOF,
   TOKEN_IDENT,
   TOKEN_KEYWORD,
-  TOKEN_INT,
   TOKEN_STRING,
+  TOKEN_INT,
   TOKEN_REAL,
-  TOKEN_CHAR,
+  TOKEN_PLUS,
+  TOKEN_MINUS,
+  TOKEN_STAR,
+  TOKEN_SLASH,
+  TOKEN_TILDE,
+  TOKEN_AMP,
+  TOKEN_DOT,
+  TOKEN_COMMA,
+  TOKEN_SEMI,
+  TOKEN_VBAR,
+  TOKEN_LPAREN,
+  TOKEN_RPAREN,
+  TOKEN_LBRACK,
+  TOKEN_RBRACK,
+  TOKEN_LBRACE,
+  TOKEN_RBRACE,
+  TOKEN_ASSIGN,
+  TOKEN_CARET,
+  TOKEN_EQ,
+  TOKEN_POUND,
+  TOKEN_LT,
+  TOKEN_GT,
+  TOKEN_LTEQ,
+  TOKEN_GTEQ,
+  TOKEN_DOTDOT,
+  TOKEN_COLON,
 } TokenKind;
 
 
@@ -21,11 +45,11 @@ typedef struct Token {
   TokenKind kind;
   int line;
   const char *sVal;
-  char cVal;
   int iVal;
   float rVal;
 } Token;
 
+#define STRING_POOL_SIZE 256*1024
 char string_pool[STRING_POOL_SIZE];
 char *pool_current;
 char *pool_end;
@@ -42,6 +66,7 @@ const char *array_keyword;
 const char *begin_keyword;
 const char *by_keyword;
 const char *case_keyword;
+const char *const_keyword;
 const char *div_keyword;
 const char *do_keyword;
 const char *else_keyword;
@@ -76,6 +101,7 @@ const char *lc_array_keyword;
 const char *lc_begin_keyword;
 const char *lc_by_keyword;
 const char *lc_case_keyword;
+const char *lc_const_keyword;
 const char *lc_div_keyword;
 const char *lc_do_keyword;
 const char *lc_else_keyword;
@@ -142,6 +168,7 @@ void init_keywords(void) {
   begin_keyword = string_intern("BEGIN");
   by_keyword = string_intern("BY");
   case_keyword = string_intern("CASE");
+  const_keyword = string_intern("CONST");
   div_keyword = string_intern("DIV");
   do_keyword = string_intern("DO");
   else_keyword = string_intern("ELSE");
@@ -176,6 +203,7 @@ void init_keywords(void) {
   lc_begin_keyword = string_intern("begin");
   lc_by_keyword = string_intern("by");
   lc_case_keyword = string_intern("case");
+  lc_const_keyword = string_intern("const");
   lc_div_keyword = string_intern("div");
   lc_do_keyword = string_intern("do");
   lc_else_keyword = string_intern("else");
@@ -209,6 +237,7 @@ void init_keywords(void) {
   G_HASH_INSERT(lower_to_upper_keywords, lc_begin_keyword, begin_keyword);
   G_HASH_INSERT(lower_to_upper_keywords, lc_by_keyword, by_keyword);
   G_HASH_INSERT(lower_to_upper_keywords, lc_case_keyword, case_keyword);
+  G_HASH_INSERT(lower_to_upper_keywords, lc_const_keyword, const_keyword);
   G_HASH_INSERT(lower_to_upper_keywords, lc_div_keyword, div_keyword);
   G_HASH_INSERT(lower_to_upper_keywords, lc_do_keyword, do_keyword);
   G_HASH_INSERT(lower_to_upper_keywords, lc_else_keyword, else_keyword);
@@ -270,8 +299,27 @@ void pool_test(void) {
 
 void init_stream(const char *buf) {
   stream = buf;
-  token.kind = TOKEN_INT;
+  token.kind = TOKEN_UNKNOWN;
   token.line = 1;
+}
+
+char *read_file(const char *path) {
+  FILE *file = fopen(path, "rb");
+  if (!file) {
+    return NULL;
+  }
+  fseek(file, 0, SEEK_END);
+  long len = ftell(file);
+  fseek(file, 0, SEEK_SET);
+  char *buf = malloc(len + 1);
+  if (len && fread(buf, len, 1, file) != 1) {
+    fclose(file);
+    free(buf);
+    return NULL;
+  }
+  fclose(file);
+  buf[len] = 0;
+  return buf;
 }
 
 void error(const char *str) {
@@ -315,7 +363,7 @@ void scan_number(void) {
   }
   // Got letters and hex digits. Could be hex, char, or floating point
   if (*stream == 'X' || *stream == 'x') {
-    token.kind = TOKEN_CHAR;
+    token.kind = TOKEN_STRING;
     base = 16;
     need_h_or_x = false;
     stream++;
@@ -323,7 +371,8 @@ void scan_number(void) {
     base = 16;
     need_h_or_x = false;
     stream++;
-  } else if (*stream == '.') {
+  } else if (*stream == '.' && stream[1] != '.') {
+    // Special case - 10..20 is 10 TOKEN_DOTDOT 20
     stream++;
     while (*stream >= '0' && *stream <= '9') {
       stream++;
@@ -358,15 +407,56 @@ void scan_number(void) {
     }
     start++;
   }
-  if (token.kind == TOKEN_CHAR) {
+  if (token.kind == TOKEN_STRING) {
     if (token.iVal > 255) {
       error("Character constant > 255");
     } else {
-      token.cVal = token.iVal;
+      char sVal[] = {token.iVal, 0};
+      token.sVal = string_intern(sVal);
     }
   }
 }
 
+void scan_string(void) {
+  assert(*stream == '"');
+  stream++;
+  int startLine = token.line;
+  const char *start = stream;
+  while (*stream && *stream != '"') {
+    if (*stream == '\n') {
+      token.line++;
+    }
+    stream++;
+  }
+  if (*stream != '"') {
+    token.line = startLine;
+    error("Unterminated \"");
+  } else {
+    token.kind = TOKEN_STRING;
+    token.sVal = string_intern_range(start, stream);
+    stream++;
+  }
+}
+
+void scan_comment(void) {
+  assert(stream[0] == '(' && stream[1] == '*');
+  stream += 2;
+  int startLine = token.line;
+  while (*stream && stream[1] && (stream[0] != '*') && (stream[1] != ')')) {
+    if (*stream == '\n') {
+      token.line++;
+    }
+    stream++;
+    if (stream[0] == '(' && stream[1] == '*') {
+      scan_comment();
+    }
+  }
+  if (stream[0] != '*' && stream[1] != ')') {
+    token.line = startLine;
+    error("Unterminated comment");
+  }
+  stream += 2;
+}
 
 void next_token(void) {
   token.kind = TOKEN_UNKNOWN;
@@ -396,6 +486,66 @@ void next_token(void) {
     case '7': case '8': case '9':
       scan_number();
       break;
+    case '"':
+      scan_string();
+      break;
+    case '+':
+      token.kind = TOKEN_PLUS; stream++; break;
+    case '-':
+      token.kind = TOKEN_MINUS; stream++; break;
+    case '*':
+      token.kind = TOKEN_STAR; stream++; break;
+    case '/':
+      token.kind = TOKEN_SLASH; stream++; break;
+    case '~':
+      token.kind = TOKEN_TILDE; stream++; break;
+    case '&':
+      token.kind = TOKEN_AMP; stream++; break;
+    case '.':
+      token.kind = TOKEN_DOT; stream++;
+      if (*stream == '.') { token.kind = TOKEN_DOTDOT; stream++; }
+      break;
+    case ',':
+      token.kind = TOKEN_COMMA; stream++; break;
+    case ';':
+      token.kind = TOKEN_SEMI; stream++; break;
+    case '|':
+      token.kind = TOKEN_VBAR; stream++; break;
+    case '(':
+      if (stream[1] == '*') {
+        scan_comment();
+      } else {
+        token.kind = TOKEN_LPAREN; stream++;
+      }
+      break;
+    case ')':
+      token.kind = TOKEN_RPAREN; stream++; break;
+    case '[':
+      token.kind = TOKEN_LBRACK; stream++; break;
+    case ']':
+      token.kind = TOKEN_RBRACK; stream++; break;
+    case '{':
+      token.kind = TOKEN_LBRACE; stream++; break;
+    case '}':
+      token.kind = TOKEN_RBRACE; stream++; break;
+    case ':':
+      token.kind = TOKEN_COLON; stream++;
+      if (*stream == '=') { token.kind = TOKEN_ASSIGN; stream++; }
+      break;
+    case '^':
+      token.kind = TOKEN_CARET; stream++; break;
+    case '=':
+      token.kind = TOKEN_EQ; stream++; break;
+    case '#':
+      token.kind = TOKEN_POUND; stream++; break;
+    case '<':
+      token.kind = TOKEN_LT; stream++;
+      if (*stream == '=') { token.kind = TOKEN_LTEQ; stream++; }
+      break;
+    case '>':
+      token.kind = TOKEN_GT; stream++;
+      if (*stream == '=') { token.kind = TOKEN_GTEQ; stream++; }
+      break;
     default:
       error("Unknown token");
       token.kind = TOKEN_EOF;
@@ -418,11 +568,41 @@ void assert_token_int(int expected) {
   assert(token.iVal == expected);
 }
 
-void assert_token_char(char expected) {
+void assert_token_string(const char *expected) {
   next_token();
-  assert(token.kind == TOKEN_CHAR);
-  printf("Checking char token %c against %c\n", token.iVal, expected);
-  assert(token.iVal == expected);
+  assert(token.kind == TOKEN_STRING);
+  printf("Checking string token %s against %s\n", token.sVal, expected);
+  assert(strcmp(token.sVal, expected) == 0);
+}
+
+void assert_token_ident(const char *expected) {
+  next_token();
+  assert(token.kind == TOKEN_IDENT);
+  printf("Checking identifier token %s against %s\n", token.sVal, expected);
+  assert(strcmp(token.sVal, expected) == 0);
+}
+
+
+void assert_token_keyword(const char *expected) {
+  next_token();
+  assert(token.kind == TOKEN_KEYWORD);
+  printf("Checking keyword token %s against %s\n", token.sVal, expected);
+  assert(strcmp(token.sVal, expected) == 0);
+}
+
+
+void lex_test_dump_file(const char *fileName) {
+  printf("Parsing %s\n", fileName);
+  char *contents = read_file(fileName);
+  if (contents) {
+    init_stream(contents);
+    while (token.kind != TOKEN_EOF) {
+      next_token();
+      printf("%d\n", token.kind);
+    }
+    free(contents);
+  }
+  printf("Done.\n");
 }
 
 void lex_test(void) {
@@ -433,18 +613,13 @@ void lex_test(void) {
   next_token();
   assert(token.kind == TOKEN_EOF);
   init_stream("alpha          beta gamma");
-  for (int i=0; i < 3; i++) {
-    next_token();
-    assert(token.kind == TOKEN_IDENT);
-    printf("Ident %s\n", token.sVal);
-  }
+  assert_token_ident("alpha");
+  assert_token_ident("beta");
+  assert_token_ident("gamma");
   next_token();
   assert(token.kind == TOKEN_EOF);
   init_stream("alpha   q912     beta gamma");
-  next_token();
-  assert(token.kind == TOKEN_IDENT);
-  assert(strcmp("alpha", token.sVal) == 0);
-  next_token();
+  assert_token_ident("alpha");
   init_stream("0 1 2 123 1234 0C000H 0C000h 0c000H 41X4");
   assert_token_int(0);
   assert_token_int(1);
@@ -454,47 +629,54 @@ void lex_test(void) {
   assert_token_int(49152);
   assert_token_int(49152);
   assert_token_int(0xc000);
-  assert_token_char('A');
+  assert_token_string("A");
   assert_token_int(4);
   init_stream("45x 46x 47x 48x");
-  assert_token_char('E');
-  assert_token_char('F');
-  assert_token_char('G');
-  assert_token_char('H');
+  assert_token_string("E");
+  assert_token_string("F");
+  assert_token_string("G");
+  assert_token_string("H");
   init_stream("3.14 3.14E2 314.E-2");
   assert_token_real(3.14);
   assert_token_real(314);
   assert_token_real(3.14);
   init_stream("FOR REPEAT PROCEDURE");
-  next_token();
-  assert(token.kind == TOKEN_KEYWORD);
+  assert_token_keyword(for_keyword);
   assert(token.sVal == for_keyword);
-  next_token();
-  assert(token.kind == TOKEN_KEYWORD);
-  assert(token.sVal == repeat_keyword);
-  next_token();
-  assert(token.kind == TOKEN_KEYWORD);
-  assert(token.sVal == procedure_keyword);
+  assert_token_keyword(repeat_keyword);
+  assert_token_keyword(procedure_keyword);
   use_lowercase_keywords = true;
   init_stream("for repeat\n procedure");
-  next_token();
-  assert(token.kind == TOKEN_KEYWORD);
+  assert_token_keyword(for_keyword);
   assert(token.sVal == for_keyword);
-  next_token();
-  assert(token.kind == TOKEN_KEYWORD);
-  assert(token.sVal == repeat_keyword);
-  next_token();
-  assert(token.kind == TOKEN_KEYWORD);
-  assert(token.sVal == procedure_keyword);
+  assert_token_keyword(repeat_keyword);
+  assert_token_keyword(procedure_keyword);
   use_lowercase_keywords = false;
   init_stream("for repeat procedure");
+  assert_token_ident("for");
+  assert_token_ident("repeat");
+  assert_token_ident("procedure");
+  init_stream("a\"hello\n world\"b c");
+  assert_token_ident("a");
+  assert_token_string("hello\n world");
+  assert_token_ident("b");
+  assert(token.line == 2);
+  init_stream("\"hello\"\"world\"");
+  assert_token_string("hello");
+  assert_token_string("world");
   next_token();
-  assert(token.kind == TOKEN_IDENT);
-  printf("Ident %s\n", token.sVal);
+  assert(token.kind == TOKEN_EOF);
+  init_stream("alpha(*q912\n(* cool (**) *)\n   *)beta gamma");
+  assert_token_ident("alpha");
+  assert_token_ident("beta");
+  assert(token.line == 3);
+  init_stream("+ - * / ~ & . , ; | ( ) [ ] { } := ^ = # < > <= >= .. 10..20");
+  for (TokenKind k = TOKEN_PLUS; k <= TOKEN_DOTDOT; k++) {
+    next_token();
+    assert(token.kind == k);
+  }
+  assert_token_int(10);
   next_token();
-  assert(token.kind == TOKEN_IDENT);
-  printf("Ident %s\n", token.sVal);
-  next_token();
-  assert(token.kind == TOKEN_IDENT);
-  printf("Ident %s\n", token.sVal);
+  assert(token.kind == TOKEN_DOTDOT);
+  assert_token_int(20);
 }
