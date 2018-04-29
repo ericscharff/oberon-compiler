@@ -62,74 +62,74 @@ Token token;
 bool use_lowercase_keywords = false;
 
 // Keywords
-const char *array_keyword;
-const char *begin_keyword;
-const char *by_keyword;
-const char *case_keyword;
-const char *const_keyword;
-const char *div_keyword;
-const char *do_keyword;
-const char *else_keyword;
-const char *elsif_keyword;
-const char *end_keyword;
-const char *false_keyword;
-const char *for_keyword;
-const char *if_keyword;
-const char *import_keyword;
-const char *in_keyword;
-const char *is_keyword;
-const char *mod_keyword;
-const char *module_keyword;
-const char *nil_keyword;
-const char *of_keyword;
-const char *or_keyword;
-const char *pointer_keyword;
-const char *procedure_keyword;
-const char *record_keyword;
-const char *repeat_keyword;
-const char *return_keyword;
-const char *then_keyword;
-const char *to_keyword;
-const char *true_keyword;
-const char *type_keyword;
-const char *until_keyword;
-const char *var_keyword;
-const char *while_keyword;
+const char *keyword_array;
+const char *keyword_begin;
+const char *keyword_by;
+const char *keyword_case;
+const char *keyword_const;
+const char *keyword_div;
+const char *keyword_do;
+const char *keyword_else;
+const char *keyword_elsif;
+const char *keyword_end;
+const char *keyword_false;
+const char *keyword_for;
+const char *keyword_if;
+const char *keyword_import;
+const char *keyword_in;
+const char *keyword_is;
+const char *keyword_mod;
+const char *keyword_module;
+const char *keyword_nil;
+const char *keyword_of;
+const char *keyword_or;
+const char *keyword_pointer;
+const char *keyword_procedure;
+const char *keyword_record;
+const char *keyword_repeat;
+const char *keyword_return;
+const char *keyword_then;
+const char *keyword_to;
+const char *keyword_true;
+const char *keyword_type;
+const char *keyword_until;
+const char *keyword_var;
+const char *keyword_while;
 
 // optional keywords in lower case
-const char *lc_array_keyword;
-const char *lc_begin_keyword;
-const char *lc_by_keyword;
-const char *lc_case_keyword;
-const char *lc_const_keyword;
-const char *lc_div_keyword;
-const char *lc_do_keyword;
-const char *lc_else_keyword;
-const char *lc_elsif_keyword;
-const char *lc_end_keyword;
-const char *lc_false_keyword;
-const char *lc_for_keyword;
-const char *lc_if_keyword;
-const char *lc_import_keyword;
-const char *lc_in_keyword;
-const char *lc_is_keyword;
-const char *lc_mod_keyword;
-const char *lc_module_keyword;
-const char *lc_nil_keyword;
-const char *lc_of_keyword;
-const char *lc_or_keyword;
-const char *lc_pointer_keyword;
-const char *lc_procedure_keyword;
-const char *lc_record_keyword;
-const char *lc_repeat_keyword;
-const char *lc_return_keyword;
-const char *lc_then_keyword;
-const char *lc_to_keyword;
-const char *lc_true_keyword;
-const char *lc_type_keyword;
-const char *lc_until_keyword;
-const char *lc_var_keyword;
-const char *lc_while_keyword;
+const char *lc_keyword_array;
+const char *lc_keyword_begin;
+const char *lc_keyword_by;
+const char *lc_keyword_case;
+const char *lc_keyword_const;
+const char *lc_keyword_div;
+const char *lc_keyword_do;
+const char *lc_keyword_else;
+const char *lc_keyword_elsif;
+const char *lc_keyword_end;
+const char *lc_keyword_false;
+const char *lc_keyword_for;
+const char *lc_keyword_if;
+const char *lc_keyword_import;
+const char *lc_keyword_in;
+const char *lc_keyword_is;
+const char *lc_keyword_mod;
+const char *lc_keyword_module;
+const char *lc_keyword_nil;
+const char *lc_keyword_of;
+const char *lc_keyword_or;
+const char *lc_keyword_pointer;
+const char *lc_keyword_procedure;
+const char *lc_keyword_record;
+const char *lc_keyword_repeat;
+const char *lc_keyword_return;
+const char *lc_keyword_then;
+const char *lc_keyword_to;
+const char *lc_keyword_true;
+const char *lc_keyword_type;
+const char *lc_keyword_until;
+const char *lc_keyword_var;
+const char *lc_keyword_while;
 
 // Insert into pool
 const char *string_pool_insert(const char *begin, const char *end) {
@@ -164,108 +164,108 @@ const char *string_intern(const char *str) {
 void init_keywords(void) {
   lower_to_upper_keywords = g_hash_table_new(g_str_hash, g_str_equal);
 
-  array_keyword = string_intern("ARRAY");
-  begin_keyword = string_intern("BEGIN");
-  by_keyword = string_intern("BY");
-  case_keyword = string_intern("CASE");
-  const_keyword = string_intern("CONST");
-  div_keyword = string_intern("DIV");
-  do_keyword = string_intern("DO");
-  else_keyword = string_intern("ELSE");
-  elsif_keyword = string_intern("ELSIF");
-  end_keyword = string_intern("END");
-  false_keyword = string_intern("FALSE");
-  for_keyword = string_intern("FOR");
-  if_keyword = string_intern("IF");
-  import_keyword = string_intern("IMPORT");
-  in_keyword = string_intern("IN");
-  is_keyword = string_intern("IS");
-  mod_keyword = string_intern("MOD");
-  module_keyword = string_intern("MODULE");
-  nil_keyword = string_intern("NIL");
-  of_keyword = string_intern("OF");
-  or_keyword = string_intern("OR");
-  pointer_keyword = string_intern("POINTER");
-  procedure_keyword = string_intern("PROCEDURE");
-  record_keyword = string_intern("RECORD");
-  repeat_keyword = string_intern("REPEAT");
-  return_keyword = string_intern("RETURN");
-  then_keyword = string_intern("THEN");
-  to_keyword = string_intern("TO");
-  true_keyword = string_intern("TRUE");
-  type_keyword = string_intern("TYPE");
-  until_keyword = string_intern("UNTIL");
-  var_keyword = string_intern("VAR");
-  while_keyword = string_intern("WHILE");
+  keyword_array = string_intern("ARRAY");
+  keyword_begin = string_intern("BEGIN");
+  keyword_by = string_intern("BY");
+  keyword_case = string_intern("CASE");
+  keyword_const = string_intern("CONST");
+  keyword_div = string_intern("DIV");
+  keyword_do = string_intern("DO");
+  keyword_else = string_intern("ELSE");
+  keyword_elsif = string_intern("ELSIF");
+  keyword_end = string_intern("END");
+  keyword_false = string_intern("FALSE");
+  keyword_for = string_intern("FOR");
+  keyword_if = string_intern("IF");
+  keyword_import = string_intern("IMPORT");
+  keyword_in = string_intern("IN");
+  keyword_is = string_intern("IS");
+  keyword_mod = string_intern("MOD");
+  keyword_module = string_intern("MODULE");
+  keyword_nil = string_intern("NIL");
+  keyword_of = string_intern("OF");
+  keyword_or = string_intern("OR");
+  keyword_pointer = string_intern("POINTER");
+  keyword_procedure = string_intern("PROCEDURE");
+  keyword_record = string_intern("RECORD");
+  keyword_repeat = string_intern("REPEAT");
+  keyword_return = string_intern("RETURN");
+  keyword_then = string_intern("THEN");
+  keyword_to = string_intern("TO");
+  keyword_true = string_intern("TRUE");
+  keyword_type = string_intern("TYPE");
+  keyword_until = string_intern("UNTIL");
+  keyword_var = string_intern("VAR");
+  keyword_while = string_intern("WHILE");
 
   // optional lower case keywords
-  lc_array_keyword = string_intern("array");
-  lc_begin_keyword = string_intern("begin");
-  lc_by_keyword = string_intern("by");
-  lc_case_keyword = string_intern("case");
-  lc_const_keyword = string_intern("const");
-  lc_div_keyword = string_intern("div");
-  lc_do_keyword = string_intern("do");
-  lc_else_keyword = string_intern("else");
-  lc_elsif_keyword = string_intern("elsif");
-  lc_end_keyword = string_intern("end");
-  lc_false_keyword = string_intern("false");
-  lc_for_keyword = string_intern("for");
-  lc_if_keyword = string_intern("if");
-  lc_import_keyword = string_intern("import");
-  lc_in_keyword = string_intern("in");
-  lc_is_keyword = string_intern("is");
-  lc_mod_keyword = string_intern("mod");
-  lc_module_keyword = string_intern("module");
-  lc_nil_keyword = string_intern("nil");
-  lc_of_keyword = string_intern("of");
-  lc_or_keyword = string_intern("or");
-  lc_pointer_keyword = string_intern("pointer");
-  lc_procedure_keyword = string_intern("procedure");
-  lc_record_keyword = string_intern("record");
-  lc_repeat_keyword = string_intern("repeat");
-  lc_return_keyword = string_intern("return");
-  lc_then_keyword = string_intern("then");
-  lc_to_keyword = string_intern("to");
-  lc_true_keyword = string_intern("true");
-  lc_type_keyword = string_intern("type");
-  lc_until_keyword = string_intern("until");
-  lc_var_keyword = string_intern("var");
-  lc_while_keyword = string_intern("while");
+  lc_keyword_array = string_intern("array");
+  lc_keyword_begin = string_intern("begin");
+  lc_keyword_by = string_intern("by");
+  lc_keyword_case = string_intern("case");
+  lc_keyword_const = string_intern("const");
+  lc_keyword_div = string_intern("div");
+  lc_keyword_do = string_intern("do");
+  lc_keyword_else = string_intern("else");
+  lc_keyword_elsif = string_intern("elsif");
+  lc_keyword_end = string_intern("end");
+  lc_keyword_false = string_intern("false");
+  lc_keyword_for = string_intern("for");
+  lc_keyword_if = string_intern("if");
+  lc_keyword_import = string_intern("import");
+  lc_keyword_in = string_intern("in");
+  lc_keyword_is = string_intern("is");
+  lc_keyword_mod = string_intern("mod");
+  lc_keyword_module = string_intern("module");
+  lc_keyword_nil = string_intern("nil");
+  lc_keyword_of = string_intern("of");
+  lc_keyword_or = string_intern("or");
+  lc_keyword_pointer = string_intern("pointer");
+  lc_keyword_procedure = string_intern("procedure");
+  lc_keyword_record = string_intern("record");
+  lc_keyword_repeat = string_intern("repeat");
+  lc_keyword_return = string_intern("return");
+  lc_keyword_then = string_intern("then");
+  lc_keyword_to = string_intern("to");
+  lc_keyword_true = string_intern("true");
+  lc_keyword_type = string_intern("type");
+  lc_keyword_until = string_intern("until");
+  lc_keyword_var = string_intern("var");
+  lc_keyword_while = string_intern("while");
 
-  G_HASH_INSERT(lower_to_upper_keywords, lc_array_keyword, lc_array_keyword);
-  G_HASH_INSERT(lower_to_upper_keywords, lc_begin_keyword, begin_keyword);
-  G_HASH_INSERT(lower_to_upper_keywords, lc_by_keyword, by_keyword);
-  G_HASH_INSERT(lower_to_upper_keywords, lc_case_keyword, case_keyword);
-  G_HASH_INSERT(lower_to_upper_keywords, lc_const_keyword, const_keyword);
-  G_HASH_INSERT(lower_to_upper_keywords, lc_div_keyword, div_keyword);
-  G_HASH_INSERT(lower_to_upper_keywords, lc_do_keyword, do_keyword);
-  G_HASH_INSERT(lower_to_upper_keywords, lc_else_keyword, else_keyword);
-  G_HASH_INSERT(lower_to_upper_keywords, lc_elsif_keyword, elsif_keyword);
-  G_HASH_INSERT(lower_to_upper_keywords, lc_end_keyword, end_keyword);
-  G_HASH_INSERT(lower_to_upper_keywords, lc_false_keyword, false_keyword);
-  G_HASH_INSERT(lower_to_upper_keywords, lc_for_keyword, for_keyword);
-  G_HASH_INSERT(lower_to_upper_keywords, lc_if_keyword, if_keyword);
-  G_HASH_INSERT(lower_to_upper_keywords, lc_import_keyword, import_keyword);
-  G_HASH_INSERT(lower_to_upper_keywords, lc_in_keyword, in_keyword);
-  G_HASH_INSERT(lower_to_upper_keywords, lc_is_keyword, is_keyword);
-  G_HASH_INSERT(lower_to_upper_keywords, lc_mod_keyword, mod_keyword);
-  G_HASH_INSERT(lower_to_upper_keywords, lc_module_keyword, module_keyword);
-  G_HASH_INSERT(lower_to_upper_keywords, lc_nil_keyword, nil_keyword);
-  G_HASH_INSERT(lower_to_upper_keywords, lc_of_keyword, of_keyword);
-  G_HASH_INSERT(lower_to_upper_keywords, lc_or_keyword, or_keyword);
-  G_HASH_INSERT(lower_to_upper_keywords, lc_pointer_keyword, pointer_keyword);
-  G_HASH_INSERT(lower_to_upper_keywords, lc_procedure_keyword, procedure_keyword);
-  G_HASH_INSERT(lower_to_upper_keywords, lc_record_keyword, record_keyword);
-  G_HASH_INSERT(lower_to_upper_keywords, lc_repeat_keyword, repeat_keyword);
-  G_HASH_INSERT(lower_to_upper_keywords, lc_return_keyword, return_keyword);
-  G_HASH_INSERT(lower_to_upper_keywords, lc_then_keyword, then_keyword);
-  G_HASH_INSERT(lower_to_upper_keywords, lc_to_keyword, to_keyword);
-  G_HASH_INSERT(lower_to_upper_keywords, lc_true_keyword, true_keyword);
-  G_HASH_INSERT(lower_to_upper_keywords, lc_type_keyword, type_keyword);
-  G_HASH_INSERT(lower_to_upper_keywords, lc_until_keyword, until_keyword);
-  G_HASH_INSERT(lower_to_upper_keywords, lc_var_keyword, var_keyword);
-  G_HASH_INSERT(lower_to_upper_keywords, lc_while_keyword, while_keyword);
+  G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_array, lc_keyword_array);
+  G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_begin, keyword_begin);
+  G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_by, keyword_by);
+  G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_case, keyword_case);
+  G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_const, keyword_const);
+  G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_div, keyword_div);
+  G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_do, keyword_do);
+  G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_else, keyword_else);
+  G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_elsif, keyword_elsif);
+  G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_end, keyword_end);
+  G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_false, keyword_false);
+  G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_for, keyword_for);
+  G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_if, keyword_if);
+  G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_import, keyword_import);
+  G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_in, keyword_in);
+  G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_is, keyword_is);
+  G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_mod, keyword_mod);
+  G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_module, keyword_module);
+  G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_nil, keyword_nil);
+  G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_of, keyword_of);
+  G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_or, keyword_or);
+  G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_pointer, keyword_pointer);
+  G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_procedure, keyword_procedure);
+  G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_record, keyword_record);
+  G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_repeat, keyword_repeat);
+  G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_return, keyword_return);
+  G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_then, keyword_then);
+  G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_to, keyword_to);
+  G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_true, keyword_true);
+  G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_type, keyword_type);
+  G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_until, keyword_until);
+  G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_var, keyword_var);
+  G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_while, keyword_while);
 }
 
 void init_string_pool(void) {
@@ -327,8 +327,8 @@ void error(const char *str) {
 }
 
 bool string_is_keyword(const char *s) {
-  return (s >= array_keyword && s <= while_keyword) ||
-    (use_lowercase_keywords && s >= lc_array_keyword && s <= lc_while_keyword);
+  return (s >= keyword_array && s <= keyword_while) ||
+    (use_lowercase_keywords && s >= lc_keyword_array && s <= lc_keyword_while);
 }
 
 void scan_identifier(void) {
@@ -554,6 +554,43 @@ void next_token(void) {
   }
 }
 
+bool is_keyword(const char *name) {
+  return token.kind == TOKEN_KEYWORD && token.sVal == name;
+}
+
+void expect_keyword(const char *name) {
+  if (is_keyword(name)) {
+    next_token();
+  } else {
+    error("Expected : ");
+    error(name);
+    exit(1);
+  }
+}
+
+void expect_token(TokenKind kind) {
+  if (token.kind == kind) {
+    next_token();
+  } else {
+    error("Token kind expected");
+    exit(1);
+  }
+}
+
+const char *expect_identifier(void) {
+  expect_token(TOKEN_IDENT);
+  return token.sVal;
+}
+
+bool match_keyword(const char *name) {
+  if (is_keyword(name)) {
+    next_token();
+    return true;
+  } else {
+    return false;
+  }
+}
+
 void assert_token_real(float expected) {
   next_token();
   assert(token.kind == TOKEN_REAL);
@@ -641,16 +678,16 @@ void lex_test(void) {
   assert_token_real(314);
   assert_token_real(3.14);
   init_stream("FOR REPEAT PROCEDURE");
-  assert_token_keyword(for_keyword);
-  assert(token.sVal == for_keyword);
-  assert_token_keyword(repeat_keyword);
-  assert_token_keyword(procedure_keyword);
+  assert_token_keyword(keyword_for);
+  assert(token.sVal == keyword_for);
+  assert_token_keyword(keyword_repeat);
+  assert_token_keyword(keyword_procedure);
   use_lowercase_keywords = true;
   init_stream("for repeat\n procedure");
-  assert_token_keyword(for_keyword);
-  assert(token.sVal == for_keyword);
-  assert_token_keyword(repeat_keyword);
-  assert_token_keyword(procedure_keyword);
+  assert_token_keyword(keyword_for);
+  assert(token.sVal == keyword_for);
+  assert_token_keyword(keyword_repeat);
+  assert_token_keyword(keyword_procedure);
   use_lowercase_keywords = false;
   init_stream("for repeat procedure");
   assert_token_ident("for");
