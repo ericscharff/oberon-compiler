@@ -21,13 +21,13 @@ void parse_module(void) {
   expect_keyword(keyword_end);
   const char *endModuleName = expect_identifier();
   if (moduleName != endModuleName) {
-    printf("Begin module name %s must match end name %s", moduleName, endModuleName);
+    error("Module name %s must match end name %s", moduleName, endModuleName);
   }
   expect_token(TOKEN_DOT);
 }
 
 void parse_test(void) {
-  init_stream("MODULE abc; END abc.");
+  init_stream("", "MODULE abc; END abc.");
   next_token();
   parse_module();
 }

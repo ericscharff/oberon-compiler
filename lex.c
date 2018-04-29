@@ -41,9 +41,14 @@ typedef enum TokenKind {
 } TokenKind;
 
 
+typedef struct Loc {
+  const char *file_name;
+  int line;
+} Loc;
+
 typedef struct Token {
   TokenKind kind;
-  int line;
+  Loc pos;
   const char *sVal;
   int iVal;
   float rVal;
@@ -297,10 +302,11 @@ void pool_test(void) {
   assert(s != one);
 }
 
-void init_stream(const char *buf) {
+void init_stream(const char *fileName, const char *buf) {
   stream = buf;
   token.kind = TOKEN_UNKNOWN;
-  token.line = 1;
+  token.pos.file_name = string_intern(fileName);
+  token.pos.line = 1;
 }
 
 char *read_file(const char *path) {
@@ -322,8 +328,14 @@ char *read_file(const char *path) {
   return buf;
 }
 
-void error(const char *str) {
-  fprintf(stderr, "Error: %s at line %d, stream char '%c'.\n", str, token.line, *stream);
+void error(const char *fmt, ...) {
+  va_list args;
+  va_start(args, fmt);
+  printf("%s:%d: error: ", token.pos.file_name, token.pos.line);
+  vprintf(fmt, args);
+  printf("\n");
+  va_end(args);
+  exit(1);
 }
 
 bool string_is_keyword(const char *s) {
@@ -409,7 +421,7 @@ void scan_number(void) {
   }
   if (token.kind == TOKEN_STRING) {
     if (token.iVal > 255) {
-      error("Character constant > 255");
+      error("Character constant %d > 255", token.iVal);
     } else {
       char sVal[] = {token.iVal, 0};
       token.sVal = string_intern(sVal);
@@ -420,16 +432,16 @@ void scan_number(void) {
 void scan_string(void) {
   assert(*stream == '"');
   stream++;
-  int startLine = token.line;
+  int startLine = token.pos.line;
   const char *start = stream;
   while (*stream && *stream != '"') {
     if (*stream == '\n') {
-      token.line++;
+      token.pos.line++;
     }
     stream++;
   }
   if (*stream != '"') {
-    token.line = startLine;
+    token.pos.line = startLine;
     error("Unterminated \"");
   } else {
     token.kind = TOKEN_STRING;
@@ -441,10 +453,10 @@ void scan_string(void) {
 void scan_comment(void) {
   assert(stream[0] == '(' && stream[1] == '*');
   stream += 2;
-  int startLine = token.line;
+  int startLine = token.pos.line;
   while (*stream && stream[1] && (stream[0] != '*') && (stream[1] != ')')) {
     if (*stream == '\n') {
-      token.line++;
+      token.pos.line++;
     }
     stream++;
     if (stream[0] == '(' && stream[1] == '*') {
@@ -452,7 +464,7 @@ void scan_comment(void) {
     }
   }
   if (stream[0] != '*' && stream[1] != ')') {
-    token.line = startLine;
+    token.pos.line = startLine;
     error("Unterminated comment");
   }
   stream += 2;
@@ -468,7 +480,7 @@ void next_token(void) {
     case ' ': case '\n': case '\r': case '\t': case '\v':
       while (isspace(*stream)) {
         if (*stream++ == '\n') {
-          token.line++;
+          token.pos.line++;
         }
       }
       break;
@@ -547,7 +559,7 @@ void next_token(void) {
       if (*stream == '=') { token.kind = TOKEN_GTEQ; stream++; }
       break;
     default:
-      error("Unknown token");
+      error("Unexpected character $d", *stream);
       token.kind = TOKEN_EOF;
       break;
     }
@@ -562,9 +574,7 @@ void expect_keyword(const char *name) {
   if (is_keyword(name)) {
     next_token();
   } else {
-    error("Expected : ");
-    error(name);
-    exit(1);
+    error("Expected %s", name);
   }
 }
 
@@ -572,8 +582,7 @@ void expect_token(TokenKind kind) {
   if (token.kind == kind) {
     next_token();
   } else {
-    error("Token kind expected");
-    exit(1);
+    error("Expected %s", "TODO");
   }
 }
 
@@ -632,7 +641,7 @@ void lex_test_dump_file(const char *fileName) {
   printf("Parsing %s\n", fileName);
   char *contents = read_file(fileName);
   if (contents) {
-    init_stream(contents);
+    init_stream(fileName, contents);
     while (token.kind != TOKEN_EOF) {
       next_token();
       printf("%d\n", token.kind);
@@ -644,20 +653,20 @@ void lex_test_dump_file(const char *fileName) {
 
 void lex_test(void) {
   pool_test();
-  init_stream("");
+  init_stream("", "");
   next_token();
   assert(token.kind == TOKEN_EOF);
   next_token();
   assert(token.kind == TOKEN_EOF);
-  init_stream("alpha          beta gamma");
+  init_stream("", "alpha          beta gamma");
   assert_token_ident("alpha");
   assert_token_ident("beta");
   assert_token_ident("gamma");
   next_token();
   assert(token.kind == TOKEN_EOF);
-  init_stream("alpha   q912     beta gamma");
+  init_stream("", "alpha   q912     beta gamma");
   assert_token_ident("alpha");
-  init_stream("0 1 2 123 1234 0C000H 0C000h 0c000H 41X4");
+  init_stream("", "0 1 2 123 1234 0C000H 0C000h 0c000H 41X4");
   assert_token_int(0);
   assert_token_int(1);
   assert_token_int(2);
@@ -668,46 +677,46 @@ void lex_test(void) {
   assert_token_int(0xc000);
   assert_token_string("A");
   assert_token_int(4);
-  init_stream("45x 46x 47x 48x");
+  init_stream("", "45x 46x 47x 48x");
   assert_token_string("E");
   assert_token_string("F");
   assert_token_string("G");
   assert_token_string("H");
-  init_stream("3.14 3.14E2 314.E-2");
+  init_stream("", "3.14 3.14E2 314.E-2");
   assert_token_real(3.14);
   assert_token_real(314);
   assert_token_real(3.14);
-  init_stream("FOR REPEAT PROCEDURE");
+  init_stream("", "FOR REPEAT PROCEDURE");
   assert_token_keyword(keyword_for);
   assert(token.sVal == keyword_for);
   assert_token_keyword(keyword_repeat);
   assert_token_keyword(keyword_procedure);
   use_lowercase_keywords = true;
-  init_stream("for repeat\n procedure");
+  init_stream("", "for repeat\n procedure");
   assert_token_keyword(keyword_for);
   assert(token.sVal == keyword_for);
   assert_token_keyword(keyword_repeat);
   assert_token_keyword(keyword_procedure);
   use_lowercase_keywords = false;
-  init_stream("for repeat procedure");
+  init_stream("", "for repeat procedure");
   assert_token_ident("for");
   assert_token_ident("repeat");
   assert_token_ident("procedure");
-  init_stream("a\"hello\n world\"b c");
+  init_stream("", "a\"hello\n world\"b c");
   assert_token_ident("a");
   assert_token_string("hello\n world");
   assert_token_ident("b");
-  assert(token.line == 2);
-  init_stream("\"hello\"\"world\"");
+  assert(token.pos.line == 2);
+  init_stream("", "\"hello\"\"world\"");
   assert_token_string("hello");
   assert_token_string("world");
   next_token();
   assert(token.kind == TOKEN_EOF);
-  init_stream("alpha(*q912\n(* cool (**) *)\n   *)beta gamma");
+  init_stream("", "alpha(*q912\n(* cool (**) *)\n   *)beta gamma");
   assert_token_ident("alpha");
   assert_token_ident("beta");
-  assert(token.line == 3);
-  init_stream("+ - * / ~ & . , ; | ( ) [ ] { } := ^ = # < > <= >= .. 10..20");
+  assert(token.pos.line == 3);
+  init_stream("", "+ - * / ~ & . , ; | ( ) [ ] { } := ^ = # < > <= >= .. 10..20");
   for (TokenKind k = TOKEN_PLUS; k <= TOKEN_DOTDOT; k++) {
     next_token();
     assert(token.kind == k);
