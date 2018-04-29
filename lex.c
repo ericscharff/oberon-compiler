@@ -488,20 +488,25 @@ void scan_comment(void) {
   assert(stream[0] == '(' && stream[1] == '*');
   stream += 2;
   int startLine = token.pos.line;
-  while (*stream && stream[1] && (stream[0] != '*') && (stream[1] != ')')) {
+  bool found_end_token = false;
+  while (*stream && stream[1] && !found_end_token) {
+    found_end_token = stream[0] == '*' && stream[1] == ')';
     if (*stream == '\n') {
       token.pos.line++;
     }
-    stream++;
+    if (!found_end_token) {
+      stream++;
+    }
     if (stream[0] == '(' && stream[1] == '*') {
       scan_comment();
     }
   }
-  if (stream[0] != '*' && stream[1] != ')') {
+  if (found_end_token) {
+    stream += 2;
+  } else{
     token.pos.line = startLine;
     error("Unterminated comment");
   }
-  stream += 2;
 }
 
 void next_token(void) {
