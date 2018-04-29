@@ -3,7 +3,6 @@
 // Avoid dumb problems with const
 #define G_HASH_INSERT(t, k, v) g_hash_table_insert(t, (void*)k, (void*)v)
 
-
 typedef enum TokenKind {
   TOKEN_UNKNOWN,
   TOKEN_EOF,
@@ -40,6 +39,41 @@ typedef enum TokenKind {
   TOKEN_COLON,
 } TokenKind;
 
+const char *token_kind_names[] = {
+  [TOKEN_UNKNOWN] = "<unknown>",
+  [TOKEN_EOF] = "<eof>",
+  [TOKEN_IDENT] = "<ident>",
+  [TOKEN_KEYWORD] = "<keyword>",
+  [TOKEN_STRING] = "<string>",
+  [TOKEN_INT] = "<integer number>",
+  [TOKEN_REAL] = "<real number>",
+  [TOKEN_PLUS] = "+",
+  [TOKEN_MINUS] = "-",
+  [TOKEN_STAR] = "*",
+  [TOKEN_SLASH] = "/",
+  [TOKEN_TILDE] = "~",
+  [TOKEN_AMP] = "&",
+  [TOKEN_DOT] = ".",
+  [TOKEN_COMMA] = ",",
+  [TOKEN_SEMI] = ";",
+  [TOKEN_VBAR] = "|",
+  [TOKEN_LPAREN] = "(",
+  [TOKEN_RPAREN] = ")",
+  [TOKEN_LBRACK] = "[",
+  [TOKEN_RBRACK] = "]",
+  [TOKEN_LBRACE] = "{",
+  [TOKEN_RBRACE] = "}",
+  [TOKEN_ASSIGN] = ":=",
+  [TOKEN_CARET] = "^",
+  [TOKEN_EQ] = "=",
+  [TOKEN_POUND] = "#",
+  [TOKEN_LT] = "<",
+  [TOKEN_GT] = ">",
+  [TOKEN_LTEQ] = "<=",
+  [TOKEN_GTEQ] = ">=",
+  [TOKEN_DOTDOT] = "..",
+  [TOKEN_COLON] = ":",
+};
 
 typedef struct Loc {
   const char *file_name;
@@ -582,7 +616,7 @@ void expect_token(TokenKind kind) {
   if (token.kind == kind) {
     next_token();
   } else {
-    error("Expected %s", "TODO");
+    error("Expected %s", token_kind_names[kind]);
   }
 }
 
