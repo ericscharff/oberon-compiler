@@ -634,6 +634,15 @@ bool match_keyword(const char *name) {
   }
 }
 
+bool match_token(TokenKind kind) {
+  if (token.kind == kind) {
+    next_token();
+    return true;
+  } else {
+    return false;
+  }
+}
+
 void assert_token_real(float expected) {
   next_token();
   assert(token.kind == TOKEN_REAL);
