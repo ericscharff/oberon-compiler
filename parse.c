@@ -64,9 +64,11 @@ void parse_set_element(void) {
 void parse_set() {
   dbg_enter("set");
   expect_token(TOKEN_LBRACE);
-  parse_set_element();
-  while (match_token(TOKEN_COMMA)) {
+  if (!is_token(TOKEN_RBRACE)) {
     parse_set_element();
+    while (match_token(TOKEN_COMMA)) {
+      parse_set_element();
+    }
   }
   expect_token(TOKEN_RBRACE);
   dbg_exit();
@@ -399,9 +401,11 @@ void parse_array_type(void) {
 
 void parse_field_list(void) {
   dbg_enter("field_list");
-  parse_ident_list();
-  expect_token(TOKEN_COLON);
-  parse_type();
+  if (is_token(TOKEN_IDENT)) {
+    parse_ident_list();
+    expect_token(TOKEN_COLON);
+    parse_type();
+  }
   dbg_exit();
 }
 
@@ -623,13 +627,63 @@ void parse_module(void) {
     error("Module name %s must match end name %s", moduleName, endModuleName);
   }
   expect_token(TOKEN_DOT);
+  dbg_print_str(moduleName);
   dbg_exit();
 }
 
-void parse_test(void) {
-  init_stream("", "MODULE abc; IMPORT A, B := aliased, C, D; CONST k=1+2*c+3; END abc.");
+void parse_test_file(const char *fileName) {
+  const char *contents = read_file(fileName);
   import_idents = g_hash_table_new(g_str_hash, g_str_equal);
-  //init_stream("ORS.Mod", read_file("ORS.Mod"));
+  init_stream(fileName, contents);
   next_token();
   parse_module();
+  free(contents);
+  g_hash_table_destroy(import_idents);
+}
+
+void parse_test(void) {
+  import_idents = g_hash_table_new(g_str_hash, g_str_equal);
+  init_stream("", "MODULE abc; IMPORT A, B := aliased, C, D; CONST k=1+2*c+3; END abc.");
+  next_token();
+  parse_module();
+  parse_test_file("Blink.Mod");
+  parse_test_file("Checkers.Mod");
+  parse_test_file("Display.Mod");
+  parse_test_file("Draw.Mod");
+  parse_test_file("EBNF.Mod");
+  parse_test_file("Edit.Mod");
+  parse_test_file("FileDir.Mod");
+  parse_test_file("Files.Mod");
+  parse_test_file("Fonts.Mod");
+  parse_test_file("GraphicFrames.Mod");
+  parse_test_file("GraphTool.Mod");
+  parse_test_file("Hilbert.Mod");
+  parse_test_file("Input.Mod");
+  parse_test_file("Kernel.Mod");
+  parse_test_file("MacroTool.Mod");
+  parse_test_file("Math.Mod");
+  parse_test_file("MenuViewers.Mod");
+  parse_test_file("Modules.Mod");
+  parse_test_file("Net.Mod");
+  parse_test_file("Oberon.Mod");
+  parse_test_file("ORB.Mod");
+  parse_test_file("ORC.Mod");
+  parse_test_file("ORG.Mod");
+  parse_test_file("ORP.Mod");
+  parse_test_file("ORS.Mod");
+  parse_test_file("ORTool.Mod");
+  parse_test_file("PCLink1.Mod");
+  parse_test_file("PIO.Mod");
+  parse_test_file("Rectangles.Mod");
+  parse_test_file("RISC.Mod");
+  parse_test_file("RS232.Mod");
+  parse_test_file("SCC.Mod");
+  parse_test_file("Sierpinski.Mod");
+  parse_test_file("SmallPrograms.Mod");
+  parse_test_file("Stars.Mod");
+  parse_test_file("System.Mod");
+  parse_test_file("TextFrames.Mod");
+  parse_test_file("Texts.Mod");
+  parse_test_file("Tools.Mod");
+  parse_test_file("Viewers.Mod");
 }
