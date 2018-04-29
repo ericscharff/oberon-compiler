@@ -29,6 +29,7 @@ void dbg_exit(void) {
 void parse_type(void);
 void parse_expression(void);
 void parse_declaration_sequence(void);
+void parse_statement_sequence(void);
 
 bool is_imported_module(const char *name) {
   // TODO
@@ -201,9 +202,164 @@ void parse_expression(void) {
   dbg_exit();
 }
 
+void parse_if_statement(void) {
+  dbg_enter("if");
+  expect_keyword(keyword_if);
+  parse_expression();
+  expect_keyword(keyword_then);
+  parse_statement_sequence();
+  while (match_keyword(keyword_elsif)) {
+    parse_expression();
+    expect_keyword(keyword_then);
+    parse_statement_sequence();
+  }
+  if (match_keyword(keyword_else)) {
+    parse_statement_sequence();
+  }
+  expect_keyword(keyword_end);
+  dbg_exit();
+}
+
+void parse_case_label(void) {
+  dbg_enter("case_label");
+  if (match_token(TOKEN_INT)) {
+  } else if (match_token(TOKEN_STRING)) {
+  } else if (is_token(TOKEN_IDENT)) {
+    parse_qualident();
+  } else {
+    error("Case label (integer, string, identifier) expected");
+  }
+  dbg_exit();
+}
+
+void parse_case_label_range(void) {
+  dbg_enter("case_label_range");
+  parse_case_label();
+  if (match_token(TOKEN_DOTDOT)) {
+    parse_case_label();
+  }
+  dbg_exit();
+}
+
+void parse_case_label_list(void) {
+  dbg_enter("case_label_list");
+  parse_case_label_range();
+  while (match_token(TOKEN_COMMA)) {
+    parse_case_label_range();
+  }
+  dbg_exit();
+}
+
+void parse_case(void) {
+  dbg_enter("case");
+  if (is_token(TOKEN_INT) || is_token(TOKEN_STRING) || is_token(TOKEN_IDENT)) {
+    parse_case_label_list();
+    expect_token(TOKEN_COLON);
+    parse_statement_sequence();
+  }
+  dbg_exit();
+}
+
+void parse_case_statement(void) {
+  dbg_enter("case_statement");
+  expect_keyword(keyword_case);
+  parse_expression();
+  expect_keyword(keyword_of);
+  parse_case();
+  while (match_token(TOKEN_VBAR)) {
+    parse_case();
+  }
+  expect_keyword(keyword_end);
+  dbg_exit();
+}
+
+void parse_while_statement(void) {
+  dbg_enter("while");
+  expect_keyword(keyword_while);
+  parse_expression();
+  expect_keyword(keyword_do);
+  parse_statement_sequence();
+  while (match_keyword(keyword_elsif)) {
+    parse_expression();
+    expect_keyword(keyword_do);
+    parse_statement_sequence();
+  }
+  expect_keyword(keyword_end);
+  dbg_exit();
+}
+
+void parse_repeat_statement(void) {
+  dbg_enter("repeat");
+  expect_keyword(keyword_repeat);
+  parse_statement_sequence();
+  expect_keyword(keyword_until);
+  parse_expression();
+  dbg_exit();
+}
+
+void parse_for_statement(void) {
+  dbg_enter("for");
+  expect_keyword(keyword_for);
+  expect_identifier();
+  expect_token(TOKEN_ASSIGN);
+  parse_expression();
+  expect_keyword(keyword_to);
+  parse_expression();
+  if (match_keyword(keyword_by)) {
+    // Really ConstExpression
+    parse_expression();
+  }
+  expect_keyword(keyword_do);
+  parse_statement_sequence();
+  expect_keyword(keyword_end);
+  dbg_exit();
+}
+
+void parse_assign_or_proc_call(void) {
+  dbg_enter("assign_or_proc_call");
+  parse_designator();
+  if (match_token(TOKEN_ASSIGN)) {
+    // Assignment
+    dbg_enter("assign");
+    parse_expression();
+    dbg_exit();
+  } else {
+    // Procedure call
+    dbg_enter("proc_call");
+    if (is_token(TOKEN_LPAREN)) {
+      parse_actual_parameters();
+    }
+    dbg_exit();
+  }
+  dbg_exit();
+}
+
+void parse_statement(void) {
+  dbg_enter("statement");
+  if (is_keyword(keyword_if)) {
+    parse_if_statement();
+  } else if (is_keyword(keyword_case)) {
+    parse_case_statement();
+  } else if (is_keyword(keyword_while)) {
+    parse_while_statement();
+  } else if (is_keyword(keyword_repeat)) {
+    parse_repeat_statement();
+  } else if (is_keyword(keyword_for)) {
+    parse_for_statement();
+  } else if (is_token(TOKEN_IDENT)) {
+    parse_assign_or_proc_call();
+  } else {
+    expect_token(TOKEN_IDENT);
+  }
+  dbg_exit();
+}
+
 void parse_statement_sequence(void) {
   dbg_enter("statement_sequence");
-  // TODO
+  parse_statement();
+  while (match_token(TOKEN_SEMI)) {
+    parse_statement();
+  }
   dbg_exit();
 }
 

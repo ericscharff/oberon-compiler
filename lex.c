@@ -620,7 +620,7 @@ void expect_token(TokenKind kind) {
   if (is_token(kind)) {
     next_token();
   } else {
-    error("Expected %s", token_kind_names[kind]);
+    error("Expected %s, got %s", token_kind_names[kind], token_kind_names[token.kind]);
   }
 }
 
