@@ -5,9 +5,11 @@
 #include <ctype.h>
 #include <stdio.h>
 #include "lex.c"
+#include "parse.c"
 
 void run_tests(void) {
   lex_test();
+  parse_test();
 }
 
 int main(void) {
