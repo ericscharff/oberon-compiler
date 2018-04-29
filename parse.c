@@ -1,7 +1,41 @@
 void parse_statement_sequence(void) {
 }
 
+void parse_const_declaration(void) {
+}
+
+void parse_type_declaration(void) {
+}
+
+void parse_var_declaration(void) {
+}
+
+void parse_procedure_declaration(void) {
+}
+
 void parse_declaration_sequence(void) {
+  if (match_keyword(keyword_const)) {
+    while (is_token(TOKEN_IDENT)) {
+      parse_const_declaration();
+      expect_token(TOKEN_SEMI);
+    }
+  }
+  if (match_keyword(keyword_type)) {
+    while (is_token(TOKEN_IDENT)) {
+      parse_type_declaration();
+      expect_token(TOKEN_SEMI);
+    }
+  }
+  if (match_keyword(keyword_var)) {
+    while (is_token(TOKEN_IDENT)) {
+      parse_var_declaration();
+      expect_token(TOKEN_SEMI);
+    }
+  }
+  while (is_keyword(keyword_procedure)) {
+    parse_procedure_declaration();
+    expect_token(TOKEN_SEMI);
+  }
 }
 
 void parse_import(void) {

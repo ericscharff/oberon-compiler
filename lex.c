@@ -600,6 +600,10 @@ void next_token(void) {
   }
 }
 
+bool is_token(TokenKind kind) {
+  return token.kind == kind;
+}
+
 bool is_keyword(const char *name) {
   return token.kind == TOKEN_KEYWORD && token.sVal == name;
 }
@@ -613,7 +617,7 @@ void expect_keyword(const char *name) {
 }
 
 void expect_token(TokenKind kind) {
-  if (token.kind == kind) {
+  if (is_token(kind)) {
     next_token();
   } else {
     error("Expected %s", token_kind_names[kind]);
@@ -635,7 +639,7 @@ bool match_keyword(const char *name) {
 }
 
 bool match_token(TokenKind kind) {
-  if (token.kind == kind) {
+  if (is_token(kind)) {
     next_token();
     return true;
   } else {
