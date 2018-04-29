@@ -1,10 +1,24 @@
 int indent = 0;
 
+void dbg_print_int(int x) {
+  for (int i=0; i < indent; i++) {
+    printf("  ");
+  }
+  printf("%d\n", x);
+}
+
+void dbg_print_str(const char *s) {
+  for (int i=0; i < indent; i++) {
+    printf("  ");
+  }
+  printf("%s\n", s);
+}
+
 void dbg_enter(const char *name) {
   for (int i=0; i < indent; i++) {
     printf("  ");
   }
-  printf("Entering %s", name);
+  printf("Entering %s\n", name);
   indent++;
 }
 
@@ -21,6 +35,7 @@ bool is_imported_module(const char *name) {
   return name[0] >= 'A' && name[0] <= 'Z';
 }
 void parse_qualident(void) {
+  dbg_enter("qualident");
   const char *ident = expect_identifier();
   const char *moduleName = "";
   if (is_imported_module(ident)) {
@@ -28,30 +43,40 @@ void parse_qualident(void) {
     expect_token(TOKEN_DOT);
     ident = expect_identifier();
   }
-  printf("Identifier %s.%s\n", moduleName, ident);
+  if (*moduleName) {
+    dbg_print_str(moduleName);
+  }
+  dbg_print_str(ident);
+  dbg_exit();
 }
 
 void parse_set_element(void) {
+  dbg_enter("set_element");
   parse_expression();
   if (match_token(TOKEN_DOTDOT)) {
     parse_expression();
   }
+  dbg_exit();
 }
 
 void parse_set() {
+  dbg_enter("set");
   expect_token(TOKEN_LBRACE);
   parse_set_element();
   while (match_token(TOKEN_COMMA)) {
     parse_set_element();
   }
   expect_token(TOKEN_RBRACE);
+  dbg_exit();
 }
 
 void parse_exp_list(void) {
+  dbg_enter("exp_list");
   parse_expression();
   while (match_token(TOKEN_COMMA)) {
     parse_expression();
   }
+  dbg_exit();
 }
 
 bool symbol_type_is_pointer(void) {
@@ -64,6 +89,7 @@ bool symbol_is_var_parameter(void) {
   return false;
 }
 void parse_designator(void) {
+  dbg_enter("designator");
   parse_qualident();
   while (is_token(TOKEN_DOT) || is_token(TOKEN_LBRACK) || is_token(TOKEN_CARET) || is_token(TOKEN_LPAREN)) {
     if (match_token(TOKEN_DOT)) {
@@ -79,16 +105,22 @@ void parse_designator(void) {
       assert(0);
     }
   }
+  dbg_exit();
 }
 
 void parse_actual_parameters(void) {
+  dbg_enter("actual_parameters");
   match_token(TOKEN_LPAREN);
   parse_exp_list();
   match_token(TOKEN_RPAREN);
+  dbg_exit();
 }
 
 void parse_factor(void) {
-  if (match_token(TOKEN_INT)) {
+  dbg_enter("factor");
+  if (is_token(TOKEN_INT)) {
+    dbg_print_int(token.iVal);
+    match_token(TOKEN_INT);
   } else if (match_token(TOKEN_REAL)) {
   } else if (match_token(TOKEN_STRING)) {
   } else if (match_keyword(keyword_nil)) {
@@ -109,6 +141,7 @@ void parse_factor(void) {
   } else {
     error("Factor expected");
   }
+  dbg_exit();
 }
 
 bool match_mul_operator(void) {
@@ -120,10 +153,12 @@ bool match_mul_operator(void) {
 }
 
 void parse_term(void) {
+  dbg_enter("term");
   parse_factor();
   while (match_mul_operator()) {
     parse_factor();
   }
+  dbg_exit();
 }
 
 bool match_add_operator(void) {
@@ -133,6 +168,7 @@ bool match_add_operator(void) {
 }
 
 void parse_simple_expression(void) {
+  dbg_enter("simple_expression");
   if (match_token(TOKEN_PLUS)) {
     printf("Unary plus\n");
   } else if (match_token(TOKEN_MINUS)) {
@@ -142,6 +178,7 @@ void parse_simple_expression(void) {
   while (match_add_operator()) {
     parse_term();
   }
+  dbg_exit();
 }
 
 bool match_relation() {
@@ -156,29 +193,38 @@ bool match_relation() {
 }
 
 void parse_expression(void) {
+  dbg_enter("expression");
   parse_simple_expression();
   if (match_relation()) {
     parse_simple_expression();
   }
+  dbg_exit();
 }
 
 void parse_statement_sequence(void) {
+  dbg_enter("statement_sequence");
   // TODO
+  dbg_exit();
 }
 
 void parse_ident_def(void) {
+  dbg_enter("ident_def");
   expect_identifier();
   match_token(TOKEN_STAR);
+  dbg_exit();
 }
 
 void parse_ident_list(void) {
+  dbg_enter("ident_list");
   parse_ident_def();
   while (match_token(TOKEN_COMMA)) {
     parse_ident_def();
   }
+  dbg_exit();
 }
 
 void parse_array_type(void) {
+  dbg_enter("array_type");
   expect_keyword(keyword_array);
   parse_expression();
   while (match_token(TOKEN_COMMA)) {
@@ -186,22 +232,28 @@ void parse_array_type(void) {
   }
   expect_keyword(keyword_of);
   parse_type();
+  dbg_exit();
 }
 
 void parse_field_list(void) {
+  dbg_enter("field_list");
   parse_ident_list();
   expect_token(TOKEN_COLON);
   parse_type();
+  dbg_exit();
 }
 
 void parse_field_list_sequence(void) {
+  dbg_enter("field_list_sequence");
   parse_field_list();
   while (match_token(TOKEN_SEMI)) {
     parse_field_list();
   }
+  dbg_exit();
 }
 
 void parse_record_type(void) {
+  dbg_enter("record_type");
   expect_keyword(keyword_record);
   if (match_token(TOKEN_LPAREN)) {
     parse_qualident();
@@ -211,15 +263,19 @@ void parse_record_type(void) {
     parse_field_list_sequence();
   }
   expect_keyword(keyword_end);
+  dbg_exit();
 }
 
 void parse_pointer_type(void) {
+  dbg_enter("pointer_type");
   expect_keyword(keyword_pointer);
   expect_keyword(keyword_to);
   parse_type();
+  dbg_exit();
 }
 
 void parse_fp_section(void) {
+  dbg_enter("fp_section");
   match_keyword(keyword_var);
   expect_identifier();
   while (match_token(TOKEN_COMMA)) {
@@ -232,9 +288,11 @@ void parse_fp_section(void) {
     expect_keyword(keyword_of);
   }
   parse_qualident();
+  dbg_exit();
 }
 
 void parse_formal_parameters(void) {
+  dbg_enter("formal_parameters");
   expect_token(TOKEN_LPAREN);
   if (is_keyword(keyword_var) || is_token(TOKEN_IDENT)) {
     parse_fp_section();
@@ -246,16 +304,20 @@ void parse_formal_parameters(void) {
   if (match_token(TOKEN_COLON)) {
     parse_qualident();
   }
+  dbg_exit();
 }
 
 void parse_procedure_type(void) {
+  dbg_enter("procedure_type");
   expect_keyword(keyword_procedure);
   if (is_token(TOKEN_LPAREN)) {
     parse_formal_parameters();
   }
+  dbg_exit();
 }
 
 void parse_type(void) {
+  dbg_enter("type");
   if (is_token(TOKEN_IDENT)) {
     parse_qualident();
   } else if (is_keyword(keyword_array)) {
@@ -269,27 +331,35 @@ void parse_type(void) {
   } else {
     error("identifier, ARRAY, RECORD, POINTER, or PROCEDURE expected");
   }
+  dbg_exit();
 }
 
 void parse_const_declaration(void) {
+  dbg_enter("const_declaration");
   parse_ident_def();
   expect_token(TOKEN_EQ);
   parse_expression();
+  dbg_exit();
 }
 
 void parse_type_declaration(void) {
+  dbg_enter("type_declaration");
   parse_ident_def();
   expect_token(TOKEN_EQ);
   parse_type();
+  dbg_exit();
 }
 
 void parse_var_declaration(void) {
+  dbg_enter("var_declaration");
   parse_ident_list();
   expect_token(TOKEN_COLON);
   parse_type();
+  dbg_exit();
 }
 
 void parse_procedure_body(void) {
+  dbg_enter("procedure_body");
   // Nested procedure declarations could be avoided here,
   // since nested procedures can't really access their
   // outer scopes anyway
@@ -301,23 +371,29 @@ void parse_procedure_body(void) {
     parse_expression();
   }
   expect_keyword(keyword_end);
+  dbg_exit();
 }
 
 void parse_procedure_heading(void) {
+  dbg_enter("procedure_heading");
   expect_keyword(keyword_procedure);
   parse_ident_def();
   if (is_token(TOKEN_LPAREN)) {
     parse_formal_parameters();
   }
+  dbg_exit();
 }
 void parse_procedure_declaration(void) {
+  dbg_enter("procedure_declaration");
   parse_procedure_heading();
   expect_token(TOKEN_SEMI);
   parse_procedure_body();
   expect_identifier();
+  dbg_exit();
 }
 
 void parse_declaration_sequence(void) {
+  dbg_enter("declaration_sequence");
   if (match_keyword(keyword_const)) {
     while (is_token(TOKEN_IDENT)) {
       parse_const_declaration();
@@ -340,9 +416,11 @@ void parse_declaration_sequence(void) {
     parse_procedure_declaration();
     expect_token(TOKEN_SEMI);
   }
+  dbg_exit();
 }
 
 void parse_import(void) {
+  dbg_enter("import");
   const char *importName = expect_identifier();
   if (match_token(TOKEN_ASSIGN)) {
     const char *canonicalName = expect_identifier();
@@ -350,18 +428,22 @@ void parse_import(void) {
   } else {
     printf("import %s\n", importName);
   }
+  dbg_exit();
 }
 
 void parse_import_list(void) {
+  dbg_enter("import_list");
   expect_keyword(keyword_import);
   parse_import();
   while (match_token(TOKEN_COMMA)) {
     parse_import();
   }
   expect_token(TOKEN_SEMI);
+  dbg_exit();
 }
 
 void parse_module(void) {
+  dbg_enter("module");
   expect_keyword(keyword_module);
   const char *moduleName = expect_identifier();
   expect_token(TOKEN_SEMI);
@@ -378,10 +460,11 @@ void parse_module(void) {
     error("Module name %s must match end name %s", moduleName, endModuleName);
   }
   expect_token(TOKEN_DOT);
+  dbg_exit();
 }
 
 void parse_test(void) {
-  init_stream("", "MODULE abc; IMPORT a, b := aliased, c, d; CONST k=1; END abc.");
+  init_stream("", "MODULE abc; IMPORT a, b := aliased, c, d; CONST k=1+2*c+3; END abc.");
   next_token();
   parse_module();
 }
