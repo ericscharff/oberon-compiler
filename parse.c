@@ -1,5 +1,20 @@
+int indent = 0;
+
+void dbg_enter(const char *name) {
+  for (int i=0; i < indent; i++) {
+    printf("  ");
+  }
+  printf("Entering %s", name);
+  indent++;
+}
+
+void dbg_exit(void) {
+  indent--;
+}
+
 void parse_type(void);
 void parse_expression(void);
+void parse_declaration_sequence(void);
 
 bool is_imported_module(const char *name) {
   // TODO
@@ -148,6 +163,7 @@ void parse_expression(void) {
 }
 
 void parse_statement_sequence(void) {
+  // TODO
 }
 
 void parse_ident_def(void) {
@@ -204,6 +220,18 @@ void parse_pointer_type(void) {
 }
 
 void parse_fp_section(void) {
+  match_keyword(keyword_var);
+  expect_identifier();
+  while (match_token(TOKEN_COMMA)) {
+    expect_identifier();
+  }
+  expect_token(TOKEN_COLON);
+  // FormalType
+  if (match_keyword(keyword_array)) {
+    // ARRAY OF ...
+    expect_keyword(keyword_of);
+  }
+  parse_qualident();
 }
 
 void parse_formal_parameters(void) {
@@ -256,9 +284,37 @@ void parse_type_declaration(void) {
 }
 
 void parse_var_declaration(void) {
+  parse_ident_list();
+  expect_token(TOKEN_COLON);
+  parse_type();
 }
 
+void parse_procedure_body(void) {
+  // Nested procedure declarations could be avoided here,
+  // since nested procedures can't really access their
+  // outer scopes anyway
+  parse_declaration_sequence();
+  if (match_keyword(keyword_begin)) {
+    parse_statement_sequence();
+  }
+  if (match_keyword(keyword_return)) {
+    parse_expression();
+  }
+  expect_keyword(keyword_end);
+}
+
+void parse_procedure_heading(void) {
+  expect_keyword(keyword_procedure);
+  parse_ident_def();
+  if (is_token(TOKEN_LPAREN)) {
+    parse_formal_parameters();
+  }
+}
 void parse_procedure_declaration(void) {
+  parse_procedure_heading();
+  expect_token(TOKEN_SEMI);
+  parse_procedure_body();
+  expect_identifier();
 }
 
 void parse_declaration_sequence(void) {
