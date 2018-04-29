@@ -18,7 +18,7 @@ void dbg_enter(const char *name) {
   for (int i=0; i < indent; i++) {
     printf("  ");
   }
-  printf("Entering %s\n", name);
+  printf("%s:%d: Entering %s\n", token.pos.file_name, token.pos.line, name);
   indent++;
 }
 
