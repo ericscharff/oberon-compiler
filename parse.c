@@ -1,3 +1,4 @@
+GHashTable *import_idents;
 int indent = 0;
 
 void dbg_print_int(int x) {
@@ -32,8 +33,8 @@ void parse_declaration_sequence(void);
 void parse_statement_sequence(void);
 
 bool is_imported_module(const char *name) {
+  return g_hash_table_contains(import_idents, name);
   // TODO
-  return name[0] >= 'A' && name[0] <= 'Z';
 }
 void parse_qualident(void) {
   dbg_enter("qualident");
@@ -89,17 +90,22 @@ bool symbol_is_var_parameter(void) {
   // TODO
   return false;
 }
+
+bool symbol_is_type_guard(void) {
+  return symbol_type_is_pointer() || symbol_is_var_parameter();
+}
+
 void parse_designator(void) {
   dbg_enter("designator");
   parse_qualident();
-  while (is_token(TOKEN_DOT) || is_token(TOKEN_LBRACK) || is_token(TOKEN_CARET) || is_token(TOKEN_LPAREN)) {
+  while (is_token(TOKEN_DOT) || is_token(TOKEN_LBRACK) || is_token(TOKEN_CARET) || (symbol_is_type_guard() && is_token(TOKEN_LPAREN))) {
     if (match_token(TOKEN_DOT)) {
       expect_identifier();
     } else if (match_token(TOKEN_LBRACK)) {
       parse_exp_list();
       expect_token(TOKEN_RBRACK);
     } else if (match_token(TOKEN_CARET)) {
-    } else if ((symbol_type_is_pointer() || symbol_is_var_parameter()) && match_token(TOKEN_LPAREN)) {
+    } else if (symbol_is_type_guard() && match_token(TOKEN_LPAREN)) {
       parse_qualident();
       expect_token(TOKEN_RPAREN);
     } else {
@@ -112,7 +118,9 @@ void parse_designator(void) {
 void parse_actual_parameters(void) {
   dbg_enter("actual_parameters");
   match_token(TOKEN_LPAREN);
-  parse_exp_list();
+  if (!is_token(TOKEN_RPAREN)) {
+    parse_exp_list();
+  }
   match_token(TOKEN_RPAREN);
   dbg_exit();
 }
@@ -165,7 +173,7 @@ void parse_term(void) {
 bool match_add_operator(void) {
   return match_token(TOKEN_PLUS) ||
     match_token(TOKEN_MINUS) ||
-    match_token(TOKEN_VBAR);
+    match_keyword(keyword_or);
 }
 
 void parse_simple_expression(void) {
@@ -348,8 +356,6 @@ void parse_statement(void) {
     parse_for_statement();
   } else if (is_token(TOKEN_IDENT)) {
     parse_assign_or_proc_call();
-  } else {
-    expect_token(TOKEN_IDENT);
   }
   dbg_exit();
 }
@@ -584,6 +590,7 @@ void parse_import(void) {
   } else {
     printf("import %s\n", importName);
   }
+  g_hash_table_add(import_idents, importName);
   dbg_exit();
 }
 
@@ -620,7 +627,9 @@ void parse_module(void) {
 }
 
 void parse_test(void) {
-  init_stream("", "MODULE abc; IMPORT a, b := aliased, c, d; CONST k=1+2*c+3; END abc.");
+  init_stream("", "MODULE abc; IMPORT A, B := aliased, C, D; CONST k=1+2*c+3; END abc.");
+  import_idents = g_hash_table_new(g_str_hash, g_str_equal);
+  //init_stream("ORS.Mod", read_file("ORS.Mod"));
   next_token();
   parse_module();
 }
