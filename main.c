@@ -10,15 +10,18 @@
 #include "buf.c"
 #include "lex.c"
 #include "parse.c"
+#include "type.c"
 
 void run_tests(void) {
   buf_test();
   lex_test();
   parse_test();
+  type_test();
 }
 
 int main(void) {
   init_string_pool();
+  init_builtin_types();
   run_tests();
   return 0;
 }
