@@ -97,6 +97,13 @@ Type *make_array_type(Type *element_type, int num_elements) {
   return t;
 }
 
+Type *make_pointer_type(Type *element_type) {
+  Type *t = alloc_type();
+  t->kind = TYPE_POINTER;
+  t->pointer_type.element_type = element_type;
+  return t;
+}
+
 void type_test(void) {
   assert(type_pool_current == type_pool);
   for (int i=0; i < 10; i++) {
@@ -107,4 +114,7 @@ void type_test(void) {
   assert(a->kind == TYPE_ARRAY);
   assert(a->array_type.element_type == &integerType);
   assert(a->array_type.num_elements == 10);
+  Type *p = make_pointer_type(a);
+  assert(p->kind == TYPE_POINTER);
+  assert(p->pointer_type.element_type == a);
 }
