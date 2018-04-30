@@ -594,7 +594,7 @@ void parse_import(void) {
   } else {
     printf("import %s\n", importName);
   }
-  g_hash_table_add(import_idents, importName);
+  g_hash_table_add(import_idents, (void*)importName);
   dbg_exit();
 }
 
