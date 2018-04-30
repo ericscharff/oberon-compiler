@@ -112,6 +112,14 @@ Type *make_procedure_type(FormalParameter *params, Type *return_type) {
   return t;
 }
 
+Type *make_record_type(Type *base_type, RecordField *fields) {
+  Type *t = alloc_type();
+  t->kind = TYPE_RECORD;
+  t->record_type.base_type = base_type;
+  t->record_type.fields = fields;
+  return t;
+}
+
 void type_test(void) {
   assert(type_pool_current == type_pool);
   for (int i=0; i < 10; i++) {
@@ -130,4 +138,14 @@ void type_test(void) {
   assert(proc->kind == TYPE_PROCEDURE);
   assert(proc->procedure_type.params == &param);
   assert(proc->procedure_type.return_type == &charType);
+  RecordField fields[] = {{"alpha", &integerType, true}, {"beta", &realType, false}};
+  Type *rec = make_record_type(NULL, fields);
+  assert(rec->kind == TYPE_RECORD);
+  assert(rec->record_type.base_type == NULL);
+  assert(strcmp(rec->record_type.fields[0].name, "alpha") == 0);
+  assert(rec->record_type.fields[0].type == &integerType);
+  assert(rec->record_type.fields[0].is_exported == true);
+  assert(strcmp(rec->record_type.fields[1].name, "beta") == 0);
+  assert(rec->record_type.fields[1].type == &realType);
+  assert(rec->record_type.fields[1].is_exported == false);
 }
