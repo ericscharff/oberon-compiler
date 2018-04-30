@@ -632,7 +632,7 @@ void parse_module(void) {
 }
 
 void parse_test_file(const char *fileName) {
-  const char *contents = read_file(fileName);
+  char *contents = read_file(fileName);
   import_idents = g_hash_table_new(g_str_hash, g_str_equal);
   init_stream(fileName, contents);
   next_token();
