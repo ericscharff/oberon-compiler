@@ -104,6 +104,14 @@ Type *make_pointer_type(Type *element_type) {
   return t;
 }
 
+Type *make_procedure_type(FormalParameter *params, Type *return_type) {
+  Type *t = alloc_type();
+  t->kind = TYPE_PROCEDURE;
+  t->procedure_type.params = params;
+  t->procedure_type.return_type = return_type;
+  return t;
+}
+
 void type_test(void) {
   assert(type_pool_current == type_pool);
   for (int i=0; i < 10; i++) {
@@ -117,4 +125,9 @@ void type_test(void) {
   Type *p = make_pointer_type(a);
   assert(p->kind == TYPE_POINTER);
   assert(p->pointer_type.element_type == a);
+  FormalParameter param = {"i", &integerType, false};
+  Type *proc = make_procedure_type(&param, &charType);
+  assert(proc->kind == TYPE_PROCEDURE);
+  assert(proc->procedure_type.params == &param);
+  assert(proc->procedure_type.return_type == &charType);
 }
