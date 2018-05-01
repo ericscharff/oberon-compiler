@@ -1,16 +1,29 @@
 typedef enum {
+  DECL_UNKNOWN,
   DECL_IMPORT,
-  DECL_TYPE,
   DECL_CONST,
+  DECL_TYPE,
   DECL_VAR,
+  DECL_PARAM,
+  DECL_VARPARAM,
   DECL_PROC,
 } DeclKind;
+
+const char *decl_kind_names[] = {
+  [DECL_UNKNOWN] = "<unknown>",
+  [DECL_IMPORT] = "IMPORT",
+  [DECL_CONST] = "CONST",
+  [DECL_TYPE] = "TYPE",
+  [DECL_VAR] = "VAR",
+  [DECL_VARPARAM] = "VARPARAM",
+  [DECL_PROC] = "PROC",
+};
 
 typedef struct Decl {
   DeclKind kind;
   const char *name;
-  bool is_exported;
   Type *type;
+  bool is_exported;
 } Decl;
 
 #define SCOPE_SIZE 512
@@ -47,6 +60,14 @@ Decl *lookup_decl(const char *name) {
   return NULL;
 }
 
+Decl *lookup_module_import(const char *moduleName, const char *name) {
+  printf("Looking up %s.%s\n", moduleName, name);
+  // TODO
+  //static Decl todo = { DECL_UNKNOWN };
+  static Decl todo = { DECL_TYPE };
+  return &todo;
+}
+
 Decl *internal_add_decl(const char *name) {
   assert(name);
   assert(current_scope);
@@ -61,11 +82,73 @@ Decl *internal_add_decl(const char *name) {
   return d;
 }
 
+void add_import_decl(const char *name) {
+  Decl *d = internal_add_decl(name);
+  d->kind = DECL_IMPORT;
+  d->type = NULL;
+  d->is_exported = false;
+}
+
+void add_const_decl(const char *name, bool is_exported) {
+  Decl *d = internal_add_decl(name);
+  d->kind = DECL_CONST;
+  d->type = NULL;
+  d->is_exported = is_exported;
+}
+
+void add_type_decl(const char *name, Type *type, bool is_exported) {
+  Decl *d = internal_add_decl(name);
+  d->kind = DECL_TYPE;
+  d->type = type;
+  d->is_exported = is_exported;
+}
+
 void add_var_decl(const char *name, Type *type, bool is_exported) {
   Decl *d = internal_add_decl(name);
   d->kind = DECL_VAR;
   d->type = type;
   d->is_exported = is_exported;
+}
+
+void add_param_decl(const char *name, Type *type) {
+  Decl *d = internal_add_decl(name);
+  d->kind = DECL_PARAM;
+  d->type = type;
+  d->is_exported = false;
+}
+
+void add_varparam_decl(const char *name, Type *type) {
+  Decl *d = internal_add_decl(name);
+  d->kind = DECL_VARPARAM;
+  d->type = type;
+  d->is_exported = false;
+}
+
+void add_proc_decl(const char *name, Type *type, bool is_exported) {
+  Decl *d = internal_add_decl(name);
+  d->kind = DECL_PROC;
+  d->type = type;
+  d->is_exported = is_exported;
+}
+
+void init_global_types() {
+  assert(booleanType.kind == TYPE_BOOLEAN);
+  add_type_decl(string_intern("BOOLEAN"), &booleanType, true);
+  add_type_decl(string_intern("BYTE"), &byteType, true);
+  add_type_decl(string_intern("CHAR"), &charType, true);
+  add_type_decl(string_intern("INTEGER"), &integerType, true);
+  add_type_decl(string_intern("REAL"), &realType, true);
+  add_type_decl(string_intern("SET"), &setType, true);
+}
+
+void dbg_dump_scope(void) {
+  for (Scope *s = current_scope; s != NULL; s = s->parent) {
+    for (int i=0; i < s->size; i++) {
+      printf("Name: %s Kind: %s Exported: %s ", s->decls[i].name, decl_kind_names[s->decls[i].kind], s->decls[i].is_exported ? "true" : "false");
+      dbg_dump_type(s->decls[i].type);
+      printf("\n");
+    }
+  }
 }
 
 void ast_test(void) {
@@ -91,6 +174,12 @@ void ast_test(void) {
   enter_scope(&inner);
   assert(current_scope == &inner);
   assert(current_scope->parent == &outer);
+  add_var_decl(string_intern("inner1"), &realType, true);
+  Decl *i1 = lookup_decl(string_intern("inner1"));
+  assert(i1->kind == DECL_VAR);
+  assert(i1->name == string_intern("inner1"));
+  assert(i1->type == &realType);
+  assert(i1->is_exported == true);
   Decl *oRef = lookup_decl(string_intern("outer1"));
   assert(oRef == o1);
   exit_scope();

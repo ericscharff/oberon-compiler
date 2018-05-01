@@ -630,8 +630,9 @@ void expect_token(TokenKind kind) {
 }
 
 const char *expect_identifier(void) {
+  const char *id = token.sVal;
   expect_token(TOKEN_IDENT);
-  return token.sVal;
+  return id;
 }
 
 bool match_keyword(const char *name) {

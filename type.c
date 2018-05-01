@@ -13,6 +13,21 @@ typedef enum {
   TYPE_PROCEDURE,
 } TypeKind;
 
+const char *type_kind_names[] = {
+  [TYPE_UNKNOWN] = "<unknown>",
+  [TYPE_BOOLEAN] = "BOOLEAN",
+  [TYPE_BYTE] = "BYTE",
+  [TYPE_CHAR] = "CHAR",
+  [TYPE_INTEGER] = "INTEGER",
+  [TYPE_REAL] = "REAL",
+  [TYPE_SET] = "SET",
+  [TYPE_STRING] = "<string>",
+  [TYPE_POINTER] = "POINTER",
+  [TYPE_ARRAY] = "ARRAY",
+  [TYPE_RECORD] = "RECORD",
+  [TYPE_PROCEDURE] = "PROCEDURE",
+};
+
 typedef struct Type Type;
 
 typedef struct ArrayType {
@@ -29,6 +44,7 @@ typedef struct FormalParameter {
   const char *name;
   Type *type;
   bool is_var_parameter;
+  bool is_open_array;
 } FormalParameter;
 
 typedef struct ProcedureType {
@@ -120,6 +136,44 @@ Type *make_record_type(Type *base_type, RecordField *fields) {
   return t;
 }
 
+void dbg_dump_type(Type *t) {
+  if (t) {
+    printf("<type kind: %s", type_kind_names[t->kind]);
+    switch (t->kind) {
+      case TYPE_ARRAY:
+        printf(" %d ", t->array_type.num_elements);
+        dbg_dump_type(t->array_type.element_type);
+        break;
+      case TYPE_POINTER:
+        printf(" ");
+        dbg_dump_type(t->pointer_type.element_type);
+        break;
+      case TYPE_PROCEDURE:
+        printf(" ");
+        for (size_t i=0; i < buf_len(t->procedure_type.params); i++) {
+          printf(" name: %s open_array: %d var: %s ", t->procedure_type.params[i].name, t->procedure_type.params[i].is_open_array, t->procedure_type.params[i].is_var_parameter ? "true" : "false");
+          dbg_dump_type(t->procedure_type.params[i].type);
+        }
+        printf(" : ");
+        dbg_dump_type(t->procedure_type.return_type);
+        break;
+      case TYPE_RECORD:
+        printf(" base: ");
+        dbg_dump_type(t->record_type.base_type);
+        for (size_t i=0; i < buf_len(t->record_type.fields); i++) {
+          printf(" name: %s exported: %s ", t->record_type.fields[i].name, t->record_type.fields[i].is_exported ? "true" : "false");
+          dbg_dump_type(t->record_type.fields[i].type);
+        }
+        break;
+      default:
+        break;
+    }
+    printf(">");
+  } else {
+    printf("<null type>");
+  }
+}
+
 void type_test(void) {
   assert(type_pool_current == type_pool);
   for (int i=0; i < 10; i++) {
@@ -133,13 +187,21 @@ void type_test(void) {
   Type *p = make_pointer_type(a);
   assert(p->kind == TYPE_POINTER);
   assert(p->pointer_type.element_type == a);
-  FormalParameter param = {"i", &integerType, false};
-  Type *proc = make_procedure_type(&param, &charType);
+  FormalParameter *param = NULL;
+  buf_push(param, (FormalParameter){"i", &integerType, false, false});
+  buf_push(param, (FormalParameter){"j", &integerType, false, true});
+  buf_push(param, (FormalParameter){"k", &integerType, false, false});
+  buf_push(param, (FormalParameter){"l", &integerType, false, false});
+  Type *proc = make_procedure_type(param, &charType);
   assert(proc->kind == TYPE_PROCEDURE);
-  assert(proc->procedure_type.params == &param);
+  assert(proc->procedure_type.params == param);
   assert(proc->procedure_type.return_type == &charType);
-  RecordField fields[] = {{"alpha", &integerType, true}, {"beta", &realType, false}};
+  dbg_dump_type(proc); printf("\n");
+  RecordField *fields = NULL;
+  buf_push(fields, (RecordField){"alpha", &integerType, true});
+  buf_push(fields, (RecordField){"beta", &realType, false});
   Type *rec = make_record_type(NULL, fields);
+  dbg_dump_type(rec); printf("\n");
   assert(rec->kind == TYPE_RECORD);
   assert(rec->record_type.base_type == NULL);
   assert(strcmp(rec->record_type.fields[0].name, "alpha") == 0);

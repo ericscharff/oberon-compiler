@@ -9,18 +9,16 @@
 #include <string.h>
 #include "buf.c"
 #include "lex.c"
-#include "parse.c"
 #include "type.c"
 #include "ast.c"
+#include "parse.c"
 
 void run_tests(void) {
-#if 0
   buf_test();
   lex_test();
-  parse_test();
   type_test();
-#endif
   ast_test();
+  parse_test();
 }
 
 int main(void) {
