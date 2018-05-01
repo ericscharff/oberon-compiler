@@ -735,11 +735,11 @@ void parse_test(void) {
   Scope globalScope;
   enter_scope(&globalScope);
   init_global_types();
-  /*
+#if 0
   init_stream("", "MODULE abc; IMPORT A, B := aliased, C, D; CONST k=1+2+B.wow+3; TYPE MySet = SET; FooRec = ARRAY 5, 10, 15, 20 OF INTEGER; q* = INTEGER; r = q; END abc.");
   next_token();
   parse_module();
-  */
-  parse_test_file("ORS.Mod");
+#endif
+  parse_test_file("Test.Mod");
   exit_scope();
 }
