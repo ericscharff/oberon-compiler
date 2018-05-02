@@ -101,31 +101,22 @@ void parse_exp_list(void) {
   dbg_exit();
 }
 
-bool symbol_type_is_pointer(void) {
-  // TODO
-  return false;
-}
-
-bool symbol_is_var_parameter(void) {
-  // TODO
-  return false;
-}
-
-bool symbol_is_type_guard(void) {
-  return symbol_type_is_pointer() || symbol_is_var_parameter();
+bool symbol_is_type_guard(Decl *d) {
+  return d->kind == DECL_VARPARAM || d->type->kind == TYPE_POINTER;
 }
 
 void parse_designator(void) {
   dbg_enter("designator");
-  parse_qualident();
-  while (is_token(TOKEN_DOT) || is_token(TOKEN_LBRACK) || is_token(TOKEN_CARET) || (symbol_is_type_guard() && is_token(TOKEN_LPAREN))) {
+  Decl *d = parse_qualident();
+  while (is_token(TOKEN_DOT) || is_token(TOKEN_LBRACK) || is_token(TOKEN_CARET) || (symbol_is_type_guard(d) && is_token(TOKEN_LPAREN))) {
     if (match_token(TOKEN_DOT)) {
       expect_identifier();
     } else if (match_token(TOKEN_LBRACK)) {
       parse_exp_list();
       expect_token(TOKEN_RBRACK);
     } else if (match_token(TOKEN_CARET)) {
-    } else if (symbol_is_type_guard() && match_token(TOKEN_LPAREN)) {
+    } else if (symbol_is_type_guard(d) && match_token(TOKEN_LPAREN)) {
+      dbg_print_str("found type guard");
       parse_qualident();
       expect_token(TOKEN_RPAREN);
     } else {
@@ -560,7 +551,8 @@ void parse_const_declaration(void) {
   parse_ident_def(&name, &is_exported);
   expect_token(TOKEN_EQ);
   parse_expression();
-  add_const_decl(name, is_exported);
+  // Placeholder INT type just to get code to parse
+  add_const_decl(name, &integerType, is_exported);
   dbg_exit();
 }
 

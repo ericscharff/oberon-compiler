@@ -26,8 +26,11 @@ VAR
 PROCEDURE Wowza*(i, j :INTEGER);
 VAR
   zzz :INTEGER;
+  p :T6;
 BEGIN
-  i := j + 1
+  i := j + 1;
+  Wowza(p);
+  p(T5).a.b := 4
 END Wowza;
 
 PROCEDURE Moo*(k, l :ARRAY OF INTEGER);

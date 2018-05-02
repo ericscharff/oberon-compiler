@@ -89,10 +89,10 @@ void add_import_decl(const char *name) {
   d->is_exported = false;
 }
 
-void add_const_decl(const char *name, bool is_exported) {
+void add_const_decl(const char *name, Type *type, bool is_exported) {
   Decl *d = internal_add_decl(name);
   d->kind = DECL_CONST;
-  d->type = NULL;
+  d->type = type;
   d->is_exported = is_exported;
 }
 
