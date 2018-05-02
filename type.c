@@ -48,7 +48,7 @@ typedef struct FormalParameter {
 } FormalParameter;
 
 typedef struct ProcedureType {
-  FormalParameter *params;
+  FormalParameter *params; // buf
   Type *return_type;
 } ProcedureType;
 
@@ -60,7 +60,7 @@ typedef struct RecordField {
 
 typedef struct RecordType {
   Type *base_type;
-  RecordField *fields;
+  RecordField *fields; // buf
 } RecordType;
 
 struct Type {
