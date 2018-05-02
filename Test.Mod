@@ -33,9 +33,10 @@ BEGIN
   p(T5).a.b := 4
 END Wowza;
 
-PROCEDURE Moo*(k, l :ARRAY OF INTEGER);
+PROCEDURE Moo*(k, l :ARRAY OF INTEGER; VAR m :INTEGER);
 BEGIN
   k := l-1;
+  k := 3 + 4 + 5 + Moo(k) + Moo(k, l, m) + Moo
 END Moo;
 
 END ORS.
