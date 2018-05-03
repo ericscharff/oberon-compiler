@@ -66,8 +66,26 @@ Decl *lookup_decl(const char *name) {
 }
 
 Decl *lookup_module_import(const char *moduleName, const char *name) {
+  Decl *m = lookup_decl(moduleName);
+  if (m) {
+    if (m->kind == DECL_IMPORT) {
+      for (size_t i = 0; i < buf_len(m->imported_decls); i++) {
+        if (m->imported_decls[i].name == name) {
+          if (m->imported_decls[i].is_exported) {
+            return &m->imported_decls[i];
+          } else {
+            error("%s.%s is not exported", moduleName, name);
+          }
+        }
+      }
+      error("%s.%s is undefined", moduleName, name);
+    } else {
+      error("%s is not an imported module", moduleName);
+    }
+  } else {
+    error("%s undefined", moduleName);
+  }
   printf("Looking up %s.%s\n", moduleName, name);
-  // TODO
   return NULL;
 }
 

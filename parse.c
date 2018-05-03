@@ -5,6 +5,8 @@ typedef struct IdentDef {
   bool is_exported;
 } IdentDef;
 
+Decl *get_imported_decls(const char *moduleName);
+
 void dbg_print_int(int x) {
   for (int i = 0; i < indent; i++) {
     printf("  ");
@@ -694,15 +696,15 @@ void parse_declaration_sequence(void) {
 void parse_import(void) {
   dbg_enter("import");
   const char *importName = expect_identifier();
+  Decl *decls = NULL;
   if (match_token(TOKEN_ASSIGN)) {
     const char *canonicalName = expect_identifier();
-
-    printf("import %s as %s\n", canonicalName, importName);
+    decls = get_imported_decls(canonicalName);
   } else {
-    printf("import %s\n", importName);
+    decls = get_imported_decls(importName);
   }
-  // FIXME
-  add_import_decl(importName, NULL);
+  assert(decls);
+  add_import_decl(importName, decls);
   dbg_exit();
 }
 
@@ -752,6 +754,25 @@ void dbg_dump_scope(Module *m) {
     dbg_dump_type(m->decls[i].type);
     printf("\n");
   }
+}
+
+Decl *get_imported_decls(const char *moduleName) {
+  char fileName[1024];
+  snprintf(fileName, sizeof(fileName), "%s.Mod", moduleName);
+  printf("Importing %s.\n", fileName);
+  char *contents = read_file(fileName);
+  Token oldToken = token;
+  const char *oldStream = stream;
+  init_stream(fileName, contents);
+  next_token();
+  Module *m = parse_module();
+  assert(m);
+  free(contents);
+  init_stream(oldToken.pos.file_name, oldStream);
+  token = oldToken;
+  Decl *d = m->decls;
+  free(m);
+  return d;
 }
 
 void parse_test_file(const char *fileName) {
