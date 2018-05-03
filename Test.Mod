@@ -1,4 +1,4 @@
-MODULE ORS;
+MODULE Test;
 
 IMPORT Out, Files;
 
@@ -17,6 +17,12 @@ TYPE
   T5 = RECORD (T4) d:REAL; e:ARRAY K2 OF CHAR END;
   T6 = POINTER TO T5;
   T7 = PROCEDURE(a, b :T1; VAR c, d:T2): BYTE;
+  P1 = POINTER TO R1;
+  P2 = POINTER TO R1;
+  R1 = RECORD a :BYTE END;
+  R2 = RECORD q :POINTER TO Q; r :POINTER TO R; END;
+  Q = REAL;
+  R = SET;
 
 VAR
   v1, v2 :INTEGER;
@@ -39,4 +45,4 @@ BEGIN
   k := 3 + 4 + 5 + Moo(k) + Moo(k, l, m) + Moo
 END Moo;
 
-END ORS.
+END Test.

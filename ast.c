@@ -1,5 +1,6 @@
 typedef enum {
   DECL_UNKNOWN,
+  DECL_INCOMPLETE,
   DECL_IMPORT,
   DECL_CONST,
   DECL_TYPE,
@@ -10,33 +11,39 @@ typedef enum {
 } DeclKind;
 
 const char *decl_kind_names[] = {
-  [DECL_UNKNOWN] = "<unknown>",
-  [DECL_IMPORT] = "IMPORT",
-  [DECL_CONST] = "CONST",
-  [DECL_TYPE] = "TYPE",
-  [DECL_VAR] = "VAR",
-  [DECL_VARPARAM] = "VARPARAM",
-  [DECL_PROC] = "PROC",
+    [DECL_UNKNOWN] = "<unknown>", [DECL_INCOMPLETE] = "<incomplete>",
+    [DECL_IMPORT] = "IMPORT",     [DECL_CONST] = "CONST",
+    [DECL_TYPE] = "TYPE",         [DECL_VAR] = "VAR",
+    [DECL_VARPARAM] = "VARPARAM", [DECL_PROC] = "PROC",
 };
 
 typedef struct Decl {
   DeclKind kind;
   const char *name;
-  Type *type;
+  union {
+    struct Decl *imported_decls;  // Only for DECL_IMPORT
+    Type *type;                   // for everything else
+  };
   bool is_exported;
 } Decl;
+
+typedef struct Module {
+  const char *name;
+  Decl *decls;  // buf
+} Module;
 
 #define SCOPE_SIZE 512
 typedef struct Scope {
   Decl decls[SCOPE_SIZE];
   // Number of valid decls
-  int size;
+  size_t size;
   struct Scope *parent;
 } Scope;
 
-// Typically, the current scope is stack allocated. E.g, when a procedure is defined, the function parsing
-// the procedure allocates a new scope on the stack, and when it leaves, sets the global scope back. Thus,
-// It is not safe to save Decl objects, but Types are persisted.
+// Typically, the current scope is stack allocated. E.g, when a procedure is
+// defined, the function parsing the procedure allocates a new scope on the
+// stack, and when it leaves, sets the global scope back. Thus, It is not safe
+// to save Decl objects, but Types are persisted.
 Scope *current_scope = NULL;
 
 void enter_scope(Scope *scope) {
@@ -45,13 +52,11 @@ void enter_scope(Scope *scope) {
   current_scope->size = 0;
 }
 
-void exit_scope(void) {
-  current_scope = current_scope->parent;
-}
+void exit_scope(void) { current_scope = current_scope->parent; }
 
 Decl *lookup_decl(const char *name) {
   for (Scope *s = current_scope; s != NULL; s = s->parent) {
-    for (int i=0; i < s->size; i++) {
+    for (size_t i = 0; i < s->size; i++) {
       if (s->decls[i].name == name) {
         return &s->decls[i];
       }
@@ -63,8 +68,8 @@ Decl *lookup_decl(const char *name) {
 Decl *lookup_module_import(const char *moduleName, const char *name) {
   printf("Looking up %s.%s\n", moduleName, name);
   // TODO
-  //static Decl todo = { DECL_UNKNOWN };
-  static Decl todo = { DECL_TYPE };
+  // static Decl todo = { DECL_UNKNOWN };
+  static Decl todo = {DECL_TYPE, "<import>", NULL, false};
   return &todo;
 }
 
@@ -72,9 +77,13 @@ Decl *internal_add_decl(const char *name) {
   assert(name);
   assert(current_scope);
   assert(current_scope->size < SCOPE_SIZE);
-  for (int i=0; i < current_scope->size; i++) {
+  for (size_t i = 0; i < current_scope->size; i++) {
     if (current_scope->decls[i].name == name) {
-      error("%s redefined", name);
+      if (current_scope->decls[i].kind == DECL_INCOMPLETE) {
+        return &current_scope->decls[i];
+      } else {
+        error("%s redefined", name);
+      }
     }
   }
   Decl *d = &current_scope->decls[current_scope->size++];
@@ -82,11 +91,19 @@ Decl *internal_add_decl(const char *name) {
   return d;
 }
 
-void add_import_decl(const char *name) {
+void add_import_decl(const char *name, Decl *decls) {
   Decl *d = internal_add_decl(name);
   d->kind = DECL_IMPORT;
-  d->type = NULL;
+  d->imported_decls = decls;
   d->is_exported = false;
+}
+
+Decl *add_incomplete_decl(const char *name) {
+  Decl *d = internal_add_decl(name);
+  d->kind = DECL_INCOMPLETE;
+  d->type = make_incomplete_type();
+  d->is_exported = false;
+  return d;
 }
 
 void add_const_decl(const char *name, Type *type, bool is_exported) {
@@ -98,8 +115,14 @@ void add_const_decl(const char *name, Type *type, bool is_exported) {
 
 void add_type_decl(const char *name, Type *type, bool is_exported) {
   Decl *d = internal_add_decl(name);
+  if (d->kind == DECL_INCOMPLETE) {
+    assert(d->type);
+    assert(d->type->kind == TYPE_INCOMPLETE);
+    *d->type = *type;
+  } else {
+    d->type = type;
+  }
   d->kind = DECL_TYPE;
-  d->type = type;
   d->is_exported = is_exported;
 }
 
@@ -131,6 +154,16 @@ void add_proc_decl(const char *name, Type *type, bool is_exported) {
   d->is_exported = is_exported;
 }
 
+Module *make_module(const char *name, Scope *s) {
+  Module *m = xmalloc(sizeof(Module));
+  m->name = name;
+  m->decls = NULL;
+  for (size_t i = 0; i < s->size; i++) {
+    buf_push(m->decls, s->decls[i]);
+  }
+  return m;
+}
+
 void init_global_types() {
   assert(booleanType.kind == TYPE_BOOLEAN);
   add_type_decl(string_intern("BOOLEAN"), &booleanType, true);
@@ -139,16 +172,6 @@ void init_global_types() {
   add_type_decl(string_intern("INTEGER"), &integerType, true);
   add_type_decl(string_intern("REAL"), &realType, true);
   add_type_decl(string_intern("SET"), &setType, true);
-}
-
-void dbg_dump_scope(void) {
-  for (Scope *s = current_scope; s != NULL; s = s->parent) {
-    for (int i=0; i < s->size; i++) {
-      printf("Name: %s Kind: %s Exported: %s ", s->decls[i].name, decl_kind_names[s->decls[i].kind], s->decls[i].is_exported ? "true" : "false");
-      dbg_dump_type(s->decls[i].type);
-      printf("\n");
-    }
-  }
 }
 
 void ast_test(void) {

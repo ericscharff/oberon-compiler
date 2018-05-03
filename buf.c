@@ -1,23 +1,5 @@
 // Stretchy buffers from github/pervognsen/bitwise
 
-void *xrealloc(void *ptr, size_t num_bytes) {
-  ptr = realloc(ptr, num_bytes);
-  if (!ptr) {
-    perror("xrealloc failed");
-    exit(1);
-  }
-  return ptr;
-}
-
-void *xmalloc(size_t num_bytes) {
-  void *ptr = malloc(num_bytes);
-  if (!ptr) {
-    perror("xmalloc failed");
-    exit(1);
-  }
-  return ptr;
-}
-
 // Stretchy buffers, invented (?) by Sean Barrett
 
 typedef struct BufHdr {
@@ -45,6 +27,24 @@ typedef struct BufHdr {
   (buf_fit((b), 1 + buf_len(b)), (b)[buf__hdr(b)->len++] = (__VA_ARGS__))
 #define buf_printf(b, ...) ((b) = buf__printf((b), __VA_ARGS__))
 #define buf_clear(b) ((b) ? buf__hdr(b)->len = 0 : 0)
+
+void *xrealloc(void *ptr, size_t num_bytes) {
+  ptr = realloc(ptr, num_bytes);
+  if (!ptr) {
+    perror("xrealloc failed");
+    exit(1);
+  }
+  return ptr;
+}
+
+void *xmalloc(size_t num_bytes) {
+  void *ptr = malloc(num_bytes);
+  if (!ptr) {
+    perror("xmalloc failed");
+    exit(1);
+  }
+  return ptr;
+}
 
 void *buf__grow(const void *buf, size_t new_len, size_t elem_size) {
   assert(buf_cap(buf) <= (SIZE_MAX - 1) / 2);

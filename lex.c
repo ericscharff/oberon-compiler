@@ -1,7 +1,7 @@
 #include <gmodule.h>
 
 // Avoid dumb problems with const
-#define G_HASH_INSERT(t, k, v) g_hash_table_insert(t, (void*)k, (void*)v)
+#define G_HASH_INSERT(t, k, v) g_hash_table_insert(t, (void *)k, (void *)v)
 
 typedef enum {
   TOKEN_UNKNOWN,
@@ -40,39 +40,39 @@ typedef enum {
 } TokenKind;
 
 const char *token_kind_names[] = {
-  [TOKEN_UNKNOWN] = "<unknown>",
-  [TOKEN_EOF] = "<eof>",
-  [TOKEN_IDENT] = "<ident>",
-  [TOKEN_KEYWORD] = "<keyword>",
-  [TOKEN_STRING] = "<string>",
-  [TOKEN_INT] = "<integer number>",
-  [TOKEN_REAL] = "<real number>",
-  [TOKEN_PLUS] = "+",
-  [TOKEN_MINUS] = "-",
-  [TOKEN_STAR] = "*",
-  [TOKEN_SLASH] = "/",
-  [TOKEN_TILDE] = "~",
-  [TOKEN_AMP] = "&",
-  [TOKEN_DOT] = ".",
-  [TOKEN_COMMA] = ",",
-  [TOKEN_SEMI] = ";",
-  [TOKEN_VBAR] = "|",
-  [TOKEN_LPAREN] = "(",
-  [TOKEN_RPAREN] = ")",
-  [TOKEN_LBRACK] = "[",
-  [TOKEN_RBRACK] = "]",
-  [TOKEN_LBRACE] = "{",
-  [TOKEN_RBRACE] = "}",
-  [TOKEN_ASSIGN] = ":=",
-  [TOKEN_CARET] = "^",
-  [TOKEN_EQ] = "=",
-  [TOKEN_POUND] = "#",
-  [TOKEN_LT] = "<",
-  [TOKEN_GT] = ">",
-  [TOKEN_LTEQ] = "<=",
-  [TOKEN_GTEQ] = ">=",
-  [TOKEN_DOTDOT] = "..",
-  [TOKEN_COLON] = ":",
+    [TOKEN_UNKNOWN] = "<unknown>",
+    [TOKEN_EOF] = "<eof>",
+    [TOKEN_IDENT] = "<ident>",
+    [TOKEN_KEYWORD] = "<keyword>",
+    [TOKEN_STRING] = "<string>",
+    [TOKEN_INT] = "<integer number>",
+    [TOKEN_REAL] = "<real number>",
+    [TOKEN_PLUS] = "+",
+    [TOKEN_MINUS] = "-",
+    [TOKEN_STAR] = "*",
+    [TOKEN_SLASH] = "/",
+    [TOKEN_TILDE] = "~",
+    [TOKEN_AMP] = "&",
+    [TOKEN_DOT] = ".",
+    [TOKEN_COMMA] = ",",
+    [TOKEN_SEMI] = ";",
+    [TOKEN_VBAR] = "|",
+    [TOKEN_LPAREN] = "(",
+    [TOKEN_RPAREN] = ")",
+    [TOKEN_LBRACK] = "[",
+    [TOKEN_RBRACK] = "]",
+    [TOKEN_LBRACE] = "{",
+    [TOKEN_RBRACE] = "}",
+    [TOKEN_ASSIGN] = ":=",
+    [TOKEN_CARET] = "^",
+    [TOKEN_EQ] = "=",
+    [TOKEN_POUND] = "#",
+    [TOKEN_LT] = "<",
+    [TOKEN_GT] = ">",
+    [TOKEN_LTEQ] = "<=",
+    [TOKEN_GTEQ] = ">=",
+    [TOKEN_DOTDOT] = "..",
+    [TOKEN_COLON] = ":",
 };
 
 typedef struct Loc {
@@ -88,7 +88,7 @@ typedef struct Token {
   float rVal;
 } Token;
 
-#define STRING_POOL_SIZE 256*1024
+#define STRING_POOL_SIZE 256 * 1024
 char string_pool[STRING_POOL_SIZE];
 char *pool_current;
 char *pool_end;
@@ -192,12 +192,12 @@ const char *string_intern_range(const char *begin, const char *end) {
     return g_hash_table_lookup(string_map, target);
   }
   string_pool_finish(begin, end);
-  g_hash_table_add(string_map, (void*)target);
+  g_hash_table_add(string_map, (void *)target);
   return target;
 }
 
 const char *string_intern(const char *str) {
-  return string_intern_range(str, str+strlen(str));
+  return string_intern_range(str, str + strlen(str));
 }
 
 void init_keywords(void) {
@@ -294,7 +294,8 @@ void init_keywords(void) {
   G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_of, keyword_of);
   G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_or, keyword_or);
   G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_pointer, keyword_pointer);
-  G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_procedure, keyword_procedure);
+  G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_procedure,
+                keyword_procedure);
   G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_record, keyword_record);
   G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_repeat, keyword_repeat);
   G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_return, keyword_return);
@@ -316,12 +317,12 @@ void init_string_pool(void) {
 
 void pool_test(void) {
   const char *s = "helloworldabcd";
-  string_pool_insert(s, s+5);
-  string_pool_finish(s, s+5);
-  string_pool_insert(s+5, s+10);
-  string_pool_finish(s+5, s+10);
-  string_pool_insert(s+10, s+11);
-  string_pool_finish(s+10, s+11);
+  string_pool_insert(s, s + 5);
+  string_pool_finish(s, s + 5);
+  string_pool_insert(s + 5, s + 10);
+  string_pool_finish(s + 5, s + 10);
+  string_pool_insert(s + 10, s + 11);
+  string_pool_finish(s + 10, s + 11);
   assert(!g_hash_table_contains(string_map, "one"));
   string_intern("one");
   assert(g_hash_table_contains(string_map, "one"));
@@ -332,7 +333,7 @@ void pool_test(void) {
   string_intern("four");
   assert(g_hash_table_contains(string_map, "four"));
   s = "onetwothreefour";
-  const char *one = string_intern_range(s, s+3);
+  const char *one = string_intern_range(s, s + 3);
   assert(s != one);
 }
 
@@ -374,7 +375,8 @@ void error(const char *fmt, ...) {
 
 bool string_is_keyword(const char *s) {
   return (s >= keyword_array && s <= keyword_while) ||
-    (use_lowercase_keywords && s >= lc_keyword_array && s <= lc_keyword_while);
+         (use_lowercase_keywords && s >= lc_keyword_array &&
+          s <= lc_keyword_while);
 }
 
 void scan_identifier(void) {
@@ -399,10 +401,10 @@ void scan_number(void) {
   int base = 10;
   bool need_h_or_x = false;
   while ((*stream >= '0' && *stream <= '9') ||
-      (*stream >= 'A' && *stream <= 'F') ||
-      (*stream >= 'a' && *stream <= 'f')) {
+         (*stream >= 'A' && *stream <= 'F') ||
+         (*stream >= 'a' && *stream <= 'f')) {
     if ((*stream >= 'A' && *stream <= 'F') ||
-      (*stream >= 'a' && *stream <= 'f')) {
+        (*stream >= 'a' && *stream <= 'f')) {
       need_h_or_x = true;
     }
     stream++;
@@ -446,8 +448,8 @@ void scan_number(void) {
       token.iVal = token.iVal * base + (*start - 'A' + 10);
     } else if (*start >= 'a' && *start <= 'f') {
       token.iVal = token.iVal * base + (*start - 'a' + 10);
-    } else if (*start == 'H' || *start <= 'h' ||
-        *start == 'X' || *start == 'x') {
+    } else if (*start == 'H' || *start <= 'h' || *start == 'X' ||
+               *start == 'x') {
     } else {
       assert(0);
     }
@@ -503,7 +505,7 @@ void scan_comment(void) {
   }
   if (found_end_token) {
     stream += 2;
-  } else{
+  } else {
     token.pos.line = startLine;
     error("Unterminated comment");
   }
@@ -513,101 +515,207 @@ void next_token(void) {
   token.kind = TOKEN_UNKNOWN;
   while (token.kind == TOKEN_UNKNOWN) {
     switch (*stream) {
-    case '\0':
-      token.kind = TOKEN_EOF;
-      break;
-    case ' ': case '\n': case '\r': case '\t': case '\v':
-      while (isspace(*stream)) {
-        if (*stream++ == '\n') {
-          token.pos.line++;
+      case '\0':
+        token.kind = TOKEN_EOF;
+        break;
+      case ' ':
+      case '\n':
+      case '\r':
+      case '\t':
+      case '\v':
+        while (isspace(*stream)) {
+          if (*stream++ == '\n') {
+            token.pos.line++;
+          }
         }
-      }
-      break;
-    case '_': case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
-    case 'g': case 'h': case 'i': case 'j': case 'k': case 'l': case 'm':
-    case 'n': case 'o': case 'p': case 'q': case 'r': case 's': case 't':
-    case 'u': case 'v': case 'w': case 'x': case 'y': case 'z': case 'A':
-    case 'B': case 'C': case 'D': case 'E': case 'F': case 'G': case 'H':
-    case 'I': case 'J': case 'K': case 'L': case 'M': case 'N': case 'O':
-    case 'P': case 'Q': case 'R': case 'S': case 'T': case 'U': case 'V':
-    case 'W': case 'X': case 'Y': case 'Z':
-      scan_identifier();
-      break;
-    case '0': case '1': case '2': case '3': case '4': case '5': case '6':
-    case '7': case '8': case '9':
-      scan_number();
-      break;
-    case '"':
-      scan_string();
-      break;
-    case '+':
-      token.kind = TOKEN_PLUS; stream++; break;
-    case '-':
-      token.kind = TOKEN_MINUS; stream++; break;
-    case '*':
-      token.kind = TOKEN_STAR; stream++; break;
-    case '/':
-      token.kind = TOKEN_SLASH; stream++; break;
-    case '~':
-      token.kind = TOKEN_TILDE; stream++; break;
-    case '&':
-      token.kind = TOKEN_AMP; stream++; break;
-    case '.':
-      token.kind = TOKEN_DOT; stream++;
-      if (*stream == '.') { token.kind = TOKEN_DOTDOT; stream++; }
-      break;
-    case ',':
-      token.kind = TOKEN_COMMA; stream++; break;
-    case ';':
-      token.kind = TOKEN_SEMI; stream++; break;
-    case '|':
-      token.kind = TOKEN_VBAR; stream++; break;
-    case '(':
-      if (stream[1] == '*') {
-        scan_comment();
-      } else {
-        token.kind = TOKEN_LPAREN; stream++;
-      }
-      break;
-    case ')':
-      token.kind = TOKEN_RPAREN; stream++; break;
-    case '[':
-      token.kind = TOKEN_LBRACK; stream++; break;
-    case ']':
-      token.kind = TOKEN_RBRACK; stream++; break;
-    case '{':
-      token.kind = TOKEN_LBRACE; stream++; break;
-    case '}':
-      token.kind = TOKEN_RBRACE; stream++; break;
-    case ':':
-      token.kind = TOKEN_COLON; stream++;
-      if (*stream == '=') { token.kind = TOKEN_ASSIGN; stream++; }
-      break;
-    case '^':
-      token.kind = TOKEN_CARET; stream++; break;
-    case '=':
-      token.kind = TOKEN_EQ; stream++; break;
-    case '#':
-      token.kind = TOKEN_POUND; stream++; break;
-    case '<':
-      token.kind = TOKEN_LT; stream++;
-      if (*stream == '=') { token.kind = TOKEN_LTEQ; stream++; }
-      break;
-    case '>':
-      token.kind = TOKEN_GT; stream++;
-      if (*stream == '=') { token.kind = TOKEN_GTEQ; stream++; }
-      break;
-    default:
-      error("Unexpected character $d", *stream);
-      token.kind = TOKEN_EOF;
-      break;
+        break;
+      case '_':
+      case 'A':
+      case 'B':
+      case 'C':
+      case 'D':
+      case 'E':
+      case 'F':
+      case 'G':
+      case 'H':
+      case 'I':
+      case 'J':
+      case 'K':
+      case 'L':
+      case 'M':
+      case 'N':
+      case 'O':
+      case 'P':
+      case 'Q':
+      case 'R':
+      case 'S':
+      case 'T':
+      case 'U':
+      case 'V':
+      case 'W':
+      case 'X':
+      case 'Y':
+      case 'Z':
+      case 'a':
+      case 'b':
+      case 'c':
+      case 'd':
+      case 'e':
+      case 'f':
+      case 'g':
+      case 'h':
+      case 'i':
+      case 'j':
+      case 'k':
+      case 'l':
+      case 'm':
+      case 'n':
+      case 'o':
+      case 'p':
+      case 'q':
+      case 'r':
+      case 's':
+      case 't':
+      case 'u':
+      case 'v':
+      case 'w':
+      case 'x':
+      case 'y':
+      case 'z':
+        scan_identifier();
+        break;
+      case '0':
+      case '1':
+      case '2':
+      case '3':
+      case '4':
+      case '5':
+      case '6':
+      case '7':
+      case '8':
+      case '9':
+        scan_number();
+        break;
+      case '"':
+        scan_string();
+        break;
+      case '+':
+        token.kind = TOKEN_PLUS;
+        stream++;
+        break;
+      case '-':
+        token.kind = TOKEN_MINUS;
+        stream++;
+        break;
+      case '*':
+        token.kind = TOKEN_STAR;
+        stream++;
+        break;
+      case '/':
+        token.kind = TOKEN_SLASH;
+        stream++;
+        break;
+      case '~':
+        token.kind = TOKEN_TILDE;
+        stream++;
+        break;
+      case '&':
+        token.kind = TOKEN_AMP;
+        stream++;
+        break;
+      case '.':
+        token.kind = TOKEN_DOT;
+        stream++;
+        if (*stream == '.') {
+          token.kind = TOKEN_DOTDOT;
+          stream++;
+        }
+        break;
+      case ',':
+        token.kind = TOKEN_COMMA;
+        stream++;
+        break;
+      case ';':
+        token.kind = TOKEN_SEMI;
+        stream++;
+        break;
+      case '|':
+        token.kind = TOKEN_VBAR;
+        stream++;
+        break;
+      case '(':
+        if (stream[1] == '*') {
+          scan_comment();
+        } else {
+          token.kind = TOKEN_LPAREN;
+          stream++;
+        }
+        break;
+      case ')':
+        token.kind = TOKEN_RPAREN;
+        stream++;
+        break;
+      case '[':
+        token.kind = TOKEN_LBRACK;
+        stream++;
+        break;
+      case ']':
+        token.kind = TOKEN_RBRACK;
+        stream++;
+        break;
+      case '{':
+        token.kind = TOKEN_LBRACE;
+        stream++;
+        break;
+      case '}':
+        token.kind = TOKEN_RBRACE;
+        stream++;
+        break;
+      case ':':
+        token.kind = TOKEN_COLON;
+        stream++;
+        if (*stream == '=') {
+          token.kind = TOKEN_ASSIGN;
+          stream++;
+        }
+        break;
+      case '^':
+        token.kind = TOKEN_CARET;
+        stream++;
+        break;
+      case '=':
+        token.kind = TOKEN_EQ;
+        stream++;
+        break;
+      case '#':
+        token.kind = TOKEN_POUND;
+        stream++;
+        break;
+      case '<':
+        token.kind = TOKEN_LT;
+        stream++;
+        if (*stream == '=') {
+          token.kind = TOKEN_LTEQ;
+          stream++;
+        }
+        break;
+      case '>':
+        token.kind = TOKEN_GT;
+        stream++;
+        if (*stream == '=') {
+          token.kind = TOKEN_GTEQ;
+          stream++;
+        }
+        break;
+      default:
+        error("Unexpected character $d", *stream);
+        token.kind = TOKEN_EOF;
+        break;
     }
   }
 }
 
-bool is_token(TokenKind kind) {
-  return token.kind == kind;
-}
+bool is_token(TokenKind kind) { return token.kind == kind; }
 
 bool is_keyword(const char *name) {
   return token.kind == TOKEN_KEYWORD && token.sVal == name;
@@ -625,7 +733,8 @@ void expect_token(TokenKind kind) {
   if (is_token(kind)) {
     next_token();
   } else {
-    error("Expected %s, got %s", token_kind_names[kind], token_kind_names[token.kind]);
+    error("Expected %s, got %s", token_kind_names[kind],
+          token_kind_names[token.kind]);
   }
 }
 
@@ -681,14 +790,12 @@ void assert_token_ident(const char *expected) {
   assert(strcmp(token.sVal, expected) == 0);
 }
 
-
 void assert_token_keyword(const char *expected) {
   next_token();
   assert(token.kind == TOKEN_KEYWORD);
   printf("Checking keyword token %s against %s\n", token.sVal, expected);
   assert(strcmp(token.sVal, expected) == 0);
 }
-
 
 void lex_test_dump_file(const char *fileName) {
   printf("Parsing %s\n", fileName);
@@ -769,7 +876,8 @@ void lex_test(void) {
   assert_token_ident("alpha");
   assert_token_ident("beta");
   assert(token.pos.line == 3);
-  init_stream("", "+ - * / ~ & . , ; | ( ) [ ] { } := ^ = # < > <= >= .. 10..20");
+  init_stream("",
+              "+ - * / ~ & . , ; | ( ) [ ] { } := ^ = # < > <= >= .. 10..20");
   for (TokenKind k = TOKEN_PLUS; k <= TOKEN_DOTDOT; k++) {
     next_token();
     assert(token.kind == k);

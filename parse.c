@@ -6,30 +6,28 @@ typedef struct IdentDef {
 } IdentDef;
 
 void dbg_print_int(int x) {
-  for (int i=0; i < indent; i++) {
+  for (int i = 0; i < indent; i++) {
     printf("  ");
   }
   printf("%d\n", x);
 }
 
 void dbg_print_str(const char *s) {
-  for (int i=0; i < indent; i++) {
+  for (int i = 0; i < indent; i++) {
     printf("  ");
   }
   printf("%s\n", s);
 }
 
 void dbg_enter(const char *name) {
-  for (int i=0; i < indent; i++) {
+  for (int i = 0; i < indent; i++) {
     printf("  ");
   }
   printf("%s:%d: Entering %s\n", token.pos.file_name, token.pos.line, name);
   indent++;
 }
 
-void dbg_exit(void) {
-  indent--;
-}
+void dbg_exit(void) { indent--; }
 
 Type *parse_type(void);
 void parse_expression(void);
@@ -39,6 +37,25 @@ void parse_statement_sequence(void);
 bool is_imported_module(const char *name) {
   Decl *d = lookup_decl(name);
   return d && d->kind == DECL_IMPORT;
+}
+
+Decl *parse_possibly_undeclared_qualident(void) {
+  dbg_enter("qualident");
+  const char *ident = expect_identifier();
+  Decl *d = NULL;
+  if (is_imported_module(ident)) {
+    const char *moduleName = ident;
+    expect_token(TOKEN_DOT);
+    ident = expect_identifier();
+    d = lookup_module_import(moduleName, ident);
+  } else {
+    d = lookup_decl(ident);
+  }
+  if (!d) {
+    d = add_incomplete_decl(ident);
+  }
+  dbg_exit();
+  return d;
 }
 
 Decl *parse_qualident(void) {
@@ -62,7 +79,7 @@ Decl *parse_qualident(void) {
 
 Type *parse_qualident_and_get_type(void) {
   Decl *d = parse_qualident();
-  if (d->kind == DECL_TYPE) {
+  if (d->kind == DECL_TYPE || d->kind == DECL_INCOMPLETE) {
     return d->type;
   } else {
     error("%s is not a type", d->name);
@@ -108,7 +125,9 @@ bool symbol_is_type_guard(Decl *d) {
 void parse_designator(void) {
   dbg_enter("designator");
   Decl *d = parse_qualident();
-  while (is_token(TOKEN_DOT) || is_token(TOKEN_LBRACK) || is_token(TOKEN_CARET) || (symbol_is_type_guard(d) && is_token(TOKEN_LPAREN))) {
+  while (is_token(TOKEN_DOT) || is_token(TOKEN_LBRACK) ||
+         is_token(TOKEN_CARET) ||
+         (symbol_is_type_guard(d) && is_token(TOKEN_LPAREN))) {
     if (match_token(TOKEN_DOT)) {
       expect_identifier();
     } else if (match_token(TOKEN_LBRACK)) {
@@ -165,11 +184,9 @@ void parse_factor(void) {
 }
 
 bool match_mul_operator(void) {
-  return match_token(TOKEN_STAR) ||
-    match_token(TOKEN_SLASH) ||
-    match_keyword(keyword_div) ||
-    match_keyword(keyword_mod) ||
-    match_token(TOKEN_AMP);
+  return match_token(TOKEN_STAR) || match_token(TOKEN_SLASH) ||
+         match_keyword(keyword_div) || match_keyword(keyword_mod) ||
+         match_token(TOKEN_AMP);
 }
 
 void parse_term(void) {
@@ -182,9 +199,8 @@ void parse_term(void) {
 }
 
 bool match_add_operator(void) {
-  return match_token(TOKEN_PLUS) ||
-    match_token(TOKEN_MINUS) ||
-    match_keyword(keyword_or);
+  return match_token(TOKEN_PLUS) || match_token(TOKEN_MINUS) ||
+         match_keyword(keyword_or);
 }
 
 void parse_simple_expression(void) {
@@ -202,14 +218,10 @@ void parse_simple_expression(void) {
 }
 
 bool match_relation() {
-  return match_token(TOKEN_EQ) ||
-    match_token(TOKEN_POUND) ||
-    match_token(TOKEN_LT) ||
-    match_token(TOKEN_LTEQ) ||
-    match_token(TOKEN_GT) ||
-    match_token(TOKEN_GTEQ) ||
-    match_keyword(keyword_in) ||
-    match_keyword(keyword_is);
+  return match_token(TOKEN_EQ) || match_token(TOKEN_POUND) ||
+         match_token(TOKEN_LT) || match_token(TOKEN_LTEQ) ||
+         match_token(TOKEN_GT) || match_token(TOKEN_GTEQ) ||
+         match_keyword(keyword_in) || match_keyword(keyword_is);
 }
 
 void parse_expression(void) {
@@ -436,7 +448,8 @@ Type *parse_record_type(void) {
       expect_token(TOKEN_COLON);
       Type *fieldType = parse_type();
       for (size_t i = 0; i < buf_len(defs); i++) {
-        buf_push(fields, (RecordField){defs[i].name, fieldType, defs[i].is_exported});
+        buf_push(fields,
+                 (RecordField){defs[i].name, fieldType, defs[i].is_exported});
       }
       buf_free(defs);
     }
@@ -448,7 +461,8 @@ Type *parse_record_type(void) {
         expect_token(TOKEN_COLON);
         Type *fieldType = parse_type();
         for (size_t i = 0; i < buf_len(defs); i++) {
-          buf_push(fields, (RecordField){defs[i].name, fieldType, defs[i].is_exported});
+          buf_push(fields,
+                   (RecordField){defs[i].name, fieldType, defs[i].is_exported});
         }
         buf_free(defs);
       }
@@ -465,7 +479,16 @@ Type *parse_pointer_type(void) {
   dbg_enter("pointer_type");
   expect_keyword(keyword_pointer);
   expect_keyword(keyword_to);
-  Type *t = parse_type();
+  // Pointers are a special case. They can be forward declared. This,
+  // POINTER TO <qualident> needs to be handled separately
+  Type *t;
+  if (is_token(TOKEN_IDENT)) {
+    Decl *d = parse_possibly_undeclared_qualident();
+    t = d->type;
+  } else {
+    t = parse_type();
+  }
+  assert(t);
   dbg_exit();
   return make_pointer_type(t);
 }
@@ -489,7 +512,8 @@ FormalParameter *parse_fp_section(FormalParameter *params) {
   }
   Type *varType = parse_qualident_and_get_type();
   for (size_t i = 0; i < buf_len(idents); i++) {
-    buf_push(params, (FormalParameter){idents[i], varType, isVarParam, isOpenArray});
+    buf_push(params,
+             (FormalParameter){idents[i], varType, isVarParam, isOpenArray});
   }
   dbg_exit();
   return params;
@@ -563,6 +587,8 @@ void parse_type_declaration(void) {
   parse_ident_def(&name, &is_exported);
   expect_token(TOKEN_EQ);
   Type *t = parse_type();
+  assert(t);
+  t->name = name;
   add_type_decl(name, t, is_exported);
   dbg_exit();
 }
@@ -572,7 +598,7 @@ void parse_var_declaration(void) {
   IdentDef *defs = parse_ident_list();
   expect_token(TOKEN_COLON);
   Type *varType = parse_type();
-  for (size_t i=0; i < buf_len(defs); i++) {
+  for (size_t i = 0; i < buf_len(defs); i++) {
     add_var_decl(defs[i].name, varType, defs[i].is_exported);
   }
   dbg_exit();
@@ -583,7 +609,7 @@ void populate_procedure_scope(const char *procName) {
   assert(d);
   Type *t = d->type;
   assert(t->kind == TYPE_PROCEDURE);
-  for (size_t i=0; i < buf_len(t->procedure_type.params); i++) {
+  for (size_t i = 0; i < buf_len(t->procedure_type.params); i++) {
     const char *paramName = t->procedure_type.params[i].name;
     Type *paramType = t->procedure_type.params[i].type;
     // TODO - handle open arrays somehow
@@ -670,11 +696,13 @@ void parse_import(void) {
   const char *importName = expect_identifier();
   if (match_token(TOKEN_ASSIGN)) {
     const char *canonicalName = expect_identifier();
+
     printf("import %s as %s\n", canonicalName, importName);
   } else {
     printf("import %s\n", importName);
   }
-  add_import_decl(importName);
+  // FIXME
+  add_import_decl(importName, NULL);
   dbg_exit();
 }
 
@@ -689,7 +717,7 @@ void parse_import_list(void) {
   dbg_exit();
 }
 
-void parse_module(void) {
+Module *parse_module(void) {
   Scope scope;
   enter_scope(&scope);
   dbg_enter("module");
@@ -711,15 +739,26 @@ void parse_module(void) {
   expect_token(TOKEN_DOT);
   dbg_print_str(moduleName);
   dbg_exit();
-  dbg_dump_scope();
   exit_scope();
+  return make_module(moduleName, &scope);
+}
+
+void dbg_dump_scope(Module *m) {
+  printf("MODULE %s:\n", m->name);
+  for (size_t i = 0; i < buf_len(m->decls); i++) {
+    printf("  Name: %s Kind: %s Exported: %s ", m->decls[i].name,
+           decl_kind_names[m->decls[i].kind],
+           m->decls[i].is_exported ? "true" : "false");
+    dbg_dump_type(m->decls[i].type);
+    printf("\n");
+  }
 }
 
 void parse_test_file(const char *fileName) {
   char *contents = read_file(fileName);
   init_stream(fileName, contents);
   next_token();
-  parse_module();
+  dbg_dump_scope(parse_module());
   free(contents);
 }
 
