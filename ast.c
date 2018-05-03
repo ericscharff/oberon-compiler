@@ -68,9 +68,7 @@ Decl *lookup_decl(const char *name) {
 Decl *lookup_module_import(const char *moduleName, const char *name) {
   printf("Looking up %s.%s\n", moduleName, name);
   // TODO
-  // static Decl todo = { DECL_UNKNOWN };
-  static Decl todo = {DECL_TYPE, "<import>", NULL, false};
-  return &todo;
+  return NULL;
 }
 
 Decl *internal_add_decl(const char *name) {
