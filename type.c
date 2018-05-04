@@ -102,14 +102,14 @@ Type *alloc_type(void) {
   return type_pool_current++;
 }
 
-Type *make_incomplete_type(void) {
+Type *new_incomplete_type(void) {
   Type *t = alloc_type();
   t->kind = TYPE_INCOMPLETE;
   t->name = NULL;
   return t;
 }
 
-Type *make_array_type(Type *element_type, int num_elements) {
+Type *new_array_type(Type *element_type, int num_elements) {
   Type *t = alloc_type();
   t->kind = TYPE_ARRAY;
   t->name = NULL;
@@ -118,7 +118,7 @@ Type *make_array_type(Type *element_type, int num_elements) {
   return t;
 }
 
-Type *make_pointer_type(Type *element_type) {
+Type *new_pointer_type(Type *element_type) {
   Type *t = alloc_type();
   t->kind = TYPE_POINTER;
   t->name = NULL;
@@ -126,7 +126,7 @@ Type *make_pointer_type(Type *element_type) {
   return t;
 }
 
-Type *make_procedure_type(FormalParameter *params, Type *return_type) {
+Type *new_procedure_type(FormalParameter *params, Type *return_type) {
   Type *t = alloc_type();
   t->kind = TYPE_PROCEDURE;
   t->name = NULL;
@@ -135,13 +135,30 @@ Type *make_procedure_type(FormalParameter *params, Type *return_type) {
   return t;
 }
 
-Type *make_record_type(Type *base_type, RecordField *fields) {
+Type *new_record_type(Type *base_type, RecordField *fields) {
   Type *t = alloc_type();
   t->kind = TYPE_RECORD;
   t->name = NULL;
   t->record_type.base_type = base_type;
   t->record_type.fields = fields;
   return t;
+}
+
+Type *lookup_field(Type *type, const char *fieldName) {
+  for (Type *t = type; t != NULL; t = t->record_type.base_type) {
+    if (t->kind == TYPE_POINTER) {
+      t = type->pointer_type.element_type;
+    }
+    if (t->kind != TYPE_RECORD) {
+      return NULL;
+    }
+    for (size_t i = 0; i < buf_len(t->record_type.fields); i++) {
+      if (t->record_type.fields[i].name == fieldName) {
+        return t->record_type.fields[i].type;
+      }
+    }
+  }
+  return NULL;
 }
 
 void dbg_dump_type(Type *t) {
@@ -154,7 +171,7 @@ void dbg_dump_type(Type *t) {
         break;
       case TYPE_POINTER:
         printf(" ");
-        dbg_dump_type(t->pointer_type.element_type);
+        // dbg_dump_type(t->pointer_type.element_type);
         break;
       case TYPE_PROCEDURE:
         printf(" ");
@@ -193,11 +210,11 @@ void type_test(void) {
     alloc_type();
   }
   assert(type_pool_current == (type_pool + 10));
-  Type *a = make_array_type(&integerType, 10);
+  Type *a = new_array_type(&integerType, 10);
   assert(a->kind == TYPE_ARRAY);
   assert(a->array_type.element_type == &integerType);
   assert(a->array_type.num_elements == 10);
-  Type *p = make_pointer_type(a);
+  Type *p = new_pointer_type(a);
   assert(p->kind == TYPE_POINTER);
   assert(p->pointer_type.element_type == a);
   FormalParameter *param = NULL;
@@ -205,7 +222,7 @@ void type_test(void) {
   buf_push(param, (FormalParameter){"j", &integerType, false, true});
   buf_push(param, (FormalParameter){"k", &integerType, false, false});
   buf_push(param, (FormalParameter){"l", &integerType, false, false});
-  Type *proc = make_procedure_type(param, &charType);
+  Type *proc = new_procedure_type(param, &charType);
   assert(proc->kind == TYPE_PROCEDURE);
   assert(proc->procedure_type.params == param);
   assert(proc->procedure_type.return_type == &charType);
@@ -214,7 +231,7 @@ void type_test(void) {
   RecordField *fields = NULL;
   buf_push(fields, (RecordField){"alpha", &integerType, true});
   buf_push(fields, (RecordField){"beta", &realType, false});
-  Type *rec = make_record_type(NULL, fields);
+  Type *rec = new_record_type(NULL, fields);
   dbg_dump_type(rec);
   printf("\n");
   assert(rec->kind == TYPE_RECORD);

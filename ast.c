@@ -89,7 +89,7 @@ Decl *lookup_module_import(const char *moduleName, const char *name) {
   return NULL;
 }
 
-Decl *internal_add_decl(const char *name) {
+Decl *internal_new_decl(const char *name) {
   assert(name);
   assert(current_scope);
   assert(current_scope->size < SCOPE_SIZE);
@@ -107,30 +107,30 @@ Decl *internal_add_decl(const char *name) {
   return d;
 }
 
-void add_import_decl(const char *name, Decl *decls) {
-  Decl *d = internal_add_decl(name);
+void new_import_decl(const char *name, Decl *decls) {
+  Decl *d = internal_new_decl(name);
   d->kind = DECL_IMPORT;
   d->imported_decls = decls;
   d->is_exported = false;
 }
 
-Decl *add_incomplete_decl(const char *name) {
-  Decl *d = internal_add_decl(name);
+Decl *new_incomplete_decl(const char *name) {
+  Decl *d = internal_new_decl(name);
   d->kind = DECL_INCOMPLETE;
-  d->type = make_incomplete_type();
+  d->type = new_incomplete_type();
   d->is_exported = false;
   return d;
 }
 
-void add_const_decl(const char *name, Type *type, bool is_exported) {
-  Decl *d = internal_add_decl(name);
+void new_const_decl(const char *name, Type *type, bool is_exported) {
+  Decl *d = internal_new_decl(name);
   d->kind = DECL_CONST;
   d->type = type;
   d->is_exported = is_exported;
 }
 
-void add_type_decl(const char *name, Type *type, bool is_exported) {
-  Decl *d = internal_add_decl(name);
+void new_type_decl(const char *name, Type *type, bool is_exported) {
+  Decl *d = internal_new_decl(name);
   if (d->kind == DECL_INCOMPLETE) {
     assert(d->type);
     assert(d->type->kind == TYPE_INCOMPLETE);
@@ -142,35 +142,35 @@ void add_type_decl(const char *name, Type *type, bool is_exported) {
   d->is_exported = is_exported;
 }
 
-void add_var_decl(const char *name, Type *type, bool is_exported) {
-  Decl *d = internal_add_decl(name);
+void new_var_decl(const char *name, Type *type, bool is_exported) {
+  Decl *d = internal_new_decl(name);
   d->kind = DECL_VAR;
   d->type = type;
   d->is_exported = is_exported;
 }
 
-void add_param_decl(const char *name, Type *type) {
-  Decl *d = internal_add_decl(name);
+void new_param_decl(const char *name, Type *type) {
+  Decl *d = internal_new_decl(name);
   d->kind = DECL_PARAM;
   d->type = type;
   d->is_exported = false;
 }
 
-void add_varparam_decl(const char *name, Type *type) {
-  Decl *d = internal_add_decl(name);
+void new_varparam_decl(const char *name, Type *type) {
+  Decl *d = internal_new_decl(name);
   d->kind = DECL_VARPARAM;
   d->type = type;
   d->is_exported = false;
 }
 
-void add_proc_decl(const char *name, Type *type, bool is_exported) {
-  Decl *d = internal_add_decl(name);
+void new_proc_decl(const char *name, Type *type, bool is_exported) {
+  Decl *d = internal_new_decl(name);
   d->kind = DECL_PROC;
   d->type = type;
   d->is_exported = is_exported;
 }
 
-Module *make_module(const char *name, Scope *s) {
+Module *new_module(const char *name, Scope *s) {
   Module *m = xmalloc(sizeof(Module));
   m->name = name;
   m->decls = NULL;
@@ -182,12 +182,12 @@ Module *make_module(const char *name, Scope *s) {
 
 void init_global_types() {
   assert(booleanType.kind == TYPE_BOOLEAN);
-  add_type_decl(string_intern("BOOLEAN"), &booleanType, true);
-  add_type_decl(string_intern("BYTE"), &byteType, true);
-  add_type_decl(string_intern("CHAR"), &charType, true);
-  add_type_decl(string_intern("INTEGER"), &integerType, true);
-  add_type_decl(string_intern("REAL"), &realType, true);
-  add_type_decl(string_intern("SET"), &setType, true);
+  new_type_decl(string_intern("BOOLEAN"), &booleanType, true);
+  new_type_decl(string_intern("BYTE"), &byteType, true);
+  new_type_decl(string_intern("CHAR"), &charType, true);
+  new_type_decl(string_intern("INTEGER"), &integerType, true);
+  new_type_decl(string_intern("REAL"), &realType, true);
+  new_type_decl(string_intern("SET"), &setType, true);
 }
 
 void ast_test(void) {
@@ -196,8 +196,8 @@ void ast_test(void) {
 
   enter_scope(&outer);
   assert(current_scope == &outer);
-  add_var_decl(string_intern("outer1"), &integerType, false);
-  add_var_decl(string_intern("outer2"), &integerType, true);
+  new_var_decl(string_intern("outer1"), &integerType, false);
+  new_var_decl(string_intern("outer2"), &integerType, true);
   assert(current_scope->size == 2);
   Decl *o1 = lookup_decl(string_intern("outer1"));
   assert(o1->kind == DECL_VAR);
@@ -213,7 +213,7 @@ void ast_test(void) {
   enter_scope(&inner);
   assert(current_scope == &inner);
   assert(current_scope->parent == &outer);
-  add_var_decl(string_intern("inner1"), &realType, true);
+  new_var_decl(string_intern("inner1"), &realType, true);
   Decl *i1 = lookup_decl(string_intern("inner1"));
   assert(i1->kind == DECL_VAR);
   assert(i1->name == string_intern("inner1"));
