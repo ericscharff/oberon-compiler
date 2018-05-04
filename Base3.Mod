@@ -1,0 +1,7 @@
+MODULE Base3;
+
+IMPORT Base1;
+
+TYPE
+  Thing* = RECORD base3:INTEGER END;
+END Base3.

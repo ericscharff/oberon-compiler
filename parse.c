@@ -7,6 +7,12 @@ typedef struct IdentDef {
 
 Decl *get_imported_decls(const char *moduleName);
 
+#define IMPORT_CACHE_SIZE 100
+struct {
+  Decl import[IMPORT_CACHE_SIZE];
+  size_t size;
+} importCache;
+
 void dbg_print_int(int x) {
   for (int i = 0; i < indent; i++) {
     printf("  ");
@@ -757,12 +763,31 @@ void dbg_dump_scope(Module *m) {
 }
 
 Decl *get_imported_decls(const char *moduleName) {
+  for (size_t i = 0; i < importCache.size; i++) {
+    if (importCache.import[i].name == moduleName) {
+      if (importCache.import[i].kind == DECL_INCOMPLETE) {
+        error("%s creates a circular import dependency", moduleName);
+      } else {
+        printf("using cached module import %s\n", moduleName);
+        return importCache.import[i].imported_decls;
+      }
+    }
+  }
+  size_t index = importCache.size++;
+  assert(index <= IMPORT_CACHE_SIZE);
+  importCache.import[index].name = moduleName;
+  importCache.import[index].kind = DECL_INCOMPLETE;
   char fileName[1024];
   snprintf(fileName, sizeof(fileName), "%s.Mod", moduleName);
   printf("Importing %s.\n", fileName);
   char *contents = read_file(fileName);
   Token oldToken = token;
   const char *oldStream = stream;
+  // This works because the current scope has to me the module
+  // scope (we've only parsed imports), and thus the parent
+  // scope is the global scope
+  Scope *oldScope = current_scope;
+  current_scope = current_scope->parent;
   init_stream(fileName, contents);
   next_token();
   Module *m = parse_module();
@@ -770,9 +795,11 @@ Decl *get_imported_decls(const char *moduleName) {
   free(contents);
   init_stream(oldToken.pos.file_name, oldStream);
   token = oldToken;
-  Decl *d = m->decls;
+  current_scope = oldScope;
+  importCache.import[index].kind = DECL_IMPORT;
+  importCache.import[index].imported_decls = m->decls;
   free(m);
-  return d;
+  return importCache.import[index].imported_decls;
 }
 
 void parse_test_file(const char *fileName) {

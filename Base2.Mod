@@ -1,8 +1,9 @@
 MODULE Base2;
 
-IMPORT Base1;
+IMPORT Base3;
 
 TYPE
   A* = REAL;
+  B* = Base3.Thing;
  
 END Base2.
