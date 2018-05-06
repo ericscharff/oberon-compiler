@@ -69,9 +69,10 @@ Decl *parse_possibly_undeclared_qualident(void) {
 Decl *parse_qualident(void) {
   dbg_enter("qualident");
   const char *ident = expect_identifier();
+  const char *moduleName = NULL;
   Decl *d = NULL;
   if (is_imported_module(ident)) {
-    const char *moduleName = ident;
+    moduleName = ident;
     expect_token(TOKEN_DOT);
     ident = expect_identifier();
     d = lookup_module_import(moduleName, ident);
@@ -82,6 +83,8 @@ Decl *parse_qualident(void) {
   if (!d) {
     error("%s undefined", ident);
   }
+  d->qualident.package_name = moduleName;
+  d->qualident.name = ident;
   return d;
 }
 

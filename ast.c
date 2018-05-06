@@ -18,7 +18,7 @@ const char *decl_kind_names[] = {
 };
 
 typedef struct Qualident {
-  const char *packageName; // can be null
+  const char *package_name; // can be null
   const char *name;
 } Qualident;
 
@@ -30,7 +30,7 @@ typedef struct Decl {
     Type *type;                   // for everything else
   };
   bool is_exported;
-  Qualident qualident; // TODO
+  Qualident qualident;
 } Decl;
 
 typedef enum {
