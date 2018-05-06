@@ -52,6 +52,26 @@ typedef enum {
   EXPR_EMPTYSET,
 } ExprKind;
 
+const char *expr_kind_names[] = {
+  [EXPR_UNKNOWN] = "EXPR_UNKNOWN",
+  [EXPR_UNARY] = "EXPR_UNARY",
+  [EXPR_BINARY] = "EXPR_BINARY",
+  [EXPR_IDENTREF] = "EXPR_IDENTREF",
+  [EXPR_PROCCALL] = "EXPR_PROCCALL",
+  [EXPR_FIELDREF] = "EXPR_FIELDREF",
+  [EXPR_POINTERDEREF] = "EXPR_POINTERDEREF",
+  [EXPR_ARRAYREF] = "EXPR_ARRAYREF",
+  [EXPR_TYPEGUARD] = "EXPR_TYPEGUARD",
+  [EXPR_INTEGER] = "EXPR_INTEGER",
+  [EXPR_REAL] = "EXPR_REAL",
+  [EXPR_STRING] = "EXPR_STRING",
+  [EXPR_NIL] = "EXPR_NIL",
+  [EXPR_TRUE] = "EXPR_TRUE",
+  [EXPR_FALSE] = "EXPR_FALSE",
+  [EXPR_EMPTYSET] = "EXPR_EMPTYSET",
+};
+
+
 typedef struct Expr {
   ExprKind kind;
   union {
@@ -69,7 +89,7 @@ typedef struct Expr {
     } identref;
     struct {
       struct Expr *proc;
-      struct Expr *args; // buf
+      struct Expr **args; // buf
     } proccall;
     struct {
       const char *field_name;
@@ -98,6 +118,77 @@ typedef struct Expr {
   };
 } Expr;
 
+const char *dbg_null_to_empty(const char *s) {
+  return s ? s : "";
+}
+
+void dbg_print_expr(Expr *e) {
+  assert(e);
+  printf("(%s ", expr_kind_names[e->kind]);
+  switch (e->kind) {
+  case EXPR_UNKNOWN:
+    break;
+  case EXPR_UNARY:
+    printf("op: %s ", token_kind_names[e->unary.op]);
+    dbg_print_expr(e->unary.expr);
+    break;
+  case EXPR_BINARY:
+    printf("op: %s ", token_kind_names[e->binary.op]);
+    dbg_print_expr(e->binary.lhs);
+    printf(" ");
+    dbg_print_expr(e->binary.rhs);
+    break;
+  case EXPR_IDENTREF:
+    printf("var: %s.%s ", dbg_null_to_empty(e->identref.qualident.package_name), e->identref.qualident.name);
+    break;
+  case EXPR_PROCCALL:
+    dbg_print_expr(e->proccall.proc);
+    printf(" ");
+    for (size_t i=0; i < buf_len(e->proccall.args); i++) {
+      dbg_print_expr(e->proccall.args[i]);
+      printf(" ");
+    }
+    break;
+  case EXPR_FIELDREF:
+    printf("field: %s ", e->fieldref.field_name);
+    dbg_print_expr(e->fieldref.expr);
+    break;
+  case EXPR_POINTERDEREF:
+    dbg_print_expr(e->pointerderef.expr);
+    break;
+  case EXPR_ARRAYREF:
+    printf("array: ");
+    dbg_print_expr(e->arrayref.expr);
+    printf("index: ");
+    dbg_print_expr(e->arrayref.array_index);
+    break;
+  case EXPR_TYPEGUARD:
+    printf("type: %s.%s ", dbg_null_to_empty(e->typeguard.type_name.package_name), e->typeguard.type_name.name);
+    dbg_print_expr(e->typeguard.expr);
+    break;
+  case EXPR_INTEGER:
+    printf("%d", e->integer.iVal);
+    break;
+  case EXPR_REAL:
+    printf("%f", e->real.rVal);
+    break;
+  case EXPR_STRING:
+    printf("%s", e->string.sVal);
+    break;
+  case EXPR_NIL:
+    break;
+  case EXPR_TRUE:
+    break;
+  case EXPR_FALSE:
+    break;
+  case EXPR_EMPTYSET:
+    break;
+  default:
+    assert(0);
+    break;
+  }
+  printf(")");
+}
 
 typedef struct Module {
   const char *name;
@@ -256,7 +347,7 @@ Expr *new_expr_unary(TokenKind op, Expr *base) {
 }
 
 Expr *new_expr_binary(TokenKind op, Expr *lhs, Expr *rhs) {
-  Expr *e = new_expr(EXPR_UNARY);
+  Expr *e = new_expr(EXPR_BINARY);
   e->binary.op = op;
   e->binary.lhs = lhs;
   e->binary.rhs = rhs;
@@ -269,7 +360,7 @@ Expr *new_expr_identref(Qualident qualident) {
   return e;
 }
 
-Expr *new_expr_proccall(Expr *proc, Expr *args) {
+Expr *new_expr_proccall(Expr *proc, Expr **args) {
   Expr *e = new_expr(EXPR_PROCCALL);
   e->proccall.proc = proc;
   e->proccall.args = args;

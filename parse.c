@@ -168,15 +168,15 @@ Expr *parse_designator(void) {
   return e;
 }
 
-Expr *parse_actual_parameters(void) {
+Expr **parse_actual_parameters(void) {
   dbg_enter("actual_parameters");
-  Expr *args = NULL;
+  Expr **args = NULL;
   match_token(TOKEN_LPAREN);
   if (!is_token(TOKEN_RPAREN)) {
     dbg_enter("exp_list");
-    buf_push(args, *parse_expression());
+    buf_push(args, parse_expression());
     while (match_token(TOKEN_COMMA)) {
-      buf_push(args, *parse_expression());
+      buf_push(args, parse_expression());
     }
   }
   match_token(TOKEN_RPAREN);
@@ -468,7 +468,7 @@ Type *parse_array_type(void) {
   Type *innerArray = new_array_type(NULL, 0);
   Type *outerArray = innerArray;
   expect_keyword(keyword_array);
-  parse_expression();
+  dbg_print_expr(parse_expression());
   while (match_token(TOKEN_COMMA)) {
     parse_expression();
     outerArray = new_array_type(outerArray, 0);
