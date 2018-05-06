@@ -468,7 +468,7 @@ Type *parse_array_type(void) {
   Type *innerArray = new_array_type(NULL, 0);
   Type *outerArray = innerArray;
   expect_keyword(keyword_array);
-  dbg_print_expr(parse_expression());
+  parse_expression();
   while (match_token(TOKEN_COMMA)) {
     parse_expression();
     outerArray = new_array_type(outerArray, 0);
