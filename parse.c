@@ -38,7 +38,7 @@ void dbg_enter(const char *name) {
 void dbg_exit(void) { indent--; }
 
 Type *parse_type(void);
-void parse_expression(void);
+Expr *parse_expression(void);
 void parse_declaration_sequence(void);
 void parse_statement_sequence(void);
 
@@ -95,45 +95,43 @@ Type *parse_qualident_and_get_type(void) {
   return NULL;
 }
 
-void parse_set_element(void) {
+Expr *parse_set_element(void) {
   dbg_enter("set_element");
-  parse_expression();
+  Expr *e = parse_expression();
   if (match_token(TOKEN_DOTDOT)) {
-    parse_expression();
+    e = new_expr_binary(TOKEN_DOTDOT, e, parse_expression());
   }
   dbg_exit();
+  return e;
 }
 
-void parse_set() {
+Expr *parse_set() {
   dbg_enter("set");
+  Expr *e = NULL;
   expect_token(TOKEN_LBRACE);
-  if (!is_token(TOKEN_RBRACE)) {
-    parse_set_element();
+  if (is_token(TOKEN_RBRACE)) {
+    e = new_expr_emptyset();
+  } else {
+    e = parse_set_element();
     while (match_token(TOKEN_COMMA)) {
-      parse_set_element();
+      e = new_expr_binary(TOKEN_PLUS, e, parse_set_element());
     }
   }
   expect_token(TOKEN_RBRACE);
   dbg_exit();
-}
-
-void parse_exp_list(void) {
-  dbg_enter("exp_list");
-  parse_expression();
-  while (match_token(TOKEN_COMMA)) {
-    parse_expression();
-  }
-  dbg_exit();
+  return e;
 }
 
 bool symbol_is_type_guard(Type *t, Decl *d) {
   return (t && t->kind == TYPE_POINTER) || (d && d->kind == DECL_VARPARAM);
 }
 
-void parse_designator(void) {
+Expr *parse_designator(void) {
   dbg_enter("designator");
   Decl *d = parse_qualident();
   Type *t = d->type;
+
+  Expr *e = new_expr_identref(d->qualident);
 
   while (is_token(TOKEN_DOT) || is_token(TOKEN_LBRACK) ||
          is_token(TOKEN_CARET) ||
@@ -142,108 +140,143 @@ void parse_designator(void) {
       const char *fieldName = expect_identifier();
       t = lookup_field(t, fieldName);
       d = NULL;
+      e = new_expr_fieldref(fieldName, e);
     } else if (match_token(TOKEN_LBRACK)) {
-      parse_exp_list();
+      dbg_enter("exp_list");
+      e = new_expr_arrayref(parse_expression(), e);
+      while (match_token(TOKEN_COMMA)) {
+        e = new_expr_arrayref(parse_expression(), e);
+      }
+      dbg_exit();
       expect_token(TOKEN_RBRACK);
     } else if (match_token(TOKEN_CARET)) {
+      e = new_expr_pointerderef(e);
     } else if (symbol_is_type_guard(t, d) && match_token(TOKEN_LPAREN)) {
       dbg_print_str("found type guard");
       Decl *guarded = parse_qualident();
       t = guarded->type;
+      e = new_expr_typeguard(guarded->qualident, e);
       expect_token(TOKEN_RPAREN);
     } else {
       assert(0);
     }
   }
   dbg_exit();
+  return e;
 }
 
-void parse_actual_parameters(void) {
+Expr *parse_actual_parameters(void) {
   dbg_enter("actual_parameters");
+  Expr *args = NULL;
   match_token(TOKEN_LPAREN);
   if (!is_token(TOKEN_RPAREN)) {
-    parse_exp_list();
+    dbg_enter("exp_list");
+    buf_push(args, *parse_expression());
+    while (match_token(TOKEN_COMMA)) {
+      buf_push(args, *parse_expression());
+    }
   }
   match_token(TOKEN_RPAREN);
   dbg_exit();
+  return args;
 }
 
-void parse_factor(void) {
+Expr *parse_factor(void) {
   dbg_enter("factor");
+  Expr *e = NULL;
   if (is_token(TOKEN_INT)) {
-    dbg_print_int(token.iVal);
+    e = new_expr_integer(token.iVal);
     match_token(TOKEN_INT);
-  } else if (match_token(TOKEN_REAL)) {
-  } else if (match_token(TOKEN_STRING)) {
+  } else if (is_token(TOKEN_REAL)) {
+    e = new_expr_real(token.rVal);
+    match_token(TOKEN_REAL);
+  } else if (is_token(TOKEN_STRING)) {
+    e = new_expr_string(token.sVal);
+    match_token(TOKEN_STRING);
   } else if (match_keyword(keyword_nil)) {
+    e = new_expr_nil();
   } else if (match_keyword(keyword_true)) {
+    e = new_expr_true();
   } else if (match_keyword(keyword_false)) {
+    e = new_expr_false();
   } else if (is_token(TOKEN_LBRACE)) {
-    parse_set();
+    e = parse_set();
   } else if (is_token(TOKEN_IDENT)) {
-    parse_designator();
+    e = parse_designator();
     if (is_token(TOKEN_LPAREN)) {
-      parse_actual_parameters();
+      e = new_expr_proccall(e, parse_actual_parameters());
     }
   } else if (match_token(TOKEN_LPAREN)) {
-    parse_expression();
+    e = parse_expression();
     expect_token(TOKEN_RPAREN);
   } else if (match_token(TOKEN_TILDE)) {
-    parse_factor();
+    e = new_expr_unary(TOKEN_TILDE, parse_factor());
   } else {
     error("Factor expected");
   }
   dbg_exit();
+  return e;
 }
 
-bool match_mul_operator(void) {
-  return match_token(TOKEN_STAR) || match_token(TOKEN_SLASH) ||
-         match_keyword(keyword_div) || match_keyword(keyword_mod) ||
-         match_token(TOKEN_AMP);
+bool is_mul_operator(void) {
+  return is_token(TOKEN_STAR) || is_token(TOKEN_SLASH) || is_token(TOKEN_DIV) || is_token(TOKEN_MOD) || is_token(TOKEN_AMP);
 }
 
-void parse_term(void) {
+Expr *parse_term(void) {
   dbg_enter("term");
-  parse_factor();
-  while (match_mul_operator()) {
-    parse_factor();
+  Expr *e = parse_factor();
+  while (is_mul_operator()) {
+    TokenKind op = token.kind;
+    next_token();
+    e = new_expr_binary(op, e, parse_factor());
   }
   dbg_exit();
+  return e;
 }
 
-bool match_add_operator(void) {
-  return match_token(TOKEN_PLUS) || match_token(TOKEN_MINUS) ||
-         match_keyword(keyword_or);
+bool is_add_operator(void) {
+  return is_token(TOKEN_PLUS) || is_token(TOKEN_MINUS) || is_token(TOKEN_OR);
 }
 
-void parse_simple_expression(void) {
+Expr *parse_simple_expression(void) {
   dbg_enter("simple_expression");
+  bool unary_plus = false;
+  bool unary_minus = false;
   if (match_token(TOKEN_PLUS)) {
-    printf("Unary plus\n");
+    unary_plus = true;
   } else if (match_token(TOKEN_MINUS)) {
-    printf("Unary minus\n");
+    unary_minus = true;
   }
-  parse_term();
-  while (match_add_operator()) {
-    parse_term();
+  Expr *e = parse_term();
+  if (unary_plus) {
+    e = new_expr_unary(TOKEN_PLUS, e);
+  }
+  if (unary_minus) {
+    e = new_expr_unary(TOKEN_MINUS, e);
+  }
+  while (is_add_operator()) {
+    TokenKind op = token.kind;
+    next_token();
+    e = new_expr_binary(op, e, parse_term());
   }
   dbg_exit();
+  return e;
 }
 
-bool match_relation() {
-  return match_token(TOKEN_EQ) || match_token(TOKEN_POUND) ||
-         match_token(TOKEN_LT) || match_token(TOKEN_LTEQ) ||
-         match_token(TOKEN_GT) || match_token(TOKEN_GTEQ) ||
-         match_keyword(keyword_in) || match_keyword(keyword_is);
+bool is_relation() {
+  return is_token(TOKEN_EQ) || is_token(TOKEN_POUND) || is_token(TOKEN_LT) || is_token(TOKEN_LTEQ) || is_token(TOKEN_GT) || is_token(TOKEN_GTEQ) || is_token(TOKEN_IN) || is_token(TOKEN_IS);
 }
 
-void parse_expression(void) {
+Expr *parse_expression(void) {
   dbg_enter("expression");
-  parse_simple_expression();
-  if (match_relation()) {
-    parse_simple_expression();
+  Expr *e = parse_simple_expression();
+  if (is_relation()) {
+    TokenKind op = token.kind;
+    next_token();
+    e = new_expr_binary(op, e, parse_simple_expression());
   }
   dbg_exit();
+  return e;
 }
 
 void parse_if_statement(void) {

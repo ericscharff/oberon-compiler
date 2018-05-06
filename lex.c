@@ -16,6 +16,11 @@ typedef enum {
   TOKEN_STAR,
   TOKEN_SLASH,
   TOKEN_TILDE,
+  TOKEN_IN,
+  TOKEN_IS,
+  TOKEN_OR,
+  TOKEN_DIV,
+  TOKEN_MOD,
   TOKEN_AMP,
   TOKEN_DOT,
   TOKEN_COMMA,
@@ -52,6 +57,11 @@ const char *token_kind_names[] = {
     [TOKEN_STAR] = "*",
     [TOKEN_SLASH] = "/",
     [TOKEN_TILDE] = "~",
+    [TOKEN_IN] = "IN",
+    [TOKEN_IS] = "IN",
+    [TOKEN_OR] = "OR",
+    [TOKEN_DIV] = "DIV",
+    [TOKEN_MOD] = "MOD",
     [TOKEN_AMP] = "&",
     [TOKEN_DOT] = ".",
     [TOKEN_COMMA] = ",",
@@ -391,6 +401,22 @@ void scan_identifier(void) {
     token.kind = TOKEN_KEYWORD;
     if (use_lowercase_keywords) {
       token.sVal = g_hash_table_lookup(lower_to_upper_keywords, token.sVal);
+    }
+    // A few special case keywords that really are tokens
+    if (token.sVal == keyword_in) {
+      token.kind = TOKEN_IN;
+    }
+    if (token.sVal == keyword_is) {
+      token.kind = TOKEN_IS;
+    }
+    if (token.sVal == keyword_or) {
+      token.kind = TOKEN_OR;
+    }
+    if (token.sVal == keyword_div) {
+      token.kind = TOKEN_DIV;
+    }
+    if (token.sVal == keyword_mod) {
+      token.kind = TOKEN_MOD;
     }
   }
 }
@@ -877,7 +903,7 @@ void lex_test(void) {
   assert_token_ident("beta");
   assert(token.pos.line == 3);
   init_stream("",
-              "+ - * / ~ & . , ; | ( ) [ ] { } := ^ = # < > <= >= .. 10..20");
+              "+ - * / ~ IN IS OR DIV MOD & . , ; | ( ) [ ] { } := ^ = # < > <= >= .. 10..20");
   for (TokenKind k = TOKEN_PLUS; k <= TOKEN_DOTDOT; k++) {
     next_token();
     assert(token.kind == k);

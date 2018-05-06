@@ -17,6 +17,11 @@ const char *decl_kind_names[] = {
     [DECL_VARPARAM] = "VARPARAM", [DECL_PROC] = "PROC",
 };
 
+typedef struct Qualident {
+  const char *packageName; // can be null
+  const char *name;
+} Qualident;
+
 typedef struct Decl {
   DeclKind kind;
   const char *name;
@@ -25,7 +30,74 @@ typedef struct Decl {
     Type *type;                   // for everything else
   };
   bool is_exported;
+  Qualident qualident; // TODO
 } Decl;
+
+typedef enum {
+  EXPR_UNKNOWN,
+  EXPR_UNARY,
+  EXPR_BINARY,
+  EXPR_IDENTREF,
+  EXPR_PROCCALL,
+  EXPR_FIELDREF,
+  EXPR_POINTERDEREF,
+  EXPR_ARRAYREF,
+  EXPR_TYPEGUARD,
+  EXPR_INTEGER,
+  EXPR_REAL,
+  EXPR_STRING,
+  EXPR_NIL,
+  EXPR_TRUE,
+  EXPR_FALSE,
+  EXPR_EMPTYSET,
+} ExprKind;
+
+typedef struct Expr {
+  ExprKind kind;
+  union {
+    struct {
+      TokenKind op;
+      struct Expr *expr;
+    } unary;
+    struct {
+      TokenKind op;
+      struct Expr *lhs;
+      struct Expr *rhs;
+    } binary;
+    struct {
+      Qualident qualident;
+    } identref;
+    struct {
+      struct Expr *proc;
+      struct Expr *args; // buf
+    } proccall;
+    struct {
+      const char *field_name;
+      struct Expr *expr;
+    } fieldref;
+    struct {
+      struct Expr *expr;
+    } pointerderef;
+    struct {
+      struct Expr *array_index;
+      struct Expr *expr;
+    } arrayref;
+    struct {
+      Qualident type_name;
+      struct Expr *expr;
+    } typeguard;
+    struct {
+      int iVal;
+    } integer;
+    struct {
+      float rVal;
+    } real;
+    struct {
+      const char *sVal;
+    } string;
+  };
+} Expr;
+
 
 typedef struct Module {
   const char *name;
@@ -168,6 +240,101 @@ void new_proc_decl(const char *name, Type *type, bool is_exported) {
   d->kind = DECL_PROC;
   d->type = type;
   d->is_exported = is_exported;
+}
+
+Expr *new_expr(ExprKind kind) {
+  Expr *e = xmalloc(sizeof(Expr));
+  e->kind = kind;
+  return e;
+}
+
+Expr *new_expr_unary(TokenKind op, Expr *base) {
+  Expr *e = new_expr(EXPR_UNARY);
+  e->unary.op = op;
+  e->unary.expr = base;
+  return e;
+}
+
+Expr *new_expr_binary(TokenKind op, Expr *lhs, Expr *rhs) {
+  Expr *e = new_expr(EXPR_UNARY);
+  e->binary.op = op;
+  e->binary.lhs = lhs;
+  e->binary.rhs = rhs;
+  return e;
+}
+
+Expr *new_expr_identref(Qualident qualident) {
+  Expr *e = new_expr(EXPR_IDENTREF);
+  e->identref.qualident = qualident;
+  return e;
+}
+
+Expr *new_expr_proccall(Expr *proc, Expr *args) {
+  Expr *e = new_expr(EXPR_PROCCALL);
+  e->proccall.proc = proc;
+  e->proccall.args = args;
+  return e;
+}
+
+Expr *new_expr_fieldref(const char *fieldName, Expr *base) {
+  Expr *e = new_expr(EXPR_FIELDREF);
+  e->fieldref.field_name = fieldName;
+  e->fieldref.expr = base;
+  return e;
+}
+
+Expr *new_expr_pointerderef(Expr *base) {
+  Expr *e = new_expr(EXPR_POINTERDEREF);
+  e->pointerderef.expr = base;
+  return e;
+}
+
+Expr *new_expr_arrayref(Expr *arrayIndex, Expr *arrayRef) {
+  Expr *e = new_expr(EXPR_ARRAYREF);
+  e->arrayref.array_index = arrayIndex;
+  e->arrayref.expr = arrayRef;
+  return e;
+}
+
+Expr *new_expr_typeguard(Qualident typeName, Expr *base) {
+  Expr *e = new_expr(EXPR_TYPEGUARD);
+  e->typeguard.type_name = typeName;
+  e->typeguard.expr = base;
+  return e;
+}
+
+Expr *new_expr_integer(int iVal) {
+  Expr *e = new_expr(EXPR_INTEGER);
+  e->integer.iVal = iVal;
+  return e;
+}
+
+Expr *new_expr_real(float rVal) {
+  Expr *e = new_expr(EXPR_REAL);
+  e->real.rVal = rVal;
+  return e;
+}
+
+Expr *new_expr_string(const char *s) {
+  Expr *e = new_expr(EXPR_STRING);
+  e->string.sVal = s;
+  return e;
+}
+
+Expr *new_expr_nil(void) {
+  return new_expr(EXPR_NIL);
+}
+
+Expr *new_expr_true(void) {
+  return new_expr(EXPR_TRUE);
+}
+
+Expr *new_expr_false(void) {
+  return new_expr(EXPR_FALSE);
+}
+
+Expr *new_expr_emptyset(void) {
+  return new_expr(EXPR_EMPTYSET);
 }
 
 Module *new_module(const char *name, Scope *s) {
