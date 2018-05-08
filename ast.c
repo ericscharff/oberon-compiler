@@ -1,3 +1,6 @@
+typedef struct Decl Decl;
+typedef struct Expr expr;
+
 typedef enum {
   DECL_UNKNOWN,
   DECL_INCOMPLETE,
@@ -26,11 +29,12 @@ typedef struct Decl {
   DeclKind kind;
   const char *name;
   union {
-    struct Decl *imported_decls;  // Only for DECL_IMPORT
+    Decl *imported_decls;  // Only for DECL_IMPORT
     Type *type;                   // for everything else
   };
   bool is_exported;
   Qualident qualident;
+  Expr *expr; // Only for DECL_CONST
 } Decl;
 
 typedef enum {
@@ -77,34 +81,34 @@ typedef struct Expr {
   union {
     struct {
       TokenKind op;
-      struct Expr *expr;
+      Expr *expr;
     } unary;
     struct {
       TokenKind op;
-      struct Expr *lhs;
-      struct Expr *rhs;
+      Expr *lhs;
+      Expr *rhs;
     } binary;
     struct {
       Qualident qualident;
     } identref;
     struct {
-      struct Expr *proc;
-      struct Expr **args; // buf
+      Expr *proc;
+      Expr **args; // buf
     } proccall;
     struct {
       const char *field_name;
-      struct Expr *expr;
+      Expr *expr;
     } fieldref;
     struct {
-      struct Expr *expr;
+      Expr *expr;
     } pointerderef;
     struct {
-      struct Expr *array_index;
-      struct Expr *expr;
+      Expr *array_index;
+      Expr *expr;
     } arrayref;
     struct {
       Qualident type_name;
-      struct Expr *expr;
+      Expr *expr;
     } typeguard;
     struct {
       int iVal;
@@ -196,11 +200,12 @@ typedef struct Module {
 } Module;
 
 #define SCOPE_SIZE 512
+typedef struct Scope Scope;
 typedef struct Scope {
   Decl decls[SCOPE_SIZE];
   // Number of valid decls
   size_t size;
-  struct Scope *parent;
+  Scope *parent;
 } Scope;
 
 // Typically, the current scope is stack allocated. E.g, when a procedure is
@@ -285,10 +290,12 @@ Decl *new_incomplete_decl(const char *name) {
   return d;
 }
 
-void new_const_decl(const char *name, Type *type, bool is_exported) {
+void new_const_decl(const char *name, Expr *expr, bool is_exported) {
   Decl *d = internal_new_decl(name);
   d->kind = DECL_CONST;
-  d->type = type;
+  d->expr = expr;
+  // NULL const type will be fixed by resolver.
+  d->type = NULL;
   d->is_exported = is_exported;
 }
 

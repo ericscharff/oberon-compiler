@@ -465,13 +465,11 @@ IdentDef *parse_ident_list(void) {
 
 Type *parse_array_type(void) {
   dbg_enter("array_type");
-  Type *innerArray = new_array_type(NULL, 0);
-  Type *outerArray = innerArray;
   expect_keyword(keyword_array);
-  parse_expression();
+  Type *innerArray = new_array_type(NULL, parse_expression());
+  Type *outerArray = innerArray;
   while (match_token(TOKEN_COMMA)) {
-    parse_expression();
-    outerArray = new_array_type(outerArray, 0);
+    outerArray = new_array_type(outerArray, parse_expression());
   }
   expect_keyword(keyword_of);
   Type *elementType = parse_type();
@@ -623,9 +621,7 @@ void parse_const_declaration(void) {
   bool is_exported;
   parse_ident_def(&name, &is_exported);
   expect_token(TOKEN_EQ);
-  parse_expression();
-  // Placeholder INT type just to get code to parse
-  new_const_decl(name, &integerType, is_exported);
+  new_const_decl(name, parse_expression(), is_exported);
   dbg_exit();
 }
 
@@ -661,7 +657,6 @@ void populate_procedure_scope(const char *procName) {
   for (size_t i = 0; i < buf_len(t->procedure_type.params); i++) {
     const char *paramName = t->procedure_type.params[i].name;
     Type *paramType = t->procedure_type.params[i].type;
-    // TODO - handle open arrays somehow
     if (t->procedure_type.params[i].is_var_parameter) {
       new_varparam_decl(paramName, paramType);
     } else {
@@ -799,6 +794,9 @@ void dbg_dump_scope(Module *m) {
            decl_kind_names[m->decls[i].kind],
            m->decls[i].is_exported ? "true" : "false");
     dbg_dump_type(m->decls[i].type);
+    if (m->decls[i].kind == DECL_CONST) {
+      dbg_print_expr(m->decls[i].expr);
+    }
     printf("\n");
   }
 }

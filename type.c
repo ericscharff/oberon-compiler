@@ -25,10 +25,11 @@ const char *type_kind_names[] = {
 };
 
 typedef struct Type Type;
+typedef struct Expr Expr;
+void dbg_print_expr(Expr *e);
 
 typedef struct ArrayType {
-  // can be 0, or -1 for open arrays
-  int num_elements;
+  Expr *num_elements_expr;
   Type *element_type;
 } ArrayType;
 
@@ -109,12 +110,12 @@ Type *new_incomplete_type(void) {
   return t;
 }
 
-Type *new_array_type(Type *element_type, int num_elements) {
+Type *new_array_type(Type *element_type, Expr *num_elements_expr) {
   Type *t = alloc_type();
   t->kind = TYPE_ARRAY;
   t->name = NULL;
   t->array_type.element_type = element_type;
-  t->array_type.num_elements = num_elements;
+  t->array_type.num_elements_expr = num_elements_expr;
   return t;
 }
 
@@ -164,9 +165,12 @@ Type *lookup_field(Type *type, const char *fieldName) {
 void dbg_dump_type(Type *t) {
   if (t) {
     printf("<type kind: %s", type_kind_names[t->kind]);
+    if (t->name) {
+      printf(" name: %s", t->name);
+    }
     switch (t->kind) {
       case TYPE_ARRAY:
-        printf(" %d ", t->array_type.num_elements);
+	dbg_print_expr(t->array_type.num_elements_expr);
         dbg_dump_type(t->array_type.element_type);
         break;
       case TYPE_POINTER:
@@ -210,10 +214,9 @@ void type_test(void) {
     alloc_type();
   }
   assert(type_pool_current == (type_pool + 10));
-  Type *a = new_array_type(&integerType, 10);
+  Type *a = new_array_type(&integerType, NULL);
   assert(a->kind == TYPE_ARRAY);
   assert(a->array_type.element_type == &integerType);
-  assert(a->array_type.num_elements == 10);
   Type *p = new_pointer_type(a);
   assert(p->kind == TYPE_POINTER);
   assert(p->pointer_type.element_type == a);
