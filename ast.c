@@ -273,6 +273,8 @@ Decl *internal_new_decl(const char *name) {
   }
   Decl *d = &current_scope->decls[current_scope->size++];
   d->name = name;
+  d->kind = DECL_UNKNOWN;
+  d->type = NULL;
   return d;
 }
 
