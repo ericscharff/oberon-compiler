@@ -903,7 +903,8 @@ void lex_test(void) {
   assert_token_ident("beta");
   assert(token.pos.line == 3);
   init_stream("",
-              "+ - * / ~ IN IS OR DIV MOD & . , ; | ( ) [ ] { } := ^ = # < > <= >= .. 10..20");
+              "+ - * / ~ IN IS OR DIV MOD & . , ; | ( ) [ ] { } := ^ = # < > "
+              "<= >= .. 10..20");
   for (TokenKind k = TOKEN_PLUS; k <= TOKEN_DOTDOT; k++) {
     next_token();
     assert(token.kind == k);

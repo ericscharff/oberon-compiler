@@ -21,7 +21,7 @@ const char *decl_kind_names[] = {
 };
 
 typedef struct Qualident {
-  const char *package_name; // can be null
+  const char *package_name;  // can be null
   const char *name;
 } Qualident;
 
@@ -30,11 +30,11 @@ typedef struct Decl {
   const char *name;
   union {
     Decl *imported_decls;  // Only for DECL_IMPORT
-    Type *type;                   // for everything else
+    Type *type;            // for everything else
   };
   bool is_exported;
   Qualident qualident;
-  Expr *expr; // Only for DECL_CONST
+  Expr *expr;  // Only for DECL_CONST
 } Decl;
 
 typedef enum {
@@ -57,24 +57,23 @@ typedef enum {
 } ExprKind;
 
 const char *expr_kind_names[] = {
-  [EXPR_UNKNOWN] = "EXPR_UNKNOWN",
-  [EXPR_UNARY] = "EXPR_UNARY",
-  [EXPR_BINARY] = "EXPR_BINARY",
-  [EXPR_IDENTREF] = "EXPR_IDENTREF",
-  [EXPR_PROCCALL] = "EXPR_PROCCALL",
-  [EXPR_FIELDREF] = "EXPR_FIELDREF",
-  [EXPR_POINTERDEREF] = "EXPR_POINTERDEREF",
-  [EXPR_ARRAYREF] = "EXPR_ARRAYREF",
-  [EXPR_TYPEGUARD] = "EXPR_TYPEGUARD",
-  [EXPR_INTEGER] = "EXPR_INTEGER",
-  [EXPR_REAL] = "EXPR_REAL",
-  [EXPR_STRING] = "EXPR_STRING",
-  [EXPR_NIL] = "EXPR_NIL",
-  [EXPR_TRUE] = "EXPR_TRUE",
-  [EXPR_FALSE] = "EXPR_FALSE",
-  [EXPR_EMPTYSET] = "EXPR_EMPTYSET",
+    [EXPR_UNKNOWN] = "EXPR_UNKNOWN",
+    [EXPR_UNARY] = "EXPR_UNARY",
+    [EXPR_BINARY] = "EXPR_BINARY",
+    [EXPR_IDENTREF] = "EXPR_IDENTREF",
+    [EXPR_PROCCALL] = "EXPR_PROCCALL",
+    [EXPR_FIELDREF] = "EXPR_FIELDREF",
+    [EXPR_POINTERDEREF] = "EXPR_POINTERDEREF",
+    [EXPR_ARRAYREF] = "EXPR_ARRAYREF",
+    [EXPR_TYPEGUARD] = "EXPR_TYPEGUARD",
+    [EXPR_INTEGER] = "EXPR_INTEGER",
+    [EXPR_REAL] = "EXPR_REAL",
+    [EXPR_STRING] = "EXPR_STRING",
+    [EXPR_NIL] = "EXPR_NIL",
+    [EXPR_TRUE] = "EXPR_TRUE",
+    [EXPR_FALSE] = "EXPR_FALSE",
+    [EXPR_EMPTYSET] = "EXPR_EMPTYSET",
 };
-
 
 typedef struct Expr {
   ExprKind kind;
@@ -93,7 +92,7 @@ typedef struct Expr {
     } identref;
     struct {
       Expr *proc;
-      Expr **args; // buf
+      Expr **args;  // buf
     } proccall;
     struct {
       const char *field_name;
@@ -122,74 +121,76 @@ typedef struct Expr {
   };
 } Expr;
 
-const char *dbg_null_to_empty(const char *s) {
-  return s ? s : "";
-}
+const char *dbg_null_to_empty(const char *s) { return s ? s : ""; }
 
 void dbg_print_expr(Expr *e) {
   assert(e);
   printf("(%s ", expr_kind_names[e->kind]);
   switch (e->kind) {
-  case EXPR_UNKNOWN:
-    break;
-  case EXPR_UNARY:
-    printf("op: %s ", token_kind_names[e->unary.op]);
-    dbg_print_expr(e->unary.expr);
-    break;
-  case EXPR_BINARY:
-    printf("op: %s ", token_kind_names[e->binary.op]);
-    dbg_print_expr(e->binary.lhs);
-    printf(" ");
-    dbg_print_expr(e->binary.rhs);
-    break;
-  case EXPR_IDENTREF:
-    printf("var: %s.%s ", dbg_null_to_empty(e->identref.qualident.package_name), e->identref.qualident.name);
-    break;
-  case EXPR_PROCCALL:
-    dbg_print_expr(e->proccall.proc);
-    printf(" ");
-    for (size_t i=0; i < buf_len(e->proccall.args); i++) {
-      dbg_print_expr(e->proccall.args[i]);
+    case EXPR_UNKNOWN:
+      break;
+    case EXPR_UNARY:
+      printf("op: %s ", token_kind_names[e->unary.op]);
+      dbg_print_expr(e->unary.expr);
+      break;
+    case EXPR_BINARY:
+      printf("op: %s ", token_kind_names[e->binary.op]);
+      dbg_print_expr(e->binary.lhs);
       printf(" ");
-    }
-    break;
-  case EXPR_FIELDREF:
-    printf("field: %s ", e->fieldref.field_name);
-    dbg_print_expr(e->fieldref.expr);
-    break;
-  case EXPR_POINTERDEREF:
-    dbg_print_expr(e->pointerderef.expr);
-    break;
-  case EXPR_ARRAYREF:
-    printf("array: ");
-    dbg_print_expr(e->arrayref.expr);
-    printf("index: ");
-    dbg_print_expr(e->arrayref.array_index);
-    break;
-  case EXPR_TYPEGUARD:
-    printf("type: %s.%s ", dbg_null_to_empty(e->typeguard.type_name.package_name), e->typeguard.type_name.name);
-    dbg_print_expr(e->typeguard.expr);
-    break;
-  case EXPR_INTEGER:
-    printf("%d", e->integer.iVal);
-    break;
-  case EXPR_REAL:
-    printf("%f", e->real.rVal);
-    break;
-  case EXPR_STRING:
-    printf("%s", e->string.sVal);
-    break;
-  case EXPR_NIL:
-    break;
-  case EXPR_TRUE:
-    break;
-  case EXPR_FALSE:
-    break;
-  case EXPR_EMPTYSET:
-    break;
-  default:
-    assert(0);
-    break;
+      dbg_print_expr(e->binary.rhs);
+      break;
+    case EXPR_IDENTREF:
+      printf("var: %s.%s ",
+             dbg_null_to_empty(e->identref.qualident.package_name),
+             e->identref.qualident.name);
+      break;
+    case EXPR_PROCCALL:
+      dbg_print_expr(e->proccall.proc);
+      printf(" ");
+      for (size_t i = 0; i < buf_len(e->proccall.args); i++) {
+        dbg_print_expr(e->proccall.args[i]);
+        printf(" ");
+      }
+      break;
+    case EXPR_FIELDREF:
+      printf("field: %s ", e->fieldref.field_name);
+      dbg_print_expr(e->fieldref.expr);
+      break;
+    case EXPR_POINTERDEREF:
+      dbg_print_expr(e->pointerderef.expr);
+      break;
+    case EXPR_ARRAYREF:
+      printf("array: ");
+      dbg_print_expr(e->arrayref.expr);
+      printf("index: ");
+      dbg_print_expr(e->arrayref.array_index);
+      break;
+    case EXPR_TYPEGUARD:
+      printf("type: %s.%s ",
+             dbg_null_to_empty(e->typeguard.type_name.package_name),
+             e->typeguard.type_name.name);
+      dbg_print_expr(e->typeguard.expr);
+      break;
+    case EXPR_INTEGER:
+      printf("%d", e->integer.iVal);
+      break;
+    case EXPR_REAL:
+      printf("%f", e->real.rVal);
+      break;
+    case EXPR_STRING:
+      printf("%s", e->string.sVal);
+      break;
+    case EXPR_NIL:
+      break;
+    case EXPR_TRUE:
+      break;
+    case EXPR_FALSE:
+      break;
+    case EXPR_EMPTYSET:
+      break;
+    default:
+      assert(0);
+      break;
   }
   printf(")");
 }
@@ -419,21 +420,13 @@ Expr *new_expr_string(const char *s) {
   return e;
 }
 
-Expr *new_expr_nil(void) {
-  return new_expr(EXPR_NIL);
-}
+Expr *new_expr_nil(void) { return new_expr(EXPR_NIL); }
 
-Expr *new_expr_true(void) {
-  return new_expr(EXPR_TRUE);
-}
+Expr *new_expr_true(void) { return new_expr(EXPR_TRUE); }
 
-Expr *new_expr_false(void) {
-  return new_expr(EXPR_FALSE);
-}
+Expr *new_expr_false(void) { return new_expr(EXPR_FALSE); }
 
-Expr *new_expr_emptyset(void) {
-  return new_expr(EXPR_EMPTYSET);
-}
+Expr *new_expr_emptyset(void) { return new_expr(EXPR_EMPTYSET); }
 
 Module *new_module(const char *name, Scope *s) {
   Module *m = xmalloc(sizeof(Module));

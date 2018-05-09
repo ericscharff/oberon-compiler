@@ -170,7 +170,7 @@ void dbg_dump_type(Type *t) {
     }
     switch (t->kind) {
       case TYPE_ARRAY:
-	dbg_print_expr(t->array_type.num_elements_expr);
+        dbg_print_expr(t->array_type.num_elements_expr);
         dbg_dump_type(t->array_type.element_type);
         break;
       case TYPE_POINTER:

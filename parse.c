@@ -222,7 +222,8 @@ Expr *parse_factor(void) {
 }
 
 bool is_mul_operator(void) {
-  return is_token(TOKEN_STAR) || is_token(TOKEN_SLASH) || is_token(TOKEN_DIV) || is_token(TOKEN_MOD) || is_token(TOKEN_AMP);
+  return is_token(TOKEN_STAR) || is_token(TOKEN_SLASH) || is_token(TOKEN_DIV) ||
+         is_token(TOKEN_MOD) || is_token(TOKEN_AMP);
 }
 
 Expr *parse_term(void) {
@@ -267,7 +268,9 @@ Expr *parse_simple_expression(void) {
 }
 
 bool is_relation() {
-  return is_token(TOKEN_EQ) || is_token(TOKEN_POUND) || is_token(TOKEN_LT) || is_token(TOKEN_LTEQ) || is_token(TOKEN_GT) || is_token(TOKEN_GTEQ) || is_token(TOKEN_IN) || is_token(TOKEN_IS);
+  return is_token(TOKEN_EQ) || is_token(TOKEN_POUND) || is_token(TOKEN_LT) ||
+         is_token(TOKEN_LTEQ) || is_token(TOKEN_GT) || is_token(TOKEN_GTEQ) ||
+         is_token(TOKEN_IN) || is_token(TOKEN_IS);
 }
 
 Expr *parse_expression(void) {
