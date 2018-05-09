@@ -7,11 +7,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "ast.c"
 #include "buf.c"
 #include "lex.c"
-#include "parse.c"
 #include "type.c"
+#include "ast.c"
+#include "parse.c"
 
 void run_tests(void) {
   buf_test();
