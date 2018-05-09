@@ -13,20 +13,6 @@ struct {
   size_t size;
 } importCache;
 
-void dbg_print_int(int x) {
-  for (int i = 0; i < indent; i++) {
-    printf("  ");
-  }
-  printf("%d\n", x);
-}
-
-void dbg_print_str(const char *s) {
-  for (int i = 0; i < indent; i++) {
-    printf("  ");
-  }
-  printf("%s\n", s);
-}
-
 void dbg_enter(const char *name) {
   for (int i = 0; i < indent; i++) {
     printf("  ");
@@ -155,7 +141,6 @@ Expr *parse_designator(void) {
     } else if (match_token(TOKEN_CARET)) {
       e = new_expr_pointerderef(e);
     } else if (symbol_is_type_guard(t, d) && match_token(TOKEN_LPAREN)) {
-      dbg_print_str("found type guard");
       Decl *guarded = parse_qualident();
       t = guarded->type;
       e = new_expr_typeguard(guarded->qualident, e);
@@ -784,7 +769,6 @@ Module *parse_module(void) {
     error("Module name %s must match end name %s", moduleName, endModuleName);
   }
   expect_token(TOKEN_DOT);
-  dbg_print_str(moduleName);
   dbg_exit();
   exit_scope();
   return new_module(moduleName, &scope);
