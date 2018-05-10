@@ -77,6 +77,7 @@ const char *expr_kind_names[] = {
 
 typedef struct Expr {
   ExprKind kind;
+  Loc loc;
   union {
     struct {
       TokenKind op;
@@ -125,7 +126,7 @@ const char *dbg_null_to_empty(const char *s) { return s ? s : ""; }
 
 void dbg_print_expr(Expr *e) {
   assert(e);
-  printf("(%s ", expr_kind_names[e->kind]);
+  printf("(%s:%d %s ", e->loc.file_name, e->loc.line, expr_kind_names[e->kind]);
   switch (e->kind) {
     case EXPR_UNKNOWN:
       break;
@@ -343,92 +344,93 @@ void new_proc_decl(const char *name, Type *type, bool is_exported) {
   d->is_exported = is_exported;
 }
 
-Expr *new_expr(ExprKind kind) {
+Expr *new_expr(ExprKind kind, Loc loc) {
   Expr *e = xmalloc(sizeof(Expr));
   e->kind = kind;
+  e->loc = loc;
   return e;
 }
 
-Expr *new_expr_unary(TokenKind op, Expr *base) {
-  Expr *e = new_expr(EXPR_UNARY);
+Expr *new_expr_unary(TokenKind op, Expr *base, Loc loc) {
+  Expr *e = new_expr(EXPR_UNARY, loc);
   e->unary.op = op;
   e->unary.expr = base;
   return e;
 }
 
-Expr *new_expr_binary(TokenKind op, Expr *lhs, Expr *rhs) {
-  Expr *e = new_expr(EXPR_BINARY);
+Expr *new_expr_binary(TokenKind op, Expr *lhs, Expr *rhs, Loc loc) {
+  Expr *e = new_expr(EXPR_BINARY, loc);
   e->binary.op = op;
   e->binary.lhs = lhs;
   e->binary.rhs = rhs;
   return e;
 }
 
-Expr *new_expr_identref(Qualident qualident) {
-  Expr *e = new_expr(EXPR_IDENTREF);
+Expr *new_expr_identref(Qualident qualident, Loc loc) {
+  Expr *e = new_expr(EXPR_IDENTREF, loc);
   e->identref.qualident = qualident;
   return e;
 }
 
-Expr *new_expr_proccall(Expr *proc, Expr **args) {
-  Expr *e = new_expr(EXPR_PROCCALL);
+Expr *new_expr_proccall(Expr *proc, Expr **args, Loc loc) {
+  Expr *e = new_expr(EXPR_PROCCALL, loc);
   e->proccall.proc = proc;
   e->proccall.args = args;
   return e;
 }
 
-Expr *new_expr_fieldref(const char *fieldName, Expr *base) {
-  Expr *e = new_expr(EXPR_FIELDREF);
+Expr *new_expr_fieldref(const char *fieldName, Expr *base, Loc loc) {
+  Expr *e = new_expr(EXPR_FIELDREF, loc);
   e->fieldref.field_name = fieldName;
   e->fieldref.expr = base;
   return e;
 }
 
-Expr *new_expr_pointerderef(Expr *base) {
-  Expr *e = new_expr(EXPR_POINTERDEREF);
+Expr *new_expr_pointerderef(Expr *base, Loc loc) {
+  Expr *e = new_expr(EXPR_POINTERDEREF, loc);
   e->pointerderef.expr = base;
   return e;
 }
 
-Expr *new_expr_arrayref(Expr *arrayIndex, Expr *arrayRef) {
-  Expr *e = new_expr(EXPR_ARRAYREF);
+Expr *new_expr_arrayref(Expr *arrayIndex, Expr *arrayRef, Loc loc) {
+  Expr *e = new_expr(EXPR_ARRAYREF, loc);
   e->arrayref.array_index = arrayIndex;
   e->arrayref.expr = arrayRef;
   return e;
 }
 
-Expr *new_expr_typeguard(Qualident typeName, Expr *base) {
-  Expr *e = new_expr(EXPR_TYPEGUARD);
+Expr *new_expr_typeguard(Qualident typeName, Expr *base, Loc loc) {
+  Expr *e = new_expr(EXPR_TYPEGUARD, loc);
   e->typeguard.type_name = typeName;
   e->typeguard.expr = base;
   return e;
 }
 
-Expr *new_expr_integer(int iVal) {
-  Expr *e = new_expr(EXPR_INTEGER);
+Expr *new_expr_integer(int iVal, Loc loc) {
+  Expr *e = new_expr(EXPR_INTEGER, loc);
   e->integer.iVal = iVal;
   return e;
 }
 
-Expr *new_expr_real(float rVal) {
-  Expr *e = new_expr(EXPR_REAL);
+Expr *new_expr_real(float rVal, Loc loc) {
+  Expr *e = new_expr(EXPR_REAL, loc);
   e->real.rVal = rVal;
   return e;
 }
 
-Expr *new_expr_string(const char *s) {
-  Expr *e = new_expr(EXPR_STRING);
+Expr *new_expr_string(const char *s, Loc loc) {
+  Expr *e = new_expr(EXPR_STRING, loc);
   e->string.sVal = s;
   return e;
 }
 
-Expr *new_expr_nil(void) { return new_expr(EXPR_NIL); }
+Expr *new_expr_nil(Loc loc) { return new_expr(EXPR_NIL, loc); }
 
-Expr *new_expr_true(void) { return new_expr(EXPR_TRUE); }
+Expr *new_expr_true(Loc loc) { return new_expr(EXPR_TRUE, loc); }
 
-Expr *new_expr_false(void) { return new_expr(EXPR_FALSE); }
+Expr *new_expr_false(Loc loc) { return new_expr(EXPR_FALSE, loc); }
 
-Expr *new_expr_emptyset(void) { return new_expr(EXPR_EMPTYSET); }
+Expr *new_expr_emptyset(Loc loc) { return new_expr(EXPR_EMPTYSET, loc); }
 
 Module *new_module(const char *name, Scope *s) {
   Module *m = xmalloc(sizeof(Module));
