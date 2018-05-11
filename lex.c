@@ -42,6 +42,7 @@ typedef enum {
   TOKEN_GTEQ,
   TOKEN_DOTDOT,
   TOKEN_COLON,
+  TOKEN_AS_SET_ELT,
 } TokenKind;
 
 const char *token_kind_names[] = {
@@ -83,6 +84,7 @@ const char *token_kind_names[] = {
     [TOKEN_GTEQ] = ">=",
     [TOKEN_DOTDOT] = "..",
     [TOKEN_COLON] = ":",
+    [TOKEN_AS_SET_ELT] = "AS_SET_ELEMENT",
 };
 
 typedef struct Loc {
@@ -377,6 +379,16 @@ void error(const char *fmt, ...) {
   va_list args;
   va_start(args, fmt);
   printf("%s:%d: error: ", token.pos.file_name, token.pos.line);
+  vprintf(fmt, args);
+  printf("\n");
+  va_end(args);
+  exit(1);
+}
+
+void errorloc(Loc loc, const char *fmt, ...) {
+  va_list args;
+  va_start(args, fmt);
+  printf("%s:%d: error: ", loc.file_name, loc.line);
   vprintf(fmt, args);
   printf("\n");
   va_end(args);

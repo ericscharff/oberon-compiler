@@ -15,4 +15,33 @@ TYPE
   A1 = ARRAY 10 OF INTEGER;
   A2 = ARRAY 1, 2+3, 4*5 OF CHAR;
 
+VAR
+  a :INTEGER;
+  s :SET;
+
+PROCEDURE DoIt*(a, b, c :INTEGER);
+BEGIN
+  a := b + c
+END DoIt;
+
+BEGIN
+  a := 12;
+  a := 3 + 2;
+  IF a > 10 THEN
+    a := a*3
+  ELSIF a > 20 THEN
+    a := a*4
+  ELSIF a > 30 THEN
+    a := a*5
+  ELSE
+    WHILE a > 0 DO DEC(a) END
+  END;
+  WHILE a > 5 DO
+    a := a + 1;
+    WHILE a < 0 DO INC(a, 2, 3) END;
+    a := a*a + a + a
+  END;
+  a := INC(a);
+  s := {2, 3, 4..10, 12}
+
 END Test.

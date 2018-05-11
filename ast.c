@@ -1,5 +1,6 @@
 typedef struct Decl Decl;
 typedef struct Expr expr;
+typedef struct Statement Statement;
 
 typedef enum {
   DECL_UNKNOWN,
@@ -17,7 +18,20 @@ const char *decl_kind_names[] = {
     [DECL_UNKNOWN] = "<unknown>", [DECL_INCOMPLETE] = "<incomplete>",
     [DECL_IMPORT] = "IMPORT",     [DECL_CONST] = "CONST",
     [DECL_TYPE] = "TYPE",         [DECL_VAR] = "VAR",
-    [DECL_VARPARAM] = "VARPARAM", [DECL_PROC] = "PROC",
+    [DECL_PARAM] = "PARAM",       [DECL_VARPARAM] = "VARPARAM",
+    [DECL_PROC] = "PROC",
+};
+
+typedef enum {
+  DECLSTATE_UNRESOLVED,
+  DECLSTATE_RESOLVING,
+  DECLSTATE_RESOLVED,
+} DeclState;
+
+const char *decl_state_names[] = {
+    [DECLSTATE_UNRESOLVED] = "UNRESOLVED",
+    [DECLSTATE_RESOLVING] = "RESOLVING",
+    [DECLSTATE_RESOLVED] = "RESOLVED",
 };
 
 typedef struct Qualident {
@@ -28,14 +42,45 @@ typedef struct Qualident {
 typedef struct Decl {
   DeclKind kind;
   const char *name;
+  Loc loc;
   union {
     Decl *imported_decls;  // Only for DECL_IMPORT
     Type *type;            // for everything else
   };
   bool is_exported;
   Qualident qualident;
-  Expr *expr;  // Only for DECL_CONST
+  union {
+    struct {
+      Expr *expr;  // Only for DECL_CONST
+    } const_val;
+    struct {
+      Decl *decls;      // buf
+      Statement *body;  // buf
+    } proc_decl;
+  };
+  DeclState state;  // Populated by resolver
 } Decl;
+
+typedef enum {
+  VAL_UNKNOWN,
+  VAL_INTEGER,
+  VAL_REAL,
+  VAL_SET,
+  VAL_BOOLEAN,
+  VAL_STRING,
+  VAL_NIL,
+} ValKind;
+
+typedef struct Val {
+  ValKind kind;
+  union {
+    int iVal;
+    float rVal;
+    uint32_t setVal;
+    bool bVal;
+    const char *sVal;
+  };
+} Val;
 
 typedef enum {
   EXPR_UNKNOWN,
@@ -57,22 +102,22 @@ typedef enum {
 } ExprKind;
 
 const char *expr_kind_names[] = {
-    [EXPR_UNKNOWN] = "EXPR_UNKNOWN",
-    [EXPR_UNARY] = "EXPR_UNARY",
-    [EXPR_BINARY] = "EXPR_BINARY",
-    [EXPR_IDENTREF] = "EXPR_IDENTREF",
-    [EXPR_PROCCALL] = "EXPR_PROCCALL",
-    [EXPR_FIELDREF] = "EXPR_FIELDREF",
-    [EXPR_POINTERDEREF] = "EXPR_POINTERDEREF",
-    [EXPR_ARRAYREF] = "EXPR_ARRAYREF",
-    [EXPR_TYPEGUARD] = "EXPR_TYPEGUARD",
-    [EXPR_INTEGER] = "EXPR_INTEGER",
-    [EXPR_REAL] = "EXPR_REAL",
-    [EXPR_STRING] = "EXPR_STRING",
-    [EXPR_NIL] = "EXPR_NIL",
-    [EXPR_TRUE] = "EXPR_TRUE",
-    [EXPR_FALSE] = "EXPR_FALSE",
-    [EXPR_EMPTYSET] = "EXPR_EMPTYSET",
+    [EXPR_UNKNOWN] = "UNKNOWN",
+    [EXPR_UNARY] = "UNARY",
+    [EXPR_BINARY] = "BINARY",
+    [EXPR_IDENTREF] = "IDENTREF",
+    [EXPR_PROCCALL] = "PROCCALL",
+    [EXPR_FIELDREF] = "FIELDREF",
+    [EXPR_POINTERDEREF] = "POINTERDEREF",
+    [EXPR_ARRAYREF] = "ARRAYREF",
+    [EXPR_TYPEGUARD] = "TYPEGUARD",
+    [EXPR_INTEGER] = "INTEGER",
+    [EXPR_REAL] = "REAL",
+    [EXPR_STRING] = "STRING",
+    [EXPR_NIL] = "NIL",
+    [EXPR_TRUE] = "TRUE",
+    [EXPR_FALSE] = "FALSE",
+    [EXPR_EMPTYSET] = "EMPTYSET",
 };
 
 typedef struct Expr {
@@ -120,13 +165,16 @@ typedef struct Expr {
       const char *sVal;
     } string;
   };
+  bool is_const;  // Populated by resolver
+  Type *type;     // Populated by resolver
+  Val val;        // Populated by resolver
 } Expr;
 
 const char *dbg_null_to_empty(const char *s) { return s ? s : ""; }
 
 void dbg_print_expr(Expr *e) {
   assert(e);
-  printf("(%s:%d %s ", e->loc.file_name, e->loc.line, expr_kind_names[e->kind]);
+  printf("(%s ", expr_kind_names[e->kind]);
   switch (e->kind) {
     case EXPR_UNKNOWN:
       break;
@@ -196,9 +244,122 @@ void dbg_print_expr(Expr *e) {
   printf(")");
 }
 
+void dbg_print_val(Val val) {
+  switch (val.kind) {
+    case VAL_INTEGER:
+      printf("%d", val.iVal);
+      break;
+    case VAL_REAL:
+      printf("%f", val.rVal);
+      break;
+    case VAL_SET: {
+      uint32_t bit = 1 << 31;
+      int bitCount = 0;
+      while (bit) {
+        printf("%c", val.setVal & bit ? '1' : '0');
+        bitCount++;
+        if (bitCount == 4) {
+          bitCount = 0;
+          printf(" ");
+        }
+        bit >>= 1;
+      }
+      break;
+    }
+    case VAL_BOOLEAN:
+      printf("%s", val.bVal ? "TRUE" : "FALSE");
+      break;
+    case VAL_STRING:
+      printf("%s", val.sVal);
+      break;
+    case VAL_NIL:
+      printf("NIL");
+      break;
+    default:
+      assert(0);
+      break;
+  }
+}
+
+typedef struct ElseIf {
+  Expr *cond;
+  Statement *body;  // buf
+} ElseIf;
+
+typedef struct Case {
+  Expr *cond;
+  Statement *body;  // buf
+} Case;
+
+typedef enum {
+  STMT_UNKNOWN,
+  STMT_IF,
+  STMT_CASE,
+  STMT_WHILE,
+  STMT_REPEAT,
+  STMT_FOR,
+  STMT_ASSIGNMENT,
+  STMT_PROCCALL,
+  STMT_EMPTY,
+} StatementKind;
+
+const char *statement_kind_names[] = {
+    [STMT_UNKNOWN] = "STMT_UNKNOWN",
+    [STMT_IF] = "STMT_IF",
+    [STMT_CASE] = "STMT_CASE",
+    [STMT_WHILE] = "STMT_WHILE",
+    [STMT_REPEAT] = "STMT_REPEAT",
+    [STMT_FOR] = "STMT_FOR",
+    [STMT_ASSIGNMENT] = "STMT_ASSIGNMENT",
+    [STMT_PROCCALL] = "STMT_PROCCALL",
+    [STMT_EMPTY] = "STMT_EMPTY",
+};
+
+typedef struct Statement {
+  StatementKind kind;
+  Loc loc;
+  union {
+    struct {
+      Expr *cond;
+      Statement *then_clause;  // buf
+      ElseIf *elseifs;         // buf
+      Statement *else_clause;  // buf
+    } if_stmt;
+    struct {
+      Expr *cond;
+      Case *case_cases;  // buf
+    } case_stmt;
+    struct {
+      Expr *cond;
+      Statement *body;  // buf
+      ElseIf *elseifs;  // buf
+    } while_stmt;
+    struct {
+      Expr *cond;
+      Statement *body;  // buf
+    } repeat_stmt;
+    struct {
+      const char *ident;
+      Expr *start;
+      Expr *end;
+      Expr *increment;
+      Statement *body;  // buf
+    } for_stmt;
+    struct {
+      Expr *lvalue;
+      Expr *rvalue;
+    } assignment_stmt;
+    struct {
+      Expr *proc;
+      Expr **args;  // buf
+    } proc_call_stmt;
+  };
+} Statement;
+
 typedef struct Module {
   const char *name;
-  Decl *decls;  // buf
+  Decl *decls;      // buf
+  Statement *body;  // buf
 } Module;
 
 #define SCOPE_SIZE 512
@@ -259,7 +420,7 @@ Decl *lookup_module_import(const char *moduleName, const char *name) {
   return NULL;
 }
 
-Decl *internal_new_decl(const char *name) {
+Decl *internal_new_decl(const char *name, Loc loc) {
   assert(name);
   assert(current_scope);
   assert(current_scope->size < SCOPE_SIZE);
@@ -274,37 +435,39 @@ Decl *internal_new_decl(const char *name) {
   }
   Decl *d = &current_scope->decls[current_scope->size++];
   d->name = name;
+  d->loc = loc;
   d->kind = DECL_UNKNOWN;
   d->type = NULL;
+  d->state = DECLSTATE_UNRESOLVED;
   return d;
 }
 
-void new_import_decl(const char *name, Decl *decls) {
-  Decl *d = internal_new_decl(name);
+void new_decl_import(const char *name, Loc loc, Decl *decls) {
+  Decl *d = internal_new_decl(name, loc);
   d->kind = DECL_IMPORT;
   d->imported_decls = decls;
   d->is_exported = false;
 }
 
-Decl *new_incomplete_decl(const char *name) {
-  Decl *d = internal_new_decl(name);
+Decl *new_decl_incomplete(const char *name, Loc loc) {
+  Decl *d = internal_new_decl(name, loc);
   d->kind = DECL_INCOMPLETE;
-  d->type = new_incomplete_type();
+  d->type = new_type_incomplete();
   d->is_exported = false;
   return d;
 }
 
-void new_const_decl(const char *name, Expr *expr, bool is_exported) {
-  Decl *d = internal_new_decl(name);
+void new_decl_const(const char *name, Loc loc, Expr *expr, bool is_exported) {
+  Decl *d = internal_new_decl(name, loc);
   d->kind = DECL_CONST;
-  d->expr = expr;
+  d->const_val.expr = expr;
   // NULL const type will be fixed by resolver.
   d->type = NULL;
   d->is_exported = is_exported;
 }
 
-void new_type_decl(const char *name, Type *type, bool is_exported) {
-  Decl *d = internal_new_decl(name);
+void new_decl_type(const char *name, Loc loc, Type *type, bool is_exported) {
+  Decl *d = internal_new_decl(name, loc);
   if (d->kind == DECL_INCOMPLETE) {
     assert(d->type);
     assert(d->type->kind == TYPE_INCOMPLETE);
@@ -316,38 +479,43 @@ void new_type_decl(const char *name, Type *type, bool is_exported) {
   d->is_exported = is_exported;
 }
 
-void new_var_decl(const char *name, Type *type, bool is_exported) {
-  Decl *d = internal_new_decl(name);
+void new_decl_var(const char *name, Loc loc, Type *type, bool is_exported) {
+  Decl *d = internal_new_decl(name, loc);
   d->kind = DECL_VAR;
   d->type = type;
   d->is_exported = is_exported;
 }
 
-void new_param_decl(const char *name, Type *type) {
-  Decl *d = internal_new_decl(name);
+void new_decl_param(const char *name, Loc loc, Type *type) {
+  Decl *d = internal_new_decl(name, loc);
   d->kind = DECL_PARAM;
   d->type = type;
   d->is_exported = false;
 }
 
-void new_varparam_decl(const char *name, Type *type) {
-  Decl *d = internal_new_decl(name);
+void new_decl_varparam(const char *name, Loc loc, Type *type) {
+  Decl *d = internal_new_decl(name, loc);
   d->kind = DECL_VARPARAM;
   d->type = type;
   d->is_exported = false;
 }
 
-void new_proc_decl(const char *name, Type *type, bool is_exported) {
-  Decl *d = internal_new_decl(name);
+Decl *new_decl_proc(const char *name, Loc loc, Type *type, bool is_exported) {
+  Decl *d = internal_new_decl(name, loc);
   d->kind = DECL_PROC;
   d->type = type;
+  d->proc_decl.decls = NULL;
+  d->proc_decl.body = NULL;
   d->is_exported = is_exported;
+  return d;
 }
 
 Expr *new_expr(ExprKind kind, Loc loc) {
   Expr *e = xmalloc(sizeof(Expr));
   e->kind = kind;
   e->loc = loc;
+  e->is_const = false;
+  e->type = NULL;
   return e;
 }
 
@@ -432,10 +600,153 @@ Expr *new_expr_false(Loc loc) { return new_expr(EXPR_FALSE, loc); }
 
 Expr *new_expr_emptyset(Loc loc) { return new_expr(EXPR_EMPTYSET, loc); }
 
-Module *new_module(const char *name, Scope *s) {
+Statement new_stmt_empty(void) {
+  Statement s;
+  s.kind = STMT_EMPTY;
+  return s;
+}
+
+Statement new_stmt_if(Loc loc, Expr *cond, Statement *then_clause,
+                      ElseIf *elseifs, Statement *else_clause) {
+  Statement s;
+  s.kind = STMT_IF;
+  s.loc = loc;
+  s.if_stmt.cond = cond;
+  s.if_stmt.then_clause = then_clause;
+  s.if_stmt.elseifs = elseifs;
+  s.if_stmt.else_clause = else_clause;
+  return s;
+}
+
+Statement new_stmt_case(Loc loc, Expr *cond, Case *case_cases) {
+  Statement s;
+  s.kind = STMT_CASE;
+  s.loc = loc;
+  s.case_stmt.cond = cond;
+  s.case_stmt.case_cases = case_cases;
+  return s;
+}
+
+Statement new_stmt_while(Loc loc, Expr *cond, Statement *body,
+                         ElseIf *elseifs) {
+  Statement s;
+  s.kind = STMT_WHILE;
+  s.loc = loc;
+  s.while_stmt.cond = cond;
+  s.while_stmt.body = body;
+  s.while_stmt.elseifs = elseifs;
+  return s;
+}
+
+Statement new_stmt_repeat(Loc loc, Expr *cond, Statement *body) {
+  Statement s;
+  s.kind = STMT_REPEAT;
+  s.loc = loc;
+  s.repeat_stmt.cond = cond;
+  s.repeat_stmt.body = body;
+  return s;
+}
+
+Statement new_stmt_for(Loc loc, const char *ident, Expr *start, Expr *end,
+                       Expr *increment, Statement *body) {
+  Statement s;
+  s.kind = STMT_FOR;
+  s.loc = loc;
+  s.for_stmt.ident = ident;
+  s.for_stmt.start = start;
+  s.for_stmt.end = end;
+  s.for_stmt.increment = increment;
+  s.for_stmt.body = body;
+  return s;
+}
+
+Statement new_stmt_assignment(Loc loc, Expr *lvalue, Expr *rvalue) {
+  Statement s;
+  s.kind = STMT_ASSIGNMENT;
+  s.loc = loc;
+  s.assignment_stmt.lvalue = lvalue;
+  s.assignment_stmt.rvalue = rvalue;
+  return s;
+}
+
+Statement new_stmt_proccall(Loc loc, Expr *proc, Expr **args) {
+  Statement s;
+  s.kind = STMT_PROCCALL;
+  s.loc = loc;
+  s.proc_call_stmt.proc = proc;
+  s.proc_call_stmt.args = args;
+  return s;
+}
+
+size_t stmt_indent = 0;
+void indenty(void) {
+  for (size_t indent = 0; indent < stmt_indent; indent++) {
+    printf("  ");
+  }
+}
+
+void dbg_dump_stmts(Statement *s) {
+  stmt_indent++;
+  for (size_t i = 0; i < buf_len(s); i++) {
+    indenty();
+    printf("%s: ", statement_kind_names[s[i].kind]);
+    switch (s[i].kind) {
+      case STMT_IF:
+        dbg_print_expr(s[i].if_stmt.cond);
+        printf("\n");
+        dbg_dump_stmts(s[i].if_stmt.then_clause);
+        for (size_t e = 0; e < buf_len(s[i].if_stmt.elseifs); e++) {
+          printf("\n");
+          indenty();
+          printf("ELSEIF ");
+          dbg_print_expr(s[i].if_stmt.elseifs[e].cond);
+          printf("\n");
+          dbg_dump_stmts(s[i].if_stmt.elseifs[e].body);
+        }
+        printf("\n");
+        indenty();
+        printf("ELSE\n");
+        dbg_dump_stmts(s[i].if_stmt.else_clause);
+        break;
+      case STMT_WHILE:
+        dbg_print_expr(s[i].while_stmt.cond);
+        printf("\n");
+        dbg_dump_stmts(s[i].while_stmt.body);
+        break;
+      case STMT_REPEAT:
+        dbg_print_expr(s[i].repeat_stmt.cond);
+        printf("\n");
+        dbg_dump_stmts(s[i].repeat_stmt.body);
+        break;
+      case STMT_ASSIGNMENT:
+        dbg_print_expr(s[i].assignment_stmt.lvalue);
+        dbg_print_expr(s[i].assignment_stmt.rvalue);
+        break;
+      case STMT_PROCCALL:
+        dbg_print_expr(s[i].proc_call_stmt.proc);
+        printf("(");
+        for (size_t arg = 0; arg < buf_len(s[i].proc_call_stmt.args); arg++) {
+          dbg_print_expr(s[i].proc_call_stmt.args[arg]);
+          printf(", ");
+        }
+        printf(")");
+        break;
+      case STMT_EMPTY:
+        break;
+      default:
+        assert(0);
+        break;
+    }
+    printf("\n");
+  }
+  stmt_indent--;
+}
+
+Module *new_module(const char *name, Scope *s, Statement *body) {
   Module *m = xmalloc(sizeof(Module));
   m->name = name;
   m->decls = NULL;
+  m->body = body;
   for (size_t i = 0; i < s->size; i++) {
     buf_push(m->decls, s->decls[i]);
   }
@@ -443,23 +754,33 @@ Module *new_module(const char *name, Scope *s) {
 }
 
 void init_global_types() {
+  Loc loc = {"<global>", 0};
   assert(booleanType.kind == TYPE_BOOLEAN);
-  new_type_decl(string_intern("BOOLEAN"), &booleanType, true);
-  new_type_decl(string_intern("BYTE"), &byteType, true);
-  new_type_decl(string_intern("CHAR"), &charType, true);
-  new_type_decl(string_intern("INTEGER"), &integerType, true);
-  new_type_decl(string_intern("REAL"), &realType, true);
-  new_type_decl(string_intern("SET"), &setType, true);
+  booleanType.name = string_intern("BOOLEAN");
+  new_decl_type(booleanType.name, loc, &booleanType, true);
+  byteType.name = string_intern("BYTE");
+  new_decl_type(byteType.name, loc, &byteType, true);
+  charType.name = string_intern("CHAR");
+  new_decl_type(charType.name, loc, &charType, true);
+  integerType.name = string_intern("INTEGER");
+  new_decl_type(integerType.name, loc, &integerType, true);
+  realType.name = string_intern("REAL");
+  new_decl_type(realType.name, loc, &realType, true);
+  setType.name = string_intern("SET");
+  new_decl_type(setType.name, loc, &setType, true);
+  nilType.name = string_intern("<NIL>");
+  stringType.name = string_intern("<STRING>");
 }
 
 void ast_test(void) {
   Scope outer;
   Scope inner;
+  Loc loc = {"<TEST>", 10};
 
   enter_scope(&outer);
   assert(current_scope == &outer);
-  new_var_decl(string_intern("outer1"), &integerType, false);
-  new_var_decl(string_intern("outer2"), &integerType, true);
+  new_decl_var(string_intern("outer1"), loc, &integerType, false);
+  new_decl_var(string_intern("outer2"), loc, &integerType, true);
   assert(current_scope->size == 2);
   Decl *o1 = lookup_decl(string_intern("outer1"));
   assert(o1->kind == DECL_VAR);
@@ -475,7 +796,7 @@ void ast_test(void) {
   enter_scope(&inner);
   assert(current_scope == &inner);
   assert(current_scope->parent == &outer);
-  new_var_decl(string_intern("inner1"), &realType, true);
+  new_decl_var(string_intern("inner1"), loc, &realType, true);
   Decl *i1 = lookup_decl(string_intern("inner1"));
   assert(i1->kind == DECL_VAR);
   assert(i1->name == string_intern("inner1"));

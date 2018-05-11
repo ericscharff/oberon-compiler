@@ -1,5 +1,3 @@
-int indent = 0;
-
 typedef struct IdentDef {
   const char *name;
   bool is_exported;
@@ -13,20 +11,10 @@ struct {
   size_t size;
 } importCache;
 
-void dbg_enter(const char *name) {
-  for (int i = 0; i < indent; i++) {
-    printf("  ");
-  }
-  printf("%s:%d: Entering %s\n", token.pos.file_name, token.pos.line, name);
-  indent++;
-}
-
-void dbg_exit(void) { indent--; }
-
 Type *parse_type(void);
 Expr *parse_expression(void);
 void parse_declaration_sequence(void);
-void parse_statement_sequence(void);
+Statement *parse_statement_sequence(void);
 
 bool is_imported_module(const char *name) {
   Decl *d = lookup_decl(name);
@@ -34,7 +22,7 @@ bool is_imported_module(const char *name) {
 }
 
 Decl *parse_possibly_undeclared_qualident(void) {
-  dbg_enter("qualident");
+  Loc loc = token.pos;
   const char *ident = expect_identifier();
   Decl *d = NULL;
   if (is_imported_module(ident)) {
@@ -46,14 +34,12 @@ Decl *parse_possibly_undeclared_qualident(void) {
     d = lookup_decl(ident);
   }
   if (!d) {
-    d = new_incomplete_decl(ident);
+    d = new_decl_incomplete(ident, loc);
   }
-  dbg_exit();
   return d;
 }
 
 Decl *parse_qualident(void) {
-  dbg_enter("qualident");
   const char *ident = expect_identifier();
   const char *moduleName = NULL;
   Decl *d = NULL;
@@ -65,7 +51,6 @@ Decl *parse_qualident(void) {
   } else {
     d = lookup_decl(ident);
   }
-  dbg_exit();
   if (!d) {
     error("%s undefined", ident);
   }
@@ -86,18 +71,17 @@ Type *parse_qualident_and_get_type(void) {
 
 Expr *parse_set_element(void) {
   Loc loc = token.pos;
-  dbg_enter("set_element");
-  Expr *e = parse_expression();
+  Expr *e = new_expr_unary(TOKEN_AS_SET_ELT, parse_expression(), loc);
   if (match_token(TOKEN_DOTDOT)) {
-    e = new_expr_binary(TOKEN_DOTDOT, e, parse_expression(), loc);
+    e = new_expr_binary(
+        TOKEN_DOTDOT, e,
+        new_expr_unary(TOKEN_AS_SET_ELT, parse_expression(), loc), loc);
   }
-  dbg_exit();
   return e;
 }
 
 Expr *parse_set() {
   Loc loc = token.pos;
-  dbg_enter("set");
   Expr *e = NULL;
   expect_token(TOKEN_LBRACE);
   if (is_token(TOKEN_RBRACE)) {
@@ -109,7 +93,6 @@ Expr *parse_set() {
     }
   }
   expect_token(TOKEN_RBRACE);
-  dbg_exit();
   return e;
 }
 
@@ -119,7 +102,6 @@ bool symbol_is_type_guard(Type *t, Decl *d) {
 
 Expr *parse_designator(void) {
   Loc loc = token.pos;
-  dbg_enter("designator");
   Decl *d = parse_qualident();
   Type *t = d->type;
 
@@ -135,12 +117,10 @@ Expr *parse_designator(void) {
       d = NULL;
       e = new_expr_fieldref(fieldName, e, loc);
     } else if (match_token(TOKEN_LBRACK)) {
-      dbg_enter("exp_list");
       e = new_expr_arrayref(parse_expression(), e, loc);
       while (match_token(TOKEN_COMMA)) {
         e = new_expr_arrayref(parse_expression(), e, loc);
       }
-      dbg_exit();
       expect_token(TOKEN_RBRACK);
     } else if (match_token(TOKEN_CARET)) {
       e = new_expr_pointerderef(e, loc);
@@ -153,29 +133,24 @@ Expr *parse_designator(void) {
       assert(0);
     }
   }
-  dbg_exit();
   return e;
 }
 
 Expr **parse_actual_parameters(void) {
-  dbg_enter("actual_parameters");
   Expr **args = NULL;
   match_token(TOKEN_LPAREN);
   if (!is_token(TOKEN_RPAREN)) {
-    dbg_enter("exp_list");
     buf_push(args, parse_expression());
     while (match_token(TOKEN_COMMA)) {
       buf_push(args, parse_expression());
     }
   }
   match_token(TOKEN_RPAREN);
-  dbg_exit();
   return args;
 }
 
 Expr *parse_factor(void) {
   Loc loc = token.pos;
-  dbg_enter("factor");
   Expr *e = NULL;
   if (is_token(TOKEN_INT)) {
     e = new_expr_integer(token.iVal, loc);
@@ -207,7 +182,6 @@ Expr *parse_factor(void) {
   } else {
     error("Factor expected");
   }
-  dbg_exit();
   return e;
 }
 
@@ -218,7 +192,6 @@ bool is_mul_operator(void) {
 
 Expr *parse_term(void) {
   Loc loc = token.pos;
-  dbg_enter("term");
   Expr *e = parse_factor();
   while (is_mul_operator()) {
     loc = token.pos;
@@ -226,7 +199,6 @@ Expr *parse_term(void) {
     next_token();
     e = new_expr_binary(op, e, parse_factor(), loc);
   }
-  dbg_exit();
   return e;
 }
 
@@ -236,7 +208,6 @@ bool is_add_operator(void) {
 
 Expr *parse_simple_expression(void) {
   Loc loc = token.pos;
-  dbg_enter("simple_expression");
   bool unary_plus = false;
   bool unary_minus = false;
   if (match_token(TOKEN_PLUS)) {
@@ -257,7 +228,6 @@ Expr *parse_simple_expression(void) {
     next_token();
     e = new_expr_binary(op, e, parse_term(), loc);
   }
-  dbg_exit();
   return e;
 }
 
@@ -269,7 +239,6 @@ bool is_relation() {
 
 Expr *parse_expression(void) {
   Loc loc = token.pos;
-  dbg_enter("expression");
   Expr *e = parse_simple_expression();
   if (is_relation()) {
     loc = token.pos;
@@ -277,30 +246,32 @@ Expr *parse_expression(void) {
     next_token();
     e = new_expr_binary(op, e, parse_simple_expression(), loc);
   }
-  dbg_exit();
   return e;
 }
 
-void parse_if_statement(void) {
-  dbg_enter("if");
+Statement parse_if_statement(void) {
+  Loc loc = token.pos;
   expect_keyword(keyword_if);
-  parse_expression();
+  Expr *cond = parse_expression();
   expect_keyword(keyword_then);
-  parse_statement_sequence();
+  Statement *then_clause = parse_statement_sequence();
+  ElseIf *elseifs = NULL;
+  Statement *else_clause = NULL;
   while (match_keyword(keyword_elsif)) {
-    parse_expression();
+    ElseIf e;
+    e.cond = parse_expression();
     expect_keyword(keyword_then);
-    parse_statement_sequence();
+    e.body = parse_statement_sequence();
+    buf_push(elseifs, e);
   }
   if (match_keyword(keyword_else)) {
-    parse_statement_sequence();
+    else_clause = parse_statement_sequence();
   }
   expect_keyword(keyword_end);
-  dbg_exit();
+  return new_stmt_if(loc, cond, then_clause, elseifs, else_clause);
 }
 
 void parse_case_label(void) {
-  dbg_enter("case_label");
   if (match_token(TOKEN_INT)) {
   } else if (match_token(TOKEN_STRING)) {
   } else if (is_token(TOKEN_IDENT)) {
@@ -308,147 +279,140 @@ void parse_case_label(void) {
   } else {
     error("Case label (integer, string, identifier) expected");
   }
-  dbg_exit();
 }
 
 void parse_case_label_range(void) {
-  dbg_enter("case_label_range");
   parse_case_label();
   if (match_token(TOKEN_DOTDOT)) {
     parse_case_label();
   }
-  dbg_exit();
 }
 
 void parse_case_label_list(void) {
-  dbg_enter("case_label_list");
   parse_case_label_range();
   while (match_token(TOKEN_COMMA)) {
     parse_case_label_range();
   }
-  dbg_exit();
 }
 
 void parse_case(void) {
-  dbg_enter("case");
   if (is_token(TOKEN_INT) || is_token(TOKEN_STRING) || is_token(TOKEN_IDENT)) {
     parse_case_label_list();
     expect_token(TOKEN_COLON);
     parse_statement_sequence();
   }
-  dbg_exit();
 }
 
-void parse_case_statement(void) {
-  dbg_enter("case_statement");
+Statement parse_case_statement(void) {
+  Loc loc = token.pos;
   expect_keyword(keyword_case);
-  parse_expression();
+  Expr *cond = parse_expression();
   expect_keyword(keyword_of);
   parse_case();
   while (match_token(TOKEN_VBAR)) {
     parse_case();
   }
   expect_keyword(keyword_end);
-  dbg_exit();
+  // TODO
+  return new_stmt_case(loc, cond, NULL);
 }
 
-void parse_while_statement(void) {
-  dbg_enter("while");
+Statement parse_while_statement(void) {
+  Loc loc = token.pos;
   expect_keyword(keyword_while);
-  parse_expression();
+  Expr *cond = parse_expression();
   expect_keyword(keyword_do);
-  parse_statement_sequence();
+  Statement *body = parse_statement_sequence();
+  ElseIf *elseifs = NULL;
   while (match_keyword(keyword_elsif)) {
-    parse_expression();
+    ElseIf e;
+    e.cond = parse_expression();
     expect_keyword(keyword_do);
-    parse_statement_sequence();
+    e.body = parse_statement_sequence();
+    buf_push(elseifs, e);
   }
   expect_keyword(keyword_end);
-  dbg_exit();
+  return new_stmt_while(loc, cond, body, elseifs);
 }
 
-void parse_repeat_statement(void) {
-  dbg_enter("repeat");
+Statement parse_repeat_statement(void) {
+  Loc loc = token.pos;
   expect_keyword(keyword_repeat);
-  parse_statement_sequence();
+  Statement *body = parse_statement_sequence();
   expect_keyword(keyword_until);
-  parse_expression();
-  dbg_exit();
+  Expr *cond = parse_expression();
+  return new_stmt_repeat(loc, cond, body);
 }
 
-void parse_for_statement(void) {
-  dbg_enter("for");
+Statement parse_for_statement(void) {
+  Loc loc = token.pos;
   expect_keyword(keyword_for);
-  expect_identifier();
+  const char *ident = expect_identifier();
   expect_token(TOKEN_ASSIGN);
-  parse_expression();
+  Expr *start = parse_expression();
   expect_keyword(keyword_to);
-  parse_expression();
+  Expr *end = parse_expression();
+  Expr *increment = NULL;
   if (match_keyword(keyword_by)) {
     // Really ConstExpression
-    parse_expression();
+    increment = parse_expression();
   }
   expect_keyword(keyword_do);
-  parse_statement_sequence();
+  Statement *body = parse_statement_sequence();
   expect_keyword(keyword_end);
-  dbg_exit();
+  return new_stmt_for(loc, ident, start, end, increment, body);
 }
 
-void parse_assign_or_proc_call(void) {
-  dbg_enter("assign_or_proc_call");
-  parse_designator();
+Statement parse_assign_or_proc_call(void) {
+  Loc loc = token.pos;
+  Expr *lvalue = parse_designator();
   if (match_token(TOKEN_ASSIGN)) {
     // Assignment
-    dbg_enter("assign");
-    parse_expression();
-    dbg_exit();
+    Expr *rvalue = parse_expression();
+    return new_stmt_assignment(loc, lvalue, rvalue);
   } else {
     // Procedure call
-    dbg_enter("proc_call");
+    Expr **args = NULL;
     if (is_token(TOKEN_LPAREN)) {
-      parse_actual_parameters();
+      args = parse_actual_parameters();
     }
-    dbg_exit();
+    return new_stmt_proccall(loc, lvalue, args);
   }
-  dbg_exit();
 }
 
-void parse_statement(void) {
-  dbg_enter("statement");
+Statement parse_statement(void) {
   if (is_keyword(keyword_if)) {
-    parse_if_statement();
+    return parse_if_statement();
   } else if (is_keyword(keyword_case)) {
-    parse_case_statement();
+    return parse_case_statement();
   } else if (is_keyword(keyword_while)) {
-    parse_while_statement();
+    return parse_while_statement();
   } else if (is_keyword(keyword_repeat)) {
-    parse_repeat_statement();
+    return parse_repeat_statement();
   } else if (is_keyword(keyword_for)) {
-    parse_for_statement();
+    return parse_for_statement();
   } else if (is_token(TOKEN_IDENT)) {
-    parse_assign_or_proc_call();
+    return parse_assign_or_proc_call();
+  } else {
+    return new_stmt_empty();
   }
-  dbg_exit();
 }
 
-void parse_statement_sequence(void) {
-  dbg_enter("statement_sequence");
-  parse_statement();
+Statement *parse_statement_sequence(void) {
+  Statement *body = NULL;
+  buf_push(body, parse_statement());
   while (match_token(TOKEN_SEMI)) {
-    parse_statement();
+    buf_push(body, parse_statement());
   }
-  dbg_exit();
+  return body;
 }
 
 void parse_ident_def(const char **name, bool *is_exported) {
-  dbg_enter("ident_def");
   *name = expect_identifier();
   *is_exported = match_token(TOKEN_STAR);
-  dbg_exit();
 }
 
 IdentDef *parse_ident_list(void) {
-  dbg_enter("ident_list");
   IdentDef *idents = NULL;
   const char *name;
   bool is_exported;
@@ -458,27 +422,23 @@ IdentDef *parse_ident_list(void) {
     parse_ident_def(&name, &is_exported);
     buf_push(idents, (IdentDef){name, is_exported});
   }
-  dbg_exit();
   return idents;
 }
 
 Type *parse_array_type(void) {
-  dbg_enter("array_type");
   expect_keyword(keyword_array);
-  Type *innerArray = new_array_type(NULL, parse_expression());
+  Type *innerArray = new_type_array(NULL, parse_expression());
   Type *outerArray = innerArray;
   while (match_token(TOKEN_COMMA)) {
-    outerArray = new_array_type(outerArray, parse_expression());
+    outerArray = new_type_array(outerArray, parse_expression());
   }
   expect_keyword(keyword_of);
   Type *elementType = parse_type();
   innerArray->array_type.element_type = elementType;
-  dbg_exit();
   return outerArray;
 }
 
 Type *parse_record_type(void) {
-  dbg_enter("record_type");
   Type *baseType = NULL;
   RecordField *fields = NULL;
   expect_keyword(keyword_record);
@@ -487,8 +447,6 @@ Type *parse_record_type(void) {
     expect_token(TOKEN_RPAREN);
   }
   if (is_token(TOKEN_IDENT)) {
-    dbg_enter("field_list_sequence");
-    dbg_enter("field_list");
     if (is_token(TOKEN_IDENT)) {
       IdentDef *defs = parse_ident_list();
       expect_token(TOKEN_COLON);
@@ -499,9 +457,7 @@ Type *parse_record_type(void) {
       }
       buf_free(defs);
     }
-    dbg_exit();
     while (match_token(TOKEN_SEMI)) {
-      dbg_enter("field_list");
       if (is_token(TOKEN_IDENT)) {
         IdentDef *defs = parse_ident_list();
         expect_token(TOKEN_COLON);
@@ -512,17 +468,13 @@ Type *parse_record_type(void) {
         }
         buf_free(defs);
       }
-      dbg_exit();
     }
-    dbg_exit();
   }
   expect_keyword(keyword_end);
-  dbg_exit();
-  return new_record_type(baseType, fields);
+  return new_type_record(baseType, fields);
 }
 
 Type *parse_pointer_type(void) {
-  dbg_enter("pointer_type");
   expect_keyword(keyword_pointer);
   expect_keyword(keyword_to);
   // Pointers are a special case. They can be forward declared. This,
@@ -535,12 +487,10 @@ Type *parse_pointer_type(void) {
     t = parse_type();
   }
   assert(t);
-  dbg_exit();
-  return new_pointer_type(t);
+  return new_type_pointer(t);
 }
 
 FormalParameter *parse_fp_section(FormalParameter *params) {
-  dbg_enter("fp_section");
   const char **idents = NULL;
   bool isVarParam = match_keyword(keyword_var);
   bool isOpenArray = false;
@@ -561,12 +511,10 @@ FormalParameter *parse_fp_section(FormalParameter *params) {
     buf_push(params,
              (FormalParameter){idents[i], varType, isVarParam, isOpenArray});
   }
-  dbg_exit();
   return params;
 }
 
 Type *parse_formal_parameters(void) {
-  dbg_enter("formal_parameters");
   FormalParameter *params = NULL;
   Type *returnType = NULL;
   if (match_token(TOKEN_LPAREN)) {
@@ -581,22 +529,18 @@ Type *parse_formal_parameters(void) {
       returnType = parse_qualident_and_get_type();
     }
   }
-  dbg_exit();
-  return new_procedure_type(params, returnType);
+  return new_type_procedure(params, returnType);
 }
 
 Type *parse_procedure_type(void) {
   Type *t = NULL;
-  dbg_enter("procedure_type");
   expect_keyword(keyword_procedure);
   t = parse_formal_parameters();
-  dbg_exit();
   return t;
 }
 
 Type *parse_type(void) {
   Type *t = NULL;
-  dbg_enter("type");
   if (is_token(TOKEN_IDENT)) {
     t = parse_qualident_and_get_type();
   } else if (is_keyword(keyword_array)) {
@@ -610,22 +554,20 @@ Type *parse_type(void) {
   } else {
     error("identifier, ARRAY, RECORD, POINTER, or PROCEDURE expected");
   }
-  dbg_exit();
   return t;
 }
 
 void parse_const_declaration(void) {
-  dbg_enter("const_declaration");
+  Loc loc = token.pos;
   const char *name;
   bool is_exported;
   parse_ident_def(&name, &is_exported);
   expect_token(TOKEN_EQ);
-  new_const_decl(name, parse_expression(), is_exported);
-  dbg_exit();
+  new_decl_const(name, loc, parse_expression(), is_exported);
 }
 
 void parse_type_declaration(void) {
-  dbg_enter("type_declaration");
+  Loc loc = token.pos;
   const char *name;
   bool is_exported;
   parse_ident_def(&name, &is_exported);
@@ -633,82 +575,81 @@ void parse_type_declaration(void) {
   Type *t = parse_type();
   assert(t);
   t->name = name;
-  new_type_decl(name, t, is_exported);
-  dbg_exit();
+  new_decl_type(name, loc, t, is_exported);
 }
 
 void parse_var_declaration(void) {
-  dbg_enter("var_declaration");
+  Loc loc = token.pos;
   IdentDef *defs = parse_ident_list();
   expect_token(TOKEN_COLON);
   Type *varType = parse_type();
   for (size_t i = 0; i < buf_len(defs); i++) {
-    new_var_decl(defs[i].name, varType, defs[i].is_exported);
+    new_decl_var(defs[i].name, loc, varType, defs[i].is_exported);
   }
-  dbg_exit();
 }
 
-void populate_procedure_scope(const char *procName) {
-  Decl *d = lookup_decl(procName);
+void populate_procedure_scope(Decl *d) {
   assert(d);
   Type *t = d->type;
   assert(t->kind == TYPE_PROCEDURE);
   for (size_t i = 0; i < buf_len(t->procedure_type.params); i++) {
+    Loc loc = token.pos;
     const char *paramName = t->procedure_type.params[i].name;
     Type *paramType = t->procedure_type.params[i].type;
     if (t->procedure_type.params[i].is_var_parameter) {
-      new_varparam_decl(paramName, paramType);
+      new_decl_varparam(paramName, loc, paramType);
     } else {
-      new_param_decl(paramName, paramType);
+      new_decl_param(paramName, loc, paramType);
     }
   }
 }
 
-void parse_procedure_body(const char *procName) {
+void parse_procedure_body(Decl *procDecl) {
   Scope scope;
   enter_scope(&scope);
-  populate_procedure_scope(procName);
-  dbg_enter("procedure_body");
+  populate_procedure_scope(procDecl);
   // Nested procedure declarations could be avoided here,
   // since nested procedures can't really access their
   // outer scopes anyway
   parse_declaration_sequence();
+  Statement *body = NULL;
   if (match_keyword(keyword_begin)) {
-    parse_statement_sequence();
+    body = parse_statement_sequence();
   }
   if (match_keyword(keyword_return)) {
     parse_expression();
   }
   expect_keyword(keyword_end);
-  dbg_exit();
+  assert(procDecl->proc_decl.decls == NULL);
+  assert(procDecl->proc_decl.body == NULL);
+  for (size_t i = 0; i < scope.size; i++) {
+    buf_push(procDecl->proc_decl.decls, scope.decls[i]);
+  }
+  procDecl->proc_decl.body = body;
   exit_scope();
 }
 
-const char *parse_procedure_heading(void) {
-  dbg_enter("procedure_heading");
+Decl *parse_procedure_heading(void) {
+  Loc loc = token.pos;
   expect_keyword(keyword_procedure);
   const char *name;
   bool is_exported;
   parse_ident_def(&name, &is_exported);
   Type *params = parse_formal_parameters();
-  new_proc_decl(name, params, is_exported);
-  dbg_exit();
-  return name;
+  return new_decl_proc(name, loc, params, is_exported);
 }
+
 void parse_procedure_declaration(void) {
-  dbg_enter("procedure_declaration");
-  const char *name = parse_procedure_heading();
+  Decl *d = parse_procedure_heading();
   expect_token(TOKEN_SEMI);
-  parse_procedure_body(name);
+  parse_procedure_body(d);
   const char *endName = expect_identifier();
-  if (name != endName) {
-    error("Procedure name %s must match end name %s", name, endName);
+  if (d->name != endName) {
+    error("Procedure name %s must match end name %s", d->name, endName);
   }
-  dbg_exit();
 }
 
 void parse_declaration_sequence(void) {
-  dbg_enter("declaration_sequence");
   if (match_keyword(keyword_const)) {
     while (is_token(TOKEN_IDENT)) {
       parse_const_declaration();
@@ -731,11 +672,10 @@ void parse_declaration_sequence(void) {
     parse_procedure_declaration();
     expect_token(TOKEN_SEMI);
   }
-  dbg_exit();
 }
 
 void parse_import(void) {
-  dbg_enter("import");
+  Loc loc = token.pos;
   const char *importName = expect_identifier();
   Decl *decls = NULL;
   if (match_token(TOKEN_ASSIGN)) {
@@ -745,26 +685,23 @@ void parse_import(void) {
     decls = get_imported_decls(importName);
   }
   assert(decls);
-  new_import_decl(importName, decls);
-  dbg_exit();
+  new_decl_import(importName, loc, decls);
 }
 
 void parse_import_list(void) {
-  dbg_enter("import_list");
   expect_keyword(keyword_import);
   parse_import();
   while (match_token(TOKEN_COMMA)) {
     parse_import();
   }
   expect_token(TOKEN_SEMI);
-  dbg_exit();
 }
 
 Module *parse_module(void) {
   Scope scope;
   enter_scope(&scope);
-  dbg_enter("module");
   expect_keyword(keyword_module);
+  Statement *body = NULL;
   const char *moduleName = expect_identifier();
   expect_token(TOKEN_SEMI);
   if (is_keyword(keyword_import)) {
@@ -772,7 +709,7 @@ Module *parse_module(void) {
   }
   parse_declaration_sequence();
   if (match_keyword(keyword_begin)) {
-    parse_statement_sequence();
+    body = parse_statement_sequence();
   }
   expect_keyword(keyword_end);
   const char *endModuleName = expect_identifier();
@@ -780,23 +717,30 @@ Module *parse_module(void) {
     error("Module name %s must match end name %s", moduleName, endModuleName);
   }
   expect_token(TOKEN_DOT);
-  dbg_exit();
   exit_scope();
-  return new_module(moduleName, &scope);
+  return new_module(moduleName, &scope, body);
 }
 
 void dbg_dump_scope(Module *m) {
   printf("MODULE %s:\n", m->name);
   for (size_t i = 0; i < buf_len(m->decls); i++) {
-    printf("  Name: %s Kind: %s Exported: %s ", m->decls[i].name,
+    printf("  Name: %s Pos: %s:%d Kind: %s Exported: %s\n", m->decls[i].name,
+           m->decls[i].loc.file_name, m->decls[i].loc.line,
            decl_kind_names[m->decls[i].kind],
            m->decls[i].is_exported ? "true" : "false");
-    dbg_dump_type(m->decls[i].type);
-    if (m->decls[i].kind == DECL_CONST) {
-      dbg_print_expr(m->decls[i].expr);
+    if (m->decls[i].kind == DECL_PROC) {
+      for (size_t j = 0; j < buf_len(m->decls[i].proc_decl.decls); j++) {
+        Decl *d = &m->decls[i].proc_decl.decls[j];
+        printf("    Name: %s Pos: %s:%d Kind: %s Exported: %s\n", d->name,
+               d->loc.file_name, d->loc.line, decl_kind_names[d->kind],
+               d->is_exported ? "true" : "false");
+      }
+      stmt_indent += 4;
+      dbg_dump_stmts(m->decls[i].proc_decl.body);
+      stmt_indent -= 4;
     }
-    printf("\n");
   }
+  dbg_dump_stmts(m->body);
 }
 
 Decl *get_imported_decls(const char *moduleName) {
@@ -863,11 +807,12 @@ void parse_test(void) {
   enter_scope(&globalScope);
   init_global_types();
   init_global_defs();
-#if 0
-  init_stream("", "MODULE abc; IMPORT A, B := aliased, C, D; CONST k=1+2+B.wow+3; TYPE MySet = SET; FooRec = ARRAY 5, 10, 15, 20 OF INTEGER; q* = INTEGER; r = q; END abc.");
+  init_stream("",
+              "MODULE abc; CONST k=1*2+3+4; TYPE MySet* = SET; FooRec = ARRAY "
+              "5, 10, 15, 20 OF INTEGER; q* = INTEGER; r = q; END abc.");
   next_token();
-  parse_module();
-#endif
+  dbg_dump_scope(parse_module());
   parse_test_file("Test.Mod");
   exit_scope();
+  assert(current_scope == NULL);
 }

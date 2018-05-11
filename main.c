@@ -12,6 +12,7 @@
 #include "type.c"
 #include "ast.c"
 #include "parse.c"
+#include "resolve.c"
 
 void run_tests(void) {
   buf_test();
@@ -19,6 +20,7 @@ void run_tests(void) {
   type_test();
   ast_test();
   parse_test();
+  resolve_test();
 }
 
 int main(void) {
