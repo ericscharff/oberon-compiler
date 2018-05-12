@@ -135,6 +135,7 @@ typedef struct Expr {
     } binary;
     struct {
       Qualident qualident;
+      Decl *decl; // Filled in by resolver
     } identref;
     struct {
       Expr *proc;
