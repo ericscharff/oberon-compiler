@@ -150,8 +150,8 @@ void resolve_binary_expr(Expr *e) {
       break;
     case TOKEN_EQ:
     case TOKEN_POUND:
-      if (lhs->type->kind == TYPE_RECORD || rhs->type->kind == TYPE_RECORD) {
-        errorloc(e->loc, "Record type forbidden for = and #");
+      if (!is_equivalent(lhs->type, rhs->type)) {
+        errorloc(e->loc, "Types %s and %s must match for operator %s", lhs->type->name, rhs->type->name, op_name(e->binary.op));
       }
       e->type = &booleanType;
       break;
