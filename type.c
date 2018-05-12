@@ -167,10 +167,40 @@ bool is_string_type(Type *t) {
   return (t == &stringType) || (t->kind == TYPE_ARRAY && t->array_type.element_type == &charType);
 }
 
+// Can be compared with =
 bool is_equivalent(Type *a, Type *b) {
   assert(a);
   assert(b);
-  return (a == b) || (is_string_type(a) && is_string_type(b)) || (a->kind == TYPE_POINTER && b->kind == TYPE_POINTER) || (a->kind == TYPE_POINTER && b == &nilType) || (a == &nilType && b->kind == TYPE_POINTER);
+  if (a->kind == TYPE_RECORD || b->kind == TYPE_RECORD) {
+    // Records can't be tested for equivalence
+    return false;
+  }
+  // Non string arrays cannot be compared
+  if (a->kind == TYPE_ARRAY && !is_string_type(a)) {
+    return false;
+  }
+  if (b->kind == TYPE_ARRAY && !is_string_type(b)) {
+    return false;
+  }
+  if (is_string_type(a) && is_string_type(b)) {
+    // Strings can be compared
+    return true;
+  }
+  // NIL can be compared to any pointer or procedure
+  if (a == &nilType && (b->kind == TYPE_POINTER || b->kind == TYPE_PROCEDURE)) {
+    return true;
+  }
+  if (b == &nilType && (a->kind == TYPE_POINTER || a->kind == TYPE_PROCEDURE)) {
+    return true;
+  }
+  if (a->kind == TYPE_POINTER && b->kind == TYPE_POINTER) {
+    return true;
+  }
+  if (a->kind == TYPE_PROCEDURE && b->kind == TYPE_PROCEDURE) {
+    return true;
+  }
+  // Primitive types must match
+  return a == b;
 }
 
 void type_test(void) {
