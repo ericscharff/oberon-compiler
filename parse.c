@@ -71,11 +71,11 @@ Type *parse_qualident_and_get_type(void) {
 
 Expr *parse_set_element(void) {
   Loc loc = token.pos;
-  Expr *e = new_expr_unary(TOKEN_AS_SET_ELT, parse_expression(), loc);
+  Expr *e = parse_expression();
   if (match_token(TOKEN_DOTDOT)) {
-    e = new_expr_binary(
-        TOKEN_DOTDOT, e,
-        new_expr_unary(TOKEN_AS_SET_ELT, parse_expression(), loc), loc);
+    e = new_expr_binary(TOKEN_DOTDOT, e, parse_expression(), loc);
+  } else {
+    e = new_expr_unary(TOKEN_AS_SET_ELT, e, loc);
   }
   return e;
 }

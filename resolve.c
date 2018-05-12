@@ -110,6 +110,20 @@ void eval_binary_expr(Expr *e, Expr *lhs, Expr *rhs) {
         assert(0);
       }
       break;
+    case TOKEN_MINUS:
+      if (lhs->type == &integerType) {
+        e->val.kind = VAL_INTEGER;
+        e->val.iVal = lhs->val.iVal - rhs->val.iVal;
+      } else if (lhs->type == &realType) {
+        e->val.kind = VAL_REAL;
+        e->val.rVal = lhs->val.rVal - rhs->val.rVal;
+      } else if (lhs->type == &setType) {
+        e->val.kind = VAL_SET;
+        e->val.setVal = lhs->val.setVal & ~rhs->val.setVal;
+      } else {
+        assert(0);
+      }
+      break;
     case TOKEN_STAR:
       if (lhs->type == &integerType) {
         e->val.kind = VAL_INTEGER;
@@ -117,8 +131,70 @@ void eval_binary_expr(Expr *e, Expr *lhs, Expr *rhs) {
       } else if (lhs->type == &realType) {
         e->val.kind = VAL_REAL;
         e->val.rVal = lhs->val.rVal * rhs->val.rVal;
+      } else if (lhs->type == &setType) {
+        e->val.kind = VAL_SET;
+        e->val.setVal = lhs->val.setVal & rhs->val.setVal;
       } else {
         assert(0);
+      }
+      break;
+    case TOKEN_SLASH:
+      if (lhs->type == &integerType) {
+        e->val.kind = VAL_INTEGER;
+        e->val.iVal = lhs->val.iVal / rhs->val.iVal;
+      } else if (lhs->type == &realType) {
+        e->val.kind = VAL_REAL;
+        e->val.rVal = lhs->val.rVal / rhs->val.rVal;
+      } else if (lhs->type == &setType) {
+        e->val.kind = VAL_SET;
+        e->val.setVal = lhs->val.setVal ^ rhs->val.setVal;
+      } else {
+        assert(0);
+      }
+      break;
+    case TOKEN_DIV:
+      if (lhs->type == &integerType) {
+        e->val.kind = VAL_INTEGER;
+        e->val.iVal = lhs->val.iVal / rhs->val.iVal;
+      } else {
+        assert(0);
+      }
+      break;
+    case TOKEN_MOD:
+      if (lhs->type == &integerType) {
+        e->val.kind = VAL_INTEGER;
+        e->val.iVal = lhs->val.iVal % rhs->val.iVal;
+      } else {
+        assert(0);
+      }
+      break;
+    case TOKEN_AMP:
+      if (lhs->type == &booleanType) {
+        e->val.kind = VAL_BOOLEAN;
+        e->val.bVal = lhs->val.bVal && rhs->val.bVal;
+      } else {
+        assert(0);
+      }
+      break;
+    case TOKEN_OR:
+      if (lhs->type == &booleanType) {
+        e->val.kind = VAL_BOOLEAN;
+        e->val.bVal = lhs->val.bVal || rhs->val.bVal;
+      } else {
+        assert(0);
+      }
+      break;
+    case TOKEN_DOTDOT:
+      if (lhs->type == &integerType) {
+        uint32_t r = 0;
+        int from = lhs->val.iVal;
+        int to = rhs->val.iVal;
+        while (from <= to) {
+          r |= 1 << from;
+          from++;
+        }
+        e->val.kind = VAL_SET;
+        e->val.setVal = r;
       }
       break;
     default:
@@ -174,10 +250,10 @@ void resolve_binary_expr(Expr *e) {
       }
       break;
     case TOKEN_DOTDOT:
-      if (lhs->type == &setType && rhs->type == &setType) {
+      if (lhs->type == &integerType && rhs->type == &integerType) {
         e->type = &setType;
       } else {
-        errorloc(e->loc, "SET expected for operator %s", op_name(e->binary.op));
+        errorloc(e->loc, "INTEGER expected for operator %s", op_name(e->binary.op));
       }
       break;
     case TOKEN_LT:
@@ -402,10 +478,17 @@ void resolve_test(void) {
               "  kNil = NIL;\n"
               "  kEmptySet = {};\n"
               "  kOneSet = {1};\n"
+              "  kFiveEltSet0 = {1, 6,7,9, 21..27};\n"
               "  kFourEltSet1 = {1, 6,7,9};\n"
               "  kFourEltSet2 = -{1, 6,7,9};\n"
+              "  kSetTestSet2 = {2 .. 8, 22 .. 25};\n"
               "  k=1*2+3*4;\n"
+              "  minusTwo = 100 - 102;\n"
+              "  minusTwoF = 100.0 - 102.0;\n"
+              "  minusTwoS = {3, 4, 8, 10} - {4, 8};\n"
               "  SixFactorial = 1*2*3*4*5*6;\n"
+              "  SeventyTwo = 720 / 10;\n"
+              "  OneHalf = 10.0 / 20.0;\n"
               "  SixFactorialF = 1.0*2.0*3.0*4.0*5.0*6.0;\n"
               "END abc.");
   next_token();
