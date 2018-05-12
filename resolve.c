@@ -47,12 +47,43 @@ void eval_unary_expr(Expr *e, Expr *expr) {
 }
 
 void resolve_unary_expr(Expr *e) {
+  assert(e);
   assert(e->kind == EXPR_UNARY);
-  resolve_expr(e->unary.expr);
+  assert(e->unary.expr);
+
+  Expr *expr = e->unary.expr;
+  resolve_expr(expr);
+  assert(expr->type);
+  switch (e->unary.op) {
+    case TOKEN_PLUS:
+    case TOKEN_MINUS:
+      if (expr->type == &integerType || expr->type == &realType || expr->type == &setType || expr->type == &byteType) {
+        e->type = expr->type;
+      } else {
+        errorloc(e->loc, "INTEGER, REAL, SET, or BYTE expected for operator %s", op_name(e->unary.op));
+      }
+      break;
+    case TOKEN_TILDE:
+      if (expr->type == &booleanType) {
+        e->type = expr->type;
+      } else {
+        errorloc(e->loc, "BOOLEAN expected for operator %s", op_name(e->unary.op));
+      }
+      break;
+    case TOKEN_AS_SET_ELT:
+      if (expr->type == &integerType) {
+        e->type = &setType;
+      } else {
+        errorloc(e->loc, "SET expected for operator %s", op_name(e->unary.op));
+      }
+      break;
+    default:
+      assert(0);
+      break;
+  }
   if (e->unary.expr->is_const) {
+    e->is_const = true;
     eval_unary_expr(e, e->unary.expr);
-  } else {
-    assert(0);
   }
 }
 
@@ -141,6 +172,13 @@ void resolve_binary_expr(Expr *e) {
         e->type = &booleanType;
       } else {
         errorloc(e->loc, "BOOLEAN expected for operator %s", op_name(e->binary.op));
+      }
+      break;
+    case TOKEN_DOTDOT:
+      if (lhs->type == &setType && rhs->type == &setType) {
+        e->type = &setType;
+      } else {
+        errorloc(e->loc, "SET expected for operator %s", op_name(e->binary.op));
       }
       break;
     case TOKEN_LT:
