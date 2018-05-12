@@ -179,11 +179,11 @@ void dbg_print_expr(Expr *e) {
     case EXPR_UNKNOWN:
       break;
     case EXPR_UNARY:
-      printf("op: %s ", token_kind_names[e->unary.op]);
+      printf("op: %s ", op_name(e->unary.op));
       dbg_print_expr(e->unary.expr);
       break;
     case EXPR_BINARY:
-      printf("op: %s ", token_kind_names[e->binary.op]);
+      printf("op: %s ", op_name(e->binary.op));
       dbg_print_expr(e->binary.lhs);
       printf(" ");
       dbg_print_expr(e->binary.rhs);

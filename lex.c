@@ -182,6 +182,10 @@ const char *lc_keyword_until;
 const char *lc_keyword_var;
 const char *lc_keyword_while;
 
+const char *op_name(TokenKind kind) {
+  return token_kind_names[kind];
+}
+
 // Insert into pool
 const char *string_pool_insert(const char *begin, const char *end) {
   size_t len = end - begin;
@@ -771,8 +775,7 @@ void expect_token(TokenKind kind) {
   if (is_token(kind)) {
     next_token();
   } else {
-    error("Expected %s, got %s", token_kind_names[kind],
-          token_kind_names[token.kind]);
+    error("Expected %s, got %s", op_name(kind), op_name(token.kind));
   }
 }
 

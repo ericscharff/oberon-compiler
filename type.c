@@ -162,12 +162,27 @@ Type *lookup_field(Type *type, const char *fieldName) {
   return NULL;
 }
 
+bool is_string_type(Type *t) {
+  assert(t);
+  return (t == &stringType) || (t->kind == TYPE_ARRAY && t->array_type.element_type == &charType);
+}
+
+bool is_equivalent(Type *a, Type *b) {
+  assert(a);
+  assert(b);
+  return (a == b) || (is_string_type(a) && is_string_type(b)) || (a->kind == TYPE_POINTER && b->kind == TYPE_POINTER) || (a->kind == TYPE_POINTER && b == &nilType) || (a == &nilType && b->kind == TYPE_POINTER);
+}
+
 void type_test(void) {
   assert(type_pool_current == type_pool);
   for (int i = 0; i < 10; i++) {
     alloc_type();
   }
   assert(type_pool_current == (type_pool + 10));
+  Type *s1 = new_type_array(&charType, NULL);
+  Type *s2 = new_type_array(&charType, NULL);
+  assert(is_string_type(s1));
+  assert(is_equivalent(s1, s2));
   Type *a = new_type_array(&integerType, NULL);
   assert(a->kind == TYPE_ARRAY);
   assert(a->array_type.element_type == &integerType);
@@ -179,6 +194,12 @@ void type_test(void) {
   buf_push(param, (FormalParameter){"j", &integerType, false, true});
   buf_push(param, (FormalParameter){"k", &integerType, false, false});
   buf_push(param, (FormalParameter){"l", &integerType, false, false});
+  Type *iPtr = new_type_pointer(&integerType);
+  Type *cPtr = new_type_pointer(&charType);
+  assert(is_equivalent(iPtr, cPtr));
+  assert(is_equivalent(iPtr, &nilType));
+  assert(is_equivalent(&nilType, cPtr));
+  assert(!is_equivalent(s1, cPtr));
   Type *proc = new_type_procedure(param, &charType);
   assert(proc->kind == TYPE_PROCEDURE);
   assert(proc->procedure_type.params == param);

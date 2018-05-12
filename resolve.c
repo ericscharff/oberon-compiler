@@ -65,12 +65,6 @@ void eval_binary_expr(Expr *e, Expr *lhs, Expr *rhs) {
   assert(rhs->is_const);
   assert(rhs->type);
 
-  if (lhs->type != rhs->type) {
-    errorloc(lhs->loc, "lhs type %s and rhs type %s do not match",
-             lhs->type->name, rhs->type->name);
-  }
-  e->type = lhs->type;
-  e->is_const = true;
   switch (e->binary.op) {
     case TOKEN_PLUS:
       if (lhs->type == &integerType) {
@@ -104,13 +98,81 @@ void eval_binary_expr(Expr *e, Expr *lhs, Expr *rhs) {
 }
 
 void resolve_binary_expr(Expr *e) {
+  assert(e);
   assert(e->kind == EXPR_BINARY);
-  resolve_expr(e->binary.lhs);
-  resolve_expr(e->binary.rhs);
-  if (e->binary.lhs->is_const && e->binary.rhs->is_const) {
-    eval_binary_expr(e, e->binary.lhs, e->binary.rhs);
-  } else {
-    assert(0);
+  assert(e->binary.lhs);
+  assert(e->binary.rhs);
+
+  Expr *lhs = e->binary.lhs;
+  Expr *rhs = e->binary.rhs;
+  resolve_expr(lhs);
+  resolve_expr(rhs);
+  assert(lhs->type);
+  assert(rhs->type);
+
+  switch (e->binary.op) {
+    case TOKEN_PLUS:
+    case TOKEN_MINUS:
+    case TOKEN_STAR:
+    case TOKEN_SLASH:
+      if (lhs->type != rhs->type) {
+        errorloc(e->loc, "Types %s and %s must match for operator %s", lhs->type->name, rhs->type->name, op_name(e->binary.op));
+      }
+      if (lhs->type == &integerType || lhs->type == &realType || lhs->type == &setType || lhs->type == &byteType) {
+        e->type = lhs->type;
+      } else {
+        errorloc(e->loc, "INTEGER, REAL, SET, or BYTE expected for operator %s", op_name(e->binary.op));
+      }
+      break;
+    case TOKEN_DIV:
+    case TOKEN_MOD:
+      if (lhs->type != rhs->type) {
+        errorloc(e->loc, "Types %s and %s must match for operator %s", lhs->type->name, rhs->type->name, op_name(e->binary.op));
+      }
+      if (lhs->type == &integerType) {
+        e->type = lhs->type;
+      } else {
+        errorloc(e->loc, "INTEGER expected for operator %s", op_name(e->binary.op));
+      }
+      break;
+    case TOKEN_LT:
+    case TOKEN_LTEQ:
+    case TOKEN_GT:
+    case TOKEN_GTEQ:
+      if (!is_equivalent(lhs->type, rhs->type)) {
+        errorloc(e->loc, "Types %s and %s must match for operator %s", lhs->type->name, rhs->type->name, op_name(e->binary.op));
+      }
+      if (lhs->type == &integerType || lhs->type == &realType || lhs->type == &charType || lhs->type == &stringType || is_string_type(lhs->type)) {
+        e->type = &booleanType;
+      } else {
+        errorloc(e->loc, "INTEGER, REAL, CHAR, or STRING expected for operator %s", op_name(e->binary.op));
+      }
+      break;
+    case TOKEN_EQ:
+    case TOKEN_POUND:
+      if (lhs->type->kind == TYPE_RECORD || rhs->type->kind == TYPE_RECORD) {
+        errorloc(e->loc, "Record type forbidden for = and #");
+      }
+      e->type = &booleanType;
+      break;
+    case TOKEN_IN:
+      if (lhs->type != &integerType) {
+        errorloc(e->loc, "left side of IN must be INTEGER, not %s", lhs->type->name);
+      }
+      if (rhs->type != &setType) {
+        errorloc(e->loc, "right side of IN must be SET, not %s", rhs->type->name);
+      }
+      e->type = &booleanType;
+      break;
+    case TOKEN_IS:
+    default:
+      assert(0);
+      break;
+  }
+
+  if (lhs->is_const && rhs->is_const) {
+    e->is_const = true;
+    eval_binary_expr(e, lhs, rhs);
   }
 }
 
