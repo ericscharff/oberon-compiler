@@ -6,26 +6,25 @@ void eval_unary_expr(Expr *e, Expr *expr) {
   assert(expr->is_const);
   assert(expr->type);
 
-  e->is_const = true;
   switch (e->unary.op) {
     case TOKEN_PLUS:
       if (expr->type == &integerType || expr->type == &realType) {
         e->val = expr->val;
         e->type = expr->type;
       } else {
-        errorloc(expr->loc, "Unary plus requires INTEGER or REAL, got %s",
-                 expr->type->name);
+        assert(0);
       }
       break;
     case TOKEN_MINUS:
       if (expr->type == &integerType) {
         e->val.kind = VAL_INTEGER;
-        e->type = expr->type;
         e->val.iVal = -expr->val.iVal;
       } else if (expr->type == &realType) {
         e->val.kind = VAL_REAL;
-        e->type = expr->type;
         e->val.rVal = -expr->val.rVal;
+      } else if (expr->type == &setType) {
+        e->val.kind = VAL_SET;
+        e->val.setVal = ~expr->val.setVal;
       } else {
         assert(0);
       }
@@ -403,7 +402,8 @@ void resolve_test(void) {
               "  kNil = NIL;\n"
               "  kEmptySet = {};\n"
               "  kOneSet = {1};\n"
-              "  kOneSixSet = {1, 6,7,9};\n"
+              "  kFourEltSet1 = {1, 6,7,9};\n"
+              "  kFourEltSet2 = -{1, 6,7,9};\n"
               "  k=1*2+3*4;\n"
               "  SixFactorial = 1*2*3*4*5*6;\n"
               "  SixFactorialF = 1.0*2.0*3.0*4.0*5.0*6.0;\n"
