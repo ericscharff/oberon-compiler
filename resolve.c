@@ -195,6 +195,52 @@ void eval_binary_expr(Expr *e, Expr *lhs, Expr *rhs) {
         }
         e->val.kind = VAL_SET;
         e->val.setVal = r;
+      } else {
+        assert(0);
+      }
+      break;
+    case TOKEN_LT:
+      if (lhs->type == &integerType) {
+        e->val.kind = VAL_BOOLEAN;
+        e->val.bVal = lhs->val.iVal < rhs->val.iVal;
+      } else if (lhs->type == &realType) {
+        e->val.kind = VAL_BOOLEAN;
+        e->val.bVal = lhs->val.rVal < rhs->val.rVal;
+      } else {
+        assert(0);
+      }
+      break;
+    case TOKEN_LTEQ:
+      if (lhs->type == &integerType) {
+        e->val.kind = VAL_BOOLEAN;
+        e->val.bVal = lhs->val.iVal <= rhs->val.iVal;
+      } else if (lhs->type == &realType) {
+        e->val.kind = VAL_BOOLEAN;
+        e->val.bVal = lhs->val.rVal <= rhs->val.rVal;
+      } else {
+        assert(0);
+      }
+      break;
+    case TOKEN_GT:
+      if (lhs->type == &integerType) {
+        e->val.kind = VAL_BOOLEAN;
+        e->val.bVal = lhs->val.iVal > rhs->val.iVal;
+      } else if (lhs->type == &realType) {
+        e->val.kind = VAL_BOOLEAN;
+        e->val.bVal = lhs->val.rVal > rhs->val.rVal;
+      } else {
+        assert(0);
+      }
+      break;
+    case TOKEN_GTEQ:
+      if (lhs->type == &integerType) {
+        e->val.kind = VAL_BOOLEAN;
+        e->val.bVal = lhs->val.iVal >= rhs->val.iVal;
+      } else if (lhs->type == &realType) {
+        e->val.kind = VAL_BOOLEAN;
+        e->val.bVal = lhs->val.rVal >= rhs->val.rVal;
+      } else {
+        assert(0);
       }
       break;
     default:
@@ -489,6 +535,8 @@ void resolve_test(void) {
               "  SixFactorial = 1*2*3*4*5*6;\n"
               "  SeventyTwo = 720 / 10;\n"
               "  OneHalf = 10.0 / 20.0;\n"
+              "  Yes = 3 > 2;\n"
+              "  No = 3 < 2;\n"
               "  SixFactorialF = 1.0*2.0*3.0*4.0*5.0*6.0;\n"
               "END abc.");
   next_token();
