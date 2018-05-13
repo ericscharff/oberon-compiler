@@ -182,9 +182,7 @@ const char *lc_keyword_until;
 const char *lc_keyword_var;
 const char *lc_keyword_while;
 
-const char *op_name(TokenKind kind) {
-  return token_kind_names[kind];
-}
+const char *op_name(TokenKind kind) { return token_kind_names[kind]; }
 
 // Insert into pool
 const char *string_pool_insert(const char *begin, const char *end) {

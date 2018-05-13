@@ -164,7 +164,8 @@ Type *lookup_field(Type *type, const char *fieldName) {
 
 bool is_string_type(Type *t) {
   assert(t);
-  return (t == &stringType) || (t->kind == TYPE_ARRAY && t->array_type.element_type == &charType);
+  return (t == &stringType) ||
+         (t->kind == TYPE_ARRAY && t->array_type.element_type == &charType);
 }
 
 // Can be compared with =
