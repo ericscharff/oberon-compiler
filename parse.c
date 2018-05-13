@@ -103,9 +103,10 @@ bool symbol_is_type_guard(Type *t, Decl *d) {
 Expr *parse_designator(void) {
   Loc loc = token.pos;
   Decl *d = parse_qualident();
+  assert(d);
   Type *t = d->type;
 
-  Expr *e = new_expr_identref(d->qualident, loc);
+  Expr *e = new_expr_identref(d->qualident, d, loc);
 
   while (is_token(TOKEN_DOT) || is_token(TOKEN_LBRACK) ||
          is_token(TOKEN_CARET) ||

@@ -135,7 +135,7 @@ typedef struct Expr {
     } binary;
     struct {
       Qualident qualident;
-      Decl *decl;  // Filled in by resolver
+      Decl *defn;
     } identref;
     struct {
       Expr *proc;
@@ -535,9 +535,10 @@ Expr *new_expr_binary(TokenKind op, Expr *lhs, Expr *rhs, Loc loc) {
   return e;
 }
 
-Expr *new_expr_identref(Qualident qualident, Loc loc) {
+Expr *new_expr_identref(Qualident qualident, Decl *definition, Loc loc) {
   Expr *e = new_expr(EXPR_IDENTREF, loc);
   e->identref.qualident = qualident;
+  e->identref.defn = definition;
   return e;
 }
 
