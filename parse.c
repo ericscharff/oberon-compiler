@@ -106,7 +106,7 @@ Expr *parse_designator(void) {
   assert(d);
   Type *t = d->type;
 
-  Expr *e = new_expr_identref(d->qualident, d, loc);
+  Expr *e = new_expr_identref(d, loc);
 
   while (is_token(TOKEN_DOT) || is_token(TOKEN_LBRACK) ||
          is_token(TOKEN_CARET) ||
@@ -128,7 +128,7 @@ Expr *parse_designator(void) {
     } else if (symbol_is_type_guard(t, d) && match_token(TOKEN_LPAREN)) {
       Decl *guarded = parse_qualident();
       t = guarded->type;
-      e = new_expr_typeguard(guarded->qualident, e, loc);
+      e = new_expr_typeguard(guarded, e, loc);
       expect_token(TOKEN_RPAREN);
     } else {
       assert(0);

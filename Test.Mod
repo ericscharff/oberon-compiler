@@ -18,6 +18,8 @@ TYPE
 VAR
   a :INTEGER;
   s :SET;
+  r1 :RECORD a :INTEGER END;
+  r2 :Base1.Base1Rec;
 
 PROCEDURE DoIt*(a, b, c :INTEGER);
 BEGIN
@@ -42,6 +44,7 @@ BEGIN
     a := a*a + a + a
   END;
   a := INC(a);
+  r1.a := 3;
+  r2.b := 4;
   s := {2, 3, 4..10, 12}
-
 END Test.

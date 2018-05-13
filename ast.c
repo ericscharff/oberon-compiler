@@ -134,7 +134,6 @@ typedef struct Expr {
       Expr *rhs;
     } binary;
     struct {
-      Qualident qualident;
       Decl *defn;
     } identref;
     struct {
@@ -153,7 +152,7 @@ typedef struct Expr {
       Expr *expr;
     } arrayref;
     struct {
-      Qualident type_name;
+      Decl *type_defn;
       Expr *expr;
     } typeguard;
     struct {
@@ -191,8 +190,8 @@ void dbg_print_expr(Expr *e) {
       break;
     case EXPR_IDENTREF:
       printf("var: %s.%s ",
-             dbg_null_to_empty(e->identref.qualident.package_name),
-             e->identref.qualident.name);
+             dbg_null_to_empty(e->identref.defn->qualident.package_name),
+             e->identref.defn->qualident.name);
       break;
     case EXPR_PROCCALL:
       dbg_print_expr(e->proccall.proc);
@@ -217,8 +216,8 @@ void dbg_print_expr(Expr *e) {
       break;
     case EXPR_TYPEGUARD:
       printf("type: %s.%s ",
-             dbg_null_to_empty(e->typeguard.type_name.package_name),
-             e->typeguard.type_name.name);
+             dbg_null_to_empty(e->typeguard.type_defn->qualident.package_name),
+             e->typeguard.type_defn->qualident.name);
       dbg_print_expr(e->typeguard.expr);
       break;
     case EXPR_INTEGER:
@@ -535,9 +534,8 @@ Expr *new_expr_binary(TokenKind op, Expr *lhs, Expr *rhs, Loc loc) {
   return e;
 }
 
-Expr *new_expr_identref(Qualident qualident, Decl *definition, Loc loc) {
+Expr *new_expr_identref(Decl *definition, Loc loc) {
   Expr *e = new_expr(EXPR_IDENTREF, loc);
-  e->identref.qualident = qualident;
   e->identref.defn = definition;
   return e;
 }
@@ -569,9 +567,9 @@ Expr *new_expr_arrayref(Expr *arrayIndex, Expr *arrayRef, Loc loc) {
   return e;
 }
 
-Expr *new_expr_typeguard(Qualident typeName, Expr *base, Loc loc) {
+Expr *new_expr_typeguard(Decl *type_defn, Expr *base, Loc loc) {
   Expr *e = new_expr(EXPR_TYPEGUARD, loc);
-  e->typeguard.type_name = typeName;
+  e->typeguard.type_defn = type_defn;
   e->typeguard.expr = base;
   return e;
 }
