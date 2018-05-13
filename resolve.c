@@ -528,6 +528,7 @@ void resolve_decls(Decl *decls) {
 
 void resolve_test(void) {
   Scope globalScope;
+  globalScope.decls = NULL;
   enter_scope(&globalScope);
   init_global_types();
   init_global_defs();

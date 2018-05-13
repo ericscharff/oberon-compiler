@@ -606,6 +606,7 @@ void populate_procedure_scope(Decl *d) {
 
 void parse_procedure_body(Decl *procDecl) {
   Scope scope;
+  scope.decls = NULL;
   enter_scope(&scope);
   populate_procedure_scope(procDecl);
   // Nested procedure declarations could be avoided here,
@@ -622,9 +623,7 @@ void parse_procedure_body(Decl *procDecl) {
   expect_keyword(keyword_end);
   assert(procDecl->proc_decl.decls == NULL);
   assert(procDecl->proc_decl.body == NULL);
-  for (size_t i = 0; i < scope.size; i++) {
-    buf_push(procDecl->proc_decl.decls, scope.decls[i]);
-  }
+  procDecl->proc_decl.decls = scope.decls;
   procDecl->proc_decl.body = body;
   exit_scope();
 }
@@ -699,6 +698,7 @@ void parse_import_list(void) {
 
 Module *parse_module(void) {
   Scope scope;
+  scope.decls = NULL;
   enter_scope(&scope);
   expect_keyword(keyword_module);
   Statement *body = NULL;
@@ -718,7 +718,7 @@ Module *parse_module(void) {
   }
   expect_token(TOKEN_DOT);
   exit_scope();
-  return new_module(moduleName, &scope, body);
+  return new_module(moduleName, scope.decls, body);
 }
 
 void dbg_dump_scope(Module *m) {
@@ -804,6 +804,7 @@ void init_global_defs(void) {
 
 void parse_test(void) {
   Scope globalScope;
+  globalScope.decls = NULL;
   enter_scope(&globalScope);
   init_global_types();
   init_global_defs();

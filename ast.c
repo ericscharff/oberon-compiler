@@ -363,12 +363,9 @@ typedef struct Module {
   Statement *body;  // buf
 } Module;
 
-#define SCOPE_SIZE 512
 typedef struct Scope Scope;
 typedef struct Scope {
-  Decl decls[SCOPE_SIZE];
-  // Number of valid decls
-  size_t size;
+  Decl *decls; // buf
   Scope *parent;
 } Scope;
 
@@ -379,16 +376,17 @@ typedef struct Scope {
 Scope *current_scope = NULL;
 
 void enter_scope(Scope *scope) {
+  assert(scope);
+  assert(scope->decls == NULL);
   scope->parent = current_scope;
   current_scope = scope;
-  current_scope->size = 0;
 }
 
 void exit_scope(void) { current_scope = current_scope->parent; }
 
 Decl *lookup_decl(const char *name) {
   for (Scope *s = current_scope; s != NULL; s = s->parent) {
-    for (size_t i = 0; i < s->size; i++) {
+    for (size_t i = 0; i < buf_len(s->decls); i++) {
       if (s->decls[i].name == name) {
         return &s->decls[i];
       }
@@ -424,8 +422,7 @@ Decl *lookup_module_import(const char *moduleName, const char *name) {
 Decl *internal_new_decl(const char *name, Loc loc) {
   assert(name);
   assert(current_scope);
-  assert(current_scope->size < SCOPE_SIZE);
-  for (size_t i = 0; i < current_scope->size; i++) {
+  for (size_t i = 0; i < buf_len(current_scope->decls); i++) {
     if (current_scope->decls[i].name == name) {
       if (current_scope->decls[i].kind == DECL_INCOMPLETE) {
         return &current_scope->decls[i];
@@ -434,13 +431,16 @@ Decl *internal_new_decl(const char *name, Loc loc) {
       }
     }
   }
-  Decl *d = &current_scope->decls[current_scope->size++];
-  d->name = name;
-  d->loc = loc;
-  d->kind = DECL_UNKNOWN;
-  d->type = NULL;
-  d->state = DECLSTATE_UNRESOLVED;
-  return d;
+  Decl d;
+  d.name = name;
+  d.loc = loc;
+  d.kind = DECL_UNKNOWN;
+  d.type = NULL;
+  d.state = DECLSTATE_UNRESOLVED;
+  size_t index = buf_len(current_scope->decls);
+  buf_push(current_scope->decls, d);
+  assert(index+1 == buf_len(current_scope->decls));
+  return current_scope->decls + index;
 }
 
 void new_decl_import(const char *name, Loc loc, Decl *decls) {
@@ -743,14 +743,12 @@ void dbg_dump_stmts(Statement *s) {
   stmt_indent--;
 }
 
-Module *new_module(const char *name, Scope *s, Statement *body) {
+Module *new_module(const char *name, Decl *decls, Statement *body) {
   Module *m = xmalloc(sizeof(Module));
   m->name = name;
   m->decls = NULL;
   m->body = body;
-  for (size_t i = 0; i < s->size; i++) {
-    buf_push(m->decls, s->decls[i]);
-  }
+  m->decls = decls;
   return m;
 }
 
@@ -776,13 +774,15 @@ void init_global_types() {
 void ast_test(void) {
   Scope outer;
   Scope inner;
+  outer.decls = NULL;
+  inner.decls = NULL;
   Loc loc = {"<TEST>", 10};
 
   enter_scope(&outer);
   assert(current_scope == &outer);
   new_decl_var(string_intern("outer1"), loc, &integerType, false);
   new_decl_var(string_intern("outer2"), loc, &integerType, true);
-  assert(current_scope->size == 2);
+  assert(buf_len(current_scope->decls) == 2);
   Decl *o1 = lookup_decl(string_intern("outer1"));
   assert(o1->kind == DECL_VAR);
   assert(o1->name == string_intern("outer1"));
