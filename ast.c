@@ -34,21 +34,16 @@ const char *decl_state_names[] = {
     [DECLSTATE_RESOLVED] = "RESOLVED",
 };
 
-typedef struct Qualident {
-  const char *package_name;  // can be null
-  const char *name;
-} Qualident;
-
 typedef struct Decl {
   DeclKind kind;
   const char *name;
+  const char *package_name;
   Loc loc;
   union {
     Decl *imported_decls;  // Only for DECL_IMPORT
     Type *type;            // for everything else
   };
   bool is_exported;
-  Qualident qualident;
   union {
     struct {
       Expr *expr;  // Only for DECL_CONST
@@ -170,8 +165,6 @@ typedef struct Expr {
   Val val;        // Populated by resolver
 } Expr;
 
-const char *dbg_null_to_empty(const char *s) { return s ? s : ""; }
-
 void dbg_print_expr(Expr *e) {
   assert(e);
   printf("(%s ", expr_kind_names[e->kind]);
@@ -189,9 +182,7 @@ void dbg_print_expr(Expr *e) {
       dbg_print_expr(e->binary.rhs);
       break;
     case EXPR_IDENTREF:
-      printf("var: %s.%s ",
-             dbg_null_to_empty(e->identref.defn->qualident.package_name),
-             e->identref.defn->qualident.name);
+      printf("var: %s.%s (TypeDef %s.%s)", e->identref.defn->package_name, e->identref.defn->name, e->identref.defn->type->package_name, e->identref.defn->type->name);
       break;
     case EXPR_PROCCALL:
       dbg_print_expr(e->proccall.proc);
@@ -215,9 +206,7 @@ void dbg_print_expr(Expr *e) {
       dbg_print_expr(e->arrayref.array_index);
       break;
     case EXPR_TYPEGUARD:
-      printf("type: %s.%s ",
-             dbg_null_to_empty(e->typeguard.type_defn->qualident.package_name),
-             e->typeguard.type_defn->qualident.name);
+      printf("type: %s.%s ", e->typeguard.type_defn->package_name, e->typeguard.type_defn->name);
       dbg_print_expr(e->typeguard.expr);
       break;
     case EXPR_INTEGER:
@@ -373,15 +362,21 @@ typedef struct Scope {
 // stack, and when it leaves, sets the global scope back. Thus, It is not safe
 // to save Decl objects, but Types are persisted.
 Scope *current_scope = NULL;
+const char *current_package_name = NULL;
 
-void enter_scope(Scope *scope) {
+void enter_scope(Scope *scope, const char *packageName) {
   assert(scope);
+  assert(packageName);
   assert(scope->decls == NULL);
   scope->parent = current_scope;
   current_scope = scope;
+  current_package_name = packageName;
 }
 
-void exit_scope(void) { current_scope = current_scope->parent; }
+void exit_scope(const char *newPackageName) {
+  current_scope = current_scope->parent;
+  current_package_name = newPackageName;
+}
 
 Decl *lookup_decl(const char *name) {
   for (Scope *s = current_scope; s != NULL; s = s->parent) {
@@ -432,6 +427,7 @@ Decl *internal_new_decl(const char *name, Loc loc) {
   }
   Decl d;
   d.name = name;
+  d.package_name = current_package_name;
   d.loc = loc;
   d.kind = DECL_UNKNOWN;
   d.type = NULL;
@@ -467,6 +463,8 @@ void new_decl_const(const char *name, Loc loc, Expr *expr, bool is_exported) {
 }
 
 void new_decl_type(const char *name, Loc loc, Type *type, bool is_exported) {
+  type->name = name;
+  type->package_name = current_package_name;
   Decl *d = internal_new_decl(name, loc);
   if (d->kind == DECL_INCOMPLETE) {
     assert(d->type);
@@ -753,6 +751,7 @@ Module *new_module(const char *name, Decl *decls, Statement *body) {
 
 void init_global_types() {
   Loc loc = {"<global>", 0};
+  current_package_name = "";
   assert(booleanType.kind == TYPE_BOOLEAN);
   booleanType.name = string_intern("BOOLEAN");
   new_decl_type(booleanType.name, loc, &booleanType, true);
@@ -776,8 +775,10 @@ void ast_test(void) {
   outer.decls = NULL;
   inner.decls = NULL;
   Loc loc = {"<TEST>", 10};
+  const char *outerScopeName = string_intern("<outer_scope>");
+  const char *innerScopeName = string_intern("<inner_scope>");
 
-  enter_scope(&outer);
+  enter_scope(&outer, outerScopeName);
   assert(current_scope == &outer);
   new_decl_var(string_intern("outer1"), loc, &integerType, false);
   new_decl_var(string_intern("outer2"), loc, &integerType, true);
@@ -793,7 +794,7 @@ void ast_test(void) {
   assert(o2->type == &integerType);
   assert(o2->is_exported == true);
 
-  enter_scope(&inner);
+  enter_scope(&inner, innerScopeName);
   assert(current_scope == &inner);
   assert(current_scope->parent == &outer);
   new_decl_var(string_intern("inner1"), loc, &realType, true);
@@ -804,8 +805,8 @@ void ast_test(void) {
   assert(i1->is_exported == true);
   Decl *oRef = lookup_decl(string_intern("outer1"));
   assert(oRef == o1);
-  exit_scope();
+  exit_scope(outerScopeName);
   assert(current_scope == &outer);
-  exit_scope();
+  exit_scope(NULL);
   assert(current_scope == NULL);
 }

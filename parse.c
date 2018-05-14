@@ -54,8 +54,6 @@ Decl *parse_qualident(void) {
   if (!d) {
     error("%s undefined", ident);
   }
-  d->qualident.package_name = moduleName;
-  d->qualident.name = ident;
   return d;
 }
 
@@ -575,7 +573,6 @@ void parse_type_declaration(void) {
   expect_token(TOKEN_EQ);
   Type *t = parse_type();
   assert(t);
-  t->name = name;
   new_decl_type(name, loc, t, is_exported);
 }
 
@@ -606,9 +603,10 @@ void populate_procedure_scope(Decl *d) {
 }
 
 void parse_procedure_body(Decl *procDecl) {
+  const char *parentPackage = current_package_name;
   Scope scope;
   scope.decls = NULL;
-  enter_scope(&scope);
+  enter_scope(&scope, "");
   populate_procedure_scope(procDecl);
   // Nested procedure declarations could be avoided here,
   // since nested procedures can't really access their
@@ -626,7 +624,7 @@ void parse_procedure_body(Decl *procDecl) {
   assert(procDecl->proc_decl.body == NULL);
   procDecl->proc_decl.decls = scope.decls;
   procDecl->proc_decl.body = body;
-  exit_scope();
+  exit_scope(parentPackage);
 }
 
 Decl *parse_procedure_heading(void) {
@@ -698,12 +696,13 @@ void parse_import_list(void) {
 }
 
 Module *parse_module(void) {
+  const char *parentPackage = current_package_name;
+  expect_keyword(keyword_module);
+  const char *moduleName = expect_identifier();
   Scope scope;
   scope.decls = NULL;
-  enter_scope(&scope);
-  expect_keyword(keyword_module);
+  enter_scope(&scope, moduleName);
   Statement *body = NULL;
-  const char *moduleName = expect_identifier();
   expect_token(TOKEN_SEMI);
   if (is_keyword(keyword_import)) {
     parse_import_list();
@@ -718,7 +717,7 @@ Module *parse_module(void) {
     error("Module name %s must match end name %s", moduleName, endModuleName);
   }
   expect_token(TOKEN_DOT);
-  exit_scope();
+  exit_scope(parentPackage);
   return new_module(moduleName, scope.decls, body);
 }
 
@@ -806,15 +805,16 @@ void init_global_defs(void) {
 void parse_test(void) {
   Scope globalScope;
   globalScope.decls = NULL;
-  enter_scope(&globalScope);
+  enter_scope(&globalScope, "");
   init_global_types();
   init_global_defs();
   init_stream("",
-              "MODULE abc; CONST k=1*2+3+4; TYPE MySet* = SET; FooRec = ARRAY "
-              "5, 10, 15, 20 OF INTEGER; q* = INTEGER; r = q; END abc.");
+              "MODULE abc; CONST _k=1*2+3+4; TYPE _MySet* = SET; _FooRec = ARRAY "
+              "5, 10, 15, 20 OF INTEGER; _q* = INTEGER; _r = _q; END abc.");
   next_token();
   dbg_dump_scope(parse_module());
+  assert(current_scope == &globalScope);
   parse_test_file("Test.Mod");
-  exit_scope();
+  exit_scope("");
   assert(current_scope == NULL);
 }

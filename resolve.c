@@ -529,7 +529,7 @@ void resolve_decls(Decl *decls) {
 void resolve_test(void) {
   Scope globalScope;
   globalScope.decls = NULL;
-  enter_scope(&globalScope);
+  enter_scope(&globalScope, "test");
   init_global_types();
   init_global_defs();
   init_stream("",
@@ -563,6 +563,6 @@ void resolve_test(void) {
   next_token();
   Module *m = parse_module();
   resolve_decls(m->decls);
-  exit_scope();
+  exit_scope("test");
   assert(current_scope == NULL);
 }

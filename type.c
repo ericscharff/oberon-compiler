@@ -62,6 +62,7 @@ typedef struct RecordType {
 struct Type {
   TypeKind kind;
   const char *name;  // Only declared types have names;
+  const char *package_name; // Only declared types have package names
   union {
     ArrayType array_type;
     PointerType pointer_type;
@@ -107,6 +108,7 @@ Type *new_type_incomplete(void) {
   Type *t = alloc_type();
   t->kind = TYPE_INCOMPLETE;
   t->name = NULL;
+  t->package_name = NULL;
   return t;
 }
 
@@ -114,6 +116,7 @@ Type *new_type_array(Type *element_type, Expr *num_elements_expr) {
   Type *t = alloc_type();
   t->kind = TYPE_ARRAY;
   t->name = NULL;
+  t->package_name = NULL;
   t->array_type.element_type = element_type;
   t->array_type.num_elements_expr = num_elements_expr;
   return t;
@@ -123,6 +126,7 @@ Type *new_type_pointer(Type *element_type) {
   Type *t = alloc_type();
   t->kind = TYPE_POINTER;
   t->name = NULL;
+  t->package_name = NULL;
   t->pointer_type.element_type = element_type;
   return t;
 }
@@ -131,6 +135,7 @@ Type *new_type_procedure(FormalParameter *params, Type *return_type) {
   Type *t = alloc_type();
   t->kind = TYPE_PROCEDURE;
   t->name = NULL;
+  t->package_name = NULL;
   t->procedure_type.params = params;
   t->procedure_type.return_type = return_type;
   return t;
@@ -140,6 +145,7 @@ Type *new_type_record(Type *base_type, RecordField *fields) {
   Type *t = alloc_type();
   t->kind = TYPE_RECORD;
   t->name = NULL;
+  t->package_name = NULL;
   t->record_type.base_type = base_type;
   t->record_type.fields = fields;
   return t;
