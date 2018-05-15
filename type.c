@@ -30,6 +30,7 @@ typedef struct Expr Expr;
 typedef struct ArrayType {
   Expr *num_elements_expr;
   Type *element_type;
+  int num_elements;  // Filled out by resolver
 } ArrayType;
 
 typedef struct PointerType {
@@ -61,8 +62,9 @@ typedef struct RecordType {
 
 struct Type {
   TypeKind kind;
-  const char *name;  // Only declared types have names;
-  const char *package_name; // Only declared types have package names
+  const char *name;          // Only declared types have names;
+  const char *package_name;  // Only declared types have package names
+  bool resolved;             // Filled in by resolver
   union {
     ArrayType array_type;
     PointerType pointer_type;
@@ -107,17 +109,19 @@ Type *alloc_type(void) {
 Type *new_type_incomplete(void) {
   Type *t = alloc_type();
   t->kind = TYPE_INCOMPLETE;
+  t->resolved = false;
   t->name = NULL;
   t->package_name = NULL;
   return t;
 }
 
-Type *new_type_array(Type *element_type, Expr *num_elements_expr) {
+Type *new_type_array(Expr *num_elements_expr) {
   Type *t = alloc_type();
   t->kind = TYPE_ARRAY;
+  t->resolved = false;
   t->name = NULL;
   t->package_name = NULL;
-  t->array_type.element_type = element_type;
+  t->array_type.element_type = NULL;
   t->array_type.num_elements_expr = num_elements_expr;
   return t;
 }
@@ -125,6 +129,7 @@ Type *new_type_array(Type *element_type, Expr *num_elements_expr) {
 Type *new_type_pointer(Type *element_type) {
   Type *t = alloc_type();
   t->kind = TYPE_POINTER;
+  t->resolved = false;
   t->name = NULL;
   t->package_name = NULL;
   t->pointer_type.element_type = element_type;
@@ -134,6 +139,7 @@ Type *new_type_pointer(Type *element_type) {
 Type *new_type_procedure(FormalParameter *params, Type *return_type) {
   Type *t = alloc_type();
   t->kind = TYPE_PROCEDURE;
+  t->resolved = false;
   t->name = NULL;
   t->package_name = NULL;
   t->procedure_type.params = params;
@@ -143,6 +149,7 @@ Type *new_type_procedure(FormalParameter *params, Type *return_type) {
 
 Type *new_type_record(Type *base_type, RecordField *fields) {
   Type *t = alloc_type();
+  t->resolved = false;
   t->kind = TYPE_RECORD;
   t->name = NULL;
   t->package_name = NULL;
@@ -216,11 +223,14 @@ void type_test(void) {
     alloc_type();
   }
   assert(type_pool_current == (type_pool + 10));
-  Type *s1 = new_type_array(&charType, NULL);
-  Type *s2 = new_type_array(&charType, NULL);
+  Type *s1 = new_type_array(NULL);
+  s1->array_type.element_type = &charType;
+  Type *s2 = new_type_array(NULL);
+  s2->array_type.element_type = &charType;
   assert(is_string_type(s1));
   assert(is_equivalent(s1, s2));
-  Type *a = new_type_array(&integerType, NULL);
+  Type *a = new_type_array(NULL);
+  a->array_type.element_type = &integerType;
   assert(a->kind == TYPE_ARRAY);
   assert(a->array_type.element_type == &integerType);
   Type *p = new_type_pointer(a);

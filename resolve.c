@@ -1,4 +1,17 @@
 void resolve_expr(Expr *e);
+void resolve_decl(Decl *d);
+
+Decl *gResolveScope = NULL;
+
+Decl *resolve_find_defn(const char *packageName, const char *name) {
+  for (size_t i = 0; i < buf_len(gResolveScope); i++) {
+    if (gResolveScope[i].package_name == packageName &&
+        gResolveScope[i].name == name) {
+      return gResolveScope + i;
+    }
+  }
+  return NULL;
+}
 
 void eval_unary_expr(Expr *e, Expr *expr) {
   assert(e);
@@ -363,6 +376,28 @@ void resolve_binary_expr(Expr *e) {
   }
 }
 
+void resolve_identref(Expr *e) {
+  assert(e);
+  assert(e->kind == EXPR_IDENTREF);
+  const char *name = e->identref.name;
+  const char *packageName = e->identref.package_name;
+  Decl *d = resolve_find_defn(packageName, name);
+  if (!d) {
+    errorloc(e->loc, "%s.%s undefined", packageName, name);
+  }
+  resolve_decl(d);
+  e->type = d->type;
+  if (d->kind == DECL_CONST) {
+    e->is_const = true;
+    Expr *constExpr = d->const_val.expr;
+    if (constExpr->is_const) {
+      e->val = constExpr->val;
+    } else {
+      errorloc(constExpr->loc, "Expression is not constant");
+    }
+  }
+}
+
 void resolve_expr(Expr *e) {
   assert(e);
   switch (e->kind) {
@@ -373,7 +408,7 @@ void resolve_expr(Expr *e) {
       resolve_binary_expr(e);
       break;
     case EXPR_IDENTREF:
-      assert(0);
+      resolve_identref(e);
       break;
     case EXPR_PROCCALL:
       assert(0);
@@ -452,9 +487,54 @@ void resolve_const_decl(Decl *d) {
   }
 }
 
+void resolve_type(Type *type) {
+  assert(type);
+  if (type->resolved) {
+    return;
+  }
+  type->resolved = true;
+  if (type->kind == TYPE_POINTER) {
+    resolve_type(type->pointer_type.element_type);
+  }
+  if (type->kind == TYPE_RECORD) {
+    Type *base_type = type->record_type.base_type;
+    if (base_type) {
+      resolve_type(base_type);
+      if (base_type->kind != TYPE_RECORD) {
+        error("Base record type %s must be a RECORD", base_type->name);
+      }
+    }
+    for (size_t i = 0; i < buf_len(type->record_type.fields); i++) {
+      printf("Record field %s\n", type->record_type.fields[i].name);
+      // TODO - Check for duplicate field name?
+      resolve_type(type->record_type.fields[i].type);
+    }
+  }
+  if (type->kind == TYPE_ARRAY) {
+    resolve_type(type->array_type.element_type);
+    Expr *e = type->array_type.num_elements_expr;
+    resolve_expr(e);
+    if (e->is_const) {
+      if (e->val.kind == VAL_INTEGER) {
+        int size = e->val.iVal;
+        if (size > 0) {
+          type->array_type.num_elements = size;
+          printf("array size %d\n", size);
+        } else {
+          error("ARRAY size %d must be greater than 0", size);
+        }
+      } else {
+        error("ARRAY capacity must be INTEGER");
+      }
+    } else {
+      error("Array expr must be constant");
+    }
+  }
+}
+
 void resolve_type_decl(Decl *d) {
   assert(d->kind == DECL_TYPE);
-  assert(0);
+  resolve_type(d->type);
 }
 
 void resolve_var_decl(Decl *d) {
@@ -477,52 +557,55 @@ void resolve_proc_decl(Decl *d) {
   assert(0);
 }
 
+void resolve_decl(Decl *d) {
+  switch (d->state) {
+    case DECLSTATE_UNRESOLVED:
+      d->state = DECLSTATE_RESOLVING;
+      switch (d->kind) {
+        case DECL_INCOMPLETE:
+          errorloc(d->loc, "Declaration incomplete for %s", d->name);
+          break;
+        case DECL_IMPORT:
+          assert(0);
+          break;
+        case DECL_CONST:
+          resolve_const_decl(d);
+          break;
+        case DECL_TYPE:
+          resolve_type_decl(d);
+          break;
+        case DECL_VAR:
+          resolve_var_decl(d);
+          break;
+        case DECL_PARAM:
+          resolve_param_decl(d);
+          break;
+        case DECL_VARPARAM:
+          resolve_varparam_decl(d);
+          break;
+        case DECL_PROC:
+          resolve_proc_decl(d);
+          break;
+        default:
+          assert(0);
+          break;
+      }
+      d->state = DECLSTATE_RESOLVED;
+      break;
+    case DECLSTATE_RESOLVING:
+      errorloc(d->loc, "Circular reference for %s", d->name);
+      break;
+    case DECLSTATE_RESOLVED:
+      break;
+    default:
+      assert(0);
+      break;
+  }
+}
+
 void resolve_decls(Decl *decls) {
   for (size_t i = 0; i < buf_len(decls); i++) {
-    switch (decls[i].state) {
-      case DECLSTATE_UNRESOLVED:
-        decls[i].state = DECLSTATE_RESOLVING;
-        switch (decls[i].kind) {
-          case DECL_INCOMPLETE:
-            errorloc(decls[i].loc, "Declaration incomplete for %s",
-                     decls[i].name);
-            break;
-          case DECL_IMPORT:
-            assert(0);
-            break;
-          case DECL_CONST:
-            resolve_const_decl(&decls[i]);
-            break;
-          case DECL_TYPE:
-            resolve_type_decl(&decls[i]);
-            break;
-          case DECL_VAR:
-            resolve_var_decl(&decls[i]);
-            break;
-          case DECL_PARAM:
-            resolve_param_decl(&decls[i]);
-            break;
-          case DECL_VARPARAM:
-            resolve_varparam_decl(&decls[i]);
-            break;
-          case DECL_PROC:
-            resolve_proc_decl(&decls[i]);
-            break;
-          default:
-            assert(0);
-            break;
-        }
-        decls[i].state = DECLSTATE_RESOLVED;
-        break;
-      case DECLSTATE_RESOLVING:
-        errorloc(decls[i].loc, "Circular reference for %s", decls[i].name);
-        break;
-      case DECLSTATE_RESOLVED:
-        break;
-      default:
-        assert(0);
-        break;
-    }
+    resolve_decl(decls + i);
   }
 }
 
@@ -559,9 +642,21 @@ void resolve_test(void) {
               "  Yes = 3 > 2;\n"
               "  No = 3 < 2;\n"
               "  SixFactorialF = 1.0*2.0*3.0*4.0*5.0*6.0;\n"
+              "  Two = one + one;\n"
+              "  Four = Two + Two;\n"
+              "  kSetX = kOneSet + {27};\n"
+              "TYPE\n"
+              "  R1 = RECORD a, b, c :INTEGER END;\n"
+              "  P1 = POINTER TO R1;\n"
+              "  A1 = ARRAY 10, 20, SeventyTwo, 40 OF INTEGER;\n"
+              "  A2 = ARRAY 10 OF ARRAY 20 OF ARRAY SeventyTwo OF ARRAY 40 OF "
+              "INTEGER;\n"
+              "  P2 = POINTER TO R2;\n"
+              "  R2 = RECORD q :CHAR; next :P2; a :ARRAY Four OF CHAR; END; \n"
               "END abc.");
   next_token();
   Module *m = parse_module();
+  gResolveScope = m->decls;
   resolve_decls(m->decls);
   exit_scope("test");
   assert(current_scope == NULL);

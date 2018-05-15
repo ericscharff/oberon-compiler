@@ -129,7 +129,8 @@ typedef struct Expr {
       Expr *rhs;
     } binary;
     struct {
-      Decl *defn;
+      const char *name;
+      const char *package_name;
     } identref;
     struct {
       Expr *proc;
@@ -182,7 +183,7 @@ void dbg_print_expr(Expr *e) {
       dbg_print_expr(e->binary.rhs);
       break;
     case EXPR_IDENTREF:
-      printf("var: %s.%s (TypeDef %s.%s)", e->identref.defn->package_name, e->identref.defn->name, e->identref.defn->type->package_name, e->identref.defn->type->name);
+      printf("var: %s.%s ", e->identref.package_name, e->identref.name);
       break;
     case EXPR_PROCCALL:
       dbg_print_expr(e->proccall.proc);
@@ -206,7 +207,8 @@ void dbg_print_expr(Expr *e) {
       dbg_print_expr(e->arrayref.array_index);
       break;
     case EXPR_TYPEGUARD:
-      printf("type: %s.%s ", e->typeguard.type_defn->package_name, e->typeguard.type_defn->name);
+      printf("type: %s.%s ", e->typeguard.type_defn->package_name,
+             e->typeguard.type_defn->name);
       dbg_print_expr(e->typeguard.expr);
       break;
     case EXPR_INTEGER:
@@ -353,7 +355,7 @@ typedef struct Module {
 
 typedef struct Scope Scope;
 typedef struct Scope {
-  Decl *decls; // buf
+  Decl *decls;  // buf
   Scope *parent;
 } Scope;
 
@@ -434,7 +436,7 @@ Decl *internal_new_decl(const char *name, Loc loc) {
   d.state = DECLSTATE_UNRESOLVED;
   size_t index = buf_len(current_scope->decls);
   buf_push(current_scope->decls, d);
-  assert(index+1 == buf_len(current_scope->decls));
+  assert(index + 1 == buf_len(current_scope->decls));
   return current_scope->decls + index;
 }
 
@@ -463,8 +465,10 @@ void new_decl_const(const char *name, Loc loc, Expr *expr, bool is_exported) {
 }
 
 void new_decl_type(const char *name, Loc loc, Type *type, bool is_exported) {
-  type->name = name;
-  type->package_name = current_package_name;
+  if (type->name == NULL && type->package_name == NULL) {
+    type->name = name;
+    type->package_name = current_package_name;
+  }
   Decl *d = internal_new_decl(name, loc);
   if (d->kind == DECL_INCOMPLETE) {
     assert(d->type);
@@ -532,9 +536,10 @@ Expr *new_expr_binary(TokenKind op, Expr *lhs, Expr *rhs, Loc loc) {
   return e;
 }
 
-Expr *new_expr_identref(Decl *definition, Loc loc) {
+Expr *new_expr_identref(const char *name, const char *packageName, Loc loc) {
   Expr *e = new_expr(EXPR_IDENTREF, loc);
-  e->identref.defn = definition;
+  e->identref.name = name;
+  e->identref.package_name = packageName;
   return e;
 }
 
@@ -751,20 +756,14 @@ Module *new_module(const char *name, Decl *decls, Statement *body) {
 
 void init_global_types() {
   Loc loc = {"<global>", 0};
-  current_package_name = "";
+  current_package_name = string_intern("<system>");
   assert(booleanType.kind == TYPE_BOOLEAN);
-  booleanType.name = string_intern("BOOLEAN");
-  new_decl_type(booleanType.name, loc, &booleanType, true);
-  byteType.name = string_intern("BYTE");
-  new_decl_type(byteType.name, loc, &byteType, true);
-  charType.name = string_intern("CHAR");
-  new_decl_type(charType.name, loc, &charType, true);
-  integerType.name = string_intern("INTEGER");
-  new_decl_type(integerType.name, loc, &integerType, true);
-  realType.name = string_intern("REAL");
-  new_decl_type(realType.name, loc, &realType, true);
-  setType.name = string_intern("SET");
-  new_decl_type(setType.name, loc, &setType, true);
+  new_decl_type(string_intern("BOOLEAN"), loc, &booleanType, true);
+  new_decl_type(string_intern("BYTE"), loc, &byteType, true);
+  new_decl_type(string_intern("CHAR"), loc, &charType, true);
+  new_decl_type(string_intern("INTEGER"), loc, &integerType, true);
+  new_decl_type(string_intern("REAL"), loc, &realType, true);
+  new_decl_type(string_intern("SET"), loc, &setType, true);
   nilType.name = string_intern("<NIL>");
   stringType.name = string_intern("<STRING>");
 }

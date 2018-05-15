@@ -104,7 +104,7 @@ Expr *parse_designator(void) {
   assert(d);
   Type *t = d->type;
 
-  Expr *e = new_expr_identref(d, loc);
+  Expr *e = new_expr_identref(d->name, d->package_name, loc);
 
   while (is_token(TOKEN_DOT) || is_token(TOKEN_LBRACK) ||
          is_token(TOKEN_CARET) ||
@@ -426,14 +426,16 @@ IdentDef *parse_ident_list(void) {
 
 Type *parse_array_type(void) {
   expect_keyword(keyword_array);
-  Type *innerArray = new_type_array(NULL, parse_expression());
-  Type *outerArray = innerArray;
+  Type *outerArray = new_type_array(parse_expression());
+  Type *lastArray = outerArray;
   while (match_token(TOKEN_COMMA)) {
-    outerArray = new_type_array(outerArray, parse_expression());
+    Type *newArray = new_type_array(parse_expression());
+    lastArray->array_type.element_type = newArray;
+    lastArray = newArray;
   }
   expect_keyword(keyword_of);
   Type *elementType = parse_type();
-  innerArray->array_type.element_type = elementType;
+  lastArray->array_type.element_type = elementType;
   return outerArray;
 }
 
@@ -809,8 +811,8 @@ void parse_test(void) {
   init_global_types();
   init_global_defs();
   init_stream("",
-              "MODULE abc; CONST _k=1*2+3+4; TYPE _MySet* = SET; _FooRec = ARRAY "
-              "5, 10, 15, 20 OF INTEGER; _q* = INTEGER; _r = _q; END abc.");
+              "MODULE abc; CONST k=1*2+3+4; TYPE MySet* = SET; FooRec = ARRAY "
+              "5, 10, 15, 20 OF INTEGER; q* = INTEGER; r = q; END abc.");
   next_token();
   dbg_dump_scope(parse_module());
   assert(current_scope == &globalScope);
