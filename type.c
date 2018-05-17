@@ -182,7 +182,7 @@ bool is_string_type(Type *t) {
 }
 
 // Can be compared with =
-bool is_equivalent(Type *a, Type *b) {
+bool is_equivalent_type(Type *a, Type *b) {
   assert(a);
   assert(b);
   if (a->kind == TYPE_RECORD || b->kind == TYPE_RECORD) {
@@ -228,7 +228,7 @@ void type_test(void) {
   Type *s2 = new_type_array(NULL);
   s2->array_type.element_type = &charType;
   assert(is_string_type(s1));
-  assert(is_equivalent(s1, s2));
+  assert(is_equivalent_type(s1, s2));
   Type *a = new_type_array(NULL);
   a->array_type.element_type = &integerType;
   assert(a->kind == TYPE_ARRAY);
@@ -243,10 +243,10 @@ void type_test(void) {
   buf_push(param, (FormalParameter){"l", &integerType, false, false});
   Type *iPtr = new_type_pointer(&integerType);
   Type *cPtr = new_type_pointer(&charType);
-  assert(is_equivalent(iPtr, cPtr));
-  assert(is_equivalent(iPtr, &nilType));
-  assert(is_equivalent(&nilType, cPtr));
-  assert(!is_equivalent(s1, cPtr));
+  assert(is_equivalent_type(iPtr, cPtr));
+  assert(is_equivalent_type(iPtr, &nilType));
+  assert(is_equivalent_type(&nilType, cPtr));
+  assert(!is_equivalent_type(s1, cPtr));
   Type *proc = new_type_procedure(param, &charType);
   assert(proc->kind == TYPE_PROCEDURE);
   assert(proc->procedure_type.params == param);

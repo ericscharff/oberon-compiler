@@ -259,10 +259,34 @@ void eval_binary_expr(Expr *e, Expr *lhs, Expr *rhs) {
         assert(0);
       }
       break;
+    case TOKEN_EQ:
+      if (lhs->type == &integerType) {
+        e->val.kind = VAL_BOOLEAN;
+        e->val.bVal = lhs->val.iVal == rhs->val.iVal;
+      } else if (lhs->type == &realType) {
+        e->val.kind = VAL_BOOLEAN;
+        e->val.bVal = lhs->val.rVal == rhs->val.rVal;
+      } else if (lhs->type == &setType) {
+        e->val.kind = VAL_BOOLEAN;
+        e->val.bVal = lhs->val.setVal == rhs->val.setVal;
+      } else {
+        assert(0);
+      }
+      break;
     default:
       assert(0);
       break;
   }
+}
+
+bool is_one_char_string(Expr *e) {
+  return e->is_const && e->val.kind == VAL_STRING && strlen(e->val.sVal) == 1;
+}
+
+bool is_equivalent(Expr *a, Expr *b) {
+  return is_equivalent_type(a->type, b->type) ||
+         (a->type == &charType && is_one_char_string(b)) ||
+         (b->type == &charType && is_one_char_string(a));
 }
 
 void resolve_binary_expr(Expr *e) {
@@ -329,29 +353,33 @@ void resolve_binary_expr(Expr *e) {
     case TOKEN_LTEQ:
     case TOKEN_GT:
     case TOKEN_GTEQ:
-      if (lhs->type != rhs->type &&
-          !(is_string_type(lhs->type) && is_string_type(rhs->type))) {
+      if (lhs->type == rhs->type ||
+          (lhs->type == &charType && is_one_char_string(rhs)) ||
+          (rhs->type == &charType && is_one_char_string(lhs)) ||
+          (is_string_type(lhs->type) && is_string_type(rhs->type))) {
+        if (lhs->type == &integerType || lhs->type == &realType ||
+            lhs->type == &charType || lhs->type == &byteType ||
+            lhs->type == &stringType || is_string_type(lhs->type)) {
+          e->type = &booleanType;
+        } else {
+          errorloc(
+              e->loc,
+              "INTEGER, REAL, CHAR, BYTE, or STRING expected for operator %s",
+              op_name(e->binary.op));
+        }
+      } else {
         errorloc(e->loc, "Types %s and %s must match for operator %s",
                  lhs->type->name, rhs->type->name, op_name(e->binary.op));
-      }
-      if (lhs->type == &integerType || lhs->type == &realType ||
-          lhs->type == &charType || lhs->type == &byteType ||
-          lhs->type == &stringType || is_string_type(lhs->type)) {
-        e->type = &booleanType;
-      } else {
-        errorloc(
-            e->loc,
-            "INTEGER, REAL, CHAR, BYTE, or STRING expected for operator %s",
-            op_name(e->binary.op));
       }
       break;
     case TOKEN_EQ:
     case TOKEN_POUND:
-      if (!is_equivalent(lhs->type, rhs->type)) {
+      if (is_equivalent(lhs, rhs)) {
+        e->type = &booleanType;
+      } else {
         errorloc(e->loc, "Types %s and %s must match for operator %s",
                  lhs->type->name, rhs->type->name, op_name(e->binary.op));
       }
-      e->type = &booleanType;
       break;
     case TOKEN_IN:
       if (lhs->type != &integerType) {
@@ -398,6 +426,22 @@ void resolve_identref(Expr *e) {
   }
 }
 
+void resolve_arrayref(Expr *e) {
+  assert(e);
+  assert(e->kind == EXPR_ARRAYREF);
+  Expr *indexExpr = e->arrayref.array_index;
+  Expr *arrayRef = e->arrayref.expr;
+  resolve_expr(indexExpr);
+  resolve_expr(arrayRef);
+  if (indexExpr->type != &integerType) {
+    errorloc(indexExpr->loc, "array index type %s should be INTEGER",
+             indexExpr->type->name);
+  }
+  if (arrayRef->type->kind != TYPE_ARRAY) {
+    errorloc(arrayRef->loc, "item %s is not an ARRAY", arrayRef->type->name);
+  }
+  e->type = arrayRef->type->array_type.element_type;
+}
 void resolve_expr(Expr *e) {
   assert(e);
   switch (e->kind) {
@@ -420,7 +464,7 @@ void resolve_expr(Expr *e) {
       assert(0);
       break;
     case EXPR_ARRAYREF:
-      assert(0);
+      resolve_arrayref(e);
       break;
     case EXPR_TYPEGUARD:
       assert(0);
@@ -539,7 +583,7 @@ void resolve_type_decl(Decl *d) {
 
 void resolve_var_decl(Decl *d) {
   assert(d->kind == DECL_VAR);
-  assert(0);
+  resolve_type(d->type);
 }
 
 void resolve_param_decl(Decl *d) {
@@ -560,6 +604,7 @@ void resolve_proc_decl(Decl *d) {
 void resolve_decl(Decl *d) {
   switch (d->state) {
     case DECLSTATE_UNRESOLVED:
+      printf("%s resolving\n", d->name);
       d->state = DECLSTATE_RESOLVING;
       switch (d->kind) {
         case DECL_INCOMPLETE:
@@ -590,12 +635,14 @@ void resolve_decl(Decl *d) {
           assert(0);
           break;
       }
+      printf("%s resolution done\n", d->name);
       d->state = DECLSTATE_RESOLVED;
       break;
     case DECLSTATE_RESOLVING:
       errorloc(d->loc, "Circular reference for %s", d->name);
       break;
     case DECLSTATE_RESOLVED:
+      printf("%s: already resolved\n", d->name);
       break;
     default:
       assert(0);
@@ -603,10 +650,71 @@ void resolve_decl(Decl *d) {
   }
 }
 
+// Can rhs be assigned to lhs
+bool is_assignable(Expr *lhs, Expr *rhs) {
+  if (lhs->type == rhs->type) {
+    return true;
+  }
+  if (lhs->type->kind == TYPE_POINTER && rhs->type == &nilType) {
+    return true;
+  }
+  if (lhs->type->kind == TYPE_PROCEDURE && rhs->type == &nilType) {
+    return true;
+  }
+  if (lhs->type == &charType && is_one_char_string(rhs)) {
+    return true;
+  }
+  return false;
+}
+
+void resolve_statements(Statement *body) {
+  for (size_t i = 0; i < buf_len(body); i++) {
+    if (body[i].kind == STMT_ASSIGNMENT) {
+      resolve_expr(body[i].assignment_stmt.lvalue);
+      resolve_expr(body[i].assignment_stmt.rvalue);
+      if (!is_assignable(body[i].assignment_stmt.lvalue,
+                         body[i].assignment_stmt.rvalue)) {
+        errorloc(body[i].loc, "Incompatible types for assignment");
+      }
+    } else {
+      assert(0);
+    }
+  }
+}
+
 void resolve_decls(Decl *decls) {
   for (size_t i = 0; i < buf_len(decls); i++) {
-    resolve_decl(decls + i);
+    printf("%s: ", decls[i].name);
+    switch (decls[i].state) {
+      case DECLSTATE_RESOLVED:
+        printf("RESOLVED\n");
+        break;
+      case DECLSTATE_RESOLVING:
+        printf("INCOMPLETE\n");
+        break;
+      case DECLSTATE_UNRESOLVED:
+        printf("NOT REACHED\n");
+        break;
+      default:
+        assert(0);
+        break;
+    }
   }
+}
+
+void resolve_test_file(void) {
+  Scope globalScope;
+  globalScope.decls = NULL;
+  enter_scope(&globalScope, "test");
+  init_global_types();
+  init_global_defs();
+
+  Module *m = parse_test_file("FibFact.Mod");
+  gResolveScope = m->decls;
+  resolve_statements(m->body);
+  resolve_decls(m->decls);
+  exit_scope("test");
+  assert(current_scope == NULL);
 }
 
 void resolve_test(void) {
@@ -615,49 +723,62 @@ void resolve_test(void) {
   enter_scope(&globalScope, "test");
   init_global_types();
   init_global_defs();
-  init_stream("",
-              "MODULE abc;\n"
-              "CONST\n"
-              "  one* = +1;\n"
-              "  minusone* = -1h;\n"
-              "  oneF* = 1.0;\n"
-              "  minusoneF* = -1.0;\n"
-              "  str = \"Howdy\";\n"
-              "  kBoolT = TRUE;\n"
-              "  kBoolF = FALSE;\n"
-              "  kNil = NIL;\n"
-              "  kEmptySet = {};\n"
-              "  kOneSet = {1};\n"
-              "  kFiveEltSet0 = {1, 6,7,9, 21..27};\n"
-              "  kFourEltSet1 = {1, 6,7,9};\n"
-              "  kFourEltSet2 = -{1, 6,7,9};\n"
-              "  kSetTestSet2 = {2 .. 8, 22 .. 25};\n"
-              "  k=1*2+3*4;\n"
-              "  minusTwo = 100 - 102;\n"
-              "  minusTwoF = 100.0 - 102.0;\n"
-              "  minusTwoS = {3, 4, 8, 10} - {4, 8};\n"
-              "  SixFactorial = 1*2*3*4*5*6;\n"
-              "  SeventyTwo = 720 / 10;\n"
-              "  OneHalf = 10.0 / 20.0;\n"
-              "  Yes = 3 > 2;\n"
-              "  No = 3 < 2;\n"
-              "  SixFactorialF = 1.0*2.0*3.0*4.0*5.0*6.0;\n"
-              "  Two = one + one;\n"
-              "  Four = Two + Two;\n"
-              "  kSetX = kOneSet + {27};\n"
-              "TYPE\n"
-              "  R1 = RECORD a, b, c :INTEGER END;\n"
-              "  P1 = POINTER TO R1;\n"
-              "  A1 = ARRAY 10, 20, SeventyTwo, 40 OF INTEGER;\n"
-              "  A2 = ARRAY 10 OF ARRAY 20 OF ARRAY SeventyTwo OF ARRAY 40 OF "
-              "INTEGER;\n"
-              "  P2 = POINTER TO R2;\n"
-              "  R2 = RECORD q :CHAR; next :P2; a :ARRAY Four OF CHAR; END; \n"
-              "END abc.");
+  init_stream(
+      "",
+      "MODULE abc;\n"
+      "CONST\n"
+      "  one* = +1;\n"
+      "  minusone* = -1h;\n"
+      "  oneF* = 1.0;\n"
+      "  minusoneF* = -1.0;\n"
+      "  str = \"Howdy\";\n"
+      "  kBoolT = TRUE;\n"
+      "  kBoolF = FALSE;\n"
+      "  kNil = NIL;\n"
+      "  kEmptySet = {};\n"
+      "  kOneSet = {1};\n"
+      "  kFiveEltSet0 = {1, 6,7,9, 21..27};\n"
+      "  kFourEltSet1 = {1, 6,7,9};\n"
+      "  kFourEltSet2 = -{1, 6,7,9};\n"
+      "  kSetTestSet2 = {2 .. 8, 22 .. 25};\n"
+      "  k=1*2+3*4;\n"
+      "  minusTwo = 100 - 102;\n"
+      "  minusTwoF = 100.0 - 102.0;\n"
+      "  minusTwoS = {3, 4, 8, 10} - {4, 8};\n"
+      "  SixFactorial = 1*2*3*4*5*6;\n"
+      "  SeventyTwo = 720 / 10;\n"
+      "  OneHalf = 10.0 / 20.0;\n"
+      "  Yes = 3 > 2;\n"
+      "  No = 3 < 2;\n"
+      "  SixFactorialF = 1.0*2.0*3.0*4.0*5.0*6.0;\n"
+      "  Two = one + one;\n"
+      "  Four = Two + Two;\n"
+      "  kSetX = kOneSet + {27};\n"
+      "TYPE\n"
+      "  R1 = RECORD a, b, c :INTEGER END;\n"
+      "  P1 = POINTER TO R1;\n"
+      "  A1 = ARRAY 10, 20, SeventyTwo, 40 OF INTEGER;\n"
+      "  A2 = ARRAY 10 OF ARRAY 20 OF ARRAY SeventyTwo OF ARRAY 40 OF "
+      "INTEGER;\n"
+      "  P2 = POINTER TO R2;\n"
+      "  R2 = RECORD q :CHAR; next :P2; a :ARRAY Four OF CHAR; END; \n"
+      "VAR\n"
+      "  unused: BYTE;\n"
+      "  aa :A1;\n"
+      "  bb :BOOLEAN;\n"
+      "  cc :CHAR;\n"
+      "  ii :INTEGER;\n"
+      "BEGIN\n"
+      "  bb := cc = \"0\"; bb := kEmptySet = kOneSet; bb := cc <= cc;\n"
+      "  cc := 041X;\n"
+      "  ii := one; ii := minusone + Four; aa[SixFactorial, 0, 0, 0] := 3\n"
+      "END abc.");
   next_token();
   Module *m = parse_module();
   gResolveScope = m->decls;
+  resolve_statements(m->body);
   resolve_decls(m->decls);
   exit_scope("test");
   assert(current_scope == NULL);
+  //  resolve_test_file();
 }

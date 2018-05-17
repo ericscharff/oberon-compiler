@@ -51,6 +51,7 @@ typedef struct Decl {
     struct {
       Decl *decls;      // buf
       Statement *body;  // buf
+      Expr *ret_val;
     } proc_decl;
   };
   DeclState state;  // Populated by resolver

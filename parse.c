@@ -615,17 +615,19 @@ void parse_procedure_body(Decl *procDecl) {
   // outer scopes anyway
   parse_declaration_sequence();
   Statement *body = NULL;
+  Expr *returnVal = NULL;
   if (match_keyword(keyword_begin)) {
     body = parse_statement_sequence();
   }
   if (match_keyword(keyword_return)) {
-    parse_expression();
+    returnVal = parse_expression();
   }
   expect_keyword(keyword_end);
   assert(procDecl->proc_decl.decls == NULL);
   assert(procDecl->proc_decl.body == NULL);
   procDecl->proc_decl.decls = scope.decls;
   procDecl->proc_decl.body = body;
+  procDecl->proc_decl.ret_val = returnVal;
   exit_scope(parentPackage);
 }
 
@@ -786,13 +788,15 @@ Decl *get_imported_decls(const char *moduleName) {
   return importCache.import[index].imported_decls;
 }
 
-void parse_test_file(const char *fileName) {
+Module *parse_test_file(const char *fileName) {
   char *contents = read_file(fileName);
   assert(contents);
   init_stream(fileName, contents);
   next_token();
-  dbg_dump_scope(parse_module());
+  Module *m = parse_module();
+  dbg_dump_scope(m);
   free(contents);
+  return m;
 }
 
 void init_global_defs(void) {
