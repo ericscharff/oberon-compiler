@@ -1,5 +1,8 @@
 MODULE FibFact;
 
+CONST
+  Seven = 7;
+
 PROCEDURE FactIter*(n :INTEGER) :INTEGER;
 VAR
   i, r :INTEGER;
@@ -50,10 +53,9 @@ BEGIN
   RETURN r
 END FibRec;
 
-
 BEGIN
   FactIter(7);
-  FactRec(7);
+  FactRec(Seven);
   FibIter(12);
   FibRec(12);
 END FibFact.

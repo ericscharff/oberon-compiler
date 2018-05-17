@@ -598,7 +598,6 @@ void resolve_varparam_decl(Decl *d) {
 
 void resolve_proc_decl(Decl *d) {
   assert(d->kind == DECL_PROC);
-  assert(0);
 }
 
 void resolve_decl(Decl *d) {
@@ -667,17 +666,53 @@ bool is_assignable(Expr *lhs, Expr *rhs) {
   return false;
 }
 
+void verify_assignment_compatible(FormalParameter *formal, Expr *actual) {
+  resolve_type(formal->type);
+  resolve_expr(actual);
+  if (formal->is_var_parameter) {
+    // actual needs to be a variable
+    assert(0);
+  }
+  if (formal->type != actual->type) {
+    // This is way too strict
+    errorloc(actual->loc, "actual type %s does not match formal type %s", actual->type->name, formal->type->name); 
+  }
+}
+
 void resolve_statements(Statement *body) {
   for (size_t i = 0; i < buf_len(body); i++) {
-    if (body[i].kind == STMT_ASSIGNMENT) {
-      resolve_expr(body[i].assignment_stmt.lvalue);
-      resolve_expr(body[i].assignment_stmt.rvalue);
-      if (!is_assignable(body[i].assignment_stmt.lvalue,
-                         body[i].assignment_stmt.rvalue)) {
-        errorloc(body[i].loc, "Incompatible types for assignment");
+    switch (body[i].kind) {
+      case STMT_EMPTY:
+        break;
+      case STMT_ASSIGNMENT:
+        resolve_expr(body[i].assignment_stmt.lvalue);
+        resolve_expr(body[i].assignment_stmt.rvalue);
+        if (!is_assignable(body[i].assignment_stmt.lvalue,
+                           body[i].assignment_stmt.rvalue)) {
+          errorloc(body[i].loc, "Incompatible types for assignment");
+        }
+        break;
+      case STMT_PROCCALL: {
+        Expr *proc = body[i].proc_call_stmt.proc;
+        Expr **actualParams = body[i].proc_call_stmt.args;
+        resolve_expr(proc);
+        if (proc->type->kind == TYPE_PROCEDURE) {
+          FormalParameter *formalParams = proc->type->procedure_type.params;
+          if (buf_len(formalParams) == buf_len(actualParams)) {
+            for (size_t i=0; i < buf_len(formalParams); i++) {
+              verify_assignment_compatible(formalParams + i, actualParams[i]);
+            }
+          } else {
+            errorloc(proc->loc, "Expected %d parameters, got %d", buf_len(formalParams), buf_len(actualParams));
+          }
+        } else {
+          errorloc(proc->loc, "%s not a PROCEDURE", proc->type->name);
+        }
+        break;
       }
-    } else {
-      assert(0);
+      default:
+        errorloc(body[i].loc, "Unhandled %s", statement_kind_names[body[i].kind]);
+        break;
     }
   }
 }
@@ -780,5 +815,5 @@ void resolve_test(void) {
   resolve_decls(m->decls);
   exit_scope("test");
   assert(current_scope == NULL);
-  //  resolve_test_file();
+  resolve_test_file();
 }
