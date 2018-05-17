@@ -424,6 +424,10 @@ void resolve_identref(Expr *e) {
       errorloc(constExpr->loc, "Expression is not constant");
     }
   }
+  // TODO - check for immutable
+  if (d->kind == DECL_VAR || d->kind == DECL_PARAM || d->kind == DECL_VARPARAM) {
+    e->is_assignable = true;
+  }
 }
 
 void resolve_arrayref(Expr *e) {
@@ -441,7 +445,9 @@ void resolve_arrayref(Expr *e) {
     errorloc(arrayRef->loc, "item %s is not an ARRAY", arrayRef->type->name);
   }
   e->type = arrayRef->type->array_type.element_type;
+  e->is_assignable = arrayRef->is_assignable;
 }
+
 void resolve_expr(Expr *e) {
   assert(e);
   switch (e->kind) {
@@ -651,6 +657,9 @@ void resolve_decl(Decl *d) {
 
 // Can rhs be assigned to lhs
 bool is_assignable(Expr *lhs, Expr *rhs) {
+  if (!lhs->is_assignable) {
+    errorloc(lhs->loc, "Cannot assign");
+  }
   if (lhs->type == rhs->type) {
     return true;
   }
@@ -669,9 +678,8 @@ bool is_assignable(Expr *lhs, Expr *rhs) {
 void verify_assignment_compatible(FormalParameter *formal, Expr *actual) {
   resolve_type(formal->type);
   resolve_expr(actual);
-  if (formal->is_var_parameter) {
-    // actual needs to be a variable
-    assert(0);
+  if (formal->is_var_parameter && !actual->is_assignable) {
+    errorloc(actual->loc, "VAR param expected, actual param is not assignable");
   }
   if (formal->type != actual->type) {
     // This is way too strict
