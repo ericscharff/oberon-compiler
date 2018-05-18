@@ -5,7 +5,7 @@ LIBS=$(shell pkg-config glib-2.0 --libs)
 run: oberon builtin.defs Test.Mod
 	./oberon
 
-oberon: main.c ast.c buf.c lex.c parse.c type.c resolve.c
+oberon: main.c ast.c buf.c lex.c parse.c type.c resolve.c c_codegen.c
 	$(CC) $(CFLAGS) -o $(@) main.c $(LIBS)
 
 clean:

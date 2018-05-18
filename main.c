@@ -13,6 +13,7 @@
 #include "ast.c"
 #include "parse.c"
 #include "resolve.c"
+#include "c_codegen.c"
 
 void run_tests(void) {
   buf_test();
@@ -21,6 +22,7 @@ void run_tests(void) {
   ast_test();
   parse_test();
   resolve_test();
+  gen_test();
 }
 
 int main(void) {

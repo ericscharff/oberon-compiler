@@ -721,8 +721,9 @@ Module *parse_module(void) {
     error("Module name %s must match end name %s", moduleName, endModuleName);
   }
   expect_token(TOKEN_DOT);
+  Module *m = new_module(moduleName, scope.decls, body);
   exit_scope(parentPackage);
-  return new_module(moduleName, scope.decls, body);
+  return m;
 }
 
 void dbg_dump_scope(Module *m) {
@@ -744,7 +745,9 @@ void dbg_dump_scope(Module *m) {
       stmt_indent -= 4;
     }
   }
-  dbg_dump_stmts(m->body);
+  if (m->initializer) {
+    dbg_dump_stmts(m->initializer->proc_decl.body);
+  }
 }
 
 Decl *get_imported_decls(const char *moduleName) {

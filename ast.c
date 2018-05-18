@@ -2,6 +2,8 @@ typedef struct Decl Decl;
 typedef struct Expr expr;
 typedef struct Statement Statement;
 
+#define MODULE_INIT string_intern("<module_init>")
+
 typedef enum {
   DECL_UNKNOWN,
   DECL_INCOMPLETE,
@@ -351,8 +353,8 @@ typedef struct Statement {
 
 typedef struct Module {
   const char *name;
-  Decl *decls;      // buf
-  Statement *body;  // buf
+  Decl *decls;  // buf
+  Decl *initializer;
 } Module;
 
 typedef struct Scope Scope;
@@ -749,17 +751,26 @@ void dbg_dump_stmts(Statement *s) {
 }
 
 Module *new_module(const char *name, Decl *decls, Statement *body) {
+  assert(current_scope->decls == decls);
   Module *m = xmalloc(sizeof(Module));
+  if (body) {
+    Decl *d = new_decl_proc(MODULE_INIT, body->loc,
+                            new_type_procedure(NULL, NULL), false);
+    d->package_name = name;
+    d->proc_decl.ret_val = NULL;
+    d->proc_decl.body = body;
+    m->initializer = d;
+  } else {
+    m->initializer = NULL;
+  }
   m->name = name;
-  m->decls = NULL;
-  m->body = body;
-  m->decls = decls;
+  m->decls = current_scope->decls;
   return m;
 }
 
 void init_global_types() {
   Loc loc = {"<global>", 0};
-  current_package_name = string_intern("<system>");
+  current_package_name = string_intern("");
   assert(booleanType.kind == TYPE_BOOLEAN);
   new_decl_type(string_intern("BOOLEAN"), loc, &booleanType, true);
   new_decl_type(string_intern("BYTE"), loc, &byteType, true);

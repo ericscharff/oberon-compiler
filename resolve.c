@@ -1,11 +1,13 @@
 void resolve_expr(Expr *e);
 void resolve_decl(Decl *d);
-void resolve_decls(Decl *d);
 void resolve_statements(Statement *body);
 
 #define SCOPE_SIZE 1024
 Decl *gResolveScope[SCOPE_SIZE];
 int gResolveScopeLast = 0;  // points to first unusd slot (past scope end)
+
+Decl **gReachableDecls = NULL;
+Type **gReachableTypes = NULL;
 
 int resolve_scope_enter(void) { return gResolveScopeLast; }
 
@@ -14,7 +16,15 @@ void resolve_scope_leave(int newScope) { gResolveScopeLast = newScope; }
 void resolve_scope_push(Decl *declBuf) {
   for (size_t i = 0; i < buf_len(declBuf); i++) {
     assert(gResolveScopeLast < SCOPE_SIZE);
-    gResolveScope[gResolveScopeLast++] = declBuf + i;
+    if (declBuf[i].kind == DECL_IMPORT) {
+      resolve_scope_push(declBuf[i].imported_decls);
+    } else {
+      gResolveScope[gResolveScopeLast++] = declBuf + i;
+      // Always resolve Module initializer
+      if (declBuf[i].kind == DECL_PROC && declBuf[i].name == MODULE_INIT) {
+        resolve_decl(declBuf + i);
+      }
+    }
   }
 }
 
@@ -485,7 +495,6 @@ void resolve_type(Type *type) {
       }
     }
     for (size_t i = 0; i < buf_len(type->record_type.fields); i++) {
-      printf("Record field %s\n", type->record_type.fields[i].name);
       // TODO - Check for duplicate field name?
       resolve_type(type->record_type.fields[i].type);
     }
@@ -499,7 +508,6 @@ void resolve_type(Type *type) {
         int size = e->val.iVal;
         if (size > 0) {
           type->array_type.num_elements = size;
-          printf("array size %d\n", size);
         } else {
           error("ARRAY size %d must be greater than 0", size);
         }
@@ -510,6 +518,7 @@ void resolve_type(Type *type) {
       error("Array expr must be constant");
     }
   }
+  buf_push(gReachableTypes, type);
 }
 
 void verify_proc_param_compatible(FormalParameter *formal, Expr *actual) {
@@ -646,9 +655,6 @@ void resolve_const_decl(Decl *d) {
   if (e->is_const) {
     assert(e->type);
     d->type = e->type;
-    printf("CONST name: %s type: %s val: ", d->name, d->type->name);
-    dbg_print_val(e->val);
-    printf("\n");
   } else {
     errorloc(e->loc, "Const exprssion for %s is not const", d->name);
   }
@@ -679,7 +685,7 @@ void resolve_proc_decl(Decl *d) { assert(d->kind == DECL_PROC); }
 void resolve_decl(Decl *d) {
   switch (d->state) {
     case DECLSTATE_UNRESOLVED:
-      printf("%s resolving\n", d->name);
+      buf_push(gReachableDecls, d);
       d->state = DECLSTATE_RESOLVING;
       switch (d->kind) {
         case DECL_INCOMPLETE:
@@ -710,14 +716,12 @@ void resolve_decl(Decl *d) {
           assert(0);
           break;
       }
-      printf("%s resolution done\n", d->name);
       d->state = DECLSTATE_RESOLVED;
       break;
     case DECLSTATE_RESOLVING:
       errorloc(d->loc, "Circular reference for %s", d->name);
       break;
     case DECLSTATE_RESOLVED:
-      printf("%s: already resolved\n", d->name);
       break;
     default:
       assert(0);
@@ -827,63 +831,69 @@ void resolve_procedure_body(Decl *procDecl) {
       errorloc(procDecl->proc_decl.ret_val->loc, "RETURN value unexpected");
     }
   }
-  resolve_decls(procDecl->proc_decl.decls);
   resolve_scope_leave(oldScope);
 }
 
-void resolve_decls(Decl *decls) {
-  for (size_t i = 0; i < buf_len(decls); i++) {
-    printf("%s: ", decls[i].name);
-    switch (decls[i].state) {
-      case DECLSTATE_RESOLVED:
-        printf("RESOLVED\n");
-        if (decls[i].kind == DECL_PROC) {
-          resolve_procedure_body(decls + i);
-        }
-        break;
-      case DECLSTATE_RESOLVING:
-        printf("INCOMPLETE\n");
-        break;
-      case DECLSTATE_UNRESOLVED:
-        printf("NOT REACHED\n");
-        break;
-      default:
-        assert(0);
-        break;
+void resolve_decls(size_t startDecl, size_t endDecl) {
+  for (size_t i = startDecl; i < endDecl; i++) {
+    assert(gReachableDecls[i]->state == DECLSTATE_RESOLVED);
+    if (gReachableDecls[i]->kind == DECL_PROC) {
+      // This call may add new decls to resolve, hence the fix point
+      resolve_procedure_body(gReachableDecls[i]);
     }
+  }
+  size_t newEnd = buf_len(gReachableDecls);
+  if (newEnd != endDecl) {
+    resolve_decls(endDecl, newEnd);
+  }
+}
+
+void resolve_all_decls(void) {
+  resolve_decls(0, buf_len(gReachableDecls));
+  for (size_t i = 0; i < buf_len(gReachableTypes); i++) {
+    printf("Final type %s.%s\n", gReachableTypes[i]->package_name,
+           gReachableTypes[i]->name);
+  }
+  for (size_t i = 0; i < buf_len(gReachableDecls); i++) {
+    printf("Final decl %s.%s\n", gReachableDecls[i]->package_name,
+           gReachableDecls[i]->name);
   }
 }
 
 void resolve_module(Module *m) {
   int scopeIndex = resolve_scope_enter();
   resolve_scope_push(m->decls);
-  resolve_statements(m->body);
-  resolve_decls(m->decls);
+  resolve_all_decls();
   resolve_scope_leave(scopeIndex);
 }
 
 void resolve_test_file(void) {
+  gReachableDecls = NULL;
+  gReachableTypes = NULL;
   Scope globalScope;
   globalScope.decls = NULL;
-  enter_scope(&globalScope, "test");
+  enter_scope(&globalScope, "__top__");
   init_global_types();
   init_global_defs();
 
   Module *m = parse_test_file("FibFact.Mod");
   resolve_module(m);
-  exit_scope("test");
+  exit_scope("__topdone__");
   assert(current_scope == NULL);
 }
 
-void resolve_test(void) {
+void resolve_test_static(void) {
+  gReachableDecls = NULL;
+  gReachableTypes = NULL;
   Scope globalScope;
   globalScope.decls = NULL;
-  enter_scope(&globalScope, "test");
+  enter_scope(&globalScope, "__test__");
   init_global_types();
   init_global_defs();
   init_stream(
       "",
       "MODULE abc;\n"
+      "IMPORT Out;\n"
       "CONST\n"
       "  one* = +1;\n"
       "  minusone* = -1h;\n"
@@ -928,22 +938,26 @@ void resolve_test(void) {
       "  ii :INTEGER;\n"
       "PROCEDURE Wow; END Wow;"
       "PROCEDURE Wow2(x :INTEGER); BEGIN x := ii; Wow; Wow; Wow END Wow2;\n"
+      "PROCEDURE Wow3(x :INTEGER); BEGIN x := ii; Wow2(x); Wow2(x) END Wow3;\n"
       "PROCEDURE Incr(x :INTEGER):INTEGER; BEGIN RETURN x + 1 END Incr;\n"
       "BEGIN\n"
       "  bb := cc = \"0\"; bb := kEmptySet = kOneSet; bb := cc <= cc;\n"
-      "  Wow2(ii);\n"
+      "  Wow3(ii);\n"
       "  cc := 041X;\n"
+      "  Out.Int(10);\n"
       "  ii := Incr(one) + Incr(minusone);\n"
       "  ii := one; ii := minusone + Four; aa[SixFactorial, 0, 0, 0] := 3\n"
       "END abc.");
   next_token();
   Module *m = parse_module();
-  int scopeIndex = resolve_scope_enter();
-  resolve_scope_push(m->decls);
-  resolve_statements(m->body);
-  resolve_decls(m->decls);
-  resolve_scope_leave(scopeIndex);
-  exit_scope("test");
+  resolve_module(m);
+  exit_scope("__test__");
   assert(current_scope == NULL);
+}
+
+void resolve_test(void) {
+#if 0
+  resolve_test_static();
   resolve_test_file();
+#endif
 }
