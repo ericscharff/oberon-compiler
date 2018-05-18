@@ -1,13 +1,28 @@
 void resolve_expr(Expr *e);
 void resolve_decl(Decl *d);
+void resolve_decls(Decl *d);
+void resolve_statements(Statement *body);
 
-Decl *gResolveScope = NULL;
+#define SCOPE_SIZE 1024
+Decl *gResolveScope[SCOPE_SIZE];
+int gResolveScopeLast = 0;  // points to first unusd slot (past scope end)
+
+int resolve_scope_enter(void) { return gResolveScopeLast; }
+
+void resolve_scope_leave(int newScope) { gResolveScopeLast = newScope; }
+
+void resolve_scope_push(Decl *declBuf) {
+  for (size_t i = 0; i < buf_len(declBuf); i++) {
+    assert(gResolveScopeLast < SCOPE_SIZE);
+    gResolveScope[gResolveScopeLast++] = declBuf + i;
+  }
+}
 
 Decl *resolve_find_defn(const char *packageName, const char *name) {
-  for (size_t i = 0; i < buf_len(gResolveScope); i++) {
-    if (gResolveScope[i].package_name == packageName &&
-        gResolveScope[i].name == name) {
-      return gResolveScope + i;
+  for (int i = gResolveScopeLast - 1; i >= 0; i--) {
+    if (gResolveScope[i]->package_name == packageName &&
+        gResolveScope[i]->name == name) {
+      return gResolveScope[i];
     }
   }
   return NULL;
@@ -424,9 +439,13 @@ void resolve_identref(Expr *e) {
       errorloc(constExpr->loc, "Expression is not constant");
     }
   }
-  // TODO - check for immutable
-  if (d->kind == DECL_VAR || d->kind == DECL_PARAM || d->kind == DECL_VARPARAM) {
+  // Note - imprted vars are not assignable either
+  if (d->kind == DECL_VAR || d->kind == DECL_PARAM ||
+      d->kind == DECL_VARPARAM) {
     e->is_assignable = true;
+  }
+  if (d->kind == DECL_PARAM && d->type->kind == TYPE_RECORD) {
+    e->is_assignable = false;
   }
 }
 
@@ -448,6 +467,98 @@ void resolve_arrayref(Expr *e) {
   e->is_assignable = arrayRef->is_assignable;
 }
 
+void resolve_type(Type *type) {
+  assert(type);
+  if (type->resolved) {
+    return;
+  }
+  type->resolved = true;
+  if (type->kind == TYPE_POINTER) {
+    resolve_type(type->pointer_type.element_type);
+  }
+  if (type->kind == TYPE_RECORD) {
+    Type *base_type = type->record_type.base_type;
+    if (base_type) {
+      resolve_type(base_type);
+      if (base_type->kind != TYPE_RECORD) {
+        error("Base record type %s must be a RECORD", base_type->name);
+      }
+    }
+    for (size_t i = 0; i < buf_len(type->record_type.fields); i++) {
+      printf("Record field %s\n", type->record_type.fields[i].name);
+      // TODO - Check for duplicate field name?
+      resolve_type(type->record_type.fields[i].type);
+    }
+  }
+  if (type->kind == TYPE_ARRAY) {
+    resolve_type(type->array_type.element_type);
+    Expr *e = type->array_type.num_elements_expr;
+    resolve_expr(e);
+    if (e->is_const) {
+      if (e->val.kind == VAL_INTEGER) {
+        int size = e->val.iVal;
+        if (size > 0) {
+          type->array_type.num_elements = size;
+          printf("array size %d\n", size);
+        } else {
+          error("ARRAY size %d must be greater than 0", size);
+        }
+      } else {
+        error("ARRAY capacity must be INTEGER");
+      }
+    } else {
+      error("Array expr must be constant");
+    }
+  }
+}
+
+void verify_proc_param_compatible(FormalParameter *formal, Expr *actual) {
+  resolve_type(formal->type);
+  resolve_expr(actual);
+  if (formal->is_var_parameter && !actual->is_assignable) {
+    errorloc(actual->loc, "VAR param expected, actual param is not assignable");
+  }
+  if (formal->is_open_array) {
+    if (formal->type == &charType && is_string_type(actual->type)) {
+      // ARRAY OF CHAR -> STRING is OK
+      return;
+    }
+    if (actual->type->kind == TYPE_ARRAY &&
+        actual->type->array_type.element_type == formal->type) {
+      // ARRAY OF N -> ARRAY <z> OF N is OK
+      return;
+    }
+    errorloc(actual->loc,
+             "actual type %s does not match formal type ARRAY OF %s",
+             actual->type->name, formal->type->name);
+  }
+  if (formal->type != actual->type) {
+    // This is way too strict
+    errorloc(actual->loc, "actual type %s does not match formal type %s",
+             actual->type->name, formal->type->name);
+  }
+}
+
+Type *resolve_proc_call(Expr *proc, Expr **actualParams) {
+  assert(proc);
+
+  resolve_expr(proc);
+  if (proc->type->kind == TYPE_PROCEDURE) {
+    FormalParameter *formalParams = proc->type->procedure_type.params;
+    if (buf_len(formalParams) == buf_len(actualParams)) {
+      for (size_t i = 0; i < buf_len(formalParams); i++) {
+        verify_proc_param_compatible(formalParams + i, actualParams[i]);
+      }
+    } else {
+      errorloc(proc->loc, "Expected %d parameters, got %d",
+               buf_len(formalParams), buf_len(actualParams));
+    }
+  } else {
+    errorloc(proc->loc, "%s not a PROCEDURE", proc->type->name);
+  }
+  return proc->type->procedure_type.return_type;
+}
+
 void resolve_expr(Expr *e) {
   assert(e);
   switch (e->kind) {
@@ -460,9 +571,15 @@ void resolve_expr(Expr *e) {
     case EXPR_IDENTREF:
       resolve_identref(e);
       break;
-    case EXPR_PROCCALL:
-      assert(0);
+    case EXPR_PROCCALL: {
+      Type *retType = resolve_proc_call(e->proccall.proc, e->proccall.args);
+      if (retType) {
+        e->type = retType;
+      } else {
+        errorloc(e->loc, "Not a proper procedure");
+      }
       break;
+    }
     case EXPR_FIELDREF:
       assert(0);
       break;
@@ -537,51 +654,6 @@ void resolve_const_decl(Decl *d) {
   }
 }
 
-void resolve_type(Type *type) {
-  assert(type);
-  if (type->resolved) {
-    return;
-  }
-  type->resolved = true;
-  if (type->kind == TYPE_POINTER) {
-    resolve_type(type->pointer_type.element_type);
-  }
-  if (type->kind == TYPE_RECORD) {
-    Type *base_type = type->record_type.base_type;
-    if (base_type) {
-      resolve_type(base_type);
-      if (base_type->kind != TYPE_RECORD) {
-        error("Base record type %s must be a RECORD", base_type->name);
-      }
-    }
-    for (size_t i = 0; i < buf_len(type->record_type.fields); i++) {
-      printf("Record field %s\n", type->record_type.fields[i].name);
-      // TODO - Check for duplicate field name?
-      resolve_type(type->record_type.fields[i].type);
-    }
-  }
-  if (type->kind == TYPE_ARRAY) {
-    resolve_type(type->array_type.element_type);
-    Expr *e = type->array_type.num_elements_expr;
-    resolve_expr(e);
-    if (e->is_const) {
-      if (e->val.kind == VAL_INTEGER) {
-        int size = e->val.iVal;
-        if (size > 0) {
-          type->array_type.num_elements = size;
-          printf("array size %d\n", size);
-        } else {
-          error("ARRAY size %d must be greater than 0", size);
-        }
-      } else {
-        error("ARRAY capacity must be INTEGER");
-      }
-    } else {
-      error("Array expr must be constant");
-    }
-  }
-}
-
 void resolve_type_decl(Decl *d) {
   assert(d->kind == DECL_TYPE);
   resolve_type(d->type);
@@ -594,7 +666,7 @@ void resolve_var_decl(Decl *d) {
 
 void resolve_param_decl(Decl *d) {
   assert(d->kind == DECL_PARAM);
-  assert(0);
+  resolve_type(d->type);
 }
 
 void resolve_varparam_decl(Decl *d) {
@@ -602,9 +674,7 @@ void resolve_varparam_decl(Decl *d) {
   assert(0);
 }
 
-void resolve_proc_decl(Decl *d) {
-  assert(d->kind == DECL_PROC);
-}
+void resolve_proc_decl(Decl *d) { assert(d->kind == DECL_PROC); }
 
 void resolve_decl(Decl *d) {
   switch (d->state) {
@@ -675,22 +745,45 @@ bool is_assignable(Expr *lhs, Expr *rhs) {
   return false;
 }
 
-void verify_assignment_compatible(FormalParameter *formal, Expr *actual) {
-  resolve_type(formal->type);
-  resolve_expr(actual);
-  if (formal->is_var_parameter && !actual->is_assignable) {
-    errorloc(actual->loc, "VAR param expected, actual param is not assignable");
+void resolve_boolean_expr(Expr *e) {
+  resolve_expr(e);
+  if (e->type != &booleanType) {
+    errorloc(e->loc, "BOOLEAN expected, got %s", e->type->name);
   }
-  if (formal->type != actual->type) {
-    // This is way too strict
-    errorloc(actual->loc, "actual type %s does not match formal type %s", actual->type->name, formal->type->name); 
+}
+
+void resolve_elseifs(ElseIf *elseifs) {
+  for (size_t i = 0; i < buf_len(elseifs); i++) {
+    resolve_boolean_expr(elseifs[i].cond);
+    resolve_statements(elseifs[i].body);
   }
 }
 
 void resolve_statements(Statement *body) {
   for (size_t i = 0; i < buf_len(body); i++) {
     switch (body[i].kind) {
-      case STMT_EMPTY:
+      case STMT_UNKNOWN:
+        assert(0);
+        break;
+      case STMT_IF:
+        resolve_boolean_expr(body[i].if_stmt.cond);
+        resolve_statements(body[i].if_stmt.then_clause);
+        resolve_elseifs(body[i].if_stmt.elseifs);
+        resolve_statements(body[i].if_stmt.else_clause);
+        break;
+      case STMT_CASE:
+        assert(0);
+        break;
+      case STMT_WHILE:
+        resolve_boolean_expr(body[i].while_stmt.cond);
+        resolve_statements(body[i].while_stmt.body);
+        resolve_elseifs(body[i].while_stmt.elseifs);
+        break;
+      case STMT_REPEAT:
+        assert(0);
+        break;
+      case STMT_FOR:
+        assert(0);
         break;
       case STMT_ASSIGNMENT:
         resolve_expr(body[i].assignment_stmt.lvalue);
@@ -700,29 +793,42 @@ void resolve_statements(Statement *body) {
           errorloc(body[i].loc, "Incompatible types for assignment");
         }
         break;
-      case STMT_PROCCALL: {
-        Expr *proc = body[i].proc_call_stmt.proc;
-        Expr **actualParams = body[i].proc_call_stmt.args;
-        resolve_expr(proc);
-        if (proc->type->kind == TYPE_PROCEDURE) {
-          FormalParameter *formalParams = proc->type->procedure_type.params;
-          if (buf_len(formalParams) == buf_len(actualParams)) {
-            for (size_t i=0; i < buf_len(formalParams); i++) {
-              verify_assignment_compatible(formalParams + i, actualParams[i]);
-            }
-          } else {
-            errorloc(proc->loc, "Expected %d parameters, got %d", buf_len(formalParams), buf_len(actualParams));
-          }
-        } else {
-          errorloc(proc->loc, "%s not a PROCEDURE", proc->type->name);
-        }
+      case STMT_PROCCALL:
+        resolve_proc_call(body[i].proc_call_stmt.proc,
+                          body[i].proc_call_stmt.args);
         break;
-      }
+      case STMT_EMPTY:
+        break;
       default:
-        errorloc(body[i].loc, "Unhandled %s", statement_kind_names[body[i].kind]);
+        assert(0);
         break;
     }
   }
+}
+
+void resolve_procedure_body(Decl *procDecl) {
+  assert(procDecl);
+  assert(procDecl->type);
+  assert(procDecl->type->kind == TYPE_PROCEDURE);
+
+  Type *procReturnType = procDecl->type->procedure_type.return_type;
+  int oldScope = resolve_scope_enter();
+  resolve_scope_push(procDecl->proc_decl.decls);
+  resolve_statements(procDecl->proc_decl.body);
+  if (procReturnType) {
+    resolve_expr(procDecl->proc_decl.ret_val);
+    if (procReturnType != procDecl->proc_decl.ret_val->type) {
+      errorloc(procDecl->proc_decl.ret_val->loc,
+               "RETURN type %s does not match declared type %s",
+               procDecl->proc_decl.ret_val->type->name, procReturnType->name);
+    }
+  } else {
+    if (procDecl->proc_decl.ret_val) {
+      errorloc(procDecl->proc_decl.ret_val->loc, "RETURN value unexpected");
+    }
+  }
+  resolve_decls(procDecl->proc_decl.decls);
+  resolve_scope_leave(oldScope);
 }
 
 void resolve_decls(Decl *decls) {
@@ -731,6 +837,9 @@ void resolve_decls(Decl *decls) {
     switch (decls[i].state) {
       case DECLSTATE_RESOLVED:
         printf("RESOLVED\n");
+        if (decls[i].kind == DECL_PROC) {
+          resolve_procedure_body(decls + i);
+        }
         break;
       case DECLSTATE_RESOLVING:
         printf("INCOMPLETE\n");
@@ -753,9 +862,11 @@ void resolve_test_file(void) {
   init_global_defs();
 
   Module *m = parse_test_file("FibFact.Mod");
-  gResolveScope = m->decls;
+  int scopeIndex = resolve_scope_enter();
+  resolve_scope_push(m->decls);
   resolve_statements(m->body);
   resolve_decls(m->decls);
+  resolve_scope_leave(scopeIndex);
   exit_scope("test");
   assert(current_scope == NULL);
 }
@@ -811,16 +922,23 @@ void resolve_test(void) {
       "  bb :BOOLEAN;\n"
       "  cc :CHAR;\n"
       "  ii :INTEGER;\n"
+      "PROCEDURE Wow; END Wow;"
+      "PROCEDURE Wow2(x :INTEGER); BEGIN x := ii; Wow; Wow; Wow END Wow2;\n"
+      "PROCEDURE Incr(x :INTEGER):INTEGER; BEGIN RETURN x + 1 END Incr;\n"
       "BEGIN\n"
       "  bb := cc = \"0\"; bb := kEmptySet = kOneSet; bb := cc <= cc;\n"
+      "  Wow2(ii);\n"
       "  cc := 041X;\n"
+      "  ii := Incr(one) + Incr(minusone);\n"
       "  ii := one; ii := minusone + Four; aa[SixFactorial, 0, 0, 0] := 3\n"
       "END abc.");
   next_token();
   Module *m = parse_module();
-  gResolveScope = m->decls;
+  int scopeIndex = resolve_scope_enter();
+  resolve_scope_push(m->decls);
   resolve_statements(m->body);
   resolve_decls(m->decls);
+  resolve_scope_leave(scopeIndex);
   exit_scope("test");
   assert(current_scope == NULL);
   resolve_test_file();

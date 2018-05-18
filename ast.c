@@ -162,10 +162,10 @@ typedef struct Expr {
       const char *sVal;
     } string;
   };
-  bool is_const;  // Populated by resolver
-  Type *type;     // Populated by resolver
-  Val val;        // Populated by resolver
-  bool is_assignable; // Populated by resolver
+  bool is_const;       // Populated by resolver
+  Type *type;          // Populated by resolver
+  Val val;             // Populated by resolver
+  bool is_assignable;  // Populated by resolver
 } Expr;
 
 void dbg_print_expr(Expr *e) {
