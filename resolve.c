@@ -854,6 +854,14 @@ void resolve_decls(Decl *decls) {
   }
 }
 
+void resolve_module(Module *m) {
+  int scopeIndex = resolve_scope_enter();
+  resolve_scope_push(m->decls);
+  resolve_statements(m->body);
+  resolve_decls(m->decls);
+  resolve_scope_leave(scopeIndex);
+}
+
 void resolve_test_file(void) {
   Scope globalScope;
   globalScope.decls = NULL;
@@ -862,11 +870,7 @@ void resolve_test_file(void) {
   init_global_defs();
 
   Module *m = parse_test_file("FibFact.Mod");
-  int scopeIndex = resolve_scope_enter();
-  resolve_scope_push(m->decls);
-  resolve_statements(m->body);
-  resolve_decls(m->decls);
-  resolve_scope_leave(scopeIndex);
+  resolve_module(m);
   exit_scope("test");
   assert(current_scope == NULL);
 }
