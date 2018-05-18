@@ -1,3 +1,5 @@
+void gen_statements(Statement *s);
+
 char *codegenBuf = NULL;
 int codegenIndent = 0;
 
@@ -78,20 +80,91 @@ void gen_typedef(Type *t) {
   gen_str(";\n");
 }
 
+void gen_val(Val val) {
+  switch (val.kind) {
+    case VAL_UNKNOWN:
+      assert(0);
+      break;
+    case VAL_INTEGER:
+      buf_printf(codegenBuf, "%d", val.iVal);
+      break;
+    case VAL_REAL:
+      buf_printf(codegenBuf, "%f", val.rVal);
+      break;
+    case VAL_SET:
+      buf_printf(codegenBuf, "%d", val.setVal);
+      break;
+    case VAL_BOOLEAN:
+      buf_printf(codegenBuf, "%d", val.bVal);
+      break;
+    case VAL_STRING:
+      buf_printf(codegenBuf, "\"%s\"", val.sVal);
+      break;
+    case VAL_NIL:
+      gen_str("0");
+      break;
+    default:
+      assert(0);
+      break;
+  }
+}
+
+void gen_expr(Expr *e) {
+  assert(e);
+  if (e->is_const) {
+    gen_val(e->val);
+  } else {
+  }
+}
+
+void gen_elseifs(ElseIf *elseifs) {
+  for (size_t i=0; i < buf_len(elseifs); i++) {
+    geni();
+    gen_str("} else if ");
+    gen_expr(elseifs[i].cond);
+    gen_str("{\n");
+    codegenIndent++;
+    gen_statements(elseifs[i].body);
+    codegenIndent--;
+  }
+}
+
 void gen_statement(Statement *s) {
   assert(s);
+  geni();
   switch (s->kind) {
     case STMT_UNKNOWN:
       assert(0);
       break;
     case STMT_IF:
-      assert(0);
+      gen_str("if ");
+      gen_expr(s->if_stmt.cond);
+      gen_str("{\n");
+      codegenIndent++;
+      gen_statements(s->if_stmt.then_clause);
+      codegenIndent--;
+      gen_elseifs(s->if_stmt.elseifs);
+      if (s->if_stmt.else_clause) {
+        geni();
+        gen_str("} else {\n");
+        codegenIndent++;
+        gen_statements(s->if_stmt.else_clause);
+        codegenIndent--;
+      }
+      geni();
+      gen_str("}\n");
       break;
     case STMT_CASE:
       assert(0);
       break;
     case STMT_WHILE:
-      assert(0);
+      gen_str("while ");
+      assert(!s->while_stmt.elseifs);
+      gen_expr(s->while_stmt.cond);
+      gen_str("{\n");
+      codegenIndent++;
+      gen_statements(s->while_stmt.body);
+      codegenIndent--;
       break;
     case STMT_REPEAT:
       assert(0);
@@ -100,13 +173,22 @@ void gen_statement(Statement *s) {
       assert(0);
       break;
     case STMT_ASSIGNMENT:
-      assert(0);
+      gen_expr(s->assignment_stmt.lvalue);
+      gen_str(" = ");
+      gen_expr(s->assignment_stmt.rvalue);
+      gen_str(";\n");
       break;
     case STMT_PROCCALL:
-      assert(0);
+      assert(s->proc_call_stmt.proc);
+      assert(s->proc_call_stmt.proc->kind == EXPR_IDENTREF);
+      gen_qname(s->proc_call_stmt.proc->identref.package_name, s->proc_call_stmt.proc->identref.name);
+      gen_str("(");
+      for (size_t i=0; i < buf_len(s->proc_call_stmt.args); i++) {
+        gen_expr(s->proc_call_stmt.args[i]);
+      }
+      gen_str(");\n");
       break;
     case STMT_EMPTY:
-      assert(0);
       break;
     default:
       assert(0);
@@ -134,7 +216,11 @@ void gen_decl(Decl *d) {
       assert(0);
       break;
     case DECL_CONST:
-      assert(0);
+      gen_str("#define ");
+      gen_qname(d->package_name, d->name);
+      gen_str(" (");
+      gen_expr(d->const_val.expr);
+      gen_str(")\n");
       break;
     case DECL_TYPE:
       assert(0);
