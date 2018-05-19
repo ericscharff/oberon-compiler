@@ -1,4 +1,5 @@
 void gen_statements(Statement *s);
+void gen_expr(Expr *e);
 
 char *codegenBuf = NULL;
 int codegenIndent = 0;
@@ -109,11 +110,78 @@ void gen_val(Val val) {
   }
 }
 
+void gen_binary_expr(TokenKind op, Expr *lhs, Expr *rhs) {
+  assert(lhs);
+  assert(rhs);
+  assert(op);
+  gen_str("(");
+  gen_expr(lhs);
+  gen_str(token_kind_names[op]);
+  gen_expr(rhs);
+  gen_str(")");
+}
+
+void gen_proccall(Expr *proc, Expr **args) {
+  assert(proc);
+  gen_expr(proc);
+  gen_str("(");
+  for (size_t i=0; i < buf_len(args); i++) {
+    gen_expr(args[i]);
+  }
+  gen_str(")");
+}
+
 void gen_expr(Expr *e) {
   assert(e);
   if (e->is_const) {
     gen_val(e->val);
   } else {
+    switch (e->kind) {
+      case EXPR_UNKNOWN:
+        assert(0);
+        break;
+      case EXPR_UNARY:
+        assert(0);
+        break;
+      case EXPR_BINARY:
+        gen_binary_expr(e->binary.op, e->binary.lhs, e->binary.rhs);
+        break;
+      case EXPR_IDENTREF:
+        gen_qname(e->identref.package_name, e->identref.name);
+        break;
+      case EXPR_PROCCALL:
+        gen_proccall(e->proccall.proc, e->proccall.args);
+        break;
+      case EXPR_FIELDREF:
+        gen_expr(e->fieldref.expr);
+        gen_str(".");
+        gen_str(e->fieldref.field_name);
+        break;
+      case EXPR_POINTERDEREF:
+        gen_str("(*");
+        gen_expr(e->pointerderef.expr);
+        gen_str(")");
+        break;
+      case EXPR_ARRAYREF:
+        gen_expr(e->arrayref.expr);
+        gen_str("[");
+        gen_expr(e->arrayref.array_index);
+        gen_str("]");
+        break;
+      case EXPR_TYPEGUARD:
+        assert(0);
+        break;
+      case EXPR_INTEGER:
+      case EXPR_REAL:
+      case EXPR_STRING:
+      case EXPR_NIL:
+      case EXPR_TRUE:
+      case EXPR_FALSE:
+      case EXPR_EMPTYSET:
+      default:
+        assert(0);
+        break;
+    }
   }
 }
 
@@ -131,7 +199,9 @@ void gen_elseifs(ElseIf *elseifs) {
 
 void gen_statement(Statement *s) {
   assert(s);
-  geni();
+  if (s->kind != STMT_EMPTY) {
+    geni();
+  }
   switch (s->kind) {
     case STMT_UNKNOWN:
       assert(0);
@@ -139,7 +209,7 @@ void gen_statement(Statement *s) {
     case STMT_IF:
       gen_str("if ");
       gen_expr(s->if_stmt.cond);
-      gen_str("{\n");
+      gen_str(" {\n");
       codegenIndent++;
       gen_statements(s->if_stmt.then_clause);
       codegenIndent--;
@@ -161,10 +231,12 @@ void gen_statement(Statement *s) {
       gen_str("while ");
       assert(!s->while_stmt.elseifs);
       gen_expr(s->while_stmt.cond);
-      gen_str("{\n");
+      gen_str(" {\n");
       codegenIndent++;
       gen_statements(s->while_stmt.body);
       codegenIndent--;
+      geni();
+      gen_str("}\n");
       break;
     case STMT_REPEAT:
       assert(0);
@@ -179,14 +251,8 @@ void gen_statement(Statement *s) {
       gen_str(";\n");
       break;
     case STMT_PROCCALL:
-      assert(s->proc_call_stmt.proc);
-      assert(s->proc_call_stmt.proc->kind == EXPR_IDENTREF);
-      gen_qname(s->proc_call_stmt.proc->identref.package_name, s->proc_call_stmt.proc->identref.name);
-      gen_str("(");
-      for (size_t i=0; i < buf_len(s->proc_call_stmt.args); i++) {
-        gen_expr(s->proc_call_stmt.args[i]);
-      }
-      gen_str(");\n");
+      gen_proccall(s->proc_call_stmt.proc, s->proc_call_stmt.args);
+      gen_str(";\n");
       break;
     case STMT_EMPTY:
       break;
@@ -280,6 +346,12 @@ void gen_decl(Decl *d) {
         }
       }
       gen_statements(d->proc_decl.body);
+      if (d->proc_decl.ret_val) {
+        geni();
+        gen_str("return (");
+        gen_expr(d->proc_decl.ret_val);
+        gen_str(");\n");
+      }
       codegenIndent--;
       geni();
       gen_str("}\n\n");
