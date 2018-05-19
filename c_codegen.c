@@ -178,6 +178,9 @@ void gen_proccall(Expr *proc, Expr **args) {
   gen_str("(");
   for (size_t i=0; i < buf_len(args); i++) {
     gen_expr(args[i]);
+    if (i != buf_len(args)-1) {
+      gen_str(", ");
+    }
   }
   gen_str(")");
 }
