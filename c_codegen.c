@@ -403,7 +403,6 @@ void generate_c_code(Type **types, Decl **decls) {
 }
 
 void gen_test(void) {
-  // resolve_test_static();
   resolve_test_file();
   generate_c_code(gReachableTypes, gReachableDecls);
   puts(codegenBuf);

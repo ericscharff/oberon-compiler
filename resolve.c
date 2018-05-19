@@ -860,6 +860,7 @@ void resolve_all_decls(void) {
   for (size_t i = 0; i < buf_len(gReachableTypes); i++) {
     printf("Final type %s.%s\n", gReachableTypes[i]->package_name,
            gReachableTypes[i]->name);
+    gReachableTypes[i]->resolved = false;
   }
   for (size_t i = 0; i < buf_len(gReachableDecls); i++) {
     printf("Final decl %s.%s\n", gReachableDecls[i]->package_name,
@@ -966,8 +967,5 @@ void resolve_test_static(void) {
 }
 
 void resolve_test(void) {
-#if 0
   resolve_test_static();
-  resolve_test_file();
-#endif
 }
