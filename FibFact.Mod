@@ -5,6 +5,20 @@ IMPORT Out;
 CONST
   Seven = 7;
 
+TYPE
+  I = INTEGER;
+  A = ARRAY 10 OF I;
+  B = ARRAY 5, 15 OF REAL;
+  P = PROCEDURE (a, b, c :INTEGER):REAL;
+
+VAR
+  v1 :I;
+  v2 :A;
+  v3 :B;
+  v4 :ARRAY 10 OF INTEGER;
+  v5 :P;
+  v6 :PROCEDURE;
+
 PROCEDURE FactIter*(n :INTEGER) :INTEGER;
 VAR
   i, r :INTEGER;
@@ -64,4 +78,10 @@ BEGIN
   FactRec(Seven);
   FibIter(12);
   FibRec(12);
+  v1 := 289;
+  v2[3] := v1;
+  v3[11, 12] := 293.3;
+  v4[0] := 10;
+  v5 := NIL;
+  v6 := NIL;
 END FibFact.

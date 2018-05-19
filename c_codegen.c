@@ -20,9 +20,11 @@ void geni(void) {
   }
 }
 
-void gen_type(Type *t) {
+void gen_type(Type *t, const char *packageName, const char *name) {
   if (t->name) {
     gen_qname(t->package_name, t->name);
+    gen_str(" ");
+    gen_qname(packageName, name);
   } else {
     switch (t->kind) {
       case TYPE_UNKNOWN:
@@ -38,13 +40,16 @@ void gen_type(Type *t) {
         assert(0);
         break;
       case TYPE_CHAR:
-        gen_str("char");
+        gen_str("char ");
+        gen_qname(packageName, name);
         break;
       case TYPE_INTEGER:
-        gen_str("int");
+        gen_str("int ");
+        gen_qname(packageName, name);
         break;
       case TYPE_REAL:
-        assert(0);
+        gen_str("float ");
+        gen_qname(packageName, name);
         break;
       case TYPE_SET:
         assert(0);
@@ -56,13 +61,34 @@ void gen_type(Type *t) {
         assert(0);
         break;
       case TYPE_ARRAY:
-        assert(0);
+        gen_type(t->array_type.element_type, packageName, name);
+        gen_str("[");
+        gen_expr(t->array_type.num_elements_expr);
+        gen_str("]");
         break;
       case TYPE_RECORD:
         assert(0);
         break;
       case TYPE_PROCEDURE:
-        assert(0);
+        if (t->procedure_type.return_type) {
+          gen_type(t->procedure_type.return_type, "", "");
+        } else {
+          gen_str("void");
+        }
+        gen_str(" (*");
+        gen_qname(packageName, name);
+        gen_str(")(");
+        if (t->procedure_type.params) {
+          for (size_t i=0; i < buf_len(t->procedure_type.params); i++) {
+            gen_type(t->procedure_type.params[i].type, "", "");
+            if (i != buf_len(t->procedure_type.params) - 1) {
+              gen_str(", ");
+            }
+          }
+        } else {
+          gen_str("void");
+        }
+        gen_str(")");
         break;
       default:
         assert(0);
@@ -71,17 +97,17 @@ void gen_type(Type *t) {
   }
 }
 
-void gen_typedef(Type *t) {
+void gen_typedef(Type *t, const char *packageName, const char *name) {
   assert(t);
-  geni();
-  gen_str("typedef ");
-  Type nakedType = *t;
-  nakedType.name = NULL;
-  nakedType.package_name = NULL;
-  gen_type(&nakedType);
-  gen_str(" ");
-  gen_qname(t->package_name, t->name);
-  gen_str(";\n");
+  if (packageName && name) {
+    geni();
+    gen_str("typedef ");
+    Type nakedType = *t;
+    nakedType.package_name = NULL;
+    nakedType.name = NULL;
+    gen_type(&nakedType, packageName, name);
+    gen_str(";\n");
+  }
 }
 
 void gen_val(Val val) {
@@ -300,8 +326,10 @@ void gen_decl(Decl *d) {
       assert(0);
       break;
     case DECL_VAR:
+      // Only generate global vars
       if (d->package_name && d->package_name[0]) {
-        assert(0);
+        gen_type(d->type, d->package_name, d->name);
+        gen_str(";\n");
       }
       break;
     case DECL_PARAM:
@@ -324,12 +352,7 @@ void gen_decl(Decl *d) {
         gen_str("(");
         for (size_t i = 0; i < buf_len(d->type->procedure_type.params); i++) {
           assert(!d->type->procedure_type.params[i].is_var_parameter);
-          gen_type(d->type->procedure_type.params[i].type);
-          if (d->type->procedure_type.params[i].is_open_array) {
-            gen_str("*");
-          }
-          gen_str(" ");
-          gen_str(d->type->procedure_type.params[i].name);
+          gen_type(d->type->procedure_type.params[i].type, NULL, d->type->procedure_type.params[i].name);
           if (i != buf_len(d->type->procedure_type.params) - 1) {
             gen_str(", ");
           }
@@ -346,9 +369,7 @@ void gen_decl(Decl *d) {
           if (d->proc_decl.decls[i].kind == DECL_VAR) {
             assert(!d->proc_decl.decls[i].package_name[0]);
             geni();
-            gen_type(d->proc_decl.decls[i].type);
-            gen_str(" ");
-            gen_str(d->proc_decl.decls[i].name);
+            gen_type(d->proc_decl.decls[i].type, d->proc_decl.decls[i].package_name, d->proc_decl.decls[i].name);
             gen_str(";\n");
           }
         }
@@ -372,7 +393,7 @@ void gen_decl(Decl *d) {
 
 void generate_c_code(Type **types, Decl **decls) {
   for (size_t i = 0; i < buf_len(types); i++) {
-    gen_typedef(types[i]);
+    gen_typedef(types[i], types[i]->package_name, types[i]->name);
   }
   for (int i = buf_len(decls) - 1; i >= 0; i--) {
     gen_decl(decls[i]);
