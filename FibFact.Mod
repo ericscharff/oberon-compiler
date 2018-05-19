@@ -1,15 +1,15 @@
 MODULE FibFact;
 
+IMPORT Out;
+
 CONST
   Seven = 7;
-
-PROCEDURE Out(s :ARRAY OF CHAR); END Out;
 
 PROCEDURE FactIter*(n :INTEGER) :INTEGER;
 VAR
   i, r :INTEGER;
 BEGIN
-  Out("FactIter");
+  Out.Str("FactIter");
   r := 1;
   i := 1;
   WHILE i <= n DO
@@ -22,7 +22,7 @@ END FactIter;
 PROCEDURE FactRec*(n :INTEGER) :INTEGER;
 VAR r :INTEGER;
 BEGIN
-  Out("FactRec");
+  Out.Str("FactRec");
   IF n <= 1 THEN
     r := 1
   ELSE
@@ -35,7 +35,7 @@ PROCEDURE FibIter*(n :INTEGER) :INTEGER;
 VAR
   prev, newPrev, fib :INTEGER;
 BEGIN
-  Out("FibIter");
+  Out.Str("FibIter");
   prev := 1;
   fib := 1;
   WHILE n > 1 DO
@@ -50,7 +50,7 @@ END FibIter;
 PROCEDURE FibRec*(n :INTEGER) :INTEGER;
 VAR r :INTEGER;
 BEGIN
-  Out("FibRec");
+  Out.Str("FibRec");
   IF n < 2 THEN
     r := 1
   ELSE
