@@ -75,7 +75,10 @@ void gen_typedef(Type *t) {
   assert(t);
   geni();
   gen_str("typedef ");
-  gen_type(t);
+  Type nakedType = *t;
+  nakedType.name = NULL;
+  nakedType.package_name = NULL;
+  gen_type(&nakedType);
   gen_str(" ");
   gen_qname(t->package_name, t->name);
   gen_str(";\n");
@@ -116,7 +119,12 @@ void gen_binary_expr(TokenKind op, Expr *lhs, Expr *rhs) {
   assert(op);
   gen_str("(");
   gen_expr(lhs);
+  // TODO - op names aren't necessarily the token names
+  // TODO - set binary operators are handled specially in C
+  // TODO - string binary operators are treaded specially in C
+  gen_str(" ");
   gen_str(token_kind_names[op]);
+  gen_str(" ");
   gen_expr(rhs);
   gen_str(")");
 }
