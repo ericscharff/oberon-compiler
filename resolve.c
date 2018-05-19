@@ -502,20 +502,25 @@ void resolve_type(Type *type) {
   if (type->kind == TYPE_ARRAY) {
     resolve_type(type->array_type.element_type);
     Expr *e = type->array_type.num_elements_expr;
-    resolve_expr(e);
-    if (e->is_const) {
-      if (e->val.kind == VAL_INTEGER) {
-        int size = e->val.iVal;
-        if (size > 0) {
-          type->array_type.num_elements = size;
+    if (e) {
+      resolve_expr(e);
+      if (e->is_const) {
+        if (e->val.kind == VAL_INTEGER) {
+          int size = e->val.iVal;
+          if (size > 0) {
+            type->array_type.num_elements = size;
+          } else {
+            error("ARRAY size %d must be greater than 0", size);
+          }
         } else {
-          error("ARRAY size %d must be greater than 0", size);
+          error("ARRAY capacity must be INTEGER");
         }
       } else {
-        error("ARRAY capacity must be INTEGER");
+        error("Array expr must be constant");
       }
     } else {
-      error("Array expr must be constant");
+      // An open array
+      type->array_type.num_elements = 0;
     }
   }
   buf_push(gReachableTypes, type);
@@ -528,12 +533,14 @@ void verify_proc_param_compatible(FormalParameter *formal, Expr *actual) {
     errorloc(actual->loc, "VAR param expected, actual param is not assignable");
   }
   if (formal->is_open_array) {
-    if (formal->type == &charType && is_string_type(actual->type)) {
+    assert(formal->type->kind == TYPE_ARRAY);
+    Type *openArrayType = formal->type->array_type.element_type;
+    if (openArrayType == &charType && is_string_type(actual->type)) {
       // ARRAY OF CHAR -> STRING is OK
       return;
     }
     if (actual->type->kind == TYPE_ARRAY &&
-        actual->type->array_type.element_type == formal->type) {
+        actual->type->array_type.element_type == openArrayType) {
       // ARRAY OF N -> ARRAY <z> OF N is OK
       return;
     }
@@ -933,9 +940,11 @@ void resolve_test_static(void) {
       "VAR\n"
       "  unused: BYTE;\n"
       "  aa :A1;\n"
+      "  a2 :ARRAY 201 OF INTEGER;\n"
       "  bb :BOOLEAN;\n"
       "  cc :CHAR;\n"
       "  ii :INTEGER;\n"
+      "PROCEDURE ArrFunc(a :ARRAY OF INTEGER); BEGIN a[0] := 1 END ArrFunc;\n"
       "PROCEDURE Wow; END Wow;"
       "PROCEDURE Wow2(x :INTEGER); BEGIN x := ii; Wow; Wow; Wow END Wow2;\n"
       "PROCEDURE Wow3(x :INTEGER); BEGIN x := ii; Wow2(x); Wow2(x) END Wow3;\n"
@@ -945,6 +954,7 @@ void resolve_test_static(void) {
       "  Wow3(ii);\n"
       "  cc := 041X;\n"
       "  Out.Int(10);\n"
+      "  ArrFunc(a2);\n"
       "  ii := Incr(one) + Incr(minusone);\n"
       "  ii := one; ii := minusone + Four; aa[SixFactorial, 0, 0, 0] := 3\n"
       "END abc.");

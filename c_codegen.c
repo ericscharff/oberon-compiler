@@ -63,7 +63,9 @@ void gen_type(Type *t, const char *packageName, const char *name) {
       case TYPE_ARRAY:
         gen_type(t->array_type.element_type, packageName, name);
         gen_str("[");
-        gen_expr(t->array_type.num_elements_expr);
+        if (t->array_type.num_elements_expr) {
+          gen_expr(t->array_type.num_elements_expr);
+        }
         gen_str("]");
         break;
       case TYPE_RECORD:

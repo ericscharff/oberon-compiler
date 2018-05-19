@@ -508,6 +508,11 @@ FormalParameter *parse_fp_section(FormalParameter *params) {
     isOpenArray = true;
   }
   Type *varType = parse_qualident_and_get_type();
+  if (isOpenArray) {
+    Type *t = new_type_array(NULL);
+    t->array_type.element_type = varType;
+    varType = t;
+  }
   for (size_t i = 0; i < buf_len(idents); i++) {
     buf_push(params,
              (FormalParameter){idents[i], varType, isVarParam, isOpenArray});
