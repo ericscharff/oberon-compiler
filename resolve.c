@@ -578,6 +578,18 @@ Type *resolve_proc_call(Expr *proc, Expr **actualParams) {
   return proc->type->procedure_type.return_type;
 }
 
+void resolve_pointerderef(Expr *e) {
+  assert(e);
+  assert(e->kind == EXPR_POINTERDEREF);
+  resolve_expr(e->pointerderef.expr);
+  if (e->pointerderef.expr->type->kind == TYPE_POINTER) {
+    e->type = e->pointerderef.expr->type->pointer_type.element_type;
+    e->is_assignable = e->pointerderef.expr->is_assignable;
+  } else {
+    errorloc(e->loc, "Not a POINTER");
+  }
+}
+
 void resolve_fieldref(Expr *e) {
   assert(e);
   assert(e->kind == EXPR_FIELDREF);
@@ -630,7 +642,7 @@ void resolve_expr(Expr *e) {
       resolve_fieldref(e);
       break;
     case EXPR_POINTERDEREF:
-      assert(0);
+      resolve_pointerderef(e);
       break;
     case EXPR_ARRAYREF:
       resolve_arrayref(e);
@@ -976,6 +988,7 @@ void resolve_test_static(void) {
       "  cc :CHAR;\n"
       "  ii :INTEGER;\n"
       "  jj :R1;\n"
+      "  p1 :P2;\n"
       "PROCEDURE ArrFunc(a :ARRAY OF INTEGER); BEGIN a[0] := 1 END ArrFunc;\n"
       "PROCEDURE Wow; END Wow;"
       "PROCEDURE Wow2(x :INTEGER); BEGIN x := ii; Wow; Wow; Wow END Wow2;\n"
@@ -991,6 +1004,7 @@ void resolve_test_static(void) {
       "  jj.a := ii;\n"
       "  jj.b := ii;\n"
       "  jj.c := a2[0];\n"
+      "  p1.q := 041X;\n"
       "  ii := one; ii := minusone + Four; aa[SixFactorial, 0, 0, 0] := 3\n"
       "END abc.");
   next_token();

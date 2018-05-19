@@ -10,6 +10,8 @@ TYPE
   A = ARRAY 10 OF I;
   B = ARRAY 5, 15 OF REAL;
   P = PROCEDURE (a, b, c :INTEGER):REAL;
+  R1 = RECORD f1 :INTEGER END;
+  R2 = RECORD p :POINTER TO R1; a :INTEGER END;
 
 VAR
   v1 :I;
@@ -18,6 +20,7 @@ VAR
   v4 :ARRAY 10 OF INTEGER;
   v5 :P;
   v6 :PROCEDURE;
+  v7 :R2;
 
 PROCEDURE FactIter*(n :INTEGER) :INTEGER;
 VAR
@@ -84,4 +87,6 @@ BEGIN
   v4[0] := 10;
   v5 := NIL;
   v6 := NIL;
+  v7.a := 0;
+  v7.p.f1 := 0;
 END FibFact.

@@ -58,7 +58,10 @@ void gen_type(Type *t, const char *packageName, const char *name) {
         assert(0);
         break;
       case TYPE_POINTER:
-        assert(0);
+        gen_str("struct ");
+        gen_type(t->pointer_type.element_type, "", "");
+        gen_str(" *");
+        gen_qname(packageName, name);
         break;
       case TYPE_ARRAY:
         gen_type(t->array_type.element_type, packageName, name);
