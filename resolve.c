@@ -485,6 +485,9 @@ void resolve_type(Type *type) {
   type->resolved = true;
   if (type->kind == TYPE_POINTER) {
     resolve_type(type->pointer_type.element_type);
+    if (type->pointer_type.element_type->kind != TYPE_RECORD) {
+      error("POINTERS must point to RECORDs");
+    }
   }
   if (type->kind == TYPE_RECORD) {
     Type *base_type = type->record_type.base_type;
@@ -575,6 +578,33 @@ Type *resolve_proc_call(Expr *proc, Expr **actualParams) {
   return proc->type->procedure_type.return_type;
 }
 
+void resolve_fieldref(Expr *e) {
+  assert(e);
+  assert(e->kind == EXPR_FIELDREF);
+  resolve_expr(e->fieldref.expr);
+  if (e->fieldref.expr->type->kind == TYPE_POINTER) {
+    Expr *deref = new_expr_pointerderef(e->fieldref.expr, e->fieldref.expr->loc);
+    resolve_expr(deref);
+    e->fieldref.expr = deref;
+  }
+  Type *recordType = e->fieldref.expr->type;
+  assert(recordType);
+  if (recordType->kind == TYPE_RECORD) {
+    const char *fieldName = e->fieldref.field_name;
+    for (size_t i=0; i < buf_len(recordType->record_type.fields); i++) {
+      if (recordType->record_type.fields[i].name == fieldName) {
+        // TODO - esnure field is exported
+        e->type = recordType->record_type.fields[i].type;
+        e->is_assignable = e->fieldref.expr->is_assignable;
+        return;
+      }
+    }
+    errorloc(e->loc, "RECORD field %s not found", fieldName);
+  } else {
+    errorloc(e->loc, "Field %s is not a RECORD", recordType->name);
+  }
+}
+
 void resolve_expr(Expr *e) {
   assert(e);
   switch (e->kind) {
@@ -597,7 +627,7 @@ void resolve_expr(Expr *e) {
       break;
     }
     case EXPR_FIELDREF:
-      assert(0);
+      resolve_fieldref(e);
       break;
     case EXPR_POINTERDEREF:
       assert(0);
@@ -801,7 +831,7 @@ void resolve_statements(Statement *body) {
         resolve_expr(body[i].assignment_stmt.rvalue);
         if (!is_assignable(body[i].assignment_stmt.lvalue,
                            body[i].assignment_stmt.rvalue)) {
-          errorloc(body[i].loc, "Incompatible types for assignment");
+          errorloc(body[i].loc, "Incompatible types (lhs=%s, rhs=%s) for assignment", body[i].assignment_stmt.lvalue->type->name, body[i].assignment_stmt.rvalue->type->name);
         }
         break;
       case STMT_PROCCALL:
@@ -945,6 +975,7 @@ void resolve_test_static(void) {
       "  bb :BOOLEAN;\n"
       "  cc :CHAR;\n"
       "  ii :INTEGER;\n"
+      "  jj :R1;\n"
       "PROCEDURE ArrFunc(a :ARRAY OF INTEGER); BEGIN a[0] := 1 END ArrFunc;\n"
       "PROCEDURE Wow; END Wow;"
       "PROCEDURE Wow2(x :INTEGER); BEGIN x := ii; Wow; Wow; Wow END Wow2;\n"
@@ -957,6 +988,9 @@ void resolve_test_static(void) {
       "  Out.Int(10);\n"
       "  ArrFunc(a2);\n"
       "  ii := Incr(one) + Incr(minusone);\n"
+      "  jj.a := ii;\n"
+      "  jj.b := ii;\n"
+      "  jj.c := a2[0];\n"
       "  ii := one; ii := minusone + Four; aa[SixFactorial, 0, 0, 0] := 3\n"
       "END abc.");
   next_token();

@@ -69,7 +69,19 @@ void gen_type(Type *t, const char *packageName, const char *name) {
         gen_str("]");
         break;
       case TYPE_RECORD:
-        assert(0);
+        gen_str("struct ");
+        gen_qname(packageName, name);
+        gen_str(" {\n");
+        codegenIndent++;
+        for (size_t i=0; i < buf_len(t->record_type.fields); i++) {
+          geni();
+          gen_type(t->record_type.fields[i].type, NULL, t->record_type.fields[i].name);
+          gen_str(";\n");
+        }
+        codegenIndent--;
+        geni();
+        gen_str("} ");
+        gen_qname(packageName, name);
         break;
       case TYPE_PROCEDURE:
         if (t->procedure_type.return_type) {
