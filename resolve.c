@@ -454,6 +454,9 @@ void resolve_identref(Expr *e) {
       d->kind == DECL_VARPARAM) {
     e->is_assignable = true;
   }
+  if (d->kind == DECL_VARPARAM) {
+    e->is_var_param = true;
+  }
   if (d->kind == DECL_PARAM && d->type->kind == TYPE_RECORD) {
     e->is_assignable = false;
   }
@@ -727,7 +730,7 @@ void resolve_param_decl(Decl *d) {
 
 void resolve_varparam_decl(Decl *d) {
   assert(d->kind == DECL_VARPARAM);
-  assert(0);
+  resolve_type(d->type);
 }
 
 void resolve_proc_decl(Decl *d) { assert(d->kind == DECL_PROC); }

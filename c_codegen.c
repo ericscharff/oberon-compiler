@@ -58,7 +58,6 @@ void gen_type(Type *t, const char *packageName, const char *name) {
         assert(0);
         break;
       case TYPE_POINTER:
-        gen_str("struct ");
         gen_type(t->pointer_type.element_type, "", "");
         gen_str(" *");
         gen_qname(packageName, name);
@@ -178,7 +177,13 @@ void gen_proccall(Expr *proc, Expr **args) {
   gen_expr(proc);
   gen_str("(");
   for (size_t i = 0; i < buf_len(args); i++) {
+    if (proc->type->procedure_type.params[i].is_var_parameter) {
+      gen_str("&(");
+    }
     gen_expr(args[i]);
+    if (proc->type->procedure_type.params[i].is_var_parameter) {
+      gen_str(")");
+    }
     if (i != buf_len(args) - 1) {
       gen_str(", ");
     }
@@ -202,7 +207,13 @@ void gen_expr(Expr *e) {
         gen_binary_expr(e->binary.op, e->binary.lhs, e->binary.rhs);
         break;
       case EXPR_IDENTREF:
+        if (e->is_var_param) {
+          gen_str("(*");
+        }
         gen_qname(e->identref.package_name, e->identref.name);
+        if (e->is_var_param) {
+          gen_str(")");
+        }
         break;
       case EXPR_PROCCALL:
         gen_proccall(e->proccall.proc, e->proccall.args);
@@ -372,9 +383,17 @@ void gen_decl(Decl *d) {
       if (d->type->procedure_type.params) {
         gen_str("(");
         for (size_t i = 0; i < buf_len(d->type->procedure_type.params); i++) {
-          assert(!d->type->procedure_type.params[i].is_var_parameter);
-          gen_type(d->type->procedure_type.params[i].type, NULL,
-                   d->type->procedure_type.params[i].name);
+          Type *formal = d->type->procedure_type.params[i].type;
+          Type varParam;
+
+          if (d->type->procedure_type.params[i].is_var_parameter) {
+            varParam.kind = TYPE_POINTER;
+            varParam.name = NULL;
+            varParam.package_name = NULL;
+            varParam.pointer_type.element_type = formal;
+            formal = &varParam;
+          }
+          gen_type(formal, NULL, d->type->procedure_type.params[i].name);
           if (i != buf_len(d->type->procedure_type.params) - 1) {
             gen_str(", ");
           }
@@ -387,6 +406,7 @@ void gen_decl(Decl *d) {
       for (size_t i = 0; i < buf_len(d->proc_decl.decls); i++) {
         if (d->proc_decl.decls[i].state == DECLSTATE_RESOLVED) {
           assert(d->proc_decl.decls[i].kind == DECL_VAR ||
+                 d->proc_decl.decls[i].kind == DECL_VARPARAM ||
                  d->proc_decl.decls[i].kind == DECL_PARAM);
           if (d->proc_decl.decls[i].kind == DECL_VAR) {
             assert(!d->proc_decl.decls[i].package_name[0]);

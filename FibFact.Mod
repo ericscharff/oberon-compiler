@@ -5,6 +5,11 @@ IMPORT Out;
 CONST
   Seven = 7;
 
+TYPE
+  R = RECORD a, b :INTEGER END;
+VAR
+  z :R;
+
 PROCEDURE FactIter*(n :INTEGER) :INTEGER;
 VAR
   i, r :INTEGER;
@@ -59,9 +64,16 @@ BEGIN
   RETURN r
 END FibRec;
 
+PROCEDURE Plus(VAR zzz :INTEGER); BEGIN zzz := zzz + 1 END Plus;
+
+PROCEDURE PlusOne(VAR x :R); BEGIN Plus(x.a) END PlusOne;
+
 BEGIN
   FactIter(7);
   FactRec(Seven);
   FibIter(12);
-  FibRec(12)
+  FibRec(12);
+  z.a := 10;
+  z.b := z.a + 1;
+  PlusOne(z)
 END FibFact.
