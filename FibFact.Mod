@@ -74,6 +74,6 @@ BEGIN
   FibIter(12);
   FibRec(12);
   z.a := 10;
-  z.b := z.a + 1;
+  z.b := -z.a + 1;
   PlusOne(z)
 END FibFact.

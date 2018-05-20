@@ -156,10 +156,17 @@ void gen_val(Val val) {
   }
 }
 
+void gen_unary_expr(TokenKind op, Expr *expr) {
+  assert(expr);
+  assert(op == TOKEN_MINUS);
+  gen_str("-(");
+  gen_expr(expr);
+  gen_str(")");
+}
+
 void gen_binary_expr(TokenKind op, Expr *lhs, Expr *rhs) {
   assert(lhs);
   assert(rhs);
-  assert(op);
   gen_str("(");
   gen_expr(lhs);
   // TODO - op names aren't necessarily the token names
@@ -201,7 +208,7 @@ void gen_expr(Expr *e) {
         assert(0);
         break;
       case EXPR_UNARY:
-        assert(0);
+        gen_unary_expr(e->unary.op, e->unary.expr);
         break;
       case EXPR_BINARY:
         gen_binary_expr(e->binary.op, e->binary.lhs, e->binary.rhs);
