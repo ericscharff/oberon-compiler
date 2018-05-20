@@ -595,7 +595,8 @@ void resolve_fieldref(Expr *e) {
   assert(e->kind == EXPR_FIELDREF);
   resolve_expr(e->fieldref.expr);
   if (e->fieldref.expr->type->kind == TYPE_POINTER) {
-    Expr *deref = new_expr_pointerderef(e->fieldref.expr, e->fieldref.expr->loc);
+    Expr *deref =
+        new_expr_pointerderef(e->fieldref.expr, e->fieldref.expr->loc);
     resolve_expr(deref);
     e->fieldref.expr = deref;
   }
@@ -603,7 +604,7 @@ void resolve_fieldref(Expr *e) {
   assert(recordType);
   if (recordType->kind == TYPE_RECORD) {
     const char *fieldName = e->fieldref.field_name;
-    for (size_t i=0; i < buf_len(recordType->record_type.fields); i++) {
+    for (size_t i = 0; i < buf_len(recordType->record_type.fields); i++) {
       if (recordType->record_type.fields[i].name == fieldName) {
         // TODO - esnure field is exported
         e->type = recordType->record_type.fields[i].type;
@@ -843,7 +844,10 @@ void resolve_statements(Statement *body) {
         resolve_expr(body[i].assignment_stmt.rvalue);
         if (!is_assignable(body[i].assignment_stmt.lvalue,
                            body[i].assignment_stmt.rvalue)) {
-          errorloc(body[i].loc, "Incompatible types (lhs=%s, rhs=%s) for assignment", body[i].assignment_stmt.lvalue->type->name, body[i].assignment_stmt.rvalue->type->name);
+          errorloc(body[i].loc,
+                   "Incompatible types (lhs=%s, rhs=%s) for assignment",
+                   body[i].assignment_stmt.lvalue->type->name,
+                   body[i].assignment_stmt.rvalue->type->name);
         }
         break;
       case STMT_PROCCALL:
@@ -1014,6 +1018,4 @@ void resolve_test_static(void) {
   assert(current_scope == NULL);
 }
 
-void resolve_test(void) {
-  resolve_test_static();
-}
+void resolve_test(void) { resolve_test_static(); }

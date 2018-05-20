@@ -76,9 +76,10 @@ void gen_type(Type *t, const char *packageName, const char *name) {
         gen_qname(packageName, name);
         gen_str(" {\n");
         codegenIndent++;
-        for (size_t i=0; i < buf_len(t->record_type.fields); i++) {
+        for (size_t i = 0; i < buf_len(t->record_type.fields); i++) {
           geni();
-          gen_type(t->record_type.fields[i].type, NULL, t->record_type.fields[i].name);
+          gen_type(t->record_type.fields[i].type, NULL,
+                   t->record_type.fields[i].name);
           gen_str(";\n");
         }
         codegenIndent--;
@@ -96,7 +97,7 @@ void gen_type(Type *t, const char *packageName, const char *name) {
         gen_qname(packageName, name);
         gen_str(")(");
         if (t->procedure_type.params) {
-          for (size_t i=0; i < buf_len(t->procedure_type.params); i++) {
+          for (size_t i = 0; i < buf_len(t->procedure_type.params); i++) {
             gen_type(t->procedure_type.params[i].type, "", "");
             if (i != buf_len(t->procedure_type.params) - 1) {
               gen_str(", ");
@@ -176,9 +177,9 @@ void gen_proccall(Expr *proc, Expr **args) {
   assert(proc);
   gen_expr(proc);
   gen_str("(");
-  for (size_t i=0; i < buf_len(args); i++) {
+  for (size_t i = 0; i < buf_len(args); i++) {
     gen_expr(args[i]);
-    if (i != buf_len(args)-1) {
+    if (i != buf_len(args) - 1) {
       gen_str(", ");
     }
   }
@@ -240,7 +241,7 @@ void gen_expr(Expr *e) {
 }
 
 void gen_elseifs(ElseIf *elseifs) {
-  for (size_t i=0; i < buf_len(elseifs); i++) {
+  for (size_t i = 0; i < buf_len(elseifs); i++) {
     geni();
     gen_str("} else if ");
     gen_expr(elseifs[i].cond);
@@ -372,7 +373,8 @@ void gen_decl(Decl *d) {
         gen_str("(");
         for (size_t i = 0; i < buf_len(d->type->procedure_type.params); i++) {
           assert(!d->type->procedure_type.params[i].is_var_parameter);
-          gen_type(d->type->procedure_type.params[i].type, NULL, d->type->procedure_type.params[i].name);
+          gen_type(d->type->procedure_type.params[i].type, NULL,
+                   d->type->procedure_type.params[i].name);
           if (i != buf_len(d->type->procedure_type.params) - 1) {
             gen_str(", ");
           }
@@ -389,7 +391,9 @@ void gen_decl(Decl *d) {
           if (d->proc_decl.decls[i].kind == DECL_VAR) {
             assert(!d->proc_decl.decls[i].package_name[0]);
             geni();
-            gen_type(d->proc_decl.decls[i].type, d->proc_decl.decls[i].package_name, d->proc_decl.decls[i].name);
+            gen_type(d->proc_decl.decls[i].type,
+                     d->proc_decl.decls[i].package_name,
+                     d->proc_decl.decls[i].name);
             gen_str(";\n");
           }
         }
