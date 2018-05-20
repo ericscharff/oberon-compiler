@@ -499,6 +499,15 @@ void resolve_type(Type *type) {
       if (base_type->kind != TYPE_RECORD) {
         error("Base record type %s must be a RECORD", base_type->name);
       }
+      // Add extended fields to these fields
+      RecordField *f = NULL;
+      for (size_t i=0; i < buf_len(base_type->record_type.fields); i++) {
+        buf_push(f, base_type->record_type.fields[i]);
+      }
+      for (size_t i=0; i < buf_len(type->record_type.fields); i++) {
+        buf_push(f, type->record_type.fields[i]);
+      }
+      type->record_type.fields = f;
     }
     for (size_t i = 0; i < buf_len(type->record_type.fields); i++) {
       // TODO - Check for duplicate field name?
@@ -553,6 +562,14 @@ void verify_proc_param_compatible(FormalParameter *formal, Expr *actual) {
     errorloc(actual->loc,
              "actual type %s does not match formal type ARRAY OF %s",
              actual->type->name, formal->type->name);
+  }
+  if (formal->type->kind == TYPE_RECORD && actual->type->kind == TYPE_RECORD) {
+    for (Type *t = actual->type; t != NULL; t = t->record_type.base_type) {
+      if (t == formal->type) {
+        // Yes - type extension
+        return;
+      }
+    }
   }
   if (formal->type != actual->type) {
     // This is way too strict

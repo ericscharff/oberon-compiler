@@ -7,8 +7,12 @@ CONST
 
 TYPE
   R = RECORD a, b :INTEGER END;
+  R2 = RECORD (R) c :INTEGER END;
+  R3 = RECORD (R2) d :INTEGER END;
 VAR
   z :R;
+  z2 :R2;
+  z3 :R3;
 
 PROCEDURE FactIter*(n :INTEGER) :INTEGER;
 VAR
@@ -75,5 +79,11 @@ BEGIN
   FibRec(12);
   z.a := 10;
   z.b := -z.a + 1;
-  PlusOne(z)
+  PlusOne(z);
+  z2.a := 101;
+  z3.a := 101;
+  z3.b := 101;
+  z3.c := 101;
+  z3.d := 101;
+  PlusOne(z3)
 END FibFact.

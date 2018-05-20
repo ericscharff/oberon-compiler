@@ -184,11 +184,20 @@ void gen_proccall(Expr *proc, Expr **args) {
   gen_expr(proc);
   gen_str("(");
   for (size_t i = 0; i < buf_len(args); i++) {
+    bool needCast = proc->type->procedure_type.params[i].type->kind == TYPE_RECORD && proc->type->procedure_type.params[i].type != args[i]->type;
+    if (needCast) {
+      gen_str("(");
+      gen_type(proc->type->procedure_type.params[i].type, "", "");
+      gen_str("*)(");
+    }
     if (proc->type->procedure_type.params[i].is_var_parameter) {
       gen_str("&(");
     }
     gen_expr(args[i]);
     if (proc->type->procedure_type.params[i].is_var_parameter) {
+      gen_str(")");
+    }
+    if (needCast) {
       gen_str(")");
     }
     if (i != buf_len(args) - 1) {
