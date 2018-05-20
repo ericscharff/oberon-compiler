@@ -501,10 +501,10 @@ void resolve_type(Type *type) {
       }
       // Add extended fields to these fields
       RecordField *f = NULL;
-      for (size_t i=0; i < buf_len(base_type->record_type.fields); i++) {
+      for (size_t i = 0; i < buf_len(base_type->record_type.fields); i++) {
         buf_push(f, base_type->record_type.fields[i]);
       }
-      for (size_t i=0; i < buf_len(type->record_type.fields); i++) {
+      for (size_t i = 0; i < buf_len(type->record_type.fields); i++) {
         buf_push(f, type->record_type.fields[i]);
       }
       type->record_type.fields = f;
