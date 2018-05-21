@@ -12,6 +12,7 @@ typedef enum {
   TYPE_ARRAY,
   TYPE_RECORD,
   TYPE_PROCEDURE,
+  TYPE_BUILTIN_PROCEDURE,
 } TypeKind;
 
 const char *type_kind_names[] = {
@@ -21,7 +22,7 @@ const char *type_kind_names[] = {
     [TYPE_REAL] = "REAL",           [TYPE_SET] = "SET",
     [TYPE_STRING] = "<string>",     [TYPE_POINTER] = "POINTER",
     [TYPE_ARRAY] = "ARRAY",         [TYPE_RECORD] = "RECORD",
-    [TYPE_PROCEDURE] = "PROCEDURE",
+    [TYPE_PROCEDURE] = "PROCEDURE", [TYPE_BUILTIN_PROCEDURE] = "<builtin>",
 };
 
 typedef struct Type Type;
@@ -144,6 +145,17 @@ Type *new_type_procedure(FormalParameter *params, Type *return_type) {
   t->package_name = NULL;
   t->procedure_type.params = params;
   t->procedure_type.return_type = return_type;
+  return t;
+}
+
+Type *new_type_builtin_procedure(const char *name) {
+  Type *t = alloc_type();
+  t->kind = TYPE_BUILTIN_PROCEDURE;
+  t->resolved = false;
+  t->name = name;
+  t->package_name = NULL;
+  t->procedure_type.params = NULL;
+  t->procedure_type.return_type = NULL;
   return t;
 }
 

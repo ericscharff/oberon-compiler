@@ -6,8 +6,16 @@ void resolve_statements(Statement *body);
 Decl *gResolveScope[SCOPE_SIZE];
 int gResolveScopeLast = 0;  // points to first unusd slot (past scope end)
 
+const char *gImportedModules[SCOPE_SIZE];
+int gNumImportedModules = 0;  // points to first unused slot
+
 Decl **gReachableDecls = NULL;
 Type **gReachableTypes = NULL;
+
+// Special functions
+Decl decDecl;
+Decl incDecl;
+Decl newDecl;
 
 int resolve_scope_enter(void) { return gResolveScopeLast; }
 
@@ -17,7 +25,17 @@ void resolve_scope_push(Decl *declBuf) {
   for (size_t i = 0; i < buf_len(declBuf); i++) {
     assert(gResolveScopeLast < SCOPE_SIZE);
     if (declBuf[i].kind == DECL_IMPORT) {
-      resolve_scope_push(declBuf[i].imported_decls);
+      bool needImport = true;
+      for (int import = 0; import < gNumImportedModules; import++) {
+        if (declBuf[i].name == gImportedModules[import]) {
+          needImport = false;
+          break;
+        }
+      }
+      if (needImport) {
+        gImportedModules[gNumImportedModules++] = declBuf[i].name;
+        resolve_scope_push(declBuf[i].imported_decls);
+      }
     } else {
       gResolveScope[gResolveScopeLast++] = declBuf + i;
       // Always resolve Module initializer
@@ -578,6 +596,55 @@ void verify_proc_param_compatible(FormalParameter *formal, Expr *actual) {
   }
 }
 
+void resolve_incdec(Expr *proc, Expr **actualParams, const char *f) {
+  if (buf_len(actualParams) > 2) {
+    errorloc(proc->loc, "%s expects 1 or 2 arguments, got %d", f,
+             buf_len(actualParams));
+  }
+  if (buf_len(actualParams) == 2) {
+    Expr *n = actualParams[1];
+    resolve_expr(n);
+    if (n->type->kind != TYPE_INTEGER) {
+      errorloc(n->loc, "%s n expects INTEGER, got %s", f, n->type->name);
+    }
+  }
+  Expr *x = actualParams[0];
+  resolve_expr(x);
+  if (x->type->kind != TYPE_INTEGER) {
+    errorloc(x->loc, "%s x expects INTEGER, got %s", f, x->type->name);
+  }
+  if (!x->is_assignable) {
+    errorloc(x->loc, "%s x is not assignable", f);
+  }
+}
+
+Type *resolve_builtin_procedure(Expr *proc, Expr **actualParams) {
+  if (proc->type->name == builtin_new) {
+    if (buf_len(actualParams) == 1) {
+      Expr *ptr = actualParams[0];
+      resolve_expr(ptr);
+      if (!ptr->is_assignable) {
+        errorloc(ptr->loc, "Argument to NEW is not assignable");
+      }
+      if (ptr->type->kind == TYPE_POINTER) {
+        return ptr->type;
+      } else {
+        errorloc(ptr->loc, "POINTER expected");
+      }
+    } else {
+      errorloc(proc->loc, "NEW expects 1 argument, got %d",
+               buf_len(actualParams));
+    }
+  } else if (proc->type->name == builtin_inc) {
+    resolve_incdec(proc, actualParams, "INC");
+  } else if (proc->type->name == builtin_dec) {
+    resolve_incdec(proc, actualParams, "DEC");
+  } else {
+    assert(0);
+  }
+  return NULL;
+}
+
 Type *resolve_proc_call(Expr *proc, Expr **actualParams) {
   assert(proc);
 
@@ -592,6 +659,8 @@ Type *resolve_proc_call(Expr *proc, Expr **actualParams) {
       errorloc(proc->loc, "Expected %d parameters, got %d",
                buf_len(formalParams), buf_len(actualParams));
     }
+  } else if (proc->type->kind == TYPE_BUILTIN_PROCEDURE) {
+    return resolve_builtin_procedure(proc, actualParams);
   } else {
     errorloc(proc->loc, "%s not a PROCEDURE", proc->type->name);
   }
@@ -886,6 +955,9 @@ void resolve_statements(Statement *body) {
 void resolve_procedure_body(Decl *procDecl) {
   assert(procDecl);
   assert(procDecl->type);
+  if (procDecl->type->kind == TYPE_BUILTIN_PROCEDURE) {
+    return;
+  }
   assert(procDecl->type->kind == TYPE_PROCEDURE);
 
   Type *procReturnType = procDecl->type->procedure_type.return_type;
@@ -934,8 +1006,25 @@ void resolve_all_decls(void) {
   }
 }
 
+void push_builtin(Decl *d, const char *name) {
+  assert(d);
+  d->package_name = string_intern("");
+  d->name = name;
+  d->type = new_type_builtin_procedure(name);
+  d->kind = DECL_PROC;
+  d->state = DECLSTATE_UNRESOLVED;
+  gResolveScope[gResolveScopeLast++] = d;
+}
+
+void resolve_push_specials(void) {
+  push_builtin(&decDecl, builtin_dec);
+  push_builtin(&incDecl, builtin_inc);
+  push_builtin(&newDecl, builtin_new);
+}
+
 void resolve_module(Module *m) {
   int scopeIndex = resolve_scope_enter();
+  resolve_push_specials();
   resolve_scope_push(m->decls);
   resolve_all_decls();
   resolve_scope_leave(scopeIndex);
@@ -944,6 +1033,8 @@ void resolve_module(Module *m) {
 void resolve_test_file(void) {
   gReachableDecls = NULL;
   gReachableTypes = NULL;
+  gResolveScopeLast = 0;
+  gNumImportedModules = 0;
   Scope globalScope;
   globalScope.decls = NULL;
   enter_scope(&globalScope, "__top__");
@@ -959,6 +1050,8 @@ void resolve_test_file(void) {
 void resolve_test_static(void) {
   gReachableDecls = NULL;
   gReachableTypes = NULL;
+  gResolveScopeLast = 0;
+  gNumImportedModules = 0;
   Scope globalScope;
   globalScope.decls = NULL;
   enter_scope(&globalScope, "__test__");

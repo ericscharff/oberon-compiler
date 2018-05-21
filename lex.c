@@ -182,6 +182,11 @@ const char *lc_keyword_until;
 const char *lc_keyword_var;
 const char *lc_keyword_while;
 
+// Builtin procedures
+const char *builtin_dec;
+const char *builtin_inc;
+const char *builtin_new;
+
 const char *op_name(TokenKind kind) { return token_kind_names[kind]; }
 
 // Insert into pool
@@ -320,6 +325,10 @@ void init_keywords(void) {
   G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_until, keyword_until);
   G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_var, keyword_var);
   G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_while, keyword_while);
+
+  builtin_dec = string_intern("DEC");
+  builtin_inc = string_intern("INC");
+  builtin_new = string_intern("NEW");
 }
 
 void init_string_pool(void) {

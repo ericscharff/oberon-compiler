@@ -179,34 +179,71 @@ void gen_binary_expr(TokenKind op, Expr *lhs, Expr *rhs) {
   gen_str(")");
 }
 
+void gen_builtin_procedure(Expr *proc, Expr **args) {
+  if (proc->type->name == builtin_dec) {
+    // DEC(x) --> x--
+    // DEC(x, n) --> x -= n
+    gen_expr(args[0]);
+    if (buf_len(args) == 2) {
+      gen_str(" -= ");
+      gen_expr(args[1]);
+    } else {
+      gen_str("--");
+    }
+  } else if (proc->type->name == builtin_inc) {
+    // INC(x) --> x++
+    // INC(x, n) --> x += n
+    gen_expr(args[0]);
+    if (buf_len(args) == 2) {
+      gen_str(" += ");
+      gen_expr(args[1]);
+    } else {
+      gen_str("++");
+    }
+  } else if (proc->type->name == builtin_new) {
+    // NEW(p) --> p = malloc(sizeof(<P ELEMENT TYPE>))
+    Expr *p = args[0];
+    gen_expr(p);
+    gen_str(" = malloc(sizeof(");
+    gen_qname(p->type->pointer_type.element_type->package_name,
+              p->type->pointer_type.element_type->name);
+    gen_str("))");
+  } else {
+    assert(0);
+  }
+}
 void gen_proccall(Expr *proc, Expr **args) {
   assert(proc);
-  gen_expr(proc);
-  gen_str("(");
-  for (size_t i = 0; i < buf_len(args); i++) {
-    bool needCast =
-        proc->type->procedure_type.params[i].type->kind == TYPE_RECORD &&
-        proc->type->procedure_type.params[i].type != args[i]->type;
-    if (needCast) {
-      gen_str("(");
-      gen_type(proc->type->procedure_type.params[i].type, "", "");
-      gen_str("*)(");
+  if (proc->type->kind == TYPE_BUILTIN_PROCEDURE) {
+    gen_builtin_procedure(proc, args);
+  } else {
+    gen_expr(proc);
+    gen_str("(");
+    for (size_t i = 0; i < buf_len(args); i++) {
+      bool needCast =
+          proc->type->procedure_type.params[i].type->kind == TYPE_RECORD &&
+          proc->type->procedure_type.params[i].type != args[i]->type;
+      if (needCast) {
+        gen_str("(");
+        gen_type(proc->type->procedure_type.params[i].type, "", "");
+        gen_str("*)(");
+      }
+      if (proc->type->procedure_type.params[i].is_var_parameter) {
+        gen_str("&(");
+      }
+      gen_expr(args[i]);
+      if (proc->type->procedure_type.params[i].is_var_parameter) {
+        gen_str(")");
+      }
+      if (needCast) {
+        gen_str(")");
+      }
+      if (i != buf_len(args) - 1) {
+        gen_str(", ");
+      }
     }
-    if (proc->type->procedure_type.params[i].is_var_parameter) {
-      gen_str("&(");
-    }
-    gen_expr(args[i]);
-    if (proc->type->procedure_type.params[i].is_var_parameter) {
-      gen_str(")");
-    }
-    if (needCast) {
-      gen_str(")");
-    }
-    if (i != buf_len(args) - 1) {
-      gen_str(", ");
-    }
+    gen_str(")");
   }
-  gen_str(")");
 }
 
 void gen_expr(Expr *e) {
@@ -389,6 +426,10 @@ void gen_decl(Decl *d) {
       // Don't do anything, handled in procedure gen
       break;
     case DECL_PROC:
+      if (d->type->kind == TYPE_BUILTIN_PROCEDURE) {
+        // nothing to declare
+        break;
+      }
       assert(d->type->kind == TYPE_PROCEDURE);
       if (d->type->procedure_type.return_type) {
         gen_qname(d->type->procedure_type.return_type->package_name,

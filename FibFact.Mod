@@ -9,10 +9,12 @@ TYPE
   R = RECORD a, b :INTEGER END;
   R2 = RECORD (R) c :INTEGER END;
   R3 = RECORD (R2) d :INTEGER END;
+  P3 = POINTER TO R3;
 VAR
   z :R;
   z2 :R2;
   z3 :R3;
+  pz3 :P3;
 
 PROCEDURE FactIter*(n :INTEGER) :INTEGER;
 VAR
@@ -23,7 +25,7 @@ BEGIN
   i := 1;
   WHILE i <= n DO
     r := r * i;
-    i := i + 1
+    INC(i)
   END;
   RETURN r
 END FactIter;
@@ -51,7 +53,7 @@ BEGIN
     newPrev := fib;
     fib := fib + prev;
     prev := newPrev;
-    n := n - 1
+    DEC(n)
   END
   RETURN fib
 END FibIter;
@@ -85,5 +87,8 @@ BEGIN
   z3.b := 101;
   z3.c := 101;
   z3.d := 101;
+  INC(z.a, 3);
+  NEW(pz3);
+  pz3.a := 35;
   PlusOne(z3)
 END FibFact.
