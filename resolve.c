@@ -1040,7 +1040,8 @@ void resolve_test_file(void) {
   enter_scope(&globalScope, "__top__");
   init_global_types();
   init_global_defs();
-
+  assert(current_scope == &globalScope);
+  resolve_scope_push(globalScope.decls);
   Module *m = parse_test_file("FibFact.Mod");
   resolve_module(m);
   exit_scope("__topdone__");

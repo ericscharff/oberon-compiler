@@ -87,6 +87,7 @@ BEGIN
   z3.b := 101;
   z3.c := 101;
   z3.d := 101;
+  FLT(z3.d);
   INC(z.a, 3);
   NEW(pz3);
   pz3.a := 35;
