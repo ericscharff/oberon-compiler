@@ -365,12 +365,22 @@ void gen_statement(Statement *s) {
     case STMT_FOR:
       assert(0);
       break;
-    case STMT_ASSIGNMENT:
+    case STMT_ASSIGNMENT: {
+      bool needsCast = (s->assignment_stmt.lvalue->type != s->assignment_stmt.rvalue->type) && (s->assignment_stmt.lvalue->type->kind != TYPE_PROCEDURE);
       gen_expr(s->assignment_stmt.lvalue);
       gen_str(" = ");
+      if (needsCast) {
+        gen_str("(");
+        gen_qname(s->assignment_stmt.lvalue->type->package_name, s->assignment_stmt.lvalue->type->name);
+        gen_str(")(");
+      }
       gen_expr(s->assignment_stmt.rvalue);
+      if (needsCast) {
+        gen_str(")");
+      }
       gen_str(";\n");
       break;
+                          }
     case STMT_PROCCALL:
       gen_proccall(s->proc_call_stmt.proc, s->proc_call_stmt.args);
       gen_str(";\n");

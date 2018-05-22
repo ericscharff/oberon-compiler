@@ -229,6 +229,25 @@ bool is_equivalent_type(Type *a, Type *b) {
   return a == b;
 }
 
+// does B extend A (B's base type chain leads to A, or B is A)
+bool is_extension_of(Type *b, Type *a) {
+  if (b->kind == TYPE_POINTER) {
+    b = b->pointer_type.element_type;
+  }
+  if (a->kind == TYPE_POINTER) {
+    a = a->pointer_type.element_type;
+  }
+
+  if (a->kind == TYPE_RECORD && b->kind == TYPE_RECORD) {
+    for (Type *t = b; t != NULL; t = t->record_type.base_type) {
+      if (t == a) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 void type_test(void) {
   assert(type_pool_current == type_pool);
   for (int i = 0; i < 10; i++) {

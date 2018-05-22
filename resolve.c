@@ -581,13 +581,9 @@ void verify_proc_param_compatible(FormalParameter *formal, Expr *actual) {
              "actual type %s does not match formal type ARRAY OF %s",
              actual->type->name, formal->type->name);
   }
-  if (formal->type->kind == TYPE_RECORD && actual->type->kind == TYPE_RECORD) {
-    for (Type *t = actual->type; t != NULL; t = t->record_type.base_type) {
-      if (t == formal->type) {
-        // Yes - type extension
-        return;
-      }
-    }
+  if (is_extension_of(actual->type, formal->type)) {
+    // Yes - type extension
+    return;
   }
   if (formal->type != actual->type) {
     // This is way too strict
@@ -883,6 +879,9 @@ bool is_assignable(Expr *lhs, Expr *rhs) {
     return true;
   }
   if (lhs->type == &charType && is_one_char_string(rhs)) {
+    return true;
+  }
+  if (is_extension_of(rhs->type, lhs->type)) {
     return true;
   }
   return false;
