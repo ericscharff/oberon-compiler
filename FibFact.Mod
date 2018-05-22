@@ -11,6 +11,7 @@ TYPE
   R3 = RECORD (R2) d :INTEGER END;
   PR = POINTER TO R;
   P3 = POINTER TO R3;
+  TakeOneReturnOne = PROCEDURE (thing :INTEGER):INTEGER;
 VAR
   z :R;
   z2 :R2;
@@ -20,6 +21,7 @@ VAR
   c :CHAR;
   ac :ARRAY 25 OF CHAR;
   b :BYTE;
+  pOne :TakeOneReturnOne;
 
 PROCEDURE FactIter*(n :INTEGER) :INTEGER;
 VAR
@@ -101,5 +103,7 @@ BEGIN
   c := 041X;
   ac := "WOWZA";
   b := 1 + 1;
+  pOne := FactIter;
+  pOne(8);
   PlusOne(z3)
 END FibFact.
