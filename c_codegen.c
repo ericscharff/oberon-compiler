@@ -366,7 +366,21 @@ void gen_statement(Statement *s) {
       assert(0);
       break;
     case STMT_ASSIGNMENT:
-      if (s->assignment_stmt.lvalue->type->kind == TYPE_RECORD) {
+      if (s->assignment_stmt.lvalue->type->kind == TYPE_CHAR && s->assignment_stmt.rvalue->type->kind == TYPE_STRING) {
+        assert(s->assignment_stmt.rvalue->is_const);
+        gen_expr(s->assignment_stmt.lvalue);
+        gen_str(" = '\\");
+        buf_printf(codegenBuf, "%o", s->assignment_stmt.rvalue->val.sVal[0]);
+        gen_str("';\n");
+      } else if (is_string_type(s->assignment_stmt.lvalue->type) && is_string_type(s->assignment_stmt.rvalue->type)) {
+        gen_str("strncpy(");
+        gen_expr(s->assignment_stmt.lvalue);
+        gen_str(", ");
+        gen_expr(s->assignment_stmt.rvalue);
+        gen_str(", sizeof(");
+        gen_expr(s->assignment_stmt.lvalue);
+        gen_str("));\n");
+      } else if (s->assignment_stmt.lvalue->type->kind == TYPE_RECORD) {
         assert(s->assignment_stmt.rvalue->type->kind == TYPE_RECORD);
         gen_str("memcpy(&(");
         gen_expr(s->assignment_stmt.lvalue);

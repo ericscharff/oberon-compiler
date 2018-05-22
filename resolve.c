@@ -884,6 +884,9 @@ bool is_assignable(Expr *lhs, Expr *rhs) {
   if (is_extension_of(rhs->type, lhs->type)) {
     return true;
   }
+  if (is_string_type(lhs->type) && is_string_type(rhs->type)) {
+    return true;
+  }
   return false;
 }
 

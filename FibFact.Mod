@@ -17,6 +17,8 @@ VAR
   z3 :R3;
   pz :PR;
   pz3 :P3;
+  c :CHAR;
+  ac :ARRAY 25 OF CHAR;
 
 PROCEDURE FactIter*(n :INTEGER) :INTEGER;
 VAR
@@ -95,5 +97,7 @@ BEGIN
   pz := pz3;
   pz3.a := 35;
   z := z3;
+  c := 041X;
+  ac := "WOWZA";
   PlusOne(z3)
 END FibFact.
