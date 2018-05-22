@@ -510,6 +510,14 @@ void resolve_type(Type *type) {
       error("POINTERS must point to RECORDs");
     }
   }
+  if (type->kind == TYPE_PROCEDURE) {
+    for (size_t i=0; i < buf_len(type->procedure_type.params); i++) {
+      resolve_type(type->procedure_type.params[i].type);
+    }
+    if (type->procedure_type.return_type) {
+      resolve_type(type->procedure_type.return_type);
+    }
+  }
   if (type->kind == TYPE_RECORD) {
     Type *base_type = type->record_type.base_type;
     if (base_type) {
@@ -818,14 +826,7 @@ void resolve_varparam_decl(Decl *d) {
 
 void resolve_proc_decl(Decl *d) {
   assert(d->kind == DECL_PROC);
-  if (d->type->kind == TYPE_PROCEDURE) {
-    for (size_t i=0; i < buf_len(d->type->procedure_type.params); i++) {
-      resolve_type(d->type->procedure_type.params[i].type);
-    }
-    if (d->type->procedure_type.return_type) {
-      resolve_type(d->type->procedure_type.return_type);
-    }
-  }
+  resolve_type(d->type);
 }
 
 void resolve_decl(Decl *d) {
