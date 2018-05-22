@@ -94,5 +94,6 @@ BEGIN
   NEW(pz3);
   pz := pz3;
   pz3.a := 35;
+  z := z3;
   PlusOne(z3)
 END FibFact.
