@@ -37,7 +37,8 @@ void gen_type(Type *t, const char *packageName, const char *name) {
         assert(0);
         break;
       case TYPE_BYTE:
-        assert(0);
+        gen_str("int ");
+        gen_qname(packageName, name);
         break;
       case TYPE_CHAR:
         gen_str("char ");

@@ -64,7 +64,7 @@ void eval_unary_expr(Expr *e, Expr *expr) {
 
   switch (e->unary.op) {
     case TOKEN_PLUS:
-      if (expr->type == &integerType || expr->type == &realType) {
+      if (is_integer_type(expr->type) || expr->type == &realType) {
         e->val = expr->val;
         e->type = expr->type;
       } else {
@@ -72,7 +72,7 @@ void eval_unary_expr(Expr *e, Expr *expr) {
       }
       break;
     case TOKEN_MINUS:
-      if (expr->type == &integerType) {
+      if (is_integer_type(expr->type)) {
         e->val.kind = VAL_INTEGER;
         e->val.iVal = -expr->val.iVal;
       } else if (expr->type == &realType) {
@@ -86,7 +86,7 @@ void eval_unary_expr(Expr *e, Expr *expr) {
       }
       break;
     case TOKEN_AS_SET_ELT:
-      if (expr->type == &integerType) {
+      if (is_integer_type(expr->type)) {
         e->val.kind = VAL_SET;
         e->type = &setType;
         e->val.setVal = 1 << expr->val.iVal;
@@ -112,7 +112,7 @@ void resolve_unary_expr(Expr *e) {
   switch (e->unary.op) {
     case TOKEN_PLUS:
     case TOKEN_MINUS:
-      if (expr->type == &integerType || expr->type == &realType ||
+      if (is_integer_type(expr->type) || expr->type == &realType ||
           expr->type == &setType || expr->type == &byteType) {
         e->type = expr->type;
       } else {
@@ -129,7 +129,7 @@ void resolve_unary_expr(Expr *e) {
       }
       break;
     case TOKEN_AS_SET_ELT:
-      if (expr->type == &integerType) {
+      if (is_integer_type(expr->type)) {
         e->type = &setType;
       } else {
         errorloc(e->loc, "SET expected for operator %s", op_name(e->unary.op));
@@ -156,7 +156,7 @@ void eval_binary_expr(Expr *e, Expr *lhs, Expr *rhs) {
 
   switch (e->binary.op) {
     case TOKEN_PLUS:
-      if (lhs->type == &integerType) {
+      if (is_integer_type(lhs->type)) {
         e->val.kind = VAL_INTEGER;
         e->val.iVal = lhs->val.iVal + rhs->val.iVal;
       } else if (lhs->type == &realType) {
@@ -170,7 +170,7 @@ void eval_binary_expr(Expr *e, Expr *lhs, Expr *rhs) {
       }
       break;
     case TOKEN_MINUS:
-      if (lhs->type == &integerType) {
+      if (is_integer_type(lhs->type)) {
         e->val.kind = VAL_INTEGER;
         e->val.iVal = lhs->val.iVal - rhs->val.iVal;
       } else if (lhs->type == &realType) {
@@ -184,7 +184,7 @@ void eval_binary_expr(Expr *e, Expr *lhs, Expr *rhs) {
       }
       break;
     case TOKEN_STAR:
-      if (lhs->type == &integerType) {
+      if (is_integer_type(lhs->type)) {
         e->val.kind = VAL_INTEGER;
         e->val.iVal = lhs->val.iVal * rhs->val.iVal;
       } else if (lhs->type == &realType) {
@@ -198,7 +198,7 @@ void eval_binary_expr(Expr *e, Expr *lhs, Expr *rhs) {
       }
       break;
     case TOKEN_SLASH:
-      if (lhs->type == &integerType) {
+      if (is_integer_type(lhs->type)) {
         e->val.kind = VAL_INTEGER;
         e->val.iVal = lhs->val.iVal / rhs->val.iVal;
       } else if (lhs->type == &realType) {
@@ -212,7 +212,7 @@ void eval_binary_expr(Expr *e, Expr *lhs, Expr *rhs) {
       }
       break;
     case TOKEN_DIV:
-      if (lhs->type == &integerType) {
+      if (is_integer_type(lhs->type)) {
         e->val.kind = VAL_INTEGER;
         e->val.iVal = lhs->val.iVal / rhs->val.iVal;
       } else {
@@ -220,7 +220,7 @@ void eval_binary_expr(Expr *e, Expr *lhs, Expr *rhs) {
       }
       break;
     case TOKEN_MOD:
-      if (lhs->type == &integerType) {
+      if (is_integer_type(lhs->type)) {
         e->val.kind = VAL_INTEGER;
         e->val.iVal = lhs->val.iVal % rhs->val.iVal;
       } else {
@@ -244,7 +244,7 @@ void eval_binary_expr(Expr *e, Expr *lhs, Expr *rhs) {
       }
       break;
     case TOKEN_DOTDOT:
-      if (lhs->type == &integerType) {
+      if (is_integer_type(lhs->type)) {
         uint32_t r = 0;
         int from = lhs->val.iVal;
         int to = rhs->val.iVal;
@@ -259,7 +259,7 @@ void eval_binary_expr(Expr *e, Expr *lhs, Expr *rhs) {
       }
       break;
     case TOKEN_LT:
-      if (lhs->type == &integerType) {
+      if (is_integer_type(lhs->type)) {
         e->val.kind = VAL_BOOLEAN;
         e->val.bVal = lhs->val.iVal < rhs->val.iVal;
       } else if (lhs->type == &realType) {
@@ -270,7 +270,7 @@ void eval_binary_expr(Expr *e, Expr *lhs, Expr *rhs) {
       }
       break;
     case TOKEN_LTEQ:
-      if (lhs->type == &integerType) {
+      if (is_integer_type(lhs->type)) {
         e->val.kind = VAL_BOOLEAN;
         e->val.bVal = lhs->val.iVal <= rhs->val.iVal;
       } else if (lhs->type == &realType) {
@@ -281,7 +281,7 @@ void eval_binary_expr(Expr *e, Expr *lhs, Expr *rhs) {
       }
       break;
     case TOKEN_GT:
-      if (lhs->type == &integerType) {
+      if (is_integer_type(lhs->type)) {
         e->val.kind = VAL_BOOLEAN;
         e->val.bVal = lhs->val.iVal > rhs->val.iVal;
       } else if (lhs->type == &realType) {
@@ -292,7 +292,7 @@ void eval_binary_expr(Expr *e, Expr *lhs, Expr *rhs) {
       }
       break;
     case TOKEN_GTEQ:
-      if (lhs->type == &integerType) {
+      if (is_integer_type(lhs->type)) {
         e->val.kind = VAL_BOOLEAN;
         e->val.bVal = lhs->val.iVal >= rhs->val.iVal;
       } else if (lhs->type == &realType) {
@@ -303,7 +303,7 @@ void eval_binary_expr(Expr *e, Expr *lhs, Expr *rhs) {
       }
       break;
     case TOKEN_EQ:
-      if (lhs->type == &integerType) {
+      if (is_integer_type(lhs->type)) {
         e->val.kind = VAL_BOOLEAN;
         e->val.bVal = lhs->val.iVal == rhs->val.iVal;
       } else if (lhs->type == &realType) {
@@ -354,7 +354,7 @@ void resolve_binary_expr(Expr *e) {
         errorloc(e->loc, "Types %s and %s must match for operator %s",
                  lhs->type->name, rhs->type->name, op_name(e->binary.op));
       }
-      if (lhs->type == &integerType || lhs->type == &realType ||
+      if (is_integer_type(lhs->type) || lhs->type == &realType ||
           lhs->type == &setType || lhs->type == &byteType) {
         e->type = lhs->type;
       } else {
@@ -368,7 +368,7 @@ void resolve_binary_expr(Expr *e) {
         errorloc(e->loc, "Types %s and %s must match for operator %s",
                  lhs->type->name, rhs->type->name, op_name(e->binary.op));
       }
-      if (lhs->type == &integerType) {
+      if (is_integer_type(lhs->type)) {
         e->type = lhs->type;
       } else {
         errorloc(e->loc, "INTEGER expected for operator %s",
@@ -385,7 +385,7 @@ void resolve_binary_expr(Expr *e) {
       }
       break;
     case TOKEN_DOTDOT:
-      if (lhs->type == &integerType && rhs->type == &integerType) {
+      if (is_integer_type(lhs->type) && is_integer_type(rhs->type)) {
         e->type = &setType;
       } else {
         errorloc(e->loc, "INTEGER expected for operator %s",
@@ -400,7 +400,7 @@ void resolve_binary_expr(Expr *e) {
           (lhs->type == &charType && is_one_char_string(rhs)) ||
           (rhs->type == &charType && is_one_char_string(lhs)) ||
           (is_string_type(lhs->type) && is_string_type(rhs->type))) {
-        if (lhs->type == &integerType || lhs->type == &realType ||
+        if (is_integer_type(lhs->type) || lhs->type == &realType ||
             lhs->type == &charType || lhs->type == &byteType ||
             lhs->type == &stringType || is_string_type(lhs->type)) {
           e->type = &booleanType;
@@ -425,7 +425,7 @@ void resolve_binary_expr(Expr *e) {
       }
       break;
     case TOKEN_IN:
-      if (lhs->type != &integerType) {
+      if (!is_integer_type(lhs->type)) {
         errorloc(e->loc, "left side of IN must be INTEGER, not %s",
                  lhs->type->name);
       }
@@ -487,7 +487,7 @@ void resolve_arrayref(Expr *e) {
   Expr *arrayRef = e->arrayref.expr;
   resolve_expr(indexExpr);
   resolve_expr(arrayRef);
-  if (indexExpr->type != &integerType) {
+  if (!is_integer_type(indexExpr->type)) {
     errorloc(indexExpr->loc, "array index type %s should be INTEGER",
              indexExpr->type->name);
   }
@@ -718,6 +718,7 @@ void resolve_expr(Expr *e) {
     case EXPR_PROCCALL: {
       Type *retType = resolve_proc_call(e->proccall.proc, e->proccall.args);
       if (retType) {
+        resolve_type(retType);
         e->type = retType;
       } else {
         errorloc(e->loc, "Not a proper procedure");
@@ -868,6 +869,9 @@ void resolve_decl(Decl *d) {
 bool is_assignable(Expr *lhs, Expr *rhs) {
   if (!lhs->is_assignable) {
     errorloc(lhs->loc, "Cannot assign");
+  }
+  if (is_integer_type(lhs->type) && is_integer_type(rhs->type)) {
+    return true;
   }
   if (lhs->type == rhs->type) {
     return true;

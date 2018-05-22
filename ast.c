@@ -801,12 +801,12 @@ void ast_test(void) {
   Decl *o1 = lookup_decl(string_intern("outer1"));
   assert(o1->kind == DECL_VAR);
   assert(o1->name == string_intern("outer1"));
-  assert(o1->type == &integerType);
+  assert(is_integer_type(o1->type));
   assert(o1->is_exported == false);
   Decl *o2 = lookup_decl(string_intern("outer2"));
   assert(o2->kind == DECL_VAR);
   assert(o2->name == string_intern("outer2"));
-  assert(o2->type == &integerType);
+  assert(is_integer_type(o2->type));
   assert(o2->is_exported == true);
 
   enter_scope(&inner, innerScopeName);

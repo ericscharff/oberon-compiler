@@ -193,6 +193,10 @@ bool is_string_type(Type *t) {
          (t->kind == TYPE_ARRAY && t->array_type.element_type == &charType);
 }
 
+bool is_integer_type(Type *t) {
+  return t == &integerType || t == &byteType;
+}
+
 // Can be compared with =
 bool is_equivalent_type(Type *a, Type *b) {
   assert(a);
