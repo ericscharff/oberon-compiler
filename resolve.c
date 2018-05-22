@@ -816,7 +816,17 @@ void resolve_varparam_decl(Decl *d) {
   resolve_type(d->type);
 }
 
-void resolve_proc_decl(Decl *d) { assert(d->kind == DECL_PROC); }
+void resolve_proc_decl(Decl *d) {
+  assert(d->kind == DECL_PROC);
+  if (d->type->kind == TYPE_PROCEDURE) {
+    for (size_t i=0; i < buf_len(d->type->procedure_type.params); i++) {
+      resolve_type(d->type->procedure_type.params[i].type);
+    }
+    if (d->type->procedure_type.return_type) {
+      resolve_type(d->type->procedure_type.return_type);
+    }
+  }
+}
 
 void resolve_decl(Decl *d) {
   switch (d->state) {
