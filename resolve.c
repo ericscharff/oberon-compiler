@@ -893,6 +893,18 @@ bool is_assignable(Expr *lhs, Expr *rhs) {
   if (lhs->type->kind == TYPE_PROCEDURE && rhs->type == &nilType) {
     return true;
   }
+  if (lhs->type->kind == TYPE_PROCEDURE && rhs->type->kind == TYPE_PROCEDURE) {
+    if (lhs->type->procedure_type.return_type == rhs->type->procedure_type.return_type &&
+        buf_len(lhs->type->procedure_type.params) == buf_len(rhs->type->procedure_type.params)) {
+      for (size_t i=0; i < buf_len(lhs->type->procedure_type.params); i++) {
+        if (lhs->type->procedure_type.params[i].type != rhs->type->procedure_type.params[i].type) {
+          return false;
+        }
+      }
+      return true;
+    }
+    return false;
+  }
   if (lhs->type == &charType && is_one_char_string(rhs)) {
     return true;
   }
@@ -982,6 +994,9 @@ void resolve_procedure_body(Decl *procDecl) {
   resolve_scope_push(procDecl->proc_decl.decls);
   resolve_statements(procDecl->proc_decl.body);
   if (procReturnType) {
+    if (!procDecl->proc_decl.ret_val) {
+      errorloc(procDecl->loc, "RETURN value missing");
+    }
     resolve_expr(procDecl->proc_decl.ret_val);
     if (procReturnType != procDecl->proc_decl.ret_val->type) {
       errorloc(procDecl->proc_decl.ret_val->loc,
