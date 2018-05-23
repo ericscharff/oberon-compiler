@@ -34,7 +34,8 @@ void gen_type(Type *t, const char *packageName, const char *name) {
         assert(0);
         break;
       case TYPE_BOOLEAN:
-        assert(0);
+        gen_str("bool ");
+        gen_qname(packageName, name);
         break;
       case TYPE_BYTE:
         gen_str("int ");
