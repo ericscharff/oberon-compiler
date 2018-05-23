@@ -2,7 +2,8 @@ typedef struct Decl Decl;
 typedef struct Expr expr;
 typedef struct Statement Statement;
 
-#define MODULE_INIT string_intern("<module_init>")
+#define MODULE_INIT_NAME "_module_init_"
+#define MODULE_INIT string_intern(MODULE_INIT_NAME)
 
 typedef enum {
   DECL_UNKNOWN,

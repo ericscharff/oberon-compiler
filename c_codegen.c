@@ -312,7 +312,7 @@ void gen_elseifs(ElseIf *elseifs) {
     geni();
     gen_str("} else if ");
     gen_expr(elseifs[i].cond);
-    gen_str("{\n");
+    gen_str(" {\n");
     codegenIndent++;
     gen_statements(elseifs[i].body);
     codegenIndent--;
@@ -350,30 +350,56 @@ void gen_statement(Statement *s) {
       assert(0);
       break;
     case STMT_WHILE:
-      gen_str("while ");
-      assert(!s->while_stmt.elseifs);
-      gen_expr(s->while_stmt.cond);
-      gen_str(" {\n");
-      codegenIndent++;
-      gen_statements(s->while_stmt.body);
-      codegenIndent--;
-      geni();
-      gen_str("}\n");
+      if (s->while_stmt.elseifs) {
+        gen_str("while (1) {\n");
+        codegenIndent++;
+        geni();
+        gen_str("if ");
+        gen_expr(s->while_stmt.cond);
+        gen_str(" {\n");
+        codegenIndent++;
+        gen_statements(s->while_stmt.body);
+        codegenIndent--;
+        gen_elseifs(s->while_stmt.elseifs);
+        geni();
+        gen_str("} else { break; }\n");
+        codegenIndent--;
+        geni();
+        gen_str("}\n");
+      } else {
+        gen_str("while ");
+        gen_expr(s->while_stmt.cond);
+        gen_str(" {\n");
+        codegenIndent++;
+        gen_statements(s->while_stmt.body);
+        codegenIndent--;
+        geni();
+        gen_str("}\n");
+      }
       break;
     case STMT_REPEAT:
-      assert(0);
+      gen_str("do {\n");
+      codegenIndent++;
+      gen_statements(s->repeat_stmt.body);
+      codegenIndent--;
+      geni();
+      gen_str("} while (!");
+      gen_expr(s->repeat_stmt.cond);
+      gen_str(");\n");
       break;
     case STMT_FOR:
       assert(0);
       break;
     case STMT_ASSIGNMENT:
-      if (s->assignment_stmt.lvalue->type->kind == TYPE_CHAR && s->assignment_stmt.rvalue->type->kind == TYPE_STRING) {
+      if (s->assignment_stmt.lvalue->type->kind == TYPE_CHAR &&
+          s->assignment_stmt.rvalue->type->kind == TYPE_STRING) {
         assert(s->assignment_stmt.rvalue->is_const);
         gen_expr(s->assignment_stmt.lvalue);
         gen_str(" = '\\");
         buf_printf(codegenBuf, "%o", s->assignment_stmt.rvalue->val.sVal[0]);
         gen_str("';\n");
-      } else if (is_string_type(s->assignment_stmt.lvalue->type) && is_string_type(s->assignment_stmt.rvalue->type)) {
+      } else if (is_string_type(s->assignment_stmt.lvalue->type) &&
+                 is_string_type(s->assignment_stmt.rvalue->type)) {
         gen_str("strncpy(");
         gen_expr(s->assignment_stmt.lvalue);
         gen_str(", ");
@@ -391,12 +417,16 @@ void gen_statement(Statement *s) {
         gen_expr(s->assignment_stmt.lvalue);
         gen_str("));\n");
       } else {
-        bool needsCast = (s->assignment_stmt.lvalue->type != s->assignment_stmt.rvalue->type) && (s->assignment_stmt.lvalue->type->kind != TYPE_PROCEDURE);
+        bool needsCast =
+            (s->assignment_stmt.lvalue->type !=
+             s->assignment_stmt.rvalue->type) &&
+            (s->assignment_stmt.lvalue->type->kind != TYPE_PROCEDURE);
         gen_expr(s->assignment_stmt.lvalue);
         gen_str(" = ");
         if (needsCast) {
           gen_str("(");
-          gen_qname(s->assignment_stmt.lvalue->type->package_name, s->assignment_stmt.lvalue->type->name);
+          gen_qname(s->assignment_stmt.lvalue->type->package_name,
+                    s->assignment_stmt.lvalue->type->name);
           gen_str(")(");
         }
         gen_expr(s->assignment_stmt.rvalue);
@@ -530,12 +560,29 @@ void gen_decl(Decl *d) {
 }
 
 void generate_c_code(Type **types, Decl **decls) {
+  gen_str("#include <stdio.h>\n");
+  gen_str("#include <stdlib.h>\n");
+  gen_str("#include <string.h>\n\n");
   for (size_t i = 0; i < buf_len(types); i++) {
     gen_typedef(types[i], types[i]->package_name, types[i]->name);
   }
   for (int i = buf_len(decls) - 1; i >= 0; i--) {
     gen_decl(decls[i]);
   }
+  gen_str("\nint main(void) {\n");
+  codegenIndent++;
+  for (size_t i = 0; i < buf_len(decls); i++) {
+    if (strstr(decls[i]->name, MODULE_INIT_NAME)) {
+      geni();
+      gen_qname(decls[i]->package_name, decls[i]->name);
+      gen_str("();\n");
+    }
+  }
+  geni();
+  gen_str("return 0;\n");
+  codegenIndent--;
+  geni();
+  gen_str("}\n");
 }
 
 void gen_test(void) {

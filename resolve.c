@@ -16,6 +16,8 @@ Type **gReachableTypes = NULL;
 Decl decDecl;
 Decl incDecl;
 Decl newDecl;
+Decl ordDecl;
+Decl valDecl;
 
 int resolve_scope_enter(void) { return gResolveScopeLast; }
 
@@ -322,8 +324,10 @@ void eval_binary_expr(Expr *e, Expr *lhs, Expr *rhs) {
   }
 }
 
+// Really, a zero or one character string, since 0X is common
 bool is_one_char_string(Expr *e) {
-  return e->is_const && e->val.kind == VAL_STRING && strlen(e->val.sVal) == 1;
+  return e->is_const && e->val.kind == VAL_STRING &&
+         (e->val.sVal[0] == '\0' || e->val.sVal[1] == '\0');
 }
 
 bool is_equivalent(Expr *a, Expr *b) {
@@ -350,29 +354,34 @@ void resolve_binary_expr(Expr *e) {
     case TOKEN_MINUS:
     case TOKEN_STAR:
     case TOKEN_SLASH:
-      if (lhs->type != rhs->type) {
+      if (lhs->type == rhs->type ||
+          (is_integer_type(lhs->type) && is_integer_type(rhs->type))) {
+        if (is_integer_type(lhs->type) || lhs->type == &realType ||
+            lhs->type == &setType || lhs->type == &byteType) {
+          e->type = lhs->type;
+        } else {
+          errorloc(e->loc,
+                   "INTEGER, REAL, SET, or BYTE expected for operator %s",
+                   op_name(e->binary.op));
+        }
+      } else {
         errorloc(e->loc, "Types %s and %s must match for operator %s",
                  lhs->type->name, rhs->type->name, op_name(e->binary.op));
-      }
-      if (is_integer_type(lhs->type) || lhs->type == &realType ||
-          lhs->type == &setType || lhs->type == &byteType) {
-        e->type = lhs->type;
-      } else {
-        errorloc(e->loc, "INTEGER, REAL, SET, or BYTE expected for operator %s",
-                 op_name(e->binary.op));
       }
       break;
     case TOKEN_DIV:
     case TOKEN_MOD:
-      if (lhs->type != rhs->type) {
+      if (lhs->type == rhs->type ||
+          (is_integer_type(lhs->type) && is_integer_type(rhs->type))) {
+        if (is_integer_type(lhs->type)) {
+          e->type = lhs->type;
+        } else {
+          errorloc(e->loc, "INTEGER expected for operator %s",
+                   op_name(e->binary.op));
+        }
+      } else {
         errorloc(e->loc, "Types %s and %s must match for operator %s",
                  lhs->type->name, rhs->type->name, op_name(e->binary.op));
-      }
-      if (is_integer_type(lhs->type)) {
-        e->type = lhs->type;
-      } else {
-        errorloc(e->loc, "INTEGER expected for operator %s",
-                 op_name(e->binary.op));
       }
       break;
     case TOKEN_AMP:
@@ -397,6 +406,7 @@ void resolve_binary_expr(Expr *e) {
     case TOKEN_GT:
     case TOKEN_GTEQ:
       if (lhs->type == rhs->type ||
+          (is_integer_type(lhs->type) && is_integer_type(rhs->type)) ||
           (lhs->type == &charType && is_one_char_string(rhs)) ||
           (rhs->type == &charType && is_one_char_string(lhs)) ||
           (is_string_type(lhs->type) && is_string_type(rhs->type))) {
@@ -511,7 +521,7 @@ void resolve_type(Type *type) {
     }
   }
   if (type->kind == TYPE_PROCEDURE) {
-    for (size_t i=0; i < buf_len(type->procedure_type.params); i++) {
+    for (size_t i = 0; i < buf_len(type->procedure_type.params); i++) {
       resolve_type(type->procedure_type.params[i].type);
     }
     if (type->procedure_type.return_type) {
@@ -567,6 +577,46 @@ void resolve_type(Type *type) {
   buf_push(gReachableTypes, type);
 }
 
+bool is_assignable_type(Type *lhs, Expr *rhs) {
+  if (is_integer_type(lhs) && is_integer_type(rhs->type)) {
+    return true;
+  }
+  if (lhs == rhs->type) {
+    return true;
+  }
+  if (lhs->kind == TYPE_POINTER && rhs->type == &nilType) {
+    return true;
+  }
+  if (lhs->kind == TYPE_PROCEDURE && rhs->type == &nilType) {
+    return true;
+  }
+  if (lhs->kind == TYPE_PROCEDURE && rhs->type->kind == TYPE_PROCEDURE) {
+    if (lhs->procedure_type.return_type ==
+            rhs->type->procedure_type.return_type &&
+        buf_len(lhs->procedure_type.params) ==
+            buf_len(rhs->type->procedure_type.params)) {
+      for (size_t i = 0; i < buf_len(lhs->procedure_type.params); i++) {
+        if (lhs->procedure_type.params[i].type !=
+            rhs->type->procedure_type.params[i].type) {
+          return false;
+        }
+      }
+      return true;
+    }
+    return false;
+  }
+  if (lhs == &charType && is_one_char_string(rhs)) {
+    return true;
+  }
+  if (is_extension_of(rhs->type, lhs)) {
+    return true;
+  }
+  if (is_string_type(lhs) && is_string_type(rhs->type)) {
+    return true;
+  }
+  return false;
+}
+
 void verify_proc_param_compatible(FormalParameter *formal, Expr *actual) {
   resolve_type(formal->type);
   resolve_expr(actual);
@@ -593,8 +643,7 @@ void verify_proc_param_compatible(FormalParameter *formal, Expr *actual) {
     // Yes - type extension
     return;
   }
-  if (formal->type != actual->type) {
-    // This is way too strict
+  if (!is_assignable_type(formal->type, actual)) {
     errorloc(actual->loc, "actual type %s does not match formal type %s",
              actual->type->name, formal->type->name);
   }
@@ -637,6 +686,34 @@ Type *resolve_builtin_procedure(Expr *proc, Expr **actualParams) {
       }
     } else {
       errorloc(proc->loc, "NEW expects 1 argument, got %d",
+               buf_len(actualParams));
+    }
+  } else if (proc->type->name == builtin_val) {
+    if (buf_len(actualParams) == 2) {
+      Expr *t = actualParams[0];
+      if (t->kind == EXPR_IDENTREF) {
+        Decl *d = lookup_decl(t->identref.name);
+        return d->type;
+      } else {
+        errorloc(t->loc, "SYSTEM.VAL needs a type name");
+      }
+    } else {
+      errorloc(proc->loc, "SYSTEM.VAL expects 2 arguments, got %d",
+               buf_len(actualParams));
+    }
+  } else if (proc->type->name == builtin_ord) {
+    if (buf_len(actualParams) == 1) {
+      Expr *e = actualParams[0];
+      resolve_expr(e);
+      if (e->type == &booleanType || e->type == &charType ||
+          e->type == &setType) {
+        return &integerType;
+      } else {
+        errorloc(e->loc, "ORD expects CHAR, BOOLEAN, or SET, got %s",
+                 e->type->name);
+      }
+    } else {
+      errorloc(proc->loc, "ORD expects 1 argument, got %d",
                buf_len(actualParams));
     }
   } else if (proc->type->name == builtin_inc) {
@@ -881,40 +958,7 @@ bool is_assignable(Expr *lhs, Expr *rhs) {
   if (!lhs->is_assignable) {
     errorloc(lhs->loc, "Cannot assign");
   }
-  if (is_integer_type(lhs->type) && is_integer_type(rhs->type)) {
-    return true;
-  }
-  if (lhs->type == rhs->type) {
-    return true;
-  }
-  if (lhs->type->kind == TYPE_POINTER && rhs->type == &nilType) {
-    return true;
-  }
-  if (lhs->type->kind == TYPE_PROCEDURE && rhs->type == &nilType) {
-    return true;
-  }
-  if (lhs->type->kind == TYPE_PROCEDURE && rhs->type->kind == TYPE_PROCEDURE) {
-    if (lhs->type->procedure_type.return_type == rhs->type->procedure_type.return_type &&
-        buf_len(lhs->type->procedure_type.params) == buf_len(rhs->type->procedure_type.params)) {
-      for (size_t i=0; i < buf_len(lhs->type->procedure_type.params); i++) {
-        if (lhs->type->procedure_type.params[i].type != rhs->type->procedure_type.params[i].type) {
-          return false;
-        }
-      }
-      return true;
-    }
-    return false;
-  }
-  if (lhs->type == &charType && is_one_char_string(rhs)) {
-    return true;
-  }
-  if (is_extension_of(rhs->type, lhs->type)) {
-    return true;
-  }
-  if (is_string_type(lhs->type) && is_string_type(rhs->type)) {
-    return true;
-  }
-  return false;
+  return is_assignable_type(lhs->type, rhs);
 }
 
 void resolve_boolean_expr(Expr *e) {
@@ -952,7 +996,8 @@ void resolve_statements(Statement *body) {
         resolve_elseifs(body[i].while_stmt.elseifs);
         break;
       case STMT_REPEAT:
-        assert(0);
+        resolve_statements(body[i].repeat_stmt.body);
+        resolve_boolean_expr(body[i].repeat_stmt.cond);
         break;
       case STMT_FOR:
         assert(0);
@@ -998,7 +1043,8 @@ void resolve_procedure_body(Decl *procDecl) {
       errorloc(procDecl->loc, "RETURN value missing");
     }
     resolve_expr(procDecl->proc_decl.ret_val);
-    if (procReturnType != procDecl->proc_decl.ret_val->type) {
+    if (procDecl->proc_decl.ret_val->type != &nilType &&
+        !is_assignable_type(procReturnType, procDecl->proc_decl.ret_val)) {
       errorloc(procDecl->proc_decl.ret_val->loc,
                "RETURN type %s does not match declared type %s",
                procDecl->proc_decl.ret_val->type->name, procReturnType->name);
@@ -1038,9 +1084,9 @@ void resolve_all_decls(void) {
   }
 }
 
-void push_builtin(Decl *d, const char *name) {
+void push_builtin(Decl *d, const char *packageName, const char *name) {
   assert(d);
-  d->package_name = string_intern("");
+  d->package_name = packageName;
   d->name = name;
   d->type = new_type_builtin_procedure(name);
   d->kind = DECL_PROC;
@@ -1049,9 +1095,13 @@ void push_builtin(Decl *d, const char *name) {
 }
 
 void resolve_push_specials(void) {
-  push_builtin(&decDecl, builtin_dec);
-  push_builtin(&incDecl, builtin_inc);
-  push_builtin(&newDecl, builtin_new);
+  const char *e = string_intern("");
+  push_builtin(&decDecl, e, builtin_dec);
+  push_builtin(&incDecl, e, builtin_inc);
+  push_builtin(&newDecl, e, builtin_new);
+  push_builtin(&ordDecl, e, builtin_ord);
+  // Ought to be SYSTEM.VAL - but VAL is so funky...
+  push_builtin(&valDecl, e, builtin_val);
 }
 
 void resolve_module(Module *m) {
@@ -1093,7 +1143,7 @@ void resolve_test_static(void) {
   init_stream(
       "",
       "MODULE abc;\n"
-      "IMPORT Out;\n"
+      "IMPORT Base1;\n"
       "CONST\n"
       "  one* = +1;\n"
       "  minusone* = -1h;\n"
@@ -1148,9 +1198,11 @@ void resolve_test_static(void) {
       "  bb := cc = \"0\"; bb := kEmptySet = kOneSet; bb := cc <= cc;\n"
       "  Wow3(ii);\n"
       "  cc := 041X;\n"
-      "  Out.Int(10);\n"
+      "  Base1.Int(10);\n"
       "  ArrFunc(a2);\n"
       "  ii := Incr(one) + Incr(minusone);\n"
+      "  WHILE ii > 0 DO ii := ii + 1 ELSIF ii > 1 DO ii := ii + 2 END;\n"
+      "  REPEAT ii := ii * 2 UNTIL ii = 25;\n"
       "  jj.a := ii;\n"
       "  jj.b := ii;\n"
       "  jj.c := a2[0];\n"

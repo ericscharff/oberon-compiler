@@ -193,9 +193,7 @@ bool is_string_type(Type *t) {
          (t->kind == TYPE_ARRAY && t->array_type.element_type == &charType);
 }
 
-bool is_integer_type(Type *t) {
-  return t == &integerType || t == &byteType;
-}
+bool is_integer_type(Type *t) { return t == &integerType || t == &byteType; }
 
 // Can be compared with =
 bool is_equivalent_type(Type *a, Type *b) {
@@ -211,6 +209,9 @@ bool is_equivalent_type(Type *a, Type *b) {
   }
   if (b->kind == TYPE_ARRAY && !is_string_type(b)) {
     return false;
+  }
+  if (is_integer_type(a) && is_integer_type(b)) {
+    return true;
   }
   if (is_string_type(a) && is_string_type(b)) {
     // Strings can be compared

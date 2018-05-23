@@ -104,6 +104,6 @@ BEGIN
   ac := "WOWZA";
   b := 1 + 1;
   pOne := FactIter;
-  pOne(8);
+  Out.Int(pOne(8));
   PlusOne(z3)
 END FibFact.

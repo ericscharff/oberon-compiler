@@ -186,6 +186,8 @@ const char *lc_keyword_while;
 const char *builtin_dec;
 const char *builtin_inc;
 const char *builtin_new;
+const char *builtin_ord;
+const char *builtin_val;
 
 const char *op_name(TokenKind kind) { return token_kind_names[kind]; }
 
@@ -329,6 +331,8 @@ void init_keywords(void) {
   builtin_dec = string_intern("DEC");
   builtin_inc = string_intern("INC");
   builtin_new = string_intern("NEW");
+  builtin_ord = string_intern("ORD");
+  builtin_val = string_intern("VAL");
 }
 
 void init_string_pool(void) {

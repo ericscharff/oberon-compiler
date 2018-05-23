@@ -3,5 +3,6 @@ MODULE Base1;
 TYPE
   A* = SET;
   Base1Rec* = RECORD b :INTEGER END;
- 
+
+PROCEDURE Int*(i :INTEGER); END Int;
 END Base1.
