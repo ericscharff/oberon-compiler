@@ -152,7 +152,7 @@ typedef struct Expr {
       Expr *expr;
     } arrayref;
     struct {
-      Decl *type_defn;
+      Type *type;
       Expr *expr;
     } typeguard;
     struct {
@@ -213,8 +213,8 @@ void dbg_print_expr(Expr *e) {
       dbg_print_expr(e->arrayref.array_index);
       break;
     case EXPR_TYPEGUARD:
-      printf("type: %s.%s ", e->typeguard.type_defn->package_name,
-             e->typeguard.type_defn->name);
+      printf("type: %s.%s ", e->typeguard.type->package_name,
+             e->typeguard.type->name);
       dbg_print_expr(e->typeguard.expr);
       break;
     case EXPR_INTEGER:
@@ -340,7 +340,8 @@ typedef struct Statement {
       Expr *start;
       Expr *end;
       Expr *increment;
-      Statement *body;  // buf
+      Statement *body;          // buf
+      bool positive_increment;  // populateed by resolver
     } for_stmt;
     struct {
       Expr *lvalue;
@@ -578,9 +579,9 @@ Expr *new_expr_arrayref(Expr *arrayIndex, Expr *arrayRef, Loc loc) {
   return e;
 }
 
-Expr *new_expr_typeguard(Decl *type_defn, Expr *base, Loc loc) {
+Expr *new_expr_typeguard(Type *type, Expr *base, Loc loc) {
   Expr *e = new_expr(EXPR_TYPEGUARD, loc);
-  e->typeguard.type_defn = type_defn;
+  e->typeguard.type = type;
   e->typeguard.expr = base;
   return e;
 }

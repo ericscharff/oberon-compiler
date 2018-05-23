@@ -291,7 +291,11 @@ void gen_expr(Expr *e) {
         gen_str("]");
         break;
       case EXPR_TYPEGUARD:
-        assert(0);
+        gen_str("((");
+        gen_qname(e->typeguard.type->package_name, e->typeguard.type->name);
+        gen_str(")");
+        gen_expr(e->typeguard.expr);
+        gen_str(")");
         break;
       case EXPR_INTEGER:
       case EXPR_REAL:
@@ -394,14 +398,18 @@ void gen_statement(Statement *s) {
       gen_expr(s->for_stmt.start);
       gen_str("; ");
       gen_str(s->for_stmt.ident);
-      gen_str(" != ");
+      if (s->for_stmt.positive_increment) {
+        gen_str(" <= ");
+      } else {
+        gen_str(" >= ");
+      }
       gen_expr(s->for_stmt.end);
       gen_str("; ");
       gen_str(s->for_stmt.ident);
       if (s->for_stmt.increment) {
         gen_str(" += ");
         gen_expr(s->for_stmt.increment);
-      } else { 
+      } else {
         gen_str("++");
       }
       gen_str(") {\n");

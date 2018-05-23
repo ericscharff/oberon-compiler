@@ -126,7 +126,7 @@ Expr *parse_designator(void) {
     } else if (symbol_is_type_guard(t, d) && match_token(TOKEN_LPAREN)) {
       Decl *guarded = parse_qualident();
       t = guarded->type;
-      e = new_expr_typeguard(guarded, e, loc);
+      e = new_expr_typeguard(t, e, loc);
       expect_token(TOKEN_RPAREN);
     } else {
       assert(0);

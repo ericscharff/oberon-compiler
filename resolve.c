@@ -788,6 +788,23 @@ void resolve_fieldref(Expr *e) {
   }
 }
 
+void resolve_typeguard(Expr *e) {
+  assert(e);
+  assert(e->kind == EXPR_TYPEGUARD);
+  assert(e->typeguard.type);
+  assert(e->typeguard.expr);
+  resolve_expr(e->typeguard.expr);
+  resolve_type(e->typeguard.type);
+  Type *sourceType = e->typeguard.expr->type;
+  Type *resultType = e->typeguard.type;
+  if (is_extension_of(resultType, sourceType)) {
+    e->type = resultType;
+  } else {
+    errorloc(e->loc, "guarded type %s does not extend %s", resultType->name,
+             sourceType->name);
+  }
+}
+
 void resolve_expr(Expr *e) {
   assert(e);
   switch (e->kind) {
@@ -820,7 +837,7 @@ void resolve_expr(Expr *e) {
       resolve_arrayref(e);
       break;
     case EXPR_TYPEGUARD:
-      assert(0);
+      resolve_typeguard(e);
       break;
     case EXPR_INTEGER:
       e->is_const = true;
@@ -1002,13 +1019,26 @@ void resolve_statements(Statement *body) {
       case STMT_FOR: {
         resolve_expr(body[i].for_stmt.start);
         resolve_expr(body[i].for_stmt.end);
+        body[i].for_stmt.positive_increment = true;
         if (body[i].for_stmt.increment) {
           resolve_expr(body[i].for_stmt.increment);
           if (!body[i].for_stmt.increment->is_const) {
-            errorloc(body[i].for_stmt.increment->loc, "FOR loop increment must be constant");
+            errorloc(body[i].for_stmt.increment->loc,
+                     "FOR loop increment must be constant");
+          }
+          if (body[i].for_stmt.increment->val.kind == VAL_INTEGER) {
+            body[i].for_stmt.positive_increment =
+                body[i].for_stmt.increment->val.iVal > 0;
+          } else if (body[i].for_stmt.increment->val.kind == VAL_REAL) {
+            body[i].for_stmt.positive_increment =
+                body[i].for_stmt.increment->val.rVal > 0;
+          } else {
+            errorloc(body[i].for_stmt.increment->loc,
+                     "invalid type for FOR increment");
           }
         }
-        Expr *fake = new_expr_identref(body[i].for_stmt.ident, string_intern(""), body[i].loc);
+        Expr *fake = new_expr_identref(body[i].for_stmt.ident,
+                                       string_intern(""), body[i].loc);
         resolve_expr(fake);
         if (fake->type != body[i].for_stmt.start->type) {
           errorloc(fake->loc, "FOR loop start type does not match start");
@@ -1016,12 +1046,13 @@ void resolve_statements(Statement *body) {
         if (fake->type != body[i].for_stmt.end->type) {
           errorloc(fake->loc, "FOR loop start type does not match end");
         }
-        if (body[i].for_stmt.increment && fake->type != body[i].for_stmt.increment->type) {
+        if (body[i].for_stmt.increment &&
+            fake->type != body[i].for_stmt.increment->type) {
           errorloc(fake->loc, "FOR loop start type does not match increment");
         }
         resolve_statements(body[i].for_stmt.body);
         break;
-                     }
+      }
       case STMT_ASSIGNMENT:
         resolve_expr(body[i].assignment_stmt.lvalue);
         resolve_expr(body[i].assignment_stmt.rvalue);
