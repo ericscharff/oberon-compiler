@@ -724,6 +724,12 @@ void dbg_dump_stmts(Statement *s) {
         printf("\n");
         dbg_dump_stmts(s[i].while_stmt.body);
         break;
+      case STMT_FOR:
+        dbg_print_expr(s[i].for_stmt.start);
+        printf("\n");
+        dbg_print_expr(s[i].for_stmt.end);
+        dbg_dump_stmts(s[i].for_stmt.body);
+        break;
       case STMT_REPEAT:
         dbg_print_expr(s[i].repeat_stmt.cond);
         printf("\n");

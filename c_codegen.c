@@ -388,7 +388,28 @@ void gen_statement(Statement *s) {
       gen_str(");\n");
       break;
     case STMT_FOR:
-      assert(0);
+      gen_str("for (");
+      gen_str(s->for_stmt.ident);
+      gen_str(" = ");
+      gen_expr(s->for_stmt.start);
+      gen_str("; ");
+      gen_str(s->for_stmt.ident);
+      gen_str(" != ");
+      gen_expr(s->for_stmt.end);
+      gen_str("; ");
+      gen_str(s->for_stmt.ident);
+      if (s->for_stmt.increment) {
+        gen_str(" += ");
+        gen_expr(s->for_stmt.increment);
+      } else { 
+        gen_str("++");
+      }
+      gen_str(") {\n");
+      codegenIndent++;
+      gen_statements(s->for_stmt.body);
+      codegenIndent--;
+      geni();
+      gen_str("}\n");
       break;
     case STMT_ASSIGNMENT:
       if (s->assignment_stmt.lvalue->type->kind == TYPE_CHAR &&

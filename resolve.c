@@ -999,9 +999,29 @@ void resolve_statements(Statement *body) {
         resolve_statements(body[i].repeat_stmt.body);
         resolve_boolean_expr(body[i].repeat_stmt.cond);
         break;
-      case STMT_FOR:
-        assert(0);
+      case STMT_FOR: {
+        resolve_expr(body[i].for_stmt.start);
+        resolve_expr(body[i].for_stmt.end);
+        if (body[i].for_stmt.increment) {
+          resolve_expr(body[i].for_stmt.increment);
+          if (!body[i].for_stmt.increment->is_const) {
+            errorloc(body[i].for_stmt.increment->loc, "FOR loop increment must be constant");
+          }
+        }
+        Expr *fake = new_expr_identref(body[i].for_stmt.ident, string_intern(""), body[i].loc);
+        resolve_expr(fake);
+        if (fake->type != body[i].for_stmt.start->type) {
+          errorloc(fake->loc, "FOR loop start type does not match start");
+        }
+        if (fake->type != body[i].for_stmt.end->type) {
+          errorloc(fake->loc, "FOR loop start type does not match end");
+        }
+        if (body[i].for_stmt.increment && fake->type != body[i].for_stmt.increment->type) {
+          errorloc(fake->loc, "FOR loop start type does not match increment");
+        }
+        resolve_statements(body[i].for_stmt.body);
         break;
+                     }
       case STMT_ASSIGNMENT:
         resolve_expr(body[i].assignment_stmt.lvalue);
         resolve_expr(body[i].assignment_stmt.rvalue);

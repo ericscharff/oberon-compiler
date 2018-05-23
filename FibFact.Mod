@@ -13,6 +13,7 @@ TYPE
   P3 = POINTER TO R3;
   TakeOneReturnOne = PROCEDURE (thing :INTEGER):INTEGER;
 VAR
+  lcv :INTEGER;
   z :R;
   z2 :R2;
   z3 :R3;
@@ -81,6 +82,18 @@ PROCEDURE Plus(VAR zzz :INTEGER); BEGIN zzz := zzz + 1 END Plus;
 
 PROCEDURE PlusOne(VAR x :R); BEGIN Plus(x.a) END PlusOne;
 
+PROCEDURE Tootle;
+VAR
+  lcv :INTEGER;
+BEGIN
+  FOR lcv := 1 TO 25 BY 2*1 DO
+    Out.Int(z3.d)
+  END;
+  FOR lcv := 1 TO 25 DO
+    Out.Int(z3.d)
+  END
+END Tootle;
+
 BEGIN
   FactIter(7);
   FactRec(Seven);
@@ -95,6 +108,7 @@ BEGIN
   z3.c := 101;
   z3.d := 101;
   FLT(z3.d);
+  Tootle;
   INC(z.a, 3);
   NEW(pz3);
   pz := pz3;

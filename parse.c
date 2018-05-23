@@ -613,7 +613,7 @@ void parse_procedure_body(Decl *procDecl) {
   const char *parentPackage = current_package_name;
   Scope scope;
   scope.decls = NULL;
-  enter_scope(&scope, "");
+  enter_scope(&scope, string_intern(""));
   populate_procedure_scope(procDecl);
   // Nested procedure declarations could be avoided here,
   // since nested procedures can't really access their
