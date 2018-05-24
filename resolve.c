@@ -921,12 +921,37 @@ void resolve_varparam_decl(Decl *d) {
 void resolve_proc_decl(Decl *d) {
   assert(d->kind == DECL_PROC);
   resolve_type(d->type);
+  if (d->type->kind == TYPE_BUILTIN_PROCEDURE) {
+    return;
+  }
+  assert(d->type->kind == TYPE_PROCEDURE);
+
+  Type *procReturnType = d->type->procedure_type.return_type;
+  int oldScope = resolve_scope_enter();
+  resolve_scope_push(d->proc_decl.decls);
+  resolve_statements(d->proc_decl.body);
+  if (procReturnType) {
+    if (!d->proc_decl.ret_val) {
+      errorloc(d->loc, "RETURN value missing");
+    }
+    resolve_expr(d->proc_decl.ret_val);
+    if (d->proc_decl.ret_val->type != &nilType &&
+        !is_assignable_type(procReturnType, d->proc_decl.ret_val)) {
+      errorloc(d->proc_decl.ret_val->loc,
+               "RETURN type %s does not match declared type %s",
+               d->proc_decl.ret_val->type->name, procReturnType->name);
+    }
+  } else {
+    if (d->proc_decl.ret_val) {
+      errorloc(d->proc_decl.ret_val->loc, "RETURN value unexpected");
+    }
+  }
+  resolve_scope_leave(oldScope);
 }
 
 void resolve_decl(Decl *d) {
   switch (d->state) {
     case DECLSTATE_UNRESOLVED:
-      buf_push(gReachableDecls, d);
       d->state = DECLSTATE_RESOLVING;
       switch (d->kind) {
         case DECL_INCOMPLETE:
@@ -958,9 +983,12 @@ void resolve_decl(Decl *d) {
           break;
       }
       d->state = DECLSTATE_RESOLVED;
+      buf_push(gReachableDecls, d);
       break;
     case DECLSTATE_RESOLVING:
-      errorloc(d->loc, "Circular reference for %s", d->name);
+      if (d->kind != DECL_PROC) {
+        errorloc(d->loc, "Circular reference for %s", d->name);
+      }
       break;
     case DECLSTATE_RESOLVED:
       break;
@@ -1077,53 +1105,7 @@ void resolve_statements(Statement *body) {
   }
 }
 
-void resolve_procedure_body(Decl *procDecl) {
-  assert(procDecl);
-  assert(procDecl->type);
-  if (procDecl->type->kind == TYPE_BUILTIN_PROCEDURE) {
-    return;
-  }
-  assert(procDecl->type->kind == TYPE_PROCEDURE);
-
-  Type *procReturnType = procDecl->type->procedure_type.return_type;
-  int oldScope = resolve_scope_enter();
-  resolve_scope_push(procDecl->proc_decl.decls);
-  resolve_statements(procDecl->proc_decl.body);
-  if (procReturnType) {
-    if (!procDecl->proc_decl.ret_val) {
-      errorloc(procDecl->loc, "RETURN value missing");
-    }
-    resolve_expr(procDecl->proc_decl.ret_val);
-    if (procDecl->proc_decl.ret_val->type != &nilType &&
-        !is_assignable_type(procReturnType, procDecl->proc_decl.ret_val)) {
-      errorloc(procDecl->proc_decl.ret_val->loc,
-               "RETURN type %s does not match declared type %s",
-               procDecl->proc_decl.ret_val->type->name, procReturnType->name);
-    }
-  } else {
-    if (procDecl->proc_decl.ret_val) {
-      errorloc(procDecl->proc_decl.ret_val->loc, "RETURN value unexpected");
-    }
-  }
-  resolve_scope_leave(oldScope);
-}
-
-void resolve_decls(size_t startDecl, size_t endDecl) {
-  for (size_t i = startDecl; i < endDecl; i++) {
-    assert(gReachableDecls[i]->state == DECLSTATE_RESOLVED);
-    if (gReachableDecls[i]->kind == DECL_PROC) {
-      // This call may add new decls to resolve, hence the fix point
-      resolve_procedure_body(gReachableDecls[i]);
-    }
-  }
-  size_t newEnd = buf_len(gReachableDecls);
-  if (newEnd != endDecl) {
-    resolve_decls(endDecl, newEnd);
-  }
-}
-
 void resolve_all_decls(void) {
-  resolve_decls(0, buf_len(gReachableDecls));
   for (size_t i = 0; i < buf_len(gReachableTypes); i++) {
     printf("Final type %s.%s\n", gReachableTypes[i]->package_name,
            gReachableTypes[i]->name);

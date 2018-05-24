@@ -689,7 +689,7 @@ void generate_c_code(Type **types, Decl **decls) {
   for (size_t i = 0; i < buf_len(types); i++) {
     gen_typedef(types[i], types[i]->package_name, types[i]->name);
   }
-  for (int i = buf_len(decls) - 1; i >= 0; i--) {
+  for (size_t i=0; i < buf_len(decls); i++) {
     gen_decl(decls[i]);
   }
   gen_str("\nint main(void) {\n");
