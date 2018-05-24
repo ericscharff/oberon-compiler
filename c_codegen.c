@@ -54,7 +54,8 @@ void gen_type(Type *t, const char *packageName, const char *name) {
         gen_qname(packageName, name);
         break;
       case TYPE_SET:
-        assert(0);
+        gen_str("int ");
+        gen_qname(packageName, name);
         break;
       case TYPE_STRING:
         assert(0);
@@ -166,19 +167,111 @@ void gen_unary_expr(TokenKind op, Expr *expr) {
   gen_str(")");
 }
 
-void gen_binary_expr(TokenKind op, Expr *lhs, Expr *rhs) {
-  assert(lhs);
-  assert(rhs);
+void gen_binary_c(const char *cOp, Expr *lhs, Expr *rhs) {
   gen_str("(");
   gen_expr(lhs);
-  // TODO - op names aren't necessarily the token names
-  // TODO - set binary operators are handled specially in C
-  // TODO - string binary operators are treaded specially in C
   gen_str(" ");
-  gen_str(token_kind_names[op]);
+  gen_str(cOp);
   gen_str(" ");
   gen_expr(rhs);
   gen_str(")");
+}
+
+void gen_strcmp(Expr *lhs, Expr *rhs, const char *epilog) {
+  gen_str("(strcmp(");
+  gen_expr(lhs);
+  gen_str(", ");
+  gen_expr(rhs);
+  gen_str(") ");
+  gen_str(epilog);
+  gen_str(")");
+}
+
+void gen_binary_expr(TokenKind op, Expr *lhs, Expr *rhs) {
+  assert(lhs);
+  assert(rhs);
+  bool isSet = lhs->type == &setType;
+  bool isString = is_string_type(lhs->type);
+
+  switch (op) {
+    case TOKEN_PLUS:
+      gen_binary_c(isSet ? "|" : "+", lhs, rhs);
+      break;
+    case TOKEN_MINUS:
+      gen_binary_c(isSet ? "& ~" : "-", lhs, rhs);
+      break;
+    case TOKEN_STAR:
+      gen_binary_c(isSet ? "&" : "*", lhs, rhs);
+      break;
+    case TOKEN_SLASH:
+      gen_binary_c(isSet ? "^" : "/", lhs, rhs);
+      break;
+    case TOKEN_DIV:
+      gen_binary_c("/", lhs, rhs);
+      break;
+    case TOKEN_MOD:
+      gen_binary_c("%", lhs, rhs);
+      break;
+    case TOKEN_AMP:
+      gen_binary_c("&&", lhs, rhs);
+      break;
+    case TOKEN_OR:
+      gen_binary_c("||", lhs, rhs);
+      break;
+    case TOKEN_LT:
+      if (isString) {
+        gen_strcmp(lhs, rhs, "< 0");
+      } else {
+        gen_binary_c("<", lhs, rhs);
+      }
+      break;
+    case TOKEN_LTEQ:
+      if (isString) {
+        gen_strcmp(lhs, rhs, "<= 0");
+      } else {
+        gen_binary_c("<=", lhs, rhs);
+      }
+      break;
+    case TOKEN_GT:
+      if (isString) {
+        gen_strcmp(lhs, rhs, "> 0");
+      } else {
+        gen_binary_c(">=", lhs, rhs);
+      }
+      break;
+    case TOKEN_GTEQ:
+      if (isString) {
+        gen_strcmp(lhs, rhs, ">= 0");
+      } else {
+        gen_binary_c(">=", lhs, rhs);
+      }
+      break;
+    case TOKEN_EQ:
+      if (isString) {
+        gen_strcmp(lhs, rhs, "== 0");
+      } else {
+        gen_binary_c("==", lhs, rhs);
+      }
+      break;
+    case TOKEN_POUND:
+      if (isString) {
+        gen_strcmp(lhs, rhs, "!= 0");
+      } else {
+        gen_binary_c("!=", lhs, rhs);
+      }
+      break;
+    case TOKEN_IN:
+      gen_str("((1 << ");
+      gen_expr(lhs);
+      gen_str(") & ");
+      gen_expr(rhs);
+      gen_str(")");
+      break;
+    case TOKEN_IS:
+    default:
+      assert(0);
+      break;
+  }
 }
 
 void gen_builtin_procedure(Expr *proc, Expr **args) {

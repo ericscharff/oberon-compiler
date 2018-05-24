@@ -82,7 +82,7 @@ PROCEDURE Plus(VAR zzz :INTEGER); BEGIN zzz := zzz + 1 END Plus;
 
 PROCEDURE PlusOne(VAR x :R); BEGIN Plus(x.a) END PlusOne;
 
-PROCEDURE Tootle;
+PROCEDURE TestFor;
 VAR
   lcv :INTEGER;
 BEGIN
@@ -92,7 +92,32 @@ BEGIN
   FOR lcv := 1 TO 25 DO
     Out.Int(z3.d)
   END
-END Tootle;
+END TestFor;
+
+PROCEDURE TestBinop;
+VAR
+  s1, s2, s3 :SET;
+  str, str2 :ARRAY 25 OF CHAR;
+  b :BOOLEAN;
+BEGIN
+  s1 := {2} + {3};
+  s2 := {1, 3, 5};
+  s3 := {2, 4, 6};
+  b := 3 IN s2;
+  s1 := s2 + s3;
+  s1 := s2 - s3;
+  s1 := s2 * s3;
+  s1 := s2 / s3;
+  str := "BETA";
+  str2 := "BETA";
+  b := "ALPHA" < str;
+  b := "Aloha" >= str;
+  b := "GAMMA" > str;
+  b := str = str2;
+  b := s1 # s2;
+  b := s1 = s1;
+  b := str # "Z"
+END TestBinop;
 
 BEGIN
   FactIter(7);
@@ -108,7 +133,8 @@ BEGIN
   z3.c := 101;
   z3.d := 101;
   FLT(z3.d);
-  Tootle;
+  TestFor;
+  TestBinop;
   INC(z.a, 3);
   NEW(pz3);
   pz := pz3;
