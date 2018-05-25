@@ -163,10 +163,18 @@ void gen_char_lit(Expr *e) { buf_printf(codegenBuf, "'\\%o'", e->val.sVal[0]); }
 
 void gen_unary_expr(TokenKind op, Expr *expr) {
   assert(expr);
-  assert(op == TOKEN_MINUS);
-  gen_str("-(");
-  gen_expr(expr);
-  gen_str(")");
+  if (op == TOKEN_MINUS) {
+    gen_str("-(");
+    gen_expr(expr);
+    gen_str(")");
+  } else if (op == TOKEN_TILDE) {
+    // TODO - handle sets
+    gen_str("!(");
+    gen_expr(expr);
+    gen_str(")");
+  } else {
+    assert(0);
+  }
 }
 
 void gen_binary_c(const char *cOp, Expr *lhs, Expr *rhs, bool coerceToChar) {
