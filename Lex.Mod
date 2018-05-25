@@ -31,6 +31,17 @@ BEGIN
   RETURN l
 END StringLen;
 
+PROCEDURE StrEq(a :ARRAY OF CHAR; ai :INTEGER; b :ARRAY OF CHAR; bi :INTEGER) :BOOLEAN;
+VAR
+  same :BOOLEAN;
+BEGIN
+  WHILE (a[ai] = b[bi]) & ((a[ai] # 0X) & (b[bi] # 0X)) DO
+    INC(ai);
+    INC(bi);
+  END;
+  RETURN (a[ai] = 0X) & (b[bi] = 0X)
+END StrEq;
+
 PROCEDURE StringInternRange(VAR sp :StringPool; s :ARRAY OF CHAR; offset, length :INTEGER) :PoolIndex;
 VAR
   i    :INTEGER;
@@ -40,15 +51,24 @@ BEGIN
   ASSERT(sp.last + length < PoolSize);
   (* Copy and compute hash at the same time *)
   hash := 811C9DC5H;
-  FOR i := 0 TO length DO
+  FOR i := 0 TO length-1 DO
     hash := hash XOR ORD(s[offset + i]);
     hash := hash * 16777619;
     sp.buf[sp.last + i] := s[offset + i]
   END;
+  sp.buf[sp.last + length] := 0X;
   hash := hash * 85EBCA6BH;
   hash := hash XOR (hash DIV 65536);
   b := hash MOD NumBuckets;
-  RETURN b
+  WHILE (sp.buckets[b] >= 0) & ~StrEq(sp.buf, sp.buckets[b], s, offset) DO
+    INC(b);
+    IF b = NumBuckets THEN b := 0; END;
+  END;
+  IF sp.buckets[b] < 0 THEN
+    sp.buckets[b] := sp.last;
+    INC(sp.last, length+1);
+  END;
+  RETURN sp.buckets[b]
 END StringInternRange;
 
 PROCEDURE StringIntern(VAR sp :StringPool; s :ARRAY OF CHAR) :PoolIndex;
@@ -58,16 +78,29 @@ END StringIntern;
 
 PROCEDURE PoolTest;
 VAR
-  sp :StringPool;
-  s  :ARRAY 25 OF CHAR;
+  sp   :StringPool;
+  s    :ARRAY 25 OF CHAR;
+  i,j  :PoolIndex;
 BEGIN
   PoolInit(sp);
   ASSERT(11 = StringLen("Hello world"));
   s := "Hello world";
+  ASSERT(StrEq(s, 0, "Hello world", 0));
+  ASSERT(~StrEq(s, 0, "Hello", 0));
+  ASSERT(StrEq(s, 1, "Hello world", 1));
   ASSERT(11 = StringLen(s));
-  ASSERT(StringIntern(sp, s) = 103);
+  ASSERT(StringIntern(sp, s) = 0);
   s := "Yello world";
-  ASSERT(StringIntern(sp, s) = 1340)
+  ASSERT(StringIntern(sp, s) = 12);
+  i := StringInternRange(sp, "Hellooo", 1, 4);
+  ASSERT(i = StringIntern(sp, "ello"));
+  j := StringInternRange(sp, s, 0, 0);
+  ASSERT(i # j);
+  ASSERT(StringIntern(sp, "") = j);
+  s[0] := "A";
+  s[1] := 0X;
+  ASSERT(StringIntern(sp, s) = StringIntern(sp, "A"));
+  ASSERT(StringIntern(sp, s) # StringIntern(sp, "B"))
 END PoolTest;
 
 BEGIN
