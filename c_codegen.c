@@ -225,6 +225,9 @@ void gen_binary_expr(TokenKind op, Expr *lhs, Expr *rhs) {
     case TOKEN_MOD:
       gen_binary_c("%", lhs, rhs, coerceToChar);
       break;
+    case TOKEN_XOR:
+      gen_binary_c("^", lhs, rhs, coerceToChar);
+      break;
     case TOKEN_AMP:
       gen_binary_c("&&", lhs, rhs, coerceToChar);
       break;
@@ -288,7 +291,9 @@ void gen_binary_expr(TokenKind op, Expr *lhs, Expr *rhs) {
 }
 
 void gen_builtin_procedure(Expr *proc, Expr **args) {
-  if (proc->type->name == builtin_dec) {
+  if (proc->type->name == builtin_ord) {
+    gen_expr(args[0]);
+  } else if (proc->type->name == builtin_dec) {
     // DEC(x) --> x--
     // DEC(x, n) --> x -= n
     gen_expr(args[0]);

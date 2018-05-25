@@ -21,6 +21,7 @@ typedef enum {
   TOKEN_OR,
   TOKEN_DIV,
   TOKEN_MOD,
+  TOKEN_XOR,
   TOKEN_AMP,
   TOKEN_DOT,
   TOKEN_COMMA,
@@ -63,6 +64,7 @@ const char *token_kind_names[] = {
     [TOKEN_OR] = "OR",
     [TOKEN_DIV] = "DIV",
     [TOKEN_MOD] = "MOD",
+    [TOKEN_XOR] = "XOR",
     [TOKEN_AMP] = "&",
     [TOKEN_DOT] = ".",
     [TOKEN_COMMA] = ",",
@@ -147,6 +149,7 @@ const char *keyword_type;
 const char *keyword_until;
 const char *keyword_var;
 const char *keyword_while;
+const char *keyword_xor;
 
 // optional keywords in lower case
 const char *lc_keyword_array;
@@ -183,6 +186,7 @@ const char *lc_keyword_type;
 const char *lc_keyword_until;
 const char *lc_keyword_var;
 const char *lc_keyword_while;
+const char *lc_keyword_xor;
 
 // Builtin procedures
 const char *builtin_dec;
@@ -260,6 +264,7 @@ void init_keywords(void) {
   keyword_until = string_intern("UNTIL");
   keyword_var = string_intern("VAR");
   keyword_while = string_intern("WHILE");
+  keyword_xor = string_intern("XOR");
 
   // optional lower case keywords
   lc_keyword_array = string_intern("array");
@@ -296,6 +301,7 @@ void init_keywords(void) {
   lc_keyword_until = string_intern("until");
   lc_keyword_var = string_intern("var");
   lc_keyword_while = string_intern("while");
+  lc_keyword_xor = string_intern("xor");
 
   G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_array, lc_keyword_array);
   G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_begin, keyword_begin);
@@ -332,6 +338,7 @@ void init_keywords(void) {
   G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_until, keyword_until);
   G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_var, keyword_var);
   G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_while, keyword_while);
+  G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_xor, keyword_xor);
 
   builtin_dec = string_intern("DEC");
   builtin_inc = string_intern("INC");
@@ -427,9 +434,9 @@ void errorloc(Loc loc, const char *fmt, ...) {
 }
 
 bool string_is_keyword(const char *s) {
-  return (s >= keyword_array && s <= keyword_while) ||
+  return (s >= keyword_array && s <= keyword_xor) ||
          (use_lowercase_keywords && s >= lc_keyword_array &&
-          s <= lc_keyword_while);
+          s <= lc_keyword_xor);
 }
 
 void scan_identifier(void) {
@@ -460,6 +467,9 @@ void scan_identifier(void) {
     }
     if (token.sVal == keyword_mod) {
       token.kind = TOKEN_MOD;
+    }
+    if (token.sVal == keyword_xor) {
+      token.kind = TOKEN_XOR;
     }
   }
 }
@@ -945,7 +955,7 @@ void lex_test(void) {
   assert_token_ident("beta");
   assert(token.pos.line == 3);
   init_stream("",
-              "+ - * / ~ IN IS OR DIV MOD & . , ; | ( ) [ ] { } := ^ = # < > "
+              "+ - * / ~ IN IS OR DIV MOD XOR & . , ; | ( ) [ ] { } := ^ = # < > "
               "<= >= .. 10..20");
   for (TokenKind k = TOKEN_PLUS; k <= TOKEN_DOTDOT; k++) {
     next_token();

@@ -186,7 +186,7 @@ Expr *parse_factor(void) {
 
 bool is_mul_operator(void) {
   return is_token(TOKEN_STAR) || is_token(TOKEN_SLASH) || is_token(TOKEN_DIV) ||
-         is_token(TOKEN_MOD) || is_token(TOKEN_AMP);
+         is_token(TOKEN_MOD) || is_token(TOKEN_AMP) || is_token(TOKEN_XOR);
 }
 
 Expr *parse_term(void) {
