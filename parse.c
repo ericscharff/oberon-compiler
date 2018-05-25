@@ -828,7 +828,7 @@ Module *parse_test_file(const char *fileName) {
 void init_global_defs(void) {
   char *contents = read_file("builtin.defs");
   assert(contents);
-  init_stream("<builtin>", contents);
+  init_stream(NULL, contents);
   next_token();
   parse_declaration_sequence();
   free(contents);

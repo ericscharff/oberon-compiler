@@ -30,7 +30,6 @@ VAR
 BEGIN
   Out.Str("FactIter");
   r := 1;
-  i := 1;
   WHILE i <= n DO
     r := r * i;
     INC(i)
@@ -196,10 +195,9 @@ BEGIN
 END TestCase;
 
 BEGIN
-(*
   TestBinop;
   TestFact;
   TestSet;
-  TestMisc; *)
+  TestMisc;
   TestCase
 END FibFact.

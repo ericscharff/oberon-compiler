@@ -8,6 +8,7 @@ int gResolveScopeLast = 0;  // points to first unusd slot (past scope end)
 
 const char *gImportedModules[SCOPE_SIZE];
 int gNumImportedModules = 0;  // points to first unused slot
+const char *gCurrentModule = NULL;
 
 Decl **gReachableDecls = NULL;
 Type **gReachableTypes = NULL;
@@ -499,6 +500,13 @@ void resolve_identref(Expr *e) {
       d->kind == DECL_VARPARAM) {
     e->is_assignable = true;
   }
+  if (d->kind == DECL_VAR && d->is_exported) {
+    // This relies on the assumption that the only exported
+    // variable that could possibly be reached here is either
+    // a global variable in the imported scope, or some value
+    // in the current scope.
+    e->is_assignable = packageName == gCurrentModule;
+  }
   if (d->kind == DECL_VARPARAM) {
     e->is_var_param = true;
   }
@@ -949,6 +957,9 @@ void resolve_varparam_decl(Decl *d) {
 }
 
 void resolve_proc_decl(Decl *d) {
+  const char *savedCurrentModule = gCurrentModule;
+  assert(strlen(d->package_name) > 0 || !d->loc.file_name);
+  gCurrentModule = d->package_name;
   assert(d->kind == DECL_PROC);
   resolve_type(d->type);
   if (d->type->kind == TYPE_BUILTIN_PROCEDURE) {
@@ -977,6 +988,7 @@ void resolve_proc_decl(Decl *d) {
     }
   }
   resolve_scope_leave(oldScope);
+  gCurrentModule = savedCurrentModule;
 }
 
 void resolve_decl(Decl *d) {

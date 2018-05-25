@@ -383,7 +383,11 @@ void pool_test(void) {
 void init_stream(const char *fileName, const char *buf) {
   stream = buf;
   token.kind = TOKEN_UNKNOWN;
-  token.pos.file_name = string_intern(fileName);
+  if (fileName) {
+    token.pos.file_name = string_intern(fileName);
+  } else {
+    token.pos.file_name = NULL;
+  }
   token.pos.line = 1;
 }
 
