@@ -159,6 +159,8 @@ void gen_val(Val val) {
   }
 }
 
+void gen_char_lit(Expr *e) { buf_printf(codegenBuf, "'\\%o'", e->val.sVal[0]); }
+
 void gen_unary_expr(TokenKind op, Expr *expr) {
   assert(expr);
   assert(op == TOKEN_MINUS);
@@ -167,13 +169,21 @@ void gen_unary_expr(TokenKind op, Expr *expr) {
   gen_str(")");
 }
 
-void gen_binary_c(const char *cOp, Expr *lhs, Expr *rhs) {
+void gen_binary_c(const char *cOp, Expr *lhs, Expr *rhs, bool coerceToChar) {
   gen_str("(");
-  gen_expr(lhs);
+  if (coerceToChar && lhs->type->kind == TYPE_STRING) {
+    gen_char_lit(lhs);
+  } else {
+    gen_expr(lhs);
+  }
   gen_str(" ");
   gen_str(cOp);
   gen_str(" ");
-  gen_expr(rhs);
+  if (coerceToChar && rhs->type->kind == TYPE_STRING) {
+    gen_char_lit(rhs);
+  } else {
+    gen_expr(rhs);
+  }
   gen_str(")");
 }
 
@@ -191,73 +201,76 @@ void gen_binary_expr(TokenKind op, Expr *lhs, Expr *rhs) {
   assert(lhs);
   assert(rhs);
   bool isSet = lhs->type == &setType;
-  bool isString = is_string_type(lhs->type);
+  bool isString = is_string_type(lhs->type) && is_string_type(rhs->type);
+  bool coerceToChar =
+      (lhs->type->kind == TYPE_CHAR && rhs->type->kind == TYPE_STRING) ||
+      (lhs->type->kind == TYPE_STRING && rhs->type->kind == TYPE_CHAR);
 
   switch (op) {
     case TOKEN_PLUS:
-      gen_binary_c(isSet ? "|" : "+", lhs, rhs);
+      gen_binary_c(isSet ? "|" : "+", lhs, rhs, coerceToChar);
       break;
     case TOKEN_MINUS:
-      gen_binary_c(isSet ? "& ~" : "-", lhs, rhs);
+      gen_binary_c(isSet ? "& ~" : "-", lhs, rhs, coerceToChar);
       break;
     case TOKEN_STAR:
-      gen_binary_c(isSet ? "&" : "*", lhs, rhs);
+      gen_binary_c(isSet ? "&" : "*", lhs, rhs, coerceToChar);
       break;
     case TOKEN_SLASH:
-      gen_binary_c(isSet ? "^" : "/", lhs, rhs);
+      gen_binary_c(isSet ? "^" : "/", lhs, rhs, coerceToChar);
       break;
     case TOKEN_DIV:
-      gen_binary_c("/", lhs, rhs);
+      gen_binary_c("/", lhs, rhs, coerceToChar);
       break;
     case TOKEN_MOD:
-      gen_binary_c("%", lhs, rhs);
+      gen_binary_c("%", lhs, rhs, coerceToChar);
       break;
     case TOKEN_AMP:
-      gen_binary_c("&&", lhs, rhs);
+      gen_binary_c("&&", lhs, rhs, coerceToChar);
       break;
     case TOKEN_OR:
-      gen_binary_c("||", lhs, rhs);
+      gen_binary_c("||", lhs, rhs, coerceToChar);
       break;
     case TOKEN_LT:
       if (isString) {
         gen_strcmp(lhs, rhs, "< 0");
       } else {
-        gen_binary_c("<", lhs, rhs);
+        gen_binary_c("<", lhs, rhs, coerceToChar);
       }
       break;
     case TOKEN_LTEQ:
       if (isString) {
         gen_strcmp(lhs, rhs, "<= 0");
       } else {
-        gen_binary_c("<=", lhs, rhs);
+        gen_binary_c("<=", lhs, rhs, coerceToChar);
       }
       break;
     case TOKEN_GT:
       if (isString) {
         gen_strcmp(lhs, rhs, "> 0");
       } else {
-        gen_binary_c(">=", lhs, rhs);
+        gen_binary_c(">=", lhs, rhs, coerceToChar);
       }
       break;
     case TOKEN_GTEQ:
       if (isString) {
         gen_strcmp(lhs, rhs, ">= 0");
       } else {
-        gen_binary_c(">=", lhs, rhs);
+        gen_binary_c(">=", lhs, rhs, coerceToChar);
       }
       break;
     case TOKEN_EQ:
       if (isString) {
         gen_strcmp(lhs, rhs, "== 0");
       } else {
-        gen_binary_c("==", lhs, rhs);
+        gen_binary_c("==", lhs, rhs, coerceToChar);
       }
       break;
     case TOKEN_POUND:
       if (isString) {
         gen_strcmp(lhs, rhs, "!= 0");
       } else {
-        gen_binary_c("!=", lhs, rhs);
+        gen_binary_c("!=", lhs, rhs, coerceToChar);
       }
       break;
     case TOKEN_IN:
@@ -518,9 +531,9 @@ void gen_statement(Statement *s) {
           s->assignment_stmt.rvalue->type->kind == TYPE_STRING) {
         assert(s->assignment_stmt.rvalue->is_const);
         gen_expr(s->assignment_stmt.lvalue);
-        gen_str(" = '\\");
-        buf_printf(codegenBuf, "%o", s->assignment_stmt.rvalue->val.sVal[0]);
-        gen_str("';\n");
+        gen_str(" = ");
+        gen_char_lit(s->assignment_stmt.rvalue);
+        gen_str(";\n");
       } else if (is_string_type(s->assignment_stmt.lvalue->type) &&
                  is_string_type(s->assignment_stmt.rvalue->type)) {
         gen_str("strncpy(");
@@ -614,7 +627,8 @@ void gen_decl(Decl *d) {
       // Don't do anything, handled in procedure gen
       break;
     case DECL_PROC:
-      if (d->type->kind == TYPE_BUILTIN_PROCEDURE) {
+      if (d->type->kind == TYPE_BUILTIN_PROCEDURE ||
+          d->type->procedure_type.native) {
         // nothing to declare
         break;
       }
@@ -683,13 +697,16 @@ void gen_decl(Decl *d) {
 }
 
 void generate_c_code(Type **types, Decl **decls) {
+  gen_str("#include <assert.h>\n");
+  gen_str("#include <stdbool.h>\n");
   gen_str("#include <stdio.h>\n");
   gen_str("#include <stdlib.h>\n");
   gen_str("#include <string.h>\n\n");
+  gen_str("#define ASSERT assert\n\n");
   for (size_t i = 0; i < buf_len(types); i++) {
     gen_typedef(types[i], types[i]->package_name, types[i]->name);
   }
-  for (size_t i=0; i < buf_len(decls); i++) {
+  for (size_t i = 0; i < buf_len(decls); i++) {
     gen_decl(decls[i]);
   }
   gen_str("\nint main(void) {\n");
@@ -712,4 +729,5 @@ void gen_test(void) {
   resolve_test_file();
   generate_c_code(gReachableTypes, gReachableDecls);
   puts(codegenBuf);
+  write_file("out.c", codegenBuf);
 }

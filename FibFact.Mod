@@ -115,9 +115,13 @@ BEGIN
   b := "GAMMA" > str;
   b := str = str2;
   b := s1 # s2;
-  b := s1 = s1;
+  b := s1 = s2;
   b := str # "Z"
 END TestBinop;
+
+PROCEDURE TestFact; END TestFact;
+
+PROCEDURE TestMisc;
 
 BEGIN
   FactIter(7);
@@ -140,10 +144,17 @@ BEGIN
   pz := pz3;
   pz3.a := 35;
   z := z3;
+  ASSERT(pz = pz);
   c := 041X;
   ac := "WOWZA";
   b := 1 + 1;
   pOne := FactIter;
   Out.Int(pOne(8));
   PlusOne(z3)
+END TestMisc;
+
+BEGIN
+  TestBinop;
+  TestFact;
+  TestMisc
 END FibFact.

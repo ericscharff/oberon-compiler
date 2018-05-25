@@ -131,6 +131,7 @@ const char *keyword_in;
 const char *keyword_is;
 const char *keyword_mod;
 const char *keyword_module;
+const char *keyword_native;
 const char *keyword_nil;
 const char *keyword_of;
 const char *keyword_or;
@@ -166,6 +167,7 @@ const char *lc_keyword_in;
 const char *lc_keyword_is;
 const char *lc_keyword_mod;
 const char *lc_keyword_module;
+const char *lc_keyword_native;
 const char *lc_keyword_nil;
 const char *lc_keyword_of;
 const char *lc_keyword_or;
@@ -242,6 +244,7 @@ void init_keywords(void) {
   keyword_is = string_intern("IS");
   keyword_mod = string_intern("MOD");
   keyword_module = string_intern("MODULE");
+  keyword_native = string_intern("NATIVE");
   keyword_nil = string_intern("NIL");
   keyword_of = string_intern("OF");
   keyword_or = string_intern("OR");
@@ -277,6 +280,7 @@ void init_keywords(void) {
   lc_keyword_is = string_intern("is");
   lc_keyword_mod = string_intern("mod");
   lc_keyword_module = string_intern("module");
+  lc_keyword_native = string_intern("native");
   lc_keyword_nil = string_intern("nil");
   lc_keyword_of = string_intern("of");
   lc_keyword_or = string_intern("or");
@@ -311,6 +315,7 @@ void init_keywords(void) {
   G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_is, keyword_is);
   G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_mod, keyword_mod);
   G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_module, keyword_module);
+  G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_native, keyword_native);
   G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_nil, keyword_nil);
   G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_of, keyword_of);
   G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_or, keyword_or);
@@ -388,6 +393,17 @@ char *read_file(const char *path) {
   fclose(file);
   buf[len] = 0;
   return buf;
+}
+
+void write_file(const char *path, const char *contents) {
+  FILE *file = fopen(path, "wb");
+  if (!file) {
+    return;
+  }
+  if (fwrite(contents, strlen(contents), 1, file) != 1) {
+    assert(0);
+  }
+  fclose(file);
 }
 
 void error(const char *fmt, ...) {

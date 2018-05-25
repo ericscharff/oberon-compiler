@@ -48,6 +48,7 @@ typedef struct FormalParameter {
 typedef struct ProcedureType {
   FormalParameter *params;  // buf
   Type *return_type;
+  bool native;
 } ProcedureType;
 
 typedef struct RecordField {
@@ -145,6 +146,7 @@ Type *new_type_procedure(FormalParameter *params, Type *return_type) {
   t->package_name = NULL;
   t->procedure_type.params = params;
   t->procedure_type.return_type = return_type;
+  t->procedure_type.native = false;
   return t;
 }
 

@@ -57,7 +57,7 @@ RepeatStatement = REPEAT StatementSequence UNTIL expression.
 ForStatement = FOR ident ":=" expression TO expression [BY ConstExpression]
 DO StatementSequence END.
 ProcedureDeclaration = ProcedureHeading ";" ProcedureBody ident.
-ProcedureHeading = PROCEDURE identdef [FormalParameters].
+ProcedureHeading = [NATIVE] PROCEDURE identdef [FormalParameters].
 ProcedureBody = DeclarationSequence [BEGIN StatementSequence]
  [RETURN expression] END.
 DeclarationSequence = [CONST {ConstDeclaration ";"}]

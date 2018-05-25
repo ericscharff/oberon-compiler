@@ -638,11 +638,16 @@ void parse_procedure_body(Decl *procDecl) {
 
 Decl *parse_procedure_heading(void) {
   Loc loc = token.pos;
+  bool native = false;
+  if (match_keyword(keyword_native)) {
+    native = true;
+  }
   expect_keyword(keyword_procedure);
   const char *name;
   bool is_exported;
   parse_ident_def(&name, &is_exported);
   Type *params = parse_formal_parameters();
+  params->procedure_type.native = native;
   return new_decl_proc(name, loc, params, is_exported);
 }
 
@@ -675,7 +680,7 @@ void parse_declaration_sequence(void) {
       expect_token(TOKEN_SEMI);
     }
   }
-  while (is_keyword(keyword_procedure)) {
+  while (is_keyword(keyword_procedure) || is_keyword(keyword_native)) {
     parse_procedure_declaration();
     expect_token(TOKEN_SEMI);
   }
