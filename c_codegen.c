@@ -164,12 +164,20 @@ void gen_char_lit(Expr *e) { buf_printf(codegenBuf, "'\\%o'", e->val.sVal[0]); }
 void gen_unary_expr(TokenKind op, Expr *expr) {
   assert(expr);
   if (op == TOKEN_MINUS) {
-    gen_str("-(");
+    if (expr->type->kind == TYPE_SET) {
+      gen_str("~");
+    } else {
+      gen_str("-");
+    }
+    gen_str("(");
     gen_expr(expr);
     gen_str(")");
   } else if (op == TOKEN_TILDE) {
-    // TODO - handle sets
     gen_str("!(");
+    gen_expr(expr);
+    gen_str(")");
+  } else if (op == TOKEN_AS_SET_ELT) {
+    gen_str("(1 <<");
     gen_expr(expr);
     gen_str(")");
   } else {
@@ -242,6 +250,13 @@ void gen_binary_expr(TokenKind op, Expr *lhs, Expr *rhs) {
     case TOKEN_OR:
       gen_binary_c("||", lhs, rhs, coerceToChar);
       break;
+    case TOKEN_DOTDOT:
+      gen_str("make_set_range(");
+      gen_expr(lhs);
+      gen_str(", ");
+      gen_expr(rhs);
+      gen_str(")");
+      break;
     case TOKEN_LT:
       if (isString) {
         gen_strcmp(lhs, rhs, "< 0");
@@ -301,6 +316,10 @@ void gen_binary_expr(TokenKind op, Expr *lhs, Expr *rhs) {
 void gen_builtin_procedure(Expr *proc, Expr **args) {
   if (proc->type->name == builtin_ord) {
     gen_expr(args[0]);
+  } else if (proc->type->name == builtin_chr) {
+    gen_str("((char)");
+    gen_expr(args[0]);
+    gen_str(")");
   } else if (proc->type->name == builtin_dec) {
     // DEC(x) --> x--
     // DEC(x, n) --> x -= n
@@ -716,6 +735,15 @@ void generate_c_code(Type **types, Decl **decls) {
   gen_str("#include <stdlib.h>\n");
   gen_str("#include <string.h>\n\n");
   gen_str("#define ASSERT assert\n\n");
+  gen_str("int make_set_range(int s, int e) {\n");
+  gen_str("  int r = 0;\n");
+  gen_str("  while (s <= e) {\n");
+  gen_str("    r |= 1 << s;\n");
+  gen_str("    s++;\n");
+  gen_str("  }\n");
+  gen_str("  return r;\n");
+  gen_str("}\n\n");
+
   for (size_t i = 0; i < buf_len(types); i++) {
     gen_typedef(types[i], types[i]->package_name, types[i]->name);
   }

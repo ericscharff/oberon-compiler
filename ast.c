@@ -284,7 +284,7 @@ typedef struct ElseIf {
 } ElseIf;
 
 typedef struct Case {
-  Expr *cond;
+  Expr **cond;      // buf
   Statement *body;  // buf
 } Case;
 
@@ -630,6 +630,13 @@ Statement new_stmt_if(Loc loc, Expr *cond, Statement *then_clause,
   return s;
 }
 
+Case new_case(Expr **cond, Statement *body) {
+  Case c;
+  c.cond = cond;
+  c.body = body;
+  return c;
+}
+
 Statement new_stmt_case(Loc loc, Expr *cond, Case *case_cases) {
   Statement s;
   s.kind = STMT_CASE;
@@ -752,7 +759,18 @@ void dbg_dump_stmts(Statement *s) {
       case STMT_EMPTY:
         break;
       default:
-        assert(0);
+        dbg_print_expr(s[i].case_stmt.cond);
+        printf(" ");
+        for (size_t c = 0; c < buf_len(s[i].case_stmt.case_cases); c++) {
+          printf("(");
+          for (size_t j = 0; j < buf_len(s[i].case_stmt.case_cases[c].cond);
+               j++) {
+            dbg_print_expr(s[i].case_stmt.case_cases[c].cond[j]);
+            printf(" ");
+          }
+          dbg_dump_stmts(s[i].case_stmt.case_cases[c].body);
+          printf(")");
+        }
         break;
     }
     printf("\n");

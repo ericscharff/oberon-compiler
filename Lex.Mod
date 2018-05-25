@@ -76,6 +76,19 @@ BEGIN
   RETURN StringInternRange(sp, s, 0, StringLen(s))
 END StringIntern;
 
+PROCEDURE MakeDummy(i :INTEGER; s :ARRAY OF CHAR);
+BEGIN
+  s[0] := "i";
+  s[1] := CHR((i MOD 10) + 48);
+  i := i DIV 10;
+  s[2] := CHR((i MOD 10) + 48);
+  i := i DIV 10;
+  s[3] := CHR((i MOD 10) + 48);
+  i := i DIV 10;
+  s[4] := CHR((i MOD 10) + 48);
+  s[5] := 0X;
+END MakeDummy;
+
 PROCEDURE PoolTest;
 VAR
   sp   :StringPool;
@@ -100,7 +113,18 @@ BEGIN
   s[0] := "A";
   s[1] := 0X;
   ASSERT(StringIntern(sp, s) = StringIntern(sp, "A"));
-  ASSERT(StringIntern(sp, s) # StringIntern(sp, "B"))
+  ASSERT(StringIntern(sp, s) # StringIntern(sp, "B"));
+
+  PoolInit(sp);
+  FOR i := 1 TO 1000 DO
+    MakeDummy(i, s);
+    StringIntern(sp, s);
+  END;
+  FOR i := 1 TO 1000 DO
+    MakeDummy(i, s);
+    ASSERT(StringIntern(sp, s) = (i-1)*6);
+  END;
+  ASSERT(sp.last = 6000);
 END PoolTest;
 
 BEGIN

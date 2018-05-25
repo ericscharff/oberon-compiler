@@ -270,50 +270,63 @@ Statement parse_if_statement(void) {
   return new_stmt_if(loc, cond, then_clause, elseifs, else_clause);
 }
 
-void parse_case_label(void) {
-  if (match_token(TOKEN_INT)) {
-  } else if (match_token(TOKEN_STRING)) {
-  } else if (is_token(TOKEN_IDENT)) {
-    parse_qualident();
+Expr *parse_case_label(void) {
+  Expr *e = NULL;
+  if (is_token(TOKEN_INT) || is_token(TOKEN_STRING) || is_token(TOKEN_IDENT)) {
+    e = parse_factor();
   } else {
     error("Case label (integer, string, identifier) expected");
   }
+  return e;
 }
 
-void parse_case_label_range(void) {
-  parse_case_label();
+Expr *parse_case_label_range(void) {
+  Expr *label = parse_case_label();
   if (match_token(TOKEN_DOTDOT)) {
-    parse_case_label();
+    label = new_expr_binary(TOKEN_CASE_DOTDOT, label, parse_case_label(),
+                            label->loc);
   }
+  return label;
 }
 
-void parse_case_label_list(void) {
-  parse_case_label_range();
+Expr **parse_case_label_list(void) {
+  Expr **labels = NULL;
+  buf_push(labels, parse_case_label_range());
   while (match_token(TOKEN_COMMA)) {
-    parse_case_label_range();
+    buf_push(labels, parse_case_label_range());
   }
+  return labels;
 }
 
-void parse_case(void) {
+Case parse_case(void) {
+  Case c = {NULL, NULL};
   if (is_token(TOKEN_INT) || is_token(TOKEN_STRING) || is_token(TOKEN_IDENT)) {
-    parse_case_label_list();
+    Expr **labels = parse_case_label_list();
     expect_token(TOKEN_COLON);
-    parse_statement_sequence();
+    Statement *body = parse_statement_sequence();
+    return new_case(labels, body);
   }
+  return c;
 }
 
 Statement parse_case_statement(void) {
   Loc loc = token.pos;
   expect_keyword(keyword_case);
   Expr *cond = parse_expression();
+  Case *cases = NULL;
   expect_keyword(keyword_of);
-  parse_case();
+  Case c = parse_case();
+  if (c.cond) {
+    buf_push(cases, c);
+  }
   while (match_token(TOKEN_VBAR)) {
-    parse_case();
+    c = parse_case();
+    if (c.cond) {
+      buf_push(cases, c);
+    }
   }
   expect_keyword(keyword_end);
-  // TODO
-  return new_stmt_case(loc, cond, NULL);
+  return new_stmt_case(loc, cond, cases);
 }
 
 Statement parse_while_statement(void) {

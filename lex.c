@@ -44,6 +44,7 @@ typedef enum {
   TOKEN_DOTDOT,
   TOKEN_COLON,
   TOKEN_AS_SET_ELT,
+  TOKEN_CASE_DOTDOT,
 } TokenKind;
 
 const char *token_kind_names[] = {
@@ -87,6 +88,7 @@ const char *token_kind_names[] = {
     [TOKEN_DOTDOT] = "..",
     [TOKEN_COLON] = ":",
     [TOKEN_AS_SET_ELT] = "AS_SET_ELEMENT",
+    [TOKEN_CASE_DOTDOT] = "CASE_DOTDOT",
 };
 
 typedef struct Loc {
@@ -189,6 +191,7 @@ const char *lc_keyword_while;
 const char *lc_keyword_xor;
 
 // Builtin procedures
+const char *builtin_chr;
 const char *builtin_dec;
 const char *builtin_inc;
 const char *builtin_new;
@@ -340,6 +343,7 @@ void init_keywords(void) {
   G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_while, keyword_while);
   G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_xor, keyword_xor);
 
+  builtin_chr = string_intern("CHR");
   builtin_dec = string_intern("DEC");
   builtin_inc = string_intern("INC");
   builtin_new = string_intern("NEW");
@@ -954,9 +958,10 @@ void lex_test(void) {
   assert_token_ident("alpha");
   assert_token_ident("beta");
   assert(token.pos.line == 3);
-  init_stream("",
-              "+ - * / ~ IN IS OR DIV MOD XOR & . , ; | ( ) [ ] { } := ^ = # < > "
-              "<= >= .. 10..20");
+  init_stream(
+      "",
+      "+ - * / ~ IN IS OR DIV MOD XOR & . , ; | ( ) [ ] { } := ^ = # < > "
+      "<= >= .. 10..20");
   for (TokenKind k = TOKEN_PLUS; k <= TOKEN_DOTDOT; k++) {
     next_token();
     assert(token.kind == k);

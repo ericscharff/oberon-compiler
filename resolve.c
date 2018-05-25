@@ -13,6 +13,7 @@ Decl **gReachableDecls = NULL;
 Type **gReachableTypes = NULL;
 
 // Special functions
+Decl chrDecl;
 Decl decDecl;
 Decl incDecl;
 Decl newDecl;
@@ -268,6 +269,9 @@ void eval_binary_expr(Expr *e, Expr *lhs, Expr *rhs) {
         assert(0);
       }
       break;
+    case TOKEN_CASE_DOTDOT:
+      // ignored here, resolved later for case statements
+      break;
     case TOKEN_LT:
       if (is_integer_type(lhs->type)) {
         e->val.kind = VAL_BOOLEAN;
@@ -409,6 +413,10 @@ void resolve_binary_expr(Expr *e) {
         errorloc(e->loc, "INTEGER expected for operator %s",
                  op_name(e->binary.op));
       }
+      break;
+    case TOKEN_CASE_DOTDOT:
+      // ignored here, resolved later for case statements
+      e->type = lhs->type;
       break;
     case TOKEN_LT:
     case TOKEN_LTEQ:
@@ -725,6 +733,19 @@ Type *resolve_builtin_procedure(Expr *proc, Expr **actualParams) {
       errorloc(proc->loc, "ORD expects 1 argument, got %d",
                buf_len(actualParams));
     }
+  } else if (proc->type->name == builtin_chr) {
+    if (buf_len(actualParams) == 1) {
+      Expr *e = actualParams[0];
+      resolve_expr(e);
+      if (is_integer_type(e->type)) {
+        return &charType;
+      } else {
+        errorloc(e->loc, "CHR expects INTEGER, got %s", e->type->name);
+      }
+    } else {
+      errorloc(proc->loc, "CHR expects 1 argument, got %d",
+               buf_len(actualParams));
+    }
   } else if (proc->type->name == builtin_inc) {
     resolve_incdec(proc, actualParams, "INC");
   } else if (proc->type->name == builtin_dec) {
@@ -1029,6 +1050,59 @@ void resolve_elseifs(ElseIf *elseifs) {
   }
 }
 
+void resolve_case_stmt(Statement *s) {
+  assert(s);
+  assert(s->kind == STMT_CASE);
+  resolve_expr(s->case_stmt.cond);
+  bool isInt = is_integer_type(s->case_stmt.cond->type);
+  bool isChar = s->case_stmt.cond->type == &charType;
+  if (isInt || isChar) {
+    for (size_t i = 0; i < buf_len(s->case_stmt.case_cases); i++) {
+      for (size_t j = 0; j < buf_len(s->case_stmt.case_cases[i].cond); j++) {
+        Expr *e = s->case_stmt.case_cases[i].cond[j];
+        resolve_expr(e);
+        if (e->kind == EXPR_BINARY) {
+          assert(e->binary.op == TOKEN_CASE_DOTDOT);
+          Expr *low = e->binary.lhs;
+          Expr *high = e->binary.rhs;
+          if (isInt && !is_integer_type(low->type)) {
+            errorloc(low->loc, "CASE type %s does not match INTEGER",
+                     low->type->name);
+          }
+          if (isChar && !is_one_char_string(low)) {
+            errorloc(low->loc, "CASE type %s does not match CHAR",
+                     low->type->name);
+          }
+          if (isInt && !is_integer_type(high->type)) {
+            errorloc(low->loc, "CASE type %s does not match INTEGER",
+                     high->type->name);
+          }
+          if (isChar && !is_one_char_string(high)) {
+            errorloc(low->loc, "CASE type %s does not match CHAR",
+                     high->type->name);
+          }
+        } else {
+          if (e->is_const) {
+            if (isInt && !is_integer_type(e->type)) {
+              errorloc(e->loc, "CASE type %s does not match INTEGER",
+                       e->type->name);
+            }
+            if (isChar && !is_one_char_string(e)) {
+              errorloc(e->loc, "CASE type %s does not match CHAR",
+                       e->type->name);
+            }
+          } else {
+            errorloc(e->loc, "CASE must be constant");
+          }
+        }
+      }
+      resolve_statements(s->case_stmt.case_cases[i].body);
+    }
+  } else {
+    errorloc(s->loc, "CASE expression must be INTEGER or CHAR");
+  }
+}
+
 void resolve_statements(Statement *body) {
   for (size_t i = 0; i < buf_len(body); i++) {
     switch (body[i].kind) {
@@ -1042,7 +1116,7 @@ void resolve_statements(Statement *body) {
         resolve_statements(body[i].if_stmt.else_clause);
         break;
       case STMT_CASE:
-        assert(0);
+        resolve_case_stmt(body + i);
         break;
       case STMT_WHILE:
         resolve_boolean_expr(body[i].while_stmt.cond);
@@ -1142,6 +1216,7 @@ void resolve_push_specials(void) {
   push_builtin(&incDecl, e, builtin_inc);
   push_builtin(&newDecl, e, builtin_new);
   push_builtin(&ordDecl, e, builtin_ord);
+  push_builtin(&chrDecl, e, builtin_chr);
   // Ought to be SYSTEM.VAL - but VAL is so funky...
   push_builtin(&valDecl, e, builtin_val);
 }
@@ -1166,7 +1241,7 @@ void resolve_test_file(void) {
   init_global_defs();
   assert(current_scope == &globalScope);
   resolve_scope_push(globalScope.decls);
-  Module *m = parse_test_file("Lex.Mod");
+  Module *m = parse_test_file("FibFact.Mod");
   resolve_module(m);
   exit_scope("__topdone__");
   assert(current_scope == NULL);

@@ -153,8 +153,47 @@ BEGIN
   PlusOne(z3)
 END TestMisc;
 
+PROCEDURE TestSet;
+VAR
+  i, j :INTEGER;
+  st   :SET;
 BEGIN
+  st := {1, 2, 3};
+  ASSERT(st = {1, 2, 3});
+  i := 4;
+  st := st + {i};
+  ASSERT(st = {1 .. 4});
+  j := 8;
+  st := {i .. j};
+  ASSERT(st = {4 .. 8});
+END TestSet;
+
+PROCEDURE TestCase;
+VAR
+  i :INTEGER;
+  c :CHAR;
+BEGIN
+  i := 7;
+  CASE i OF
+      0: i := 100;
+    | 1: i := 200;
+    | 2: i := 300; Out.Int(i)
+    | 3, 4, 5: i := 400;
+    | 6 .. 10: i := 500
+  END;
+  CASE c OF
+      "A": c := "a"
+    | "E": c := "e"
+    | "I", "O", "U": c := "z"
+    | "J" .. "M": c := "Z"
+  END;
+END TestCase;
+
+BEGIN
+(*
   TestBinop;
   TestFact;
-  TestMisc
+  TestSet;
+  TestMisc; *)
+  TestCase
 END FibFact.
