@@ -462,6 +462,56 @@ void gen_elseifs(ElseIf *elseifs) {
   }
 }
 
+int get_case_val(Expr *e) {
+  assert(e->is_const);
+  if (e->val.kind == VAL_INTEGER) {
+    return e->val.iVal;
+  } else if (e->val.kind == VAL_STRING) {
+    return e->val.sVal[0];
+  } else {
+    assert(0);
+  }
+  return 0;
+}
+
+void gen_case_statement(Statement *s) {
+  gen_str("switch (");
+  gen_expr(s->case_stmt.cond);
+  gen_str(") {\n");
+  for (size_t i=0; i < buf_len(s->case_stmt.case_cases); i++) {
+    codegenIndent++;
+    for (size_t j=0; j < buf_len(s->case_stmt.case_cases[i].cond); j++) {
+      Expr *e = s->case_stmt.case_cases[i].cond[j];
+      int lowVal;
+      int highVal;
+      if (e->kind == EXPR_BINARY) {
+        lowVal = get_case_val(e->binary.lhs);
+        highVal = get_case_val(e->binary.rhs);
+      } else {
+        lowVal = get_case_val(e);
+        highVal = lowVal;
+      }
+      for (int c=lowVal; c <= highVal; c++) {
+        geni();
+        gen_str("case ");
+        if (is_integer_type(s->case_stmt.cond->type)) {
+          buf_printf(codegenBuf, "%d:\n", c);
+        } else {
+          assert(s->case_stmt.cond->type == &charType);
+          buf_printf(codegenBuf, "'\\%o':\n", c);
+        }
+      }
+    }
+    codegenIndent++;
+    gen_statements(s->case_stmt.case_cases[i].body);
+    geni();
+    gen_str("break;\n");
+    codegenIndent -= 2;
+  }
+  geni();
+  gen_str("}\n");
+}
+
 void gen_statement(Statement *s) {
   assert(s);
   if (s->kind != STMT_EMPTY) {
@@ -490,7 +540,7 @@ void gen_statement(Statement *s) {
       gen_str("}\n");
       break;
     case STMT_CASE:
-      assert(0);
+      gen_case_statement(s);
       break;
     case STMT_WHILE:
       if (s->while_stmt.elseifs) {

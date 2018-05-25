@@ -172,21 +172,27 @@ PROCEDURE TestCase;
 VAR
   i :INTEGER;
   c :CHAR;
+  r :INTEGER;
+  s :CHAR;
 BEGIN
-  i := 7;
-  CASE i OF
-      0: i := 100;
-    | 1: i := 200;
-    | 2: i := 300; Out.Int(i)
-    | 3, 4, 5: i := 400;
-    | 6 .. 10: i := 500
+  FOR i := -1 TO 10 DO
+    CASE i OF
+        0: r := 100;
+      | 1: r := 200;
+      | 2: r := 300; Out.Int(r)
+      | 3, 4, 5: r := 400;
+      | 6 .. 10: r := 500
+    END;
   END;
-  CASE c OF
-      "A": c := "a"
-    | "E": c := "e"
-    | "I", "O", "U": c := "z"
-    | "J" .. "M": c := "Z"
-  END;
+  FOR i := 65 TO 65+26 DO
+    c := CHR(i);
+    CASE c OF
+        "A": s := "a"
+      | "E": s := "e"
+      | "I", "O", "U": s := "z"
+      | "J" .. "M": s := "Z"
+    END
+  END
 END TestCase;
 
 BEGIN
