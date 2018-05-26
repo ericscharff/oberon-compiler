@@ -814,9 +814,11 @@ void resolve_fieldref(Expr *e) {
     const char *fieldName = e->fieldref.field_name;
     for (size_t i = 0; i < buf_len(recordType->record_type.fields); i++) {
       if (recordType->record_type.fields[i].name == fieldName) {
-        // TODO - esnure field is exported
         e->type = recordType->record_type.fields[i].type;
         e->is_assignable = e->fieldref.expr->is_assignable;
+        if (!(recordType->record_type.fields[i].is_exported || recordType->package_name == gCurrentModule)) {
+          errorloc(e->loc, "RECORD field %s is private", fieldName);
+        }
         return;
       }
     }
@@ -963,6 +965,7 @@ void resolve_proc_decl(Decl *d) {
   assert(d->kind == DECL_PROC);
   resolve_type(d->type);
   if (d->type->kind == TYPE_BUILTIN_PROCEDURE) {
+    gCurrentModule = savedCurrentModule;
     return;
   }
   assert(d->type->kind == TYPE_PROCEDURE);
