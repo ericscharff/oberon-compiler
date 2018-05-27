@@ -80,7 +80,7 @@ CONST
   tCOLON       = 65;
   tAS_SET_ELT  = 66;
   tCASE_DOTDOT = 67;
-  tEOF         = -1;
+  tEOF         = 68;
 
 TYPE
   PoolIndex*  = INTEGER;
@@ -89,6 +89,9 @@ TYPE
     last    :PoolIndex;
     buckets :ARRAY NumBuckets OF PoolIndex;
   END;
+
+VAR
+  TokenNames :ARRAY 68, 10 OF CHAR;
 
 PROCEDURE PoolInit(VAR sp :StringPool);
 VAR
@@ -214,6 +217,13 @@ BEGIN
   ASSERT(StringIntern(sp, "B") = 20);
 END TestPool;
 
+PROCEDURE InitTokenNames;
+
 BEGIN
+  TokenNames[tEOF] := "EOF";
+END InitTokenNames;
+
+BEGIN
+  InitTokenNames;
   TestPool
 END Lex.

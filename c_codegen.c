@@ -65,14 +65,23 @@ void gen_type(Type *t, const char *packageName, const char *name) {
         gen_str(" *");
         gen_qname(packageName, name);
         break;
-      case TYPE_ARRAY:
-        gen_type(t->array_type.element_type, packageName, name);
-        gen_str("[");
-        if (t->array_type.num_elements_expr) {
-          gen_expr(t->array_type.num_elements_expr);
+      case TYPE_ARRAY: {
+        Type *origType = t;
+        while (t->kind == TYPE_ARRAY) {
+          t = t->array_type.element_type;
         }
-        gen_str("]");
+        gen_type(t, packageName, name);
+        t = origType;
+        while (t->kind == TYPE_ARRAY) {
+          gen_str("[");
+          if (t->array_type.num_elements_expr) {
+            gen_expr(t->array_type.num_elements_expr);
+          }
+          gen_str("]");
+          t = t->array_type.element_type;
+        }
         break;
+                       }
       case TYPE_RECORD:
         gen_str("struct ");
         gen_qname(packageName, name);
