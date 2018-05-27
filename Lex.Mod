@@ -91,7 +91,7 @@ BEGIN
   s[5] := 0X;
 END MakeDummy;
 
-PROCEDURE PoolTest;
+PROCEDURE TestPool;
 VAR
   sp   :StringPool;
   s    :ARRAY 25 OF CHAR;
@@ -134,8 +134,8 @@ BEGIN
   ASSERT(StringIntern(sp, "A") = 0);
   ASSERT(StringIntern(sp, "PROCEDURE") = 10);
   ASSERT(StringIntern(sp, "B") = 20);
-END PoolTest;
+END TestPool;
 
 BEGIN
-  PoolTest
+  TestPool
 END Lex.
