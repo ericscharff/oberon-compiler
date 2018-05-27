@@ -3,6 +3,7 @@ MODULE Lex;
 CONST
   NumBuckets = 4096;
   PoolSize   = 64 * 1024;
+  BufSize    = 64 * 1024;
   (* Token definitions *)
   (* Keywords - Keywords are special because they are included in the string *)
   (* pool in a special way. The ARRAY keyword is inserted first into the     *)
@@ -89,6 +90,20 @@ TYPE
     last    :PoolIndex;
     buckets :ARRAY NumBuckets OF PoolIndex;
   END;
+  Token       = RECORD
+    kind :INTEGER;
+    pos  :INTEGER;
+    sVal :PoolIndex;
+    iVal :INTEGER;
+    rVal :REAL;
+  END;
+  Lexer*      = RECORD
+    sp       :StringPool;
+    buf      :ARRAY BufSize OF CHAR;
+    fileName :PoolIndex;
+    pos      :INTEGER;
+    t        :Token;
+  END;
 
 VAR
   TokenNames :ARRAY tEOF+1, 10 OF CHAR;
@@ -172,53 +187,64 @@ BEGIN
   s[5] := 0X;
 END MakeDummy;
 
-PROCEDURE TestPool;
-VAR
-  sp   :StringPool;
-  s    :ARRAY 25 OF CHAR;
-  i,j  :PoolIndex;
+PROCEDURE AddKeywords(VAR sp :StringPool);
 BEGIN
-  PoolInit(sp);
-  ASSERT(11 = StringLen("Hello world"));
-  s := "Hello world";
-  ASSERT(StrEq(s, 0, "Hello world", 0));
-  ASSERT(~StrEq(s, 0, "Hello", 0));
-  ASSERT(StrEq(s, 1, "Hello world", 1));
-  ASSERT(11 = StringLen(s));
-  ASSERT(StringIntern(sp, s) = 0);
-  s := "Yello world";
-  ASSERT(StringIntern(sp, s) = 12);
-  i := StringInternRange(sp, "Hellooo", 1, 4);
-  ASSERT(i = StringIntern(sp, "ello"));
-  j := StringInternRange(sp, s, 0, 0);
-  ASSERT(i # j);
-  ASSERT(StringIntern(sp, "") = j);
-  s[0] := "A";
-  s[1] := 0X;
-  ASSERT(StringIntern(sp, s) = StringIntern(sp, "A"));
-  ASSERT(StringIntern(sp, s) # StringIntern(sp, "B"));
-
-  PoolInit(sp);
-  FOR i := 1 TO 4000 DO
-    MakeDummy(i, s);
-    StringIntern(sp, s);
-  END;
-  FOR i := 1 TO 4000 DO
-    MakeDummy(i, s);
-    ASSERT(StringIntern(sp, s) = (i-1)*6);
-  END;
-  ASSERT(sp.last = 24000);
-  PoolInit(sp);
-  StringInternRange(sp, "A", 0, 9);
+  StringInternRange(sp, "ARRAY", 0, 9);
+  StringInternRange(sp, "BEGIN", 0, 9);
+  StringInternRange(sp, "BY", 0, 9);
+  StringInternRange(sp, "CASE", 0, 9);
+  StringInternRange(sp, "CONST", 0, 9);
+  StringInternRange(sp, "DIV", 0, 9);
+  StringInternRange(sp, "DO", 0, 9);
+  StringInternRange(sp, "ELSE", 0, 9);
+  StringInternRange(sp, "ELSIF", 0, 9);
+  StringInternRange(sp, "END", 0, 9);
+  StringInternRange(sp, "FALSE", 0, 9);
+  StringInternRange(sp, "FOR", 0, 9);
+  StringInternRange(sp, "IF", 0, 9);
+  StringInternRange(sp, "IMPORT", 0, 9);
+  StringInternRange(sp, "IN", 0, 9);
+  StringInternRange(sp, "IS", 0, 9);
+  StringInternRange(sp, "MOD", 0, 9);
+  StringInternRange(sp, "MODULE", 0, 9);
+  StringInternRange(sp, "NATIVE", 0, 9);
+  StringInternRange(sp, "NIL", 0, 9);
+  StringInternRange(sp, "OF", 0, 9);
+  StringInternRange(sp, "OR", 0, 9);
+  StringInternRange(sp, "POINTER", 0, 9);
   StringInternRange(sp, "PROCEDURE", 0, 9);
-  StringInternRange(sp, "B", 0, 9);
-  ASSERT(StringIntern(sp, "A") = 0);
-  ASSERT(StringIntern(sp, "PROCEDURE") = 10);
-  ASSERT(StringIntern(sp, "B") = 20);
-END TestPool;
+  StringInternRange(sp, "RECORD", 0, 9);
+  StringInternRange(sp, "REPEAT", 0, 9);
+  StringInternRange(sp, "RETURN", 0, 9);
+  StringInternRange(sp, "THEN", 0, 9);
+  StringInternRange(sp, "TO", 0, 9);
+  StringInternRange(sp, "TRUE", 0, 9);
+  StringInternRange(sp, "TYPE", 0, 9);
+  StringInternRange(sp, "UNTIL", 0, 9);
+  StringInternRange(sp, "VAR", 0, 9);
+  StringInternRange(sp, "WHILE", 0, 9);
+  StringInternRange(sp, "XOR", 0, 9);
+END AddKeywords;
 
+PROCEDURE LexerInitFromFile(VAR l :Lexer; fileName :ARRAY OF CHAR);
+BEGIN
+  PoolInit(l.sp);
+  AddKeywords(l.sp);
+  l.buf := "TODO"; (* TODO *)
+  l.fileName := StringIntern(l.sp, fileName);
+  l.pos := 0;
+END LexerInitFromFile;
+
+PROCEDURE LexerInitFromString(VAR l :Lexer; s :ARRAY OF CHAR);
+BEGIN
+  PoolInit(l.sp);
+  AddKeywords(l.sp);
+  l.buf := s;
+  l.fileName := StringIntern(l.sp, "<string>");
+  l.pos := 0;
+END LexerInitFromString;
+  
 PROCEDURE InitTokenNames;
-
 BEGIN
   TokenNames[tARRAY]        :=  "ARRAY";
   TokenNames[tBEGIN]        :=  "BEGIN";
@@ -291,7 +317,60 @@ BEGIN
   TokenNames[tEOF]          :=  "EOF";
 END InitTokenNames;
 
+PROCEDURE TestPool;
+VAR
+  sp   :StringPool;
+  s    :ARRAY 25 OF CHAR;
+  i,j  :PoolIndex;
+BEGIN
+  PoolInit(sp);
+  ASSERT(11 = StringLen("Hello world"));
+  s := "Hello world";
+  ASSERT(StrEq(s, 0, "Hello world", 0));
+  ASSERT(~StrEq(s, 0, "Hello", 0));
+  ASSERT(StrEq(s, 1, "Hello world", 1));
+  ASSERT(11 = StringLen(s));
+  ASSERT(StringIntern(sp, s) = 0);
+  s := "Yello world";
+  ASSERT(StringIntern(sp, s) = 12);
+  i := StringInternRange(sp, "Hellooo", 1, 4);
+  ASSERT(i = StringIntern(sp, "ello"));
+  j := StringInternRange(sp, s, 0, 0);
+  ASSERT(i # j);
+  ASSERT(StringIntern(sp, "") = j);
+  s[0] := "A";
+  s[1] := 0X;
+  ASSERT(StringIntern(sp, s) = StringIntern(sp, "A"));
+  ASSERT(StringIntern(sp, s) # StringIntern(sp, "B"));
+
+  PoolInit(sp);
+  FOR i := 1 TO 4000 DO
+    MakeDummy(i, s);
+    StringIntern(sp, s);
+  END;
+  FOR i := 1 TO 4000 DO
+    MakeDummy(i, s);
+    ASSERT(StringIntern(sp, s) = (i-1)*6);
+  END;
+  ASSERT(sp.last = 24000);
+  PoolInit(sp);
+  StringInternRange(sp, "A", 0, 9);
+  StringInternRange(sp, "PROCEDURE", 0, 9);
+  StringInternRange(sp, "B", 0, 9);
+  ASSERT(StringIntern(sp, "A") = 0);
+  ASSERT(StringIntern(sp, "PROCEDURE") = 10);
+  ASSERT(StringIntern(sp, "B") = 20);
+END TestPool;
+
+PROCEDURE TestLexer;
+VAR
+  l :Lexer;
+BEGIN
+  LexerInitFromString(l, "hello world");
+END TestLexer;
+
 BEGIN
   InitTokenNames;
-  TestPool
+  TestPool;
+  TestLexer;
 END Lex.
