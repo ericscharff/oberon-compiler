@@ -3,6 +3,84 @@ MODULE Lex;
 CONST
   NumBuckets = 4096;
   PoolSize   = 64 * 1024;
+  (* Token definitions *)
+  (* Keywords - Keywords are special because they are included in the string *)
+  (* pool in a special way. The ARRAY keyword is inserted first into the     *)
+  (* table, and it takes up 10 characters. Thus, ARRAY is at position 0,     *)
+  (* BEGIN at position 10, BY at position 20, and so on. This means that the *)
+  (* keword is looked up by PoolIndex DIV 10. Adding new keywords thus       *)
+  (* requires that they be contiguous with each other, and before the        *)
+  (* punctuation tokens, IN order to keep things consistent.                 *)
+  tARRAY       =  0;
+  tBEGIN       =  1;
+  tBY          =  2;
+  tCASE        =  3;
+  tCONST       =  4;
+  tDIV         =  5;
+  tDO          =  6;
+  tELSE        =  7;
+  tELSIF       =  8;
+  tEND         =  9;
+  tFALSE       = 10;
+  tFOR         = 11;
+  tIF          = 12;
+  tIMPORT      = 13;
+  tIN          = 14;
+  tIS          = 15;
+  tMOD         = 16;
+  tMODULE      = 17;
+  tNATIVE      = 18;
+  tNIL         = 19;
+  tOF          = 20;
+  tOR          = 21;
+  tPOINTER     = 22;
+  tPROCEDURE   = 23;
+  tRECORD      = 24;
+  tREPEAT      = 25;
+  tRETURN      = 26;
+  tTHEN        = 27;
+  tTO          = 28;
+  tTRUE        = 29;
+  tTYPE        = 30;
+  tUNTIL       = 31;
+  tVAR         = 32;
+  tWHILE       = 33;
+  tXOR         = 34;
+
+  tIDENT       = 35;
+  tKEYWORD     = 36;
+  tSTRING      = 37;
+  tINT         = 38;
+  tREAL        = 39;
+  tPLUS        = 40;
+  tMINUS       = 41;
+  tSTAR        = 42;
+  tSLASH       = 43;
+  tTILDE       = 44;
+  tAMP         = 45;
+  tDOT         = 46;
+  tCOMMA       = 47;
+  tSEMI        = 48;
+  tVBAR        = 49;
+  tLPAREN      = 50;
+  tRPAREN      = 51;
+  tLBRACK      = 52;
+  tRBRACK      = 53;
+  tLBRACE      = 54;
+  tRBRACE      = 55;
+  tASSIGN      = 56;
+  tCARET       = 57;
+  tEQ          = 58;
+  tPOUND       = 59;
+  tLT          = 60;
+  tGT          = 61;
+  tLTEQ        = 62;
+  tGTEQ        = 63;
+  tDOTDOT      = 64;
+  tCOLON       = 65;
+  tAS_SET_ELT  = 66;
+  tCASE_DOTDOT = 67;
+  tEOF         = -1;
 
 TYPE
   PoolIndex*  = INTEGER;
