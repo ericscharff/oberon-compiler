@@ -91,7 +91,7 @@ TYPE
   END;
 
 VAR
-  TokenNames :ARRAY 68, 10 OF CHAR;
+  TokenNames :ARRAY tEOF+1, 10 OF CHAR;
 
 PROCEDURE PoolInit(VAR sp :StringPool);
 VAR
@@ -220,7 +220,75 @@ END TestPool;
 PROCEDURE InitTokenNames;
 
 BEGIN
-  TokenNames[tEOF] := "EOF";
+  TokenNames[tARRAY]        :=  "ARRAY";
+  TokenNames[tBEGIN]        :=  "BEGIN";
+  TokenNames[tBY]           :=  "BY";
+  TokenNames[tCASE]         :=  "CASE";
+  TokenNames[tCONST]        :=  "CONST";
+  TokenNames[tDIV]          :=  "DIV";
+  TokenNames[tDO]           :=  "DO";
+  TokenNames[tELSE]         :=  "ELSE";
+  TokenNames[tELSIF]        :=  "ELSIF";
+  TokenNames[tEND]          :=  "END";
+  TokenNames[tFALSE]        :=  "FALSE";
+  TokenNames[tFOR]          :=  "FOR";
+  TokenNames[tIF]           :=  "IF";
+  TokenNames[tIMPORT]       :=  "IMPORT";
+  TokenNames[tIN]           :=  "IN";
+  TokenNames[tIS]           :=  "IS";
+  TokenNames[tMOD]          :=  "MOD";
+  TokenNames[tMODULE]       :=  "MODULE";
+  TokenNames[tNATIVE]       :=  "NATIVE";
+  TokenNames[tNIL]          :=  "NIL";
+  TokenNames[tOF]           :=  "OF";
+  TokenNames[tOR]           :=  "OR";
+  TokenNames[tPOINTER]      :=  "POINTER";
+  TokenNames[tPROCEDURE]    :=  "PROCEDURE";
+  TokenNames[tRECORD]       :=  "RECORD";
+  TokenNames[tREPEAT]       :=  "REPEAT";
+  TokenNames[tRETURN]       :=  "RETURN";
+  TokenNames[tTHEN]         :=  "THEN";
+  TokenNames[tTO]           :=  "TO";
+  TokenNames[tTRUE]         :=  "TRUE";
+  TokenNames[tTYPE]         :=  "TYPE";
+  TokenNames[tUNTIL]        :=  "UNTIL";
+  TokenNames[tVAR]          :=  "VAR";
+  TokenNames[tWHILE]        :=  "WHILE";
+  TokenNames[tXOR]          :=  "XOR";
+  TokenNames[tIDENT]        :=  "IDENT";
+  TokenNames[tKEYWORD]      :=  "KEYWORD";
+  TokenNames[tSTRING]       :=  "STRING";
+  TokenNames[tINT]          :=  "INT";
+  TokenNames[tREAL]         :=  "REAL";
+  TokenNames[tPLUS]         :=  "PLUS";
+  TokenNames[tMINUS]        :=  "MINUS";
+  TokenNames[tSTAR]         :=  "STAR";
+  TokenNames[tSLASH]        :=  "SLASH";
+  TokenNames[tTILDE]        :=  "TILDE";
+  TokenNames[tAMP]          :=  "AMP";
+  TokenNames[tDOT]          :=  "DOT";
+  TokenNames[tCOMMA]        :=  "COMMA";
+  TokenNames[tSEMI]         :=  "SEMI";
+  TokenNames[tVBAR]         :=  "VBAR";
+  TokenNames[tLPAREN]       :=  "LPAREN";
+  TokenNames[tRPAREN]       :=  "RPAREN";
+  TokenNames[tLBRACK]       :=  "LBRACK";
+  TokenNames[tRBRACK]       :=  "RBRACK";
+  TokenNames[tLBRACE]       :=  "LBRACE";
+  TokenNames[tRBRACE]       :=  "RBRACE";
+  TokenNames[tASSIGN]       :=  "ASSIGN";
+  TokenNames[tCARET]        :=  "CARET";
+  TokenNames[tEQ]           :=  "EQ";
+  TokenNames[tPOUND]        :=  "POUND";
+  TokenNames[tLT]           :=  "LT";
+  TokenNames[tGT]           :=  "GT";
+  TokenNames[tLTEQ]         :=  "LTEQ";
+  TokenNames[tGTEQ]         :=  "GTEQ";
+  TokenNames[tDOTDOT]       :=  "DOTDOT";
+  TokenNames[tCOLON]        :=  "COLON";
+  TokenNames[tAS_SET_ELT]   :=  "AS_SET_ELT";
+  TokenNames[tCASE_DOTDOT]  :=  "CASE_DOTDOT";
+  TokenNames[tEOF]          :=  "EOF";
 END InitTokenNames;
 
 BEGIN
