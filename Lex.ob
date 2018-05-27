@@ -81,8 +81,8 @@ CONST
   tGTEQ*        = 63;
   tDOTDOT*      = 64;
   tCOLON*       = 65;
-  tAS_SET_ELT*  = 66;
-  tCASE_DOTDOT* = 67;
+  tAsSetElt*    = 66;
+  tCaseDotDot*  = 67;
   tEOF*         = 68;
 
 TYPE
@@ -338,8 +338,8 @@ BEGIN
   TokenNames[tGTEQ]         :=  "GTEQ";
   TokenNames[tDOTDOT]       :=  "DOTDOT";
   TokenNames[tCOLON]        :=  "COLON";
-  TokenNames[tAS_SET_ELT]   :=  "AS_SET_ELT";
-  TokenNames[tCASE_DOTDOT]  :=  "CASE_DOTDOT";
+  TokenNames[tAsSetElt]     :=  "AS_SET";
+  TokenNames[tCaseDotDot]   :=  "DOTDOT";
   TokenNames[tEOF]          :=  "EOF";
 END InitTokenNames;
 
