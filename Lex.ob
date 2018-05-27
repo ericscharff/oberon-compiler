@@ -4,6 +4,7 @@ CONST
   NumBuckets = 4096;
   PoolSize   = 64 * 1024;
   BufSize    = 64 * 1024;
+  KwdSize    = 10;
   (* Token definitions *)
   (* Keywords - Keywords are special because they are included in the string *)
   (* pool in a special way. The ARRAY keyword is inserted first into the     *)
@@ -47,6 +48,7 @@ CONST
   tVAR*         = 32;
   tWHILE*       = 33;
   tXOR*         = 34;
+  tLastKwd      = tXOR * KwdSize;
 
   tIDENT*       = 35;
   tKEYWORD*     = 36;
@@ -106,7 +108,7 @@ TYPE
   END;
 
 VAR
-  TokenNames :ARRAY tEOF+1, 10 OF CHAR;
+  TokenNames :ARRAY tEOF+1, KwdSize OF CHAR;
 
 PROCEDURE PoolInit(VAR sp :StringPool);
 VAR
@@ -127,15 +129,16 @@ BEGIN
   RETURN l
 END StringLen;
 
-PROCEDURE StrEq(a :ARRAY OF CHAR; ai :INTEGER; b :ARRAY OF CHAR; bi :INTEGER) :BOOLEAN;
+PROCEDURE StrEq(a :ARRAY OF CHAR; ai :INTEGER; b :ARRAY OF CHAR; bi :INTEGER; len :INTEGER) :BOOLEAN;
 VAR
   same :BOOLEAN;
 BEGIN
-  WHILE (a[ai] = b[bi]) & ((a[ai] # 0X) & (b[bi] # 0X)) DO
+  WHILE (len > 0) & (a[ai] = b[bi]) DO
     INC(ai);
     INC(bi);
+    DEC(len);
   END;
-  RETURN (a[ai] = 0X) & (b[bi] = 0X)
+  RETURN len = 0
 END StrEq;
 
 PROCEDURE StringInternRange(VAR sp :StringPool; s :ARRAY OF CHAR; offset, length :INTEGER) :PoolIndex;
@@ -158,7 +161,7 @@ BEGIN
   hash := hash * 85EBCA6BH;
   hash := hash XOR (hash DIV 65536);
   b := hash MOD NumBuckets;
-  WHILE (sp.buckets[b] >= 0) & ~StrEq(sp.buf, sp.buckets[b], s, offset) DO
+  WHILE (sp.buckets[b] >= 0) & ~StrEq(sp.buf, sp.buckets[b], s, offset, length) DO
     INC(b);
     IF b = NumBuckets THEN b := 0; END;
   END;
@@ -225,6 +228,29 @@ BEGIN
   StringInternRange(sp, "WHILE", 0, 9);
   StringInternRange(sp, "XOR", 0, 9);
 END AddKeywords;
+
+PROCEDURE ScanIdent(VAR l :Lexer);
+VAR
+  start   :INTEGER;
+  scan    :BOOLEAN;
+  idx     :INTEGER;
+BEGIN
+  start := l.pos;
+  scan := TRUE;
+  WHILE scan DO
+    scan := FALSE;
+    CASE l.buf[l.pos] OF
+      "A" .. "Z", "a" .. "z", "0" .. "9", "_": scan := TRUE; INC(l.pos);
+    END;
+  END;
+  idx := StringInternRange(l.sp, l.buf, start, l.pos - start);
+  IF idx <= tLastKwd THEN
+    l.t.kind := idx DIV KwdSize;
+  ELSE
+    l.t.kind := tSTRING;
+    l.t.sVal := idx;
+  END;
+END ScanIdent;
 
 PROCEDURE LexerInitFromFile(VAR l :Lexer; fileName :ARRAY OF CHAR);
 BEGIN
@@ -326,9 +352,9 @@ BEGIN
   PoolInit(sp);
   ASSERT(11 = StringLen("Hello world"));
   s := "Hello world";
-  ASSERT(StrEq(s, 0, "Hello world", 0));
-  ASSERT(~StrEq(s, 0, "Hello", 0));
-  ASSERT(StrEq(s, 1, "Hello world", 1));
+  ASSERT(StrEq(s, 0, "Hello world", 0, 11));
+  ASSERT(~StrEq(s, 0, "Hello", 0, 11));
+  ASSERT(StrEq(s, 1, "Hello world", 1, 10));
   ASSERT(11 = StringLen(s));
   ASSERT(StringIntern(sp, s) = 0);
   s := "Yello world";
@@ -366,7 +392,8 @@ PROCEDURE TestLexer;
 VAR
   l :Lexer;
 BEGIN
-  LexerInitFromString(l, "hello world");
+  LexerInitFromString(l, "WHILE hello world");
+  ScanIdent(l);
 END TestLexer;
 
 BEGIN
