@@ -789,7 +789,7 @@ Decl *get_imported_decls(const char *moduleName) {
   importCache.import[index].name = moduleName;
   importCache.import[index].kind = DECL_INCOMPLETE;
   char fileName[1024];
-  snprintf(fileName, sizeof(fileName), "%s.Mod", moduleName);
+  snprintf(fileName, sizeof(fileName), "%s.ob", moduleName);
   printf("Importing %s.\n", fileName);
   char *contents = read_file(fileName);
   assert(contents);
@@ -846,7 +846,7 @@ void parse_test(void) {
   next_token();
   dbg_dump_scope(parse_module());
   assert(current_scope == &globalScope);
-  parse_test_file("Test.Mod");
+  parse_test_file("Test.ob");
   exit_scope("");
   assert(current_scope == NULL);
 }
