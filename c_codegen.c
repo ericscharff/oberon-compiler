@@ -168,7 +168,13 @@ void gen_val(Val val) {
   }
 }
 
-void gen_char_lit(Expr *e) { buf_printf(codegenBuf, "'\\%o'", e->val.sVal[0]); }
+void gen_char_lit(char c) {
+  if (isalnum(c)) {
+    buf_printf(codegenBuf, "'%c'", c);
+  } else {
+    buf_printf(codegenBuf, "'\\%o'", c);
+  }
+}
 
 void gen_unary_expr(TokenKind op, Expr *expr) {
   assert(expr);
@@ -197,7 +203,7 @@ void gen_unary_expr(TokenKind op, Expr *expr) {
 void gen_binary_c(const char *cOp, Expr *lhs, Expr *rhs, bool coerceToChar) {
   gen_str("(");
   if (coerceToChar && lhs->type->kind == TYPE_STRING) {
-    gen_char_lit(lhs);
+    gen_char_lit(lhs->val.sVal[0]);
   } else {
     gen_expr(lhs);
   }
@@ -205,7 +211,7 @@ void gen_binary_c(const char *cOp, Expr *lhs, Expr *rhs, bool coerceToChar) {
   gen_str(cOp);
   gen_str(" ");
   if (coerceToChar && rhs->type->kind == TYPE_STRING) {
-    gen_char_lit(rhs);
+    gen_char_lit(rhs->val.sVal[0]);
   } else {
     gen_expr(rhs);
   }
@@ -507,7 +513,7 @@ void gen_case_statement(Statement *s) {
           buf_printf(codegenBuf, "%d:\n", c);
         } else {
           assert(s->case_stmt.cond->type == &charType);
-          buf_printf(codegenBuf, "'\\%o':\n", c);
+          gen_char_lit(c);
         }
       }
     }
@@ -623,7 +629,7 @@ void gen_statement(Statement *s) {
         assert(s->assignment_stmt.rvalue->is_const);
         gen_expr(s->assignment_stmt.lvalue);
         gen_str(" = ");
-        gen_char_lit(s->assignment_stmt.rvalue);
+        gen_char_lit(s->assignment_stmt.rvalue->val.sVal[0]);
         gen_str(";\n");
       } else if (is_string_type(s->assignment_stmt.lvalue->type) &&
                  is_string_type(s->assignment_stmt.rvalue->type)) {
