@@ -116,15 +116,15 @@ BEGIN
   ASSERT(StringIntern(sp, s) # StringIntern(sp, "B"));
 
   PoolInit(sp);
-  FOR i := 1 TO 1000 DO
+  FOR i := 1 TO 4000 DO
     MakeDummy(i, s);
     StringIntern(sp, s);
   END;
-  FOR i := 1 TO 1000 DO
+  FOR i := 1 TO 4000 DO
     MakeDummy(i, s);
     ASSERT(StringIntern(sp, s) = (i-1)*6);
   END;
-  ASSERT(sp.last = 6000);
+  ASSERT(sp.last = 24000);
 END PoolTest;
 
 BEGIN
