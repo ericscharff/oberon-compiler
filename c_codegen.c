@@ -728,6 +728,14 @@ void gen_decl(Decl *d) {
         for (size_t i = 0; i < buf_len(d->type->procedure_type.params); i++) {
           Type *formal = d->type->procedure_type.params[i].type;
           Type varParam;
+          // This is an interesting special case. An open array is passed
+          // by pointer already. Adding VAR to it simply makes it readonly.
+          // Thus, if something is a var param **and** an open array, pretend
+          // it isn't a var param. This means tweaking the procedure declaration,
+          // to avoid weird things being generated later.
+          if (d->type->procedure_type.params[i].is_var_parameter && d->type->procedure_type.params[i].is_open_array) {
+            d->type->procedure_type.params[i].is_var_parameter = false;
+          }
 
           if (d->type->procedure_type.params[i].is_var_parameter) {
             varParam.kind = TYPE_POINTER;

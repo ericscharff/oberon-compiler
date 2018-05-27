@@ -475,6 +475,10 @@ void resolve_binary_expr(Expr *e) {
   }
 }
 
+bool decl_is_open_array(Decl *d) {
+  return d->type->kind == TYPE_ARRAY && d->type->array_type.num_elements_expr == NULL;
+}
+
 void resolve_identref(Expr *e) {
   assert(e);
   assert(e->kind == EXPR_IDENTREF);
@@ -507,10 +511,13 @@ void resolve_identref(Expr *e) {
     // in the current scope.
     e->is_assignable = packageName == gCurrentModule;
   }
-  if (d->kind == DECL_VARPARAM) {
+  if (d->kind == DECL_VARPARAM && !decl_is_open_array(d)) {
     e->is_var_param = true;
   }
   if (d->kind == DECL_PARAM && d->type->kind == TYPE_RECORD) {
+    e->is_assignable = false;
+  }
+  if (d->kind == DECL_PARAM && d->type->kind == TYPE_ARRAY) {
     e->is_assignable = false;
   }
 }
@@ -1256,7 +1263,7 @@ void resolve_test_file(void) {
   init_global_defs();
   assert(current_scope == &globalScope);
   resolve_scope_push(globalScope.decls);
-  Module *m = parse_test_file("FibFact.Mod");
+  Module *m = parse_test_file("Lex.Mod");
   resolve_module(m);
   exit_scope("__topdone__");
   assert(current_scope == NULL);
@@ -1321,7 +1328,8 @@ void resolve_test_static(void) {
       "  ii :INTEGER;\n"
       "  jj :R1;\n"
       "  p1 :P2;\n"
-      "PROCEDURE ArrFunc(a :ARRAY OF INTEGER); BEGIN a[0] := 1 END ArrFunc;\n"
+      "PROCEDURE ArrFunc(VAR a :ARRAY OF INTEGER);\n"
+      "BEGIN a[0] := 1 END ArrFunc;\n"
       "PROCEDURE Wow; END Wow;"
       "PROCEDURE Wow2(x :INTEGER); BEGIN x := ii; Wow; Wow; Wow END Wow2;\n"
       "PROCEDURE Wow3(x :INTEGER); BEGIN x := ii; Wow2(x); Wow2(x) END Wow3;\n"

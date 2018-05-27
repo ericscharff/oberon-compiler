@@ -15,7 +15,9 @@ TYPE
 PROCEDURE PoolInit(VAR sp :StringPool);
 VAR
   i :INTEGER;
+  tt :TT;
 BEGIN
+  Silly(tt);
   sp.last := 0;
   FOR i := 0 TO NumBuckets-1 DO
     sp.buckets[i] := -1
@@ -76,16 +78,16 @@ BEGIN
   RETURN StringInternRange(sp, s, 0, StringLen(s))
 END StringIntern;
 
-PROCEDURE MakeDummy(i :INTEGER; s :ARRAY OF CHAR);
+PROCEDURE MakeDummy(i :INTEGER; VAR s :ARRAY OF CHAR);
 BEGIN
   s[0] := "i";
-  s[1] := CHR((i MOD 10) + 48);
-  i := i DIV 10;
-  s[2] := CHR((i MOD 10) + 48);
+  s[4] := CHR((i MOD 10) + 48);
   i := i DIV 10;
   s[3] := CHR((i MOD 10) + 48);
   i := i DIV 10;
-  s[4] := CHR((i MOD 10) + 48);
+  s[2] := CHR((i MOD 10) + 48);
+  i := i DIV 10;
+  s[1] := CHR((i MOD 10) + 48);
   s[5] := 0X;
 END MakeDummy;
 
