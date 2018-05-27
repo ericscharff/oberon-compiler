@@ -51,12 +51,14 @@ BEGIN
   ASSERT(sp.last + length < PoolSize);
   (* Copy and compute hash at the same time *)
   hash := 811C9DC5H;
-  FOR i := 0 TO length-1 DO
+  i := 0;
+  WHILE (i < length) & (s[i] # 0X) DO
     hash := hash XOR ORD(s[offset + i]);
     hash := hash * 16777619;
-    sp.buf[sp.last + i] := s[offset + i]
+    sp.buf[sp.last + i] := s[offset + i];
+    INC(i)
   END;
-  sp.buf[sp.last + length] := 0X;
+  sp.buf[sp.last + i] := 0X;
   hash := hash * 85EBCA6BH;
   hash := hash XOR (hash DIV 65536);
   b := hash MOD NumBuckets;
@@ -125,6 +127,13 @@ BEGIN
     ASSERT(StringIntern(sp, s) = (i-1)*6);
   END;
   ASSERT(sp.last = 24000);
+  PoolInit(sp);
+  StringInternRange(sp, "A", 0, 9);
+  StringInternRange(sp, "PROCEDURE", 0, 9);
+  StringInternRange(sp, "B", 0, 9);
+  ASSERT(StringIntern(sp, "A") = 0);
+  ASSERT(StringIntern(sp, "PROCEDURE") = 10);
+  ASSERT(StringIntern(sp, "B") = 20);
 END PoolTest;
 
 BEGIN
