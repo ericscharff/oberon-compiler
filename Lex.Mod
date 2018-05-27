@@ -15,9 +15,7 @@ TYPE
 PROCEDURE PoolInit(VAR sp :StringPool);
 VAR
   i :INTEGER;
-  tt :TT;
 BEGIN
-  Silly(tt);
   sp.last := 0;
   FOR i := 0 TO NumBuckets-1 DO
     sp.buckets[i] := -1
