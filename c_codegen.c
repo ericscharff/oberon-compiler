@@ -169,7 +169,7 @@ void gen_val(Val val) {
 }
 
 void gen_char_lit(char c) {
-  if (isalnum(c)) {
+  if (isgraph(c) && c != '\'' && c != '\\') {
     buf_printf(codegenBuf, "'%c'", c);
   } else {
     buf_printf(codegenBuf, "'\\%o'", c);
