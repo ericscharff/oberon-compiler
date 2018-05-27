@@ -290,7 +290,7 @@ void gen_binary_expr(TokenKind op, Expr *lhs, Expr *rhs) {
       if (isString) {
         gen_strcmp(lhs, rhs, "> 0");
       } else {
-        gen_binary_c(">=", lhs, rhs, coerceToChar);
+        gen_binary_c(">", lhs, rhs, coerceToChar);
       }
       break;
     case TOKEN_GTEQ:
@@ -514,6 +514,7 @@ void gen_case_statement(Statement *s) {
         } else {
           assert(s->case_stmt.cond->type == &charType);
           gen_char_lit(c);
+          gen_str(":\n");
         }
       }
     }
@@ -575,9 +576,9 @@ void gen_statement(Statement *s) {
         geni();
         gen_str("}\n");
       } else {
-        gen_str("while ");
+        gen_str("while (");
         gen_expr(s->while_stmt.cond);
-        gen_str(" {\n");
+        gen_str(") {\n");
         codegenIndent++;
         gen_statements(s->while_stmt.body);
         codegenIndent--;
