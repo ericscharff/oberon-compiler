@@ -313,7 +313,7 @@ BEGIN
     IF (ch >= "A") & (ch <= "F") OR (ch >= "a") & (ch <= "f") THEN
       needHorX := TRUE;
     END;
-    Next(l, ch);;
+    INC(l.pos); ch := l.buf[l.pos];
   END;
   (* Got letters and hex digits. Could be hex, char, or floating point *)
   IF (ch = "X") OR (ch = "x") THEN
@@ -325,7 +325,7 @@ BEGIN
     base := 16;
     needHorX := FALSE;
     Next(l, ch);;
-  ELSIF (ch = ".") & (l.buf[l.pos+1] # ".") THEN
+  ELSIF (ch = ".") & (l.buf[l.pos] # ".") THEN
     (* Special case - 10..20 is 10 TOKEN_DOTDOT 20 *)
     Next(l, ch);;
     (* mantissa *)
@@ -577,10 +577,49 @@ END TestPool;
 PROCEDURE TestLexer;
 VAR
   l :Lexer;
+  k :INTEGER;
 BEGIN
-  LexerInitFromString(l, "(* hello (*0ffffh *)000H*) 12345 hello world");
+  LexerInitFromString(l, "
+      101 102 (103)Wow 104Whoa
+      + - * / ~ & . , ; | ( ) [ ] { } := ^ = # < >
+      <= >=  .. 10..20
+  ");
   NextToken(l);
-  Out.Str("["); Out.StrI(l.buf, l.pos); Out.Str("]"); Out.Ln;
+  ASSERT(l.t.kind = tINT);
+  ASSERT(l.t.iVal = 101);
+  NextToken(l);
+  ASSERT(l.t.kind = tINT);
+  ASSERT(l.t.iVal = 102);
+  NextToken(l);
+  ASSERT(l.t.kind = tLPAREN);
+  NextToken(l);
+  ASSERT(l.t.kind = tINT);
+  ASSERT(l.t.iVal = 103);
+  NextToken(l);
+  ASSERT(l.t.kind = tRPAREN);
+  NextToken(l);
+  ASSERT(l.t.kind = tIDENT);
+  NextToken(l);
+  ASSERT(l.t.kind = tINT);
+  ASSERT(l.t.iVal = 104);
+  NextToken(l);
+  ASSERT(l.t.kind = tIDENT);
+  FOR k := tPLUS TO tDOTDOT DO
+    NextToken(l);
+    ASSERT(l.t.kind = k);
+  END;
+  NextToken(l);
+  ASSERT(l.t.kind = tINT);
+  ASSERT(l.t.iVal = 10);
+  NextToken(l);
+  ASSERT(l.t.kind = tDOTDOT);
+  NextToken(l);
+  ASSERT(l.t.kind = tINT);
+  ASSERT(l.t.iVal = 20);
+  NextToken(l);
+  ASSERT(l.t.kind = tEOF);
+  NextToken(l);
+  ASSERT(l.t.kind = tEOF);
 END TestLexer;
 
 BEGIN

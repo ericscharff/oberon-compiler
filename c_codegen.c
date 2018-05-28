@@ -150,6 +150,12 @@ const char *sanitize_string(const char *s) {
     } else if (*s == '"') {
       *p++ = '\\';
       *p++ = '"';
+    } else if (*s == '\n') {
+      *p++ = '\\';
+      *p++ = 'n';
+    } else if (*s == '\t') {
+      *p++ = '\\';
+      *p++ = 't';
     } else {
       *p++ = *s;
     }
