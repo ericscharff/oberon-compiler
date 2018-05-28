@@ -15,3 +15,14 @@ int make_set_range(int s, int e) {
   return r;
 }
 
+void Out_Int(int i) {
+  printf("%d", i);
+}
+
+void Out_Str(const char *s) {
+  fputs(s, stdout);
+}
+
+void Out_Ln(void) {
+  puts("");
+}

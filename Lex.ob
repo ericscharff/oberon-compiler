@@ -1,5 +1,7 @@
 MODULE Lex;
 
+IMPORT Out;
+
 CONST
   NumBuckets = 4096;
   PoolSize   = 64 * 1024;
@@ -470,8 +472,11 @@ PROCEDURE TestLexer;
 VAR
   l :Lexer;
 BEGIN
-  LexerInitFromString(l, "12345 hello world");
+  LexerInitFromString(l, "0C000H 12345 hello world");
   ScanNumber(l);
+  Out.Str("Number is: ");
+  Out.Int(l.t.iVal);
+  Out.Ln;
 END TestLexer;
 
 BEGIN
