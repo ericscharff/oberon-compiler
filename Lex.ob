@@ -254,6 +254,24 @@ BEGIN
   INC(l.pos);
 END Next;
 
+PROCEDURE LexerInitFromFile(VAR l :Lexer; fileName :ARRAY OF CHAR);
+BEGIN
+  PoolInit(l.sp);
+  AddKeywords(l.sp);
+  l.buf := "TODO"; (* TODO *)
+  l.fileName := StringIntern(l.sp, fileName);
+  l.pos := 0;
+END LexerInitFromFile;
+
+PROCEDURE LexerInitFromString(VAR l :Lexer; s :ARRAY OF CHAR);
+BEGIN
+  PoolInit(l.sp);
+  AddKeywords(l.sp);
+  l.buf := s;
+  l.fileName := StringIntern(l.sp, "<string>");
+  l.pos := 0;
+END LexerInitFromString;
+
 PROCEDURE ScanIdent(VAR l :Lexer);
 VAR
   start   :INTEGER;
@@ -400,24 +418,6 @@ BEGIN
     INC(l.pos, 2);
   END;
 END ScanComment;
-
-PROCEDURE LexerInitFromFile(VAR l :Lexer; fileName :ARRAY OF CHAR);
-BEGIN
-  PoolInit(l.sp);
-  AddKeywords(l.sp);
-  l.buf := "TODO"; (* TODO *)
-  l.fileName := StringIntern(l.sp, fileName);
-  l.pos := 0;
-END LexerInitFromFile;
-
-PROCEDURE LexerInitFromString(VAR l :Lexer; s :ARRAY OF CHAR);
-BEGIN
-  PoolInit(l.sp);
-  AddKeywords(l.sp);
-  l.buf := s;
-  l.fileName := StringIntern(l.sp, "<string>");
-  l.pos := 0;
-END LexerInitFromString;
   
 PROCEDURE InitTokenNames;
 BEGIN
