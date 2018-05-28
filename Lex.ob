@@ -231,6 +231,22 @@ BEGIN
   StringInternRange(sp, "XOR", 0, 9);
 END AddKeywords;
 
+PROCEDURE Error(l :Lexer; s :ARRAY OF CHAR);
+BEGIN
+  Out.Str("Err!");
+  Out.StrI(l.sp.buf, l.fileName);
+  Out.Str("!");
+  Out.Int(l.pos);
+  Out.Str("!");
+  Out.Str(s);
+END Error;
+
+PROCEDURE ErrorLn(l :Lexer; s :ARRAY OF CHAR);
+BEGIN
+  Error(l, s);
+  Out.Ln;
+END ErrorLn;
+
 PROCEDURE Next(VAR l :Lexer; VAR c :CHAR);
 BEGIN
   c := l.buf[l.pos];
@@ -310,7 +326,7 @@ BEGIN
     l.t.rVal := 0.0; (* TODO *)
     (* RETURN *)
   ELSIF needHorX THEN
-    (* ErrorLn("Hex digit must be followed by H or X"); *)
+    ErrorLn(l, "Hex digit must be followed by H or X");
   END;
   l.t.iVal := 0;
   WHILE start # l.pos DO
@@ -478,7 +494,7 @@ PROCEDURE TestLexer;
 VAR
   l :Lexer;
 BEGIN
-  LexerInitFromString(l, "0C000H 12345 hello world");
+  LexerInitFromString(l, "0C 000H 12345 hello world");
   ScanNumber(l);
   Out.Str("Number is: ");
   Out.Int(l.t.iVal);

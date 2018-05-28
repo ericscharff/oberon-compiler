@@ -23,6 +23,10 @@ void Out_Str(const char *s) {
   fputs(s, stdout);
 }
 
+void Out_StrI(const char *s, int offset) {
+  fputs(s + offset, stdout);
+}
+
 void Out_Ln(void) {
   puts("");
 }
