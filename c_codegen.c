@@ -330,7 +330,11 @@ void gen_binary_expr(TokenKind op, Expr *lhs, Expr *rhs) {
 
 void gen_builtin_procedure(Expr *proc, Expr **args) {
   if (proc->type->name == builtin_ord) {
-    gen_expr(args[0]);
+    if (is_one_char_string(args[0])) {
+      gen_char_lit(args[0]->val.sVal[0]);
+    } else {
+      gen_expr(args[0]);
+    }
   } else if (proc->type->name == builtin_chr) {
     gen_str("((char)");
     gen_expr(args[0]);
@@ -468,9 +472,9 @@ void gen_expr(Expr *e) {
 void gen_elseifs(ElseIf *elseifs) {
   for (size_t i = 0; i < buf_len(elseifs); i++) {
     geni();
-    gen_str("} else if ");
+    gen_str("} else if (");
     gen_expr(elseifs[i].cond);
-    gen_str(" {\n");
+    gen_str(") {\n");
     codegenIndent++;
     gen_statements(elseifs[i].body);
     codegenIndent--;
@@ -538,9 +542,9 @@ void gen_statement(Statement *s) {
       assert(0);
       break;
     case STMT_IF:
-      gen_str("if ");
+      gen_str("if (");
       gen_expr(s->if_stmt.cond);
-      gen_str(" {\n");
+      gen_str(") {\n");
       codegenIndent++;
       gen_statements(s->if_stmt.then_clause);
       codegenIndent--;

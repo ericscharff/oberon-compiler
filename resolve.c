@@ -738,7 +738,7 @@ Type *resolve_builtin_procedure(Expr *proc, Expr **actualParams) {
       Expr *e = actualParams[0];
       resolve_expr(e);
       if (e->type == &booleanType || e->type == &charType ||
-          e->type == &setType) {
+          is_one_char_string(e) || e->type == &setType) {
         return &integerType;
       } else {
         errorloc(e->loc, "ORD expects CHAR, BOOLEAN, or SET, got %s",
