@@ -7,6 +7,7 @@ CONST
   PoolSize   = 64 * 1024;
   BufSize    = 64 * 1024;
   KwdSize    = 10;
+
   (* Token definitions *)
   (* Keywords - Keywords are special because they are included in the string *)
   (* pool in a special way. The ARRAY keyword is inserted first into the     *)
@@ -271,7 +272,7 @@ BEGIN
   IF idx <= tLastKwd THEN
     l.t.kind := idx DIV KwdSize;
   ELSE
-    l.t.kind := tSTRING;
+    l.t.kind := tIDENT;
     l.t.sVal := idx;
   END;
 END ScanIdent;
@@ -345,7 +346,9 @@ BEGIN
   END;
   IF l.t.kind = tSTRING THEN
     IF l.t.iVal > 255 THEN
-      (* error("Character constant %d > 255", token.iVal); *)
+      Error(l, "Character constant ");
+      Out.Int(l.t.iVal);
+      Out.PrintLn(" > 255");
     ELSE
       s[0] := CHR(l.t.iVal);
       s[1] := 0X;
@@ -353,6 +356,28 @@ BEGIN
     END;
   END;
 END ScanNumber;
+
+PROCEDURE ScanString(VAR l :Lexer);
+CONST
+  quote = 022X;
+VAR
+  ch :CHAR;
+  start :INTEGER;
+BEGIN
+  Next(l, ch);
+  ASSERT(ch = quote);
+  start := l.pos;
+  REPEAT
+    Next(l, ch)
+  UNTIL (ch = 0X) OR (ch = quote);
+  IF ch = quote THEN
+    l.t.kind := tSTRING;
+    l.t.sVal := StringInternRange(l.sp, l.buf, start, l.pos - start - 1);
+  ELSE
+    l.pos := start;
+    ErrorLn(l, "Unterminated string");
+  END;
+END ScanString;
 
 PROCEDURE LexerInitFromFile(VAR l :Lexer; fileName :ARRAY OF CHAR);
 BEGIN
@@ -494,11 +519,12 @@ PROCEDURE TestLexer;
 VAR
   l :Lexer;
 BEGIN
-  LexerInitFromString(l, "0C 000H 12345 hello world");
-  ScanNumber(l);
-  Out.Str("Number is: ");
-  Out.Int(l.t.iVal);
-  Out.Ln;
+  LexerInitFromString(l, " hello 0ffffh 000H 12345 hello world");
+  l.buf[0] := 22X;
+  l.buf[6] := 22X;
+  ScanString(l);
+  Out.PrintLn(l.buf);
+  Out.Str("["); Out.StrI(l.sp.buf, l.t.sVal); Out.Str("]"); Out.Ln;
 END TestLexer;
 
 BEGIN
