@@ -139,6 +139,26 @@ void gen_typedef(Type *t, const char *packageName, const char *name) {
   }
 }
 
+const char *sanitize_string(const char *s) {
+  assert(strlen(s) < 1024);
+  static char buf[1024];
+  char *p = buf;
+  while (*s) {
+    if (*s == '\\') {
+      *p++ = '\\';
+      *p++ = '\\';
+    } else if (*s == '"') {
+      *p++ = '\\';
+      *p++ = '"';
+    } else {
+      *p++ = *s;
+    }
+    s++;
+  }
+  *p = '\0';
+  return buf;
+}
+
 void gen_val(Val val) {
   switch (val.kind) {
     case VAL_UNKNOWN:
@@ -157,7 +177,7 @@ void gen_val(Val val) {
       buf_printf(codegenBuf, "%d", val.bVal);
       break;
     case VAL_STRING:
-      buf_printf(codegenBuf, "\"%s\"", val.sVal);
+      buf_printf(codegenBuf, "\"%s\"", sanitize_string(val.sVal));
       break;
     case VAL_NIL:
       gen_str("0");
@@ -710,11 +730,14 @@ void gen_decl(Decl *d) {
       assert(0);
       break;
     case DECL_CONST:
+#if 0
+      // These are correct, but don't actually get used anywhere
       gen_str("#define ");
       gen_qname(d->package_name, d->name);
       gen_str(" (");
       gen_expr(d->const_val.expr);
       gen_str(")\n");
+#endif
       break;
     case DECL_TYPE:
       assert(0);
@@ -782,6 +805,7 @@ void gen_decl(Decl *d) {
         if (d->proc_decl.decls[i].state == DECLSTATE_RESOLVED) {
           assert(d->proc_decl.decls[i].kind == DECL_VAR ||
                  d->proc_decl.decls[i].kind == DECL_VARPARAM ||
+                 d->proc_decl.decls[i].kind == DECL_CONST ||
                  d->proc_decl.decls[i].kind == DECL_PARAM);
           if (d->proc_decl.decls[i].kind == DECL_VAR) {
             assert(!d->proc_decl.decls[i].package_name[0]);
