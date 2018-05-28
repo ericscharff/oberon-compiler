@@ -384,17 +384,18 @@ void gen_proccall(Expr *proc, Expr **args) {
     gen_expr(proc);
     gen_str("(");
     for (size_t i = 0; i < buf_len(args); i++) {
-      bool needCast = is_record(proc->type->procedure_type.params[i].type) && proc->type->procedure_type.params[i].type != args[i]->type;
+      bool recordFormal = is_record(proc->type->procedure_type.params[i].type);
+      bool needCast = recordFormal && proc->type->procedure_type.params[i].type != args[i]->type;
       if (needCast) {
         gen_str("(");
         gen_type(proc->type->procedure_type.params[i].type, "", "");
         gen_str("*)(");
       }
-      if (proc->type->procedure_type.params[i].is_var_parameter) {
+      if (proc->type->procedure_type.params[i].is_var_parameter || recordFormal) {
         gen_str("&(");
       }
       gen_expr(args[i]);
-      if (proc->type->procedure_type.params[i].is_var_parameter) {
+      if (proc->type->procedure_type.params[i].is_var_parameter || recordFormal) {
         gen_str(")");
       }
       if (needCast) {
@@ -424,11 +425,11 @@ void gen_expr(Expr *e) {
         gen_binary_expr(e->binary.op, e->binary.lhs, e->binary.rhs);
         break;
       case EXPR_IDENTREF:
-        if (e->is_var_param) {
+        if (e->is_var_param || (e->is_param && is_record(e->type))) {
           gen_str("(*");
         }
         gen_qname(e->identref.package_name, e->identref.name);
-        if (e->is_var_param) {
+        if (e->is_var_param || (e->is_param && is_record(e->type))) {
           gen_str(")");
         }
         break;
@@ -760,7 +761,7 @@ void gen_decl(Decl *d) {
             d->type->procedure_type.params[i].is_var_parameter = false;
           }
 
-          if (d->type->procedure_type.params[i].is_var_parameter) {
+          if (d->type->procedure_type.params[i].is_var_parameter || is_record(formal)) {
             varParam.kind = TYPE_POINTER;
             varParam.name = NULL;
             varParam.package_name = NULL;

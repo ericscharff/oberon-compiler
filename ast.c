@@ -170,6 +170,7 @@ typedef struct Expr {
   Val val;             // Populated by resolver
   bool is_assignable;  // Populated by resolver
   bool is_var_param;   // Populated by resolver
+  bool is_param;       // Populated by resolver
 } Expr;
 
 void dbg_print_expr(Expr *e) {
@@ -527,6 +528,7 @@ Expr *new_expr(ExprKind kind, Loc loc) {
   e->type = NULL;
   e->is_assignable = false;
   e->is_var_param = false;
+  e->is_param = false;
   return e;
 }
 

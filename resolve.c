@@ -516,6 +516,7 @@ void resolve_identref(Expr *e) {
   }
   if (d->kind == DECL_PARAM && d->type->kind == TYPE_RECORD) {
     e->is_assignable = false;
+    e->is_param = true;
   }
   if (d->kind == DECL_PARAM && d->type->kind == TYPE_ARRAY) {
     e->is_assignable = false;
@@ -1263,7 +1264,7 @@ void resolve_test_file(void) {
   init_global_defs();
   assert(current_scope == &globalScope);
   resolve_scope_push(globalScope.decls);
-  Module *m = parse_test_file("Lex.ob");
+  Module *m = parse_test_file("FibFact.ob");
   resolve_module(m);
   exit_scope("__topdone__");
   assert(current_scope == NULL);

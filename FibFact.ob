@@ -28,7 +28,7 @@ PROCEDURE FactIter*(n :INTEGER) :INTEGER;
 VAR
   i, r :INTEGER;
 BEGIN
-  Out.Str("FactIter");
+  Out.StrLn("FactIter");
   r := 1;
   WHILE i <= n DO
     r := r * i;
@@ -40,7 +40,7 @@ END FactIter;
 PROCEDURE FactRec*(n :INTEGER) :INTEGER;
 VAR r :INTEGER;
 BEGIN
-  Out.Str("FactRec");
+  Out.StrLn("FactRec");
   IF n <= 1 THEN
     r := 1
   ELSE
@@ -53,7 +53,7 @@ PROCEDURE FibIter*(n :INTEGER) :INTEGER;
 VAR
   prev, newPrev, fib :INTEGER;
 BEGIN
-  Out.Str("FibIter");
+  Out.StrLn("FibIter");
   prev := 1;
   fib := 1;
   WHILE n > 1 DO
@@ -68,7 +68,7 @@ END FibIter;
 PROCEDURE FibRec*(n :INTEGER) :INTEGER;
 VAR r :INTEGER;
 BEGIN
-  Out.Str("FibRec");
+  Out.StrLn("FibRec");
   IF n < 2 THEN
     r := 1
   ELSE
@@ -86,10 +86,10 @@ VAR
   lcv :INTEGER;
 BEGIN
   FOR lcv := 1 TO 25 BY 2*1 DO
-    Out.Int(z3.d)
+    Out.Int(z3.d); Out.Str(" "); Out.Int(lcv); Out.Ln
   END;
   FOR lcv := 1 TO 25 DO
-    Out.Int(z3.d)
+    Out.Int(z3.d); Out.Str(" "); Out.Int(lcv); Out.Ln
   END
 END TestFor;
 
@@ -148,7 +148,7 @@ BEGIN
   ac := "WOWZA";
   b := 1 + 1;
   pOne := FactIter;
-  Out.Int(pOne(8));
+  Out.Int(pOne(8)); Out.Ln;
   PlusOne(z3)
 END TestMisc;
 
@@ -178,7 +178,7 @@ BEGIN
     CASE i OF
         0: r := 100;
       | 1: r := 200;
-      | 2: r := 300; Out.Int(r)
+      | 2: r := 300; Out.Int(r); Out.Ln
       | 3, 4, 5: r := 400;
       | 6 .. 10: r := 500
     END;
