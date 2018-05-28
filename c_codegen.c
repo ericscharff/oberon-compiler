@@ -371,6 +371,11 @@ void gen_builtin_procedure(Expr *proc, Expr **args) {
     assert(0);
   }
 }
+
+bool is_record(Type *t) {
+  return t->kind == TYPE_RECORD;
+}
+
 void gen_proccall(Expr *proc, Expr **args) {
   assert(proc);
   if (proc->type->kind == TYPE_BUILTIN_PROCEDURE) {
@@ -379,9 +384,7 @@ void gen_proccall(Expr *proc, Expr **args) {
     gen_expr(proc);
     gen_str("(");
     for (size_t i = 0; i < buf_len(args); i++) {
-      bool needCast =
-          proc->type->procedure_type.params[i].type->kind == TYPE_RECORD &&
-          proc->type->procedure_type.params[i].type != args[i]->type;
+      bool needCast = is_record(proc->type->procedure_type.params[i].type) && proc->type->procedure_type.params[i].type != args[i]->type;
       if (needCast) {
         gen_str("(");
         gen_type(proc->type->procedure_type.params[i].type, "", "");
@@ -645,8 +648,8 @@ void gen_statement(Statement *s) {
         gen_str(", sizeof(");
         gen_expr(s->assignment_stmt.lvalue);
         gen_str("));\n");
-      } else if (s->assignment_stmt.lvalue->type->kind == TYPE_RECORD) {
-        assert(s->assignment_stmt.rvalue->type->kind == TYPE_RECORD);
+      } else if (is_record(s->assignment_stmt.lvalue->type)) {
+        assert(is_record(s->assignment_stmt.rvalue->type));
         gen_str("memcpy(&(");
         gen_expr(s->assignment_stmt.lvalue);
         gen_str("), &(");
