@@ -379,6 +379,28 @@ BEGIN
   END;
 END ScanString;
 
+PROCEDURE ScanComment(VAR l :Lexer);
+VAR
+  start :INTEGER;
+BEGIN
+  start := l.pos;
+  ASSERT((l.buf[l.pos] = "(") & (l.buf[l.pos+1] = "*"));
+  INC(l.pos, 2);
+  REPEAT
+    IF (l.buf[l.pos] = "(") & (l.buf[l.pos+1] = "*") THEN
+      ScanComment(l)
+    END;
+    INC(l.pos);
+  UNTIL (l.buf[l.pos] = 0X) OR (l.buf[l.pos] = "*") & (l.buf[l.pos+1] = ")");
+  IF l.buf[l.pos] = 0X THEN
+    l.pos := start;
+    ErrorLn(l, "Unterminated comment");
+  ELSE
+    (* l.pos IS pointing at terminating star *)
+    INC(l.pos, 2);
+  END;
+END ScanComment;
+
 PROCEDURE LexerInitFromFile(VAR l :Lexer; fileName :ARRAY OF CHAR);
 BEGIN
   PoolInit(l.sp);
@@ -519,12 +541,9 @@ PROCEDURE TestLexer;
 VAR
   l :Lexer;
 BEGIN
-  LexerInitFromString(l, " hello 0ffffh 000H 12345 hello world");
-  l.buf[0] := 22X;
-  l.buf[6] := 22X;
-  ScanString(l);
-  Out.PrintLn(l.buf);
-  Out.Str("["); Out.StrI(l.sp.buf, l.t.sVal); Out.Str("]"); Out.Ln;
+  LexerInitFromString(l, "(* hello (*0ffffh *)000H*) 12345 hello world");
+  ScanComment(l);
+  Out.Str("["); Out.StrI(l.buf, l.pos); Out.Str("]"); Out.Ln;
 END TestLexer;
 
 BEGIN
