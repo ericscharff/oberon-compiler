@@ -1264,7 +1264,7 @@ void resolve_test_file(void) {
   init_global_defs();
   assert(current_scope == &globalScope);
   resolve_scope_push(globalScope.decls);
-  Module *m = parse_test_file("FibFact.ob");
+  Module *m = parse_test_file("Lex.ob");
   resolve_module(m);
   exit_scope("__topdone__");
   assert(current_scope == NULL);

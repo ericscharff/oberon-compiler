@@ -28,7 +28,7 @@ PROCEDURE FactIter*(n :INTEGER) :INTEGER;
 VAR
   i, r :INTEGER;
 BEGIN
-  Out.StrLn("FactIter");
+  Out.PrintLn("FactIter");
   r := 1;
   WHILE i <= n DO
     r := r * i;
@@ -40,7 +40,7 @@ END FactIter;
 PROCEDURE FactRec*(n :INTEGER) :INTEGER;
 VAR r :INTEGER;
 BEGIN
-  Out.StrLn("FactRec");
+  Out.PrintLn("FactRec");
   IF n <= 1 THEN
     r := 1
   ELSE
@@ -53,7 +53,7 @@ PROCEDURE FibIter*(n :INTEGER) :INTEGER;
 VAR
   prev, newPrev, fib :INTEGER;
 BEGIN
-  Out.StrLn("FibIter");
+  Out.PrintLn("FibIter");
   prev := 1;
   fib := 1;
   WHILE n > 1 DO
@@ -68,7 +68,7 @@ END FibIter;
 PROCEDURE FibRec*(n :INTEGER) :INTEGER;
 VAR r :INTEGER;
 BEGIN
-  Out.StrLn("FibRec");
+  Out.PrintLn("FibRec");
   IF n < 2 THEN
     r := 1
   ELSE
