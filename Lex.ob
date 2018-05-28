@@ -231,6 +231,12 @@ BEGIN
   StringInternRange(sp, "XOR", 0, 9);
 END AddKeywords;
 
+PROCEDURE Next(VAR l :Lexer; VAR c :CHAR);
+BEGIN
+  c := l.buf[l.pos];
+  INC(l.pos);
+END Next;
+
 PROCEDURE ScanIdent(VAR l :Lexer);
 VAR
   start   :INTEGER;
@@ -265,46 +271,46 @@ BEGIN
   l.t.kind := tINT;
   base := 10;
   needHorX := FALSE;
-  ch := l.buf[l.pos];
+  Next(l, ch);
   WHILE (ch >= "0") & (ch <= "9") OR
         (ch >= "A") & (ch <= "F") OR
         (ch >= "a") & (ch <= "f") DO
     IF (ch >= "A") & (ch <= "F") OR (ch >= "a") & (ch <= "f") THEN
       needHorX := TRUE;
     END;
-    INC(l.pos); ch := l.buf[l.pos];
+    Next(l, ch);;
   END;
   (* Got letters and hex digits. Could be hex, char, or floating point *)
   IF (ch = "X") OR (ch = "x") THEN
     l.t.kind := tSTRING;
     base := 16;
     needHorX := FALSE;
-    INC(l.pos); ch := l.buf[l.pos];
+    Next(l, ch);;
   ELSIF (ch = "H") OR (ch = "h") THEN
     base := 16;
     needHorX := FALSE;
-    INC(l.pos); ch := l.buf[l.pos];
+    Next(l, ch);;
   ELSIF (ch = ".") & (l.buf[l.pos+1] # ".") THEN
     (* Special case - 10..20 is 10 TOKEN_DOTDOT 20 *)
-    INC(l.pos); ch := l.buf[l.pos];
+    Next(l, ch);;
     (* mantissa *)
     WHILE (ch >= "0") & (ch <= "9") DO
-      INC(l.pos); ch := l.buf[l.pos];
+      Next(l, ch);;
     END;
     IF (ch = "e") OR (ch = "E") THEN
-      INC(l.pos); ch := l.buf[l.pos];
+      Next(l, ch);;
     END;
     IF ch = "-" THEN
-      INC(l.pos); ch := l.buf[l.pos];
+      Next(l, ch);;
     END;
     WHILE (ch >= "0") & (ch <= "9") DO
-      INC(l.pos); ch := l.buf[l.pos];
+      Next(l, ch);;
     END;
     l.t.kind := tREAL;
     l.t.rVal := 0.0; (* TODO *)
     (* RETURN *)
   ELSIF needHorX THEN
-    (* error("Hex digit must be followed by H or X"); *)
+    (* ErrorLn("Hex digit must be followed by H or X"); *)
   END;
   l.t.iVal := 0;
   WHILE start # l.pos DO
