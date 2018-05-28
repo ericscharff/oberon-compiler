@@ -418,7 +418,44 @@ BEGIN
     INC(l.pos, 2);
   END;
 END ScanComment;
-  
+
+PROCEDURE NextToken(VAR l :Lexer);
+BEGIN
+  l.t.kind := -1;
+  REPEAT
+    CASE l.buf[l.pos] OF
+      0X: l.t.kind := tEOF;
+      (* space, newline, carriage return, newline, tab, vertical tab *)
+      | 09X, 0AX, 0BX, 0CX, 0DX, 20X: INC(l.pos)
+      | "A" .. "Z", "a" .. "z", "_": ScanIdent(l)
+      | "0" .. "9": ScanNumber(l)
+      | 22X: ScanString(l)
+      | "+": l.t.kind := tPLUS; INC(l.pos)
+      | "-": l.t.kind := tMINUS; INC(l.pos)
+      | "*": l.t.kind := tSTAR; INC(l.pos)
+      | "/": l.t.kind := tSLASH; INC(l.pos)
+      | "~": l.t.kind := tTILDE; INC(l.pos)
+      | "&": l.t.kind := tAMP; INC(l.pos)
+      | ".": l.t.kind := tDOT; INC(l.pos); IF l.buf[l.pos] = "." THEN INC(l.pos); l.t.kind := tDOTDOT; END
+      | ",": l.t.kind := tCOMMA; INC(l.pos)
+      | ";": l.t.kind := tSEMI; INC(l.pos)
+      | "|": l.t.kind := tVBAR; INC(l.pos)
+      | "(": IF l.buf[l.pos+1] = "*" THEN ScanComment(l) ELSE l.t.kind := tLPAREN; INC(l.pos); END
+      | ")": l.t.kind := tRPAREN; INC(l.pos)
+      | "[": l.t.kind := tLBRACK; INC(l.pos)
+      | "]": l.t.kind := tRBRACK; INC(l.pos)
+      | "{": l.t.kind := tLBRACE; INC(l.pos)
+      | "}": l.t.kind := tRBRACE; INC(l.pos)
+      | ":": l.t.kind := tCOLON; INC(l.pos); IF l.buf[l.pos] = "=" THEN INC(l.pos); l.t.kind := tASSIGN; END
+      | "^": l.t.kind := tCARET; INC(l.pos)
+      | "=": l.t.kind := tEQ; INC(l.pos)
+      | "#": l.t.kind := tPOUND; INC(l.pos)
+      | "<": l.t.kind := tLT; INC(l.pos); IF l.buf[l.pos] = "=" THEN INC(l.pos); l.t.kind := tLTEQ; END
+      | ">": l.t.kind := tGT; INC(l.pos); IF l.buf[l.pos] = "=" THEN INC(l.pos); l.t.kind := tGTEQ; END
+    END;
+  UNTIL l.t.kind >= 0;
+END NextToken;
+
 PROCEDURE InitTokenNames;
 BEGIN
   TokenNames[tARRAY]        :=  "ARRAY";
@@ -542,7 +579,7 @@ VAR
   l :Lexer;
 BEGIN
   LexerInitFromString(l, "(* hello (*0ffffh *)000H*) 12345 hello world");
-  ScanComment(l);
+  NextToken(l);
   Out.Str("["); Out.StrI(l.buf, l.pos); Out.Str("]"); Out.Ln;
 END TestLexer;
 
