@@ -407,8 +407,9 @@ BEGIN
   REPEAT
     IF (l.buf[l.pos] = "(") & (l.buf[l.pos+1] = "*") THEN
       ScanComment(l)
+    ELSE
+      INC(l.pos);
     END;
-    INC(l.pos);
   UNTIL (l.buf[l.pos] = 0X) OR (l.buf[l.pos] = "*") & (l.buf[l.pos+1] = ")");
   IF l.buf[l.pos] = 0X THEN
     l.pos := start;
@@ -583,6 +584,8 @@ BEGIN
       101 102 (103)Wow 104Whoa
       + - * / ~ & . , ; | ( ) [ ] { } := ^ = # < >
       <= >=  .. 10..20
+      (* totally (* skipped *)*)
+      XOR
   ");
   NextToken(l);
   ASSERT(l.t.kind = tINT);
@@ -616,6 +619,8 @@ BEGIN
   NextToken(l);
   ASSERT(l.t.kind = tINT);
   ASSERT(l.t.iVal = 20);
+  NextToken(l);
+  ASSERT(l.t.kind = tXOR);
   NextToken(l);
   ASSERT(l.t.kind = tEOF);
   NextToken(l);
