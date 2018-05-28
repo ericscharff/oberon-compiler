@@ -5,7 +5,7 @@ LIBS=$(shell pkg-config glib-2.0 --libs)
 run: out.prg
 	./out.prg
 
-out.prg: out.c
+out.prg: out.c runtime.c
 	$(CC) -g -Wall -Wextra -Wpedantic -o $(@) out.c
 
 out.c: oberon Lex.ob

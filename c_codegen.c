@@ -807,20 +807,7 @@ void gen_decl(Decl *d) {
 }
 
 void generate_c_code(Type **types, Decl **decls) {
-  gen_str("#include <assert.h>\n");
-  gen_str("#include <stdbool.h>\n");
-  gen_str("#include <stdio.h>\n");
-  gen_str("#include <stdlib.h>\n");
-  gen_str("#include <string.h>\n\n");
-  gen_str("#define ASSERT assert\n\n");
-  gen_str("int make_set_range(int s, int e) {\n");
-  gen_str("  int r = 0;\n");
-  gen_str("  while (s <= e) {\n");
-  gen_str("    r |= 1 << s;\n");
-  gen_str("    s++;\n");
-  gen_str("  }\n");
-  gen_str("  return r;\n");
-  gen_str("}\n\n");
+  gen_str("#include \"runtime.c\"\n\n");
 
   for (size_t i = 0; i < buf_len(types); i++) {
     gen_typedef(types[i], types[i]->package_name, types[i]->name);
