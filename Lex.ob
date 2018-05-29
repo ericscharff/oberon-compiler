@@ -232,8 +232,10 @@ BEGIN
   StringInternRange(sp, "XOR", 0, 9);
 END AddKeywords;
 
-PROCEDURE Error(l :Lexer; s :ARRAY OF CHAR);
+PROCEDURE Error(VAR l :Lexer; s :ARRAY OF CHAR);
 BEGIN
+  l.buf[l.pos] := 0X;
+  l.buf[l.pos+1] := 0X;
   Out.Str("Err!");
   Out.StrI(l.sp.buf, l.fileName);
   Out.Str("!");
@@ -242,7 +244,7 @@ BEGIN
   Out.Str(s);
 END Error;
 
-PROCEDURE ErrorLn(l :Lexer; s :ARRAY OF CHAR);
+PROCEDURE ErrorLn(VAR l :Lexer; s :ARRAY OF CHAR);
 BEGIN
   Error(l, s);
   Out.Ln;
@@ -573,6 +575,7 @@ BEGIN
   ASSERT(StringIntern(sp, "A") = 0);
   ASSERT(StringIntern(sp, "PROCEDURE") = 10);
   ASSERT(StringIntern(sp, "B") = 20);
+  Out.PrintLn("String pool test complete");
 END TestPool;
 
 PROCEDURE TestLexer;
@@ -580,6 +583,13 @@ VAR
   l :Lexer;
   k :INTEGER;
 BEGIN
+  (* Error cases *)
+  Out.PrintLn("Errors below are expected");
+  LexerInitFromString(l, "0C "); NextToken(l);
+  LexerInitFromString(l, "100X"); NextToken(l);
+  LexerInitFromString(l, "   "); l.buf[0] := 22X; NextToken(l);
+  LexerInitFromString(l, "(* "); NextToken(l);
+  Out.PrintLn("Finished with expected errors");
   LexerInitFromString(l, "
       Test Hello World Test
   ARRAY       BEGIN       BY          CASE        CONST
@@ -589,6 +599,7 @@ BEGIN
   OF          OR          POINTER     PROCEDURE   RECORD
   REPEAT      RETURN      THEN        TO          TRUE
   TYPE        UNTIL       VAR         WHILE       XOR
+      0FFD2H 041X
       101 102 (103)Wow 104Whoa
       + - * / ~ & . , ; | ( ) [ ] { } := ^ = # < >
       <= >=  .. 10..20
@@ -611,6 +622,13 @@ BEGIN
     NextToken(l);
     ASSERT(l.t.kind = k)
   END;
+  NextToken(l);
+  ASSERT(l.t.kind = tINT);
+  ASSERT(l.t.iVal = 65490);
+  ASSERT(l.t.iVal = 0FFD2H);
+  NextToken(l);
+  ASSERT(l.t.kind = tSTRING);
+  ASSERT(l.sp.buf[l.t.sVal] = "A");
   NextToken(l);
   ASSERT(l.t.kind = tINT);
   ASSERT(l.t.iVal = 101);
@@ -649,6 +667,7 @@ BEGIN
   ASSERT(l.t.kind = tEOF);
   NextToken(l);
   ASSERT(l.t.kind = tEOF);
+  Out.PrintLn("Lexer test complete");
 END TestLexer;
 
 BEGIN
