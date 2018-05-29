@@ -581,12 +581,36 @@ VAR
   k :INTEGER;
 BEGIN
   LexerInitFromString(l, "
+      Test Hello World Test
+  ARRAY       BEGIN       BY          CASE        CONST
+  DIV         DO          ELSE        ELSIF       END
+  FALSE       FOR         IF          IMPORT      IN
+  IS          MOD         MODULE      NATIVE      NIL
+  OF          OR          POINTER     PROCEDURE   RECORD
+  REPEAT      RETURN      THEN        TO          TRUE
+  TYPE        UNTIL       VAR         WHILE       XOR
       101 102 (103)Wow 104Whoa
       + - * / ~ & . , ; | ( ) [ ] { } := ^ = # < >
       <= >=  .. 10..20
       (* totally (* skipped *)*)
       XOR
   ");
+  (* Put quotes around Hello World *)
+  l.buf[11] := 22X;
+  l.buf[23] := 22X;
+  NextToken(l);
+  ASSERT(l.t.kind = tIDENT);
+  ASSERT(l.t.sVal = StringIntern(l.sp, "Test"));
+  NextToken(l);
+  ASSERT(l.t.kind = tSTRING);
+  ASSERT(l.t.sVal = StringIntern(l.sp, "Hello World"));
+  NextToken(l);
+  ASSERT(l.t.kind = tIDENT);
+  ASSERT(l.t.sVal = StringIntern(l.sp, "Test"));
+  FOR k := tARRAY TO tXOR DO
+    NextToken(l);
+    ASSERT(l.t.kind = k)
+  END;
   NextToken(l);
   ASSERT(l.t.kind = tINT);
   ASSERT(l.t.iVal = 101);
