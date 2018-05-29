@@ -191,6 +191,7 @@ const char *lc_keyword_while;
 const char *lc_keyword_xor;
 
 // Builtin procedures
+const char *builtin_abs;
 const char *builtin_chr;
 const char *builtin_dec;
 const char *builtin_inc;
@@ -343,6 +344,7 @@ void init_keywords(void) {
   G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_while, keyword_while);
   G_HASH_INSERT(lower_to_upper_keywords, lc_keyword_xor, keyword_xor);
 
+  builtin_abs = string_intern("ABS");
   builtin_chr = string_intern("CHR");
   builtin_dec = string_intern("DEC");
   builtin_inc = string_intern("INC");
@@ -851,50 +853,31 @@ bool match_token(TokenKind kind) {
 void assert_token_real(float expected) {
   next_token();
   assert(token.kind == TOKEN_REAL);
-  printf("Checking real token %f against %f\n", token.rVal, expected);
   assert(token.rVal == expected);
 }
 
 void assert_token_int(int expected) {
   next_token();
   assert(token.kind == TOKEN_INT);
-  printf("Checking int token %d against %d\n", token.iVal, expected);
   assert(token.iVal == expected);
 }
 
 void assert_token_string(const char *expected) {
   next_token();
   assert(token.kind == TOKEN_STRING);
-  printf("Checking string token %s against %s\n", token.sVal, expected);
   assert(strcmp(token.sVal, expected) == 0);
 }
 
 void assert_token_ident(const char *expected) {
   next_token();
   assert(token.kind == TOKEN_IDENT);
-  printf("Checking identifier token %s against %s\n", token.sVal, expected);
   assert(strcmp(token.sVal, expected) == 0);
 }
 
 void assert_token_keyword(const char *expected) {
   next_token();
   assert(token.kind == TOKEN_KEYWORD);
-  printf("Checking keyword token %s against %s\n", token.sVal, expected);
   assert(strcmp(token.sVal, expected) == 0);
-}
-
-void lex_test_dump_file(const char *fileName) {
-  printf("Parsing %s\n", fileName);
-  char *contents = read_file(fileName);
-  if (contents) {
-    init_stream(fileName, contents);
-    while (token.kind != TOKEN_EOF) {
-      next_token();
-      printf("%d\n", token.kind);
-    }
-    free(contents);
-  }
-  printf("Done.\n");
 }
 
 void lex_test(void) {
@@ -974,4 +957,5 @@ void lex_test(void) {
   next_token();
   assert(token.kind == TOKEN_DOTDOT);
   assert_token_int(20);
+  printf("PASS: lex_test\n");
 }

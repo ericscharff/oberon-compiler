@@ -779,7 +779,6 @@ Decl *get_imported_decls(const char *moduleName) {
       if (importCache.import[i].kind == DECL_INCOMPLETE) {
         error("%s creates a circular import dependency", moduleName);
       } else {
-        printf("using cached module import %s\n", moduleName);
         return importCache.import[i].imported_decls;
       }
     }
@@ -790,7 +789,6 @@ Decl *get_imported_decls(const char *moduleName) {
   importCache.import[index].kind = DECL_INCOMPLETE;
   char fileName[1024];
   snprintf(fileName, sizeof(fileName), "%s.ob", moduleName);
-  printf("Importing %s.\n", fileName);
   char *contents = read_file(fileName);
   assert(contents);
   Token oldToken = token;
@@ -820,7 +818,6 @@ Module *parse_test_file(const char *fileName) {
   init_stream(fileName, contents);
   next_token();
   Module *m = parse_module();
-  dbg_dump_scope(m);
   free(contents);
   return m;
 }
@@ -844,9 +841,10 @@ void parse_test(void) {
               "MODULE abc; CONST k=1*2+3+4; TYPE MySet* = SET; FooRec = ARRAY "
               "5, 10, 15, 20 OF INTEGER; q* = INTEGER; r = q; END abc.");
   next_token();
-  dbg_dump_scope(parse_module());
+  parse_module();
   assert(current_scope == &globalScope);
   parse_test_file("Test.ob");
   exit_scope("");
   assert(current_scope == NULL);
+  printf("PASS: parse_test\n");
 }

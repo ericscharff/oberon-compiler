@@ -81,7 +81,7 @@ void gen_type(Type *t, const char *packageName, const char *name) {
           t = t->array_type.element_type;
         }
         break;
-                       }
+      }
       case TYPE_RECORD:
         gen_str("struct ");
         gen_qname(packageName, name);
@@ -174,7 +174,7 @@ void gen_val(Val val) {
       buf_printf(codegenBuf, "%d", val.iVal);
       break;
     case VAL_REAL:
-      buf_printf(codegenBuf, "%f", val.rVal);
+      buf_printf(codegenBuf, "%g", val.rVal);
       break;
     case VAL_SET:
       buf_printf(codegenBuf, "%d", val.setVal);
@@ -354,6 +354,16 @@ void gen_binary_expr(TokenKind op, Expr *lhs, Expr *rhs) {
   }
 }
 
+void gen_paren_expr(Expr *e) {
+  if (e->kind == EXPR_BINARY) {
+    gen_expr(e);
+  } else {
+    gen_str("(");
+    gen_expr(e);
+    gen_str(")");
+  }
+}
+
 void gen_builtin_procedure(Expr *proc, Expr **args) {
   if (proc->type->name == builtin_ord) {
     if (is_one_char_string(args[0])) {
@@ -365,6 +375,9 @@ void gen_builtin_procedure(Expr *proc, Expr **args) {
     gen_str("((char)");
     gen_expr(args[0]);
     gen_str(")");
+  } else if (proc->type->name == builtin_abs) {
+    gen_str("oberon_abs");
+    gen_paren_expr(args[0]);
   } else if (proc->type->name == builtin_dec) {
     // DEC(x) --> x--
     // DEC(x, n) --> x -= n
@@ -398,9 +411,7 @@ void gen_builtin_procedure(Expr *proc, Expr **args) {
   }
 }
 
-bool is_record(Type *t) {
-  return t->kind == TYPE_RECORD;
-}
+bool is_record(Type *t) { return t->kind == TYPE_RECORD; }
 
 void gen_proccall(Expr *proc, Expr **args) {
   assert(proc);
@@ -411,17 +422,21 @@ void gen_proccall(Expr *proc, Expr **args) {
     gen_str("(");
     for (size_t i = 0; i < buf_len(args); i++) {
       bool recordFormal = is_record(proc->type->procedure_type.params[i].type);
-      bool needCast = recordFormal && proc->type->procedure_type.params[i].type != args[i]->type;
+      bool needCast =
+          recordFormal &&
+          proc->type->procedure_type.params[i].type != args[i]->type;
       if (needCast) {
         gen_str("(");
         gen_type(proc->type->procedure_type.params[i].type, "", "");
         gen_str("*)(");
       }
-      if (proc->type->procedure_type.params[i].is_var_parameter || recordFormal) {
+      if (proc->type->procedure_type.params[i].is_var_parameter ||
+          recordFormal) {
         gen_str("&(");
       }
       gen_expr(args[i]);
-      if (proc->type->procedure_type.params[i].is_var_parameter || recordFormal) {
+      if (proc->type->procedure_type.params[i].is_var_parameter ||
+          recordFormal) {
         gen_str(")");
       }
       if (needCast) {
@@ -502,9 +517,9 @@ void gen_expr(Expr *e) {
 void gen_elseifs(ElseIf *elseifs) {
   for (size_t i = 0; i < buf_len(elseifs); i++) {
     geni();
-    gen_str("} else if (");
-    gen_expr(elseifs[i].cond);
-    gen_str(") {\n");
+    gen_str("} else if ");
+    gen_paren_expr(elseifs[i].cond);
+    gen_str(" {\n");
     codegenIndent++;
     gen_statements(elseifs[i].body);
     codegenIndent--;
@@ -524,12 +539,12 @@ int get_case_val(Expr *e) {
 }
 
 void gen_case_statement(Statement *s) {
-  gen_str("switch (");
-  gen_expr(s->case_stmt.cond);
-  gen_str(") {\n");
-  for (size_t i=0; i < buf_len(s->case_stmt.case_cases); i++) {
+  gen_str("switch ");
+  gen_paren_expr(s->case_stmt.cond);
+  gen_str(" {\n");
+  for (size_t i = 0; i < buf_len(s->case_stmt.case_cases); i++) {
     codegenIndent++;
-    for (size_t j=0; j < buf_len(s->case_stmt.case_cases[i].cond); j++) {
+    for (size_t j = 0; j < buf_len(s->case_stmt.case_cases[i].cond); j++) {
       Expr *e = s->case_stmt.case_cases[i].cond[j];
       int lowVal;
       int highVal;
@@ -540,7 +555,7 @@ void gen_case_statement(Statement *s) {
         lowVal = get_case_val(e);
         highVal = lowVal;
       }
-      for (int c=lowVal; c <= highVal; c++) {
+      for (int c = lowVal; c <= highVal; c++) {
         geni();
         gen_str("case ");
         if (is_integer_type(s->case_stmt.cond->type)) {
@@ -572,9 +587,9 @@ void gen_statement(Statement *s) {
       assert(0);
       break;
     case STMT_IF:
-      gen_str("if (");
-      gen_expr(s->if_stmt.cond);
-      gen_str(") {\n");
+      gen_str("if ");
+      gen_paren_expr(s->if_stmt.cond);
+      gen_str(" {\n");
       codegenIndent++;
       gen_statements(s->if_stmt.then_clause);
       codegenIndent--;
@@ -610,9 +625,9 @@ void gen_statement(Statement *s) {
         geni();
         gen_str("}\n");
       } else {
-        gen_str("while (");
-        gen_expr(s->while_stmt.cond);
-        gen_str(") {\n");
+        gen_str("while ");
+        gen_paren_expr(s->while_stmt.cond);
+        gen_str(" {\n");
         codegenIndent++;
         gen_statements(s->while_stmt.body);
         codegenIndent--;
@@ -784,13 +799,15 @@ void gen_decl(Decl *d) {
           // This is an interesting special case. An open array is passed
           // by pointer already. Adding VAR to it simply makes it readonly.
           // Thus, if something is a var param **and** an open array, pretend
-          // it isn't a var param. This means tweaking the procedure declaration,
-          // to avoid weird things being generated later.
-          if (d->type->procedure_type.params[i].is_var_parameter && d->type->procedure_type.params[i].is_open_array) {
+          // it isn't a var param. This means tweaking the procedure
+          // declaration, to avoid weird things being generated later.
+          if (d->type->procedure_type.params[i].is_var_parameter &&
+              d->type->procedure_type.params[i].is_open_array) {
             d->type->procedure_type.params[i].is_var_parameter = false;
           }
 
-          if (d->type->procedure_type.params[i].is_var_parameter || is_record(formal)) {
+          if (d->type->procedure_type.params[i].is_var_parameter ||
+              is_record(formal)) {
             varParam.kind = TYPE_POINTER;
             varParam.name = NULL;
             varParam.package_name = NULL;
@@ -868,6 +885,6 @@ void generate_c_code(Type **types, Decl **decls) {
 void gen_test(void) {
   resolve_test_file();
   generate_c_code(gReachableTypes, gReachableDecls);
-  puts(codegenBuf);
   write_file("out.c", codegenBuf);
+  printf("PASS: gen_test\n");
 }

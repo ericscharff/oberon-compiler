@@ -301,4 +301,5 @@ void type_test(void) {
   assert(strcmp(rec->record_type.fields[1].name, "beta") == 0);
   assert(rec->record_type.fields[1].type == &realType);
   assert(rec->record_type.fields[1].is_exported == false);
+  printf("PASS: type_test\n");
 }

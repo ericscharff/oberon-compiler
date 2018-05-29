@@ -102,4 +102,5 @@ void buf_test(void) {
   assert(strcmp(str, "One: 1\nHex: 0x12345678\n") == 0);
   buf_free(str);
   assert(str == NULL);
+  printf("PASS: buf_test\n");
 }

@@ -97,7 +97,6 @@ TYPE
   END;
   Token       = RECORD
     kind :INTEGER;
-    pos  :INTEGER;
     sVal :PoolIndex;
     iVal :INTEGER;
     rVal :REAL;
@@ -252,15 +251,15 @@ END ErrorLn;
 
 PROCEDURE Next(VAR l :Lexer; VAR c :CHAR);
 BEGIN
-  c := l.buf[l.pos];
   INC(l.pos);
+  c := l.buf[l.pos];
 END Next;
 
 PROCEDURE LexerInitFromFile(VAR l :Lexer; fileName :ARRAY OF CHAR);
 BEGIN
   PoolInit(l.sp);
   AddKeywords(l.sp);
-  l.buf := "TODO"; (* TODO *)
+  Out.ReadFile(fileName, l.buf);
   l.fileName := StringIntern(l.sp, fileName);
   l.pos := 0;
 END LexerInitFromFile;
@@ -297,6 +296,59 @@ BEGIN
   END;
 END ScanIdent;
 
+PROCEDURE Ten(e :INTEGER) :REAL;
+VAR
+  r :REAL;
+BEGIN
+  ASSERT(e >= 0);
+  r := 1.0;
+  WHILE e > 0 DO
+    r := r * 10.0;
+    DEC(e)
+  END;
+  RETURN r
+END Ten;
+
+PROCEDURE StrToReal(s :ARRAY OF CHAR; idx :INTEGER) :REAL;
+VAR
+  digits, e, exp, sgn :INTEGER;
+  r :REAL;
+BEGIN
+  digits := 0;
+  e := 0;
+  exp := 0;
+  sgn := 1;
+  REPEAT
+    digits :=  digits * 10 + (ORD(s[idx]) - ORD("0"));
+    INC(idx);
+  UNTIL s[idx] = ".";
+  INC(idx);
+  WHILE (s[idx] >= "0") & (s[idx] <= "9") DO
+    DEC(e);
+    digits :=  digits * 10 + (ORD(s[idx]) - ORD("0"));
+    INC(idx);
+  END;
+  IF (s[idx] = "e") OR (s[idx] = "E") THEN
+    INC(idx);
+    IF s[idx] = "-" THEN
+      sgn := -1;
+      INC(idx);
+    END;
+    WHILE (s[idx] >= "0") & (s[idx] <= "9") DO
+      exp := exp * 10 + (ORD(s[idx]) - ORD("0"));
+      INC(idx);
+    END;
+    exp := exp * sgn;
+    e := e + exp;
+  END;
+  IF e > 0 THEN
+    r := FLT(digits) * Ten(e)
+  ELSE
+    r := FLT(digits) / Ten(-e)
+  END;
+  RETURN r
+END StrToReal;
+
 PROCEDURE ScanNumber(VAR l :Lexer);
 VAR
   ch          :CHAR;
@@ -308,14 +360,14 @@ BEGIN
   l.t.kind := tINT;
   base := 10;
   needHorX := FALSE;
-  ch := l.buf[l.pos];
+  Next(l, ch);
   WHILE (ch >= "0") & (ch <= "9") OR
         (ch >= "A") & (ch <= "F") OR
         (ch >= "a") & (ch <= "f") DO
     IF (ch >= "A") & (ch <= "F") OR (ch >= "a") & (ch <= "f") THEN
       needHorX := TRUE;
     END;
-    INC(l.pos); ch := l.buf[l.pos];
+    Next(l, ch);;
   END;
   (* Got letters and hex digits. Could be hex, char, or floating point *)
   IF (ch = "X") OR (ch = "x") THEN
@@ -344,25 +396,27 @@ BEGIN
       Next(l, ch);;
     END;
     l.t.kind := tREAL;
-    l.t.rVal := 0.0; (* TODO *)
-    (* RETURN *)
   ELSIF needHorX THEN
     ErrorLn(l, "Hex digit must be followed by H or X");
   END;
   l.t.iVal := 0;
-  WHILE start # l.pos DO
-    ch := l.buf[start];
-    IF (ch >= "0") & (ch <= "9") THEN
-      l.t.iVal := l.t.iVal * base + (ORD(ch) - ORD("0"));
-    ELSIF (ch >= "A") & (ch <= "F") THEN
-      l.t.iVal := l.t.iVal * base + (ORD(ch) - ORD("A") + 10);
-    ELSIF (ch >= "a") & (ch <= "f") THEN
-      l.t.iVal := l.t.iVal * base + (ORD(ch) - ORD("a") + 10);
-    ELSIF (ch = "H") OR (ch <= "h") OR (ch = "X") OR (ch = "x") THEN
-    ELSE
-      ASSERT(FALSE);
+  IF l.t.kind = tREAL THEN
+    l.t.rVal := StrToReal(l.buf, start);
+  ELSE
+    WHILE start # l.pos DO
+      ch := l.buf[start];
+      IF (ch >= "0") & (ch <= "9") THEN
+        l.t.iVal := l.t.iVal * base + (ORD(ch) - ORD("0"));
+      ELSIF (ch >= "A") & (ch <= "F") THEN
+        l.t.iVal := l.t.iVal * base + (ORD(ch) - ORD("A") + 10);
+      ELSIF (ch >= "a") & (ch <= "f") THEN
+        l.t.iVal := l.t.iVal * base + (ORD(ch) - ORD("a") + 10);
+      ELSIF (ch = "H") OR (ch = "h") OR (ch = "X") OR (ch = "x") THEN
+      ELSE
+        ASSERT(FALSE);
+      END;
+      INC(start);
     END;
-    INC(start);
   END;
   IF l.t.kind = tSTRING THEN
     IF l.t.iVal > 255 THEN
@@ -384,15 +438,14 @@ VAR
   ch :CHAR;
   start :INTEGER;
 BEGIN
-  Next(l, ch);
-  ASSERT(ch = quote);
   start := l.pos;
   REPEAT
     Next(l, ch)
   UNTIL (ch = 0X) OR (ch = quote);
   IF ch = quote THEN
     l.t.kind := tSTRING;
-    l.t.sVal := StringInternRange(l.sp, l.buf, start, l.pos - start - 1);
+    l.t.sVal := StringInternRange(l.sp, l.buf, start + 1, l.pos - start - 1);
+    Next(l, ch);
   ELSE
     l.pos := start;
     ErrorLn(l, "Unterminated string");
@@ -575,7 +628,7 @@ BEGIN
   ASSERT(StringIntern(sp, "A") = 0);
   ASSERT(StringIntern(sp, "PROCEDURE") = 10);
   ASSERT(StringIntern(sp, "B") = 20);
-  Out.PrintLn("String pool test complete");
+  Out.PrintLn("PASS: String pool test");
 END TestPool;
 
 PROCEDURE TestLexer;
@@ -584,12 +637,13 @@ VAR
   k :INTEGER;
 BEGIN
   (* Error cases *)
-  Out.PrintLn("Errors below are expected");
+  Out.Mute;
   LexerInitFromString(l, "0C "); NextToken(l);
   LexerInitFromString(l, "100X"); NextToken(l);
   LexerInitFromString(l, "   "); l.buf[0] := 22X; NextToken(l);
   LexerInitFromString(l, "(* "); NextToken(l);
-  Out.PrintLn("Finished with expected errors");
+  Out.Unmute;
+  (* Regular cases *)
   LexerInitFromString(l, "
       Test Hello World Test
   ARRAY       BEGIN       BY          CASE        CONST
@@ -650,8 +704,18 @@ BEGIN
   ASSERT(l.t.iVal = 104);
   NextToken(l);
   ASSERT(l.t.kind = tIDENT);
-  (* Ignore the four REAL tokens *)
-  FOR k := 1 TO 4 DO NextToken(l) END;
+  NextToken(l);
+  ASSERT(l.t.kind = tREAL);
+  ASSERT(ABS(l.t.rVal - 0.1) < 0.00001);
+  NextToken(l);
+  ASSERT(l.t.kind = tREAL);
+  ASSERT(ABS(l.t.rVal - 0.1e4) < 0.00001);
+  NextToken(l);
+  ASSERT(l.t.kind = tREAL);
+  ASSERT(ABS(l.t.rVal - 0.08e-3) < 0.00001);
+  NextToken(l);
+  ASSERT(l.t.kind = tREAL);
+  ASSERT(ABS(l.t.rVal - 128.3) < 0.00001);
   FOR k := tPLUS TO tDOTDOT DO
     NextToken(l);
     ASSERT(l.t.kind = k);
@@ -670,7 +734,22 @@ BEGIN
   ASSERT(l.t.kind = tEOF);
   NextToken(l);
   ASSERT(l.t.kind = tEOF);
-  Out.PrintLn("Lexer test complete");
+  LexerInitFromFile(l, "Lex.ob");
+  Out.Mute;
+  REPEAT
+    NextToken(l);
+    Out.Str(TokenNames[l.t.kind]);
+    IF l.t.kind = tINT THEN
+      Out.Str(" ");
+      Out.Int(l.t.iVal);
+    ELSIF (l.t.kind = tIDENT) OR (l.t.kind = tSTRING) THEN
+      Out.Str(" ");
+      Out.StrI(l.sp.buf, l.t.sVal);
+    END;
+    Out.Ln;
+  UNTIL l.t.kind = tEOF;
+  Out.Unmute;
+  Out.PrintLn("PASS: Lexer test");
 END TestLexer;
 
 BEGIN

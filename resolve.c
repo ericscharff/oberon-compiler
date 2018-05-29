@@ -14,6 +14,7 @@ Decl **gReachableDecls = NULL;
 Type **gReachableTypes = NULL;
 
 // Special functions
+Decl absDecl;
 Decl chrDecl;
 Decl decDecl;
 Decl incDecl;
@@ -476,7 +477,8 @@ void resolve_binary_expr(Expr *e) {
 }
 
 bool decl_is_open_array(Decl *d) {
-  return d->type->kind == TYPE_ARRAY && d->type->array_type.num_elements_expr == NULL;
+  return d->type->kind == TYPE_ARRAY &&
+         d->type->array_type.num_elements_expr == NULL;
 }
 
 void resolve_identref(Expr *e) {
@@ -762,6 +764,19 @@ Type *resolve_builtin_procedure(Expr *proc, Expr **actualParams) {
       errorloc(proc->loc, "CHR expects 1 argument, got %d",
                buf_len(actualParams));
     }
+  } else if (proc->type->name == builtin_abs) {
+    if (buf_len(actualParams) == 1) {
+      Expr *e = actualParams[0];
+      resolve_expr(e);
+      if (is_integer_type(e->type) || e->type == &realType) {
+        return e->type;
+      } else {
+        errorloc(e->loc, "CHR expects INTEGER or REAL, got %s", e->type->name);
+      }
+    } else {
+      errorloc(proc->loc, "ABS expects 1 argument, got %d",
+               buf_len(actualParams));
+    }
   } else if (proc->type->name == builtin_inc) {
     resolve_incdec(proc, actualParams, "INC");
   } else if (proc->type->name == builtin_dec) {
@@ -824,7 +839,8 @@ void resolve_fieldref(Expr *e) {
       if (recordType->record_type.fields[i].name == fieldName) {
         e->type = recordType->record_type.fields[i].type;
         e->is_assignable = e->fieldref.expr->is_assignable;
-        if (!(recordType->record_type.fields[i].is_exported || recordType->package_name == gCurrentModule)) {
+        if (!(recordType->record_type.fields[i].is_exported ||
+              recordType->package_name == gCurrentModule)) {
           errorloc(e->loc, "RECORD field %s is private", fieldName);
         }
         return;
@@ -1213,13 +1229,7 @@ void resolve_statements(Statement *body) {
 
 void resolve_all_decls(void) {
   for (size_t i = 0; i < buf_len(gReachableTypes); i++) {
-    printf("Final type %s.%s\n", gReachableTypes[i]->package_name,
-           gReachableTypes[i]->name);
     gReachableTypes[i]->resolved = false;
-  }
-  for (size_t i = 0; i < buf_len(gReachableDecls); i++) {
-    printf("Final decl %s.%s\n", gReachableDecls[i]->package_name,
-           gReachableDecls[i]->name);
   }
 }
 
@@ -1240,6 +1250,7 @@ void resolve_push_specials(void) {
   push_builtin(&newDecl, e, builtin_new);
   push_builtin(&ordDecl, e, builtin_ord);
   push_builtin(&chrDecl, e, builtin_chr);
+  push_builtin(&absDecl, e, builtin_abs);
   // Ought to be SYSTEM.VAL - but VAL is so funky...
   push_builtin(&valDecl, e, builtin_val);
 }
@@ -1355,6 +1366,7 @@ void resolve_test_static(void) {
   resolve_module(m);
   exit_scope("__test__");
   assert(current_scope == NULL);
+  printf("PASS: resolve_test\n");
 }
 
 void resolve_test(void) { resolve_test_static(); }

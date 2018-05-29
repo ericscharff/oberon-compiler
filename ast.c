@@ -852,4 +852,5 @@ void ast_test(void) {
   assert(current_scope == &outer);
   exit_scope(NULL);
   assert(current_scope == NULL);
+  printf("PASS: ast_test\n");
 }

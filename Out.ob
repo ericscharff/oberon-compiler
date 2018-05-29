@@ -11,4 +11,8 @@ BEGIN
   Ln
 END PrintLn;
 
+NATIVE PROCEDURE ReadFile*(fileName :ARRAY OF CHAR; buf :ARRAY OF CHAR); END ReadFile;
+NATIVE PROCEDURE Mute*; END Mute;
+NATIVE PROCEDURE Unmute*; END Unmute;
+
 END Out.
