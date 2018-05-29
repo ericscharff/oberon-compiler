@@ -308,7 +308,7 @@ BEGIN
   l.t.kind := tINT;
   base := 10;
   needHorX := FALSE;
-  Next(l, ch);
+  ch := l.buf[l.pos];
   WHILE (ch >= "0") & (ch <= "9") OR
         (ch >= "A") & (ch <= "F") OR
         (ch >= "a") & (ch <= "f") DO
@@ -327,7 +327,7 @@ BEGIN
     base := 16;
     needHorX := FALSE;
     Next(l, ch);;
-  ELSIF (ch = ".") & (l.buf[l.pos] # ".") THEN
+  ELSIF (ch = ".") & (l.buf[l.pos+1] # ".") THEN
     (* Special case - 10..20 is 10 TOKEN_DOTDOT 20 *)
     Next(l, ch);;
     (* mantissa *)
@@ -601,6 +601,7 @@ BEGIN
   TYPE        UNTIL       VAR         WHILE       XOR
       0FFD2H 041X
       101 102 (103)Wow 104Whoa
+      0.1 0.1E4 0.08E-3 12.83e1
       + - * / ~ & . , ; | ( ) [ ] { } := ^ = # < >
       <= >=  .. 10..20
       (* totally (* skipped *)*)
@@ -649,6 +650,8 @@ BEGIN
   ASSERT(l.t.iVal = 104);
   NextToken(l);
   ASSERT(l.t.kind = tIDENT);
+  (* Ignore the four REAL tokens *)
+  FOR k := 1 TO 4 DO NextToken(l) END;
   FOR k := tPLUS TO tDOTDOT DO
     NextToken(l);
     ASSERT(l.t.kind = k);
