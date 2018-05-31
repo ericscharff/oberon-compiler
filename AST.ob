@@ -39,7 +39,9 @@ BEGIN
       p := p.next;
     END;
     IF p.name = name THEN
-      Lex.ErrorLn(l, "already defined");
+      Lex.Error(l, "");
+      Lex.OutStr(l, name);
+      Out.PrintLn(" already defined");
     ELSE
       d.next := p.next;
       p.next := d;
@@ -55,6 +57,10 @@ VAR
 BEGIN
   Lex.LexerInitFromString(l, "");
   d := NIL;
+  AddDecl(l, d, Lex.DebugLexerAddString(l, "alpha"));
+  AddDecl(l, d, Lex.DebugLexerAddString(l, "beta"));
+  AddDecl(l, d, Lex.DebugLexerAddString(l, "gamma"));
+  AddDecl(l, d, Lex.DebugLexerAddString(l, "delta"));
   AddDecl(l, d, Lex.DebugLexerAddString(l, "alpha"));
   AddDecl(l, d, Lex.DebugLexerAddString(l, "beta"));
   AddDecl(l, d, Lex.DebugLexerAddString(l, "gamma"));

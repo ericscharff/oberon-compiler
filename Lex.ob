@@ -232,12 +232,17 @@ BEGIN
   StringInternRange(sp, "XOR", 0, 9);
 END AddKeywords;
 
+PROCEDURE OutStr*(l :Lexer; s :PoolIndex);
+BEGIN
+  Out.StrI(l.sp.buf, s);
+END OutStr;
+
 PROCEDURE Error*(VAR l :Lexer; s :ARRAY OF CHAR);
 BEGIN
   l.buf[l.pos] := 0X;
   l.buf[l.pos+1] := 0X;
   Out.Str("Err!");
-  Out.StrI(l.sp.buf, l.fileName);
+  OutStr(l, l.fileName);
   Out.Str("!");
   Out.Int(l.pos);
   Out.Str("!");
@@ -714,7 +719,7 @@ BEGIN
       Out.Int(l.t.iVal);
     ELSIF (l.t.kind = tIDENT) OR (l.t.kind = tSTRING) THEN
       Out.Str(" ");
-      Out.StrI(l.sp.buf, l.t.sVal);
+      OutStr(l, l.t.sVal);
     END;
     Out.Ln;
   UNTIL l.t.kind = tEOF;
