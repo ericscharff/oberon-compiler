@@ -531,7 +531,11 @@ BEGIN
   e := ExpectIdentifier();
   IF 0 = e THEN
     (* TODO *)
-    Lex.ErrorLn(l, "Procedure end name must match start");
+    Lex.Error(l, "Procedure end name [");
+    Lex.OutStr(l, e);
+    Out.Str("] must match start name [");
+    (* Lex.OutStr(l, s); *)
+    Out.PrintLn("]");
   END;
 END ParseProcedureDeclaration;
 
@@ -596,7 +600,11 @@ BEGIN
   ExpectToken(Lex.tEND);
   e := ExpectIdentifier();
   IF s # e THEN
-    Lex.ErrorLn(l, "Module end name must match start");
+    Lex.Error(l, "Module end name [");
+    Lex.OutStr(l, e);
+    Out.Str("] must match start name [");
+    Lex.OutStr(l, s);
+    Out.PrintLn("]");
   END;
   ExpectToken(Lex.tDOT);
 END ParseModule;
