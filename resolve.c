@@ -550,6 +550,10 @@ void resolve_type(Type *type) {
   }
   type->resolved = true;
   if (type->kind == TYPE_POINTER) {
+    // Pointers always need to be resolved before the things they point to,
+    // because they are usually used in circular references, hence an explicit
+    // resolution here.
+    buf_push(gReachableTypes, type);
     resolve_type(type->pointer_type.element_type);
     if (type->pointer_type.element_type->kind != TYPE_RECORD) {
       error("POINTERS must point to RECORDs");
@@ -609,7 +613,9 @@ void resolve_type(Type *type) {
       type->array_type.num_elements = 0;
     }
   }
-  buf_push(gReachableTypes, type);
+  if (type->kind != TYPE_POINTER) {
+    buf_push(gReachableTypes, type);
+  }
 }
 
 bool is_assignable_type(Type *lhs, Expr *rhs) {
@@ -1275,7 +1281,7 @@ void resolve_test_file(void) {
   init_global_defs();
   assert(current_scope == &globalScope);
   resolve_scope_push(globalScope.decls);
-  Module *m = parse_test_file("Parse.ob");
+  Module *m = parse_test_file("AST.ob");
   resolve_module(m);
   exit_scope("__topdone__");
   assert(current_scope == NULL);

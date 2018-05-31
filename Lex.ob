@@ -632,6 +632,12 @@ BEGIN
   Out.PrintLn("PASS: String pool test");
 END TestPool;
 
+(* Only for testing *)
+PROCEDURE DebugLexerAddString*(VAR l :Lexer; s :ARRAY OF CHAR) :PoolIndex;
+BEGIN
+  RETURN StringIntern(l.sp, s)
+END DebugLexerAddString;
+
 PROCEDURE TestLexer;
 VAR
   l :Lexer;
@@ -665,84 +671,39 @@ BEGIN
   (* Put quotes around Hello World *)
   l.buf[11] := 22X;
   l.buf[23] := 22X;
-  NextToken(l);
-  ASSERT(l.t.kind = tIDENT);
-  ASSERT(l.t.sVal = StringIntern(l.sp, "Test"));
-  NextToken(l);
-  ASSERT(l.t.kind = tSTRING);
-  ASSERT(l.t.sVal = StringIntern(l.sp, "Hello World"));
-  NextToken(l);
-  ASSERT(l.t.kind = tIDENT);
-  ASSERT(l.t.sVal = StringIntern(l.sp, "Test"));
-  NextToken(l);
-  ASSERT(l.t.kind = tIDENT);
-  ASSERT(l.t.sVal = StringIntern(l.sp, "alpha"));
-  NextToken(l);
-  ASSERT(l.t.kind = tDOTDOT);
-  NextToken(l);
-  ASSERT(l.t.kind = tIDENT);
-  ASSERT(l.t.sVal = StringIntern(l.sp, "beta"));
+  NextToken(l); ASSERT(l.t.kind = tIDENT); ASSERT(l.t.sVal = StringIntern(l.sp, "Test"));
+  NextToken(l); ASSERT(l.t.kind = tSTRING); ASSERT(l.t.sVal = StringIntern(l.sp, "Hello World"));
+  NextToken(l); ASSERT(l.t.kind = tIDENT); ASSERT(l.t.sVal = StringIntern(l.sp, "Test"));
+  NextToken(l); ASSERT(l.t.kind = tIDENT); ASSERT(l.t.sVal = StringIntern(l.sp, "alpha"));
+  NextToken(l); ASSERT(l.t.kind = tDOTDOT);
+  NextToken(l); ASSERT(l.t.kind = tIDENT); ASSERT(l.t.sVal = StringIntern(l.sp, "beta"));
   FOR k := tARRAY TO tXOR DO
-    NextToken(l);
-    ASSERT(l.t.kind = k)
+    NextToken(l); ASSERT(l.t.kind = k)
   END;
-  NextToken(l);
-  ASSERT(l.t.kind = tINT);
-  ASSERT(l.t.iVal = 65490);
-  ASSERT(l.t.iVal = 0FFD2H);
-  NextToken(l);
-  ASSERT(l.t.kind = tSTRING);
-  ASSERT(l.sp.buf[l.t.sVal] = "A");
-  NextToken(l);
-  ASSERT(l.t.kind = tINT);
-  ASSERT(l.t.iVal = 101);
-  NextToken(l);
-  ASSERT(l.t.kind = tINT);
-  ASSERT(l.t.iVal = 102);
-  NextToken(l);
-  ASSERT(l.t.kind = tLPAREN);
-  NextToken(l);
-  ASSERT(l.t.kind = tINT);
-  ASSERT(l.t.iVal = 103);
-  NextToken(l);
-  ASSERT(l.t.kind = tRPAREN);
-  NextToken(l);
-  ASSERT(l.t.kind = tIDENT);
-  NextToken(l);
-  ASSERT(l.t.kind = tINT);
-  ASSERT(l.t.iVal = 104);
-  NextToken(l);
-  ASSERT(l.t.kind = tIDENT);
-  NextToken(l);
-  ASSERT(l.t.kind = tREAL);
-  ASSERT(ABS(l.t.rVal - 0.1) < 0.00001);
-  NextToken(l);
-  ASSERT(l.t.kind = tREAL);
-  ASSERT(ABS(l.t.rVal - 0.1e4) < 0.00001);
-  NextToken(l);
-  ASSERT(l.t.kind = tREAL);
-  ASSERT(ABS(l.t.rVal - 0.08e-3) < 0.00001);
-  NextToken(l);
-  ASSERT(l.t.kind = tREAL);
-  ASSERT(ABS(l.t.rVal - 128.3) < 0.00001);
+  NextToken(l); ASSERT(l.t.kind = tINT); ASSERT(l.t.iVal = 65490); ASSERT(l.t.iVal = 0FFD2H);
+  NextToken(l); ASSERT(l.t.kind = tSTRING); ASSERT(l.sp.buf[l.t.sVal] = "A");
+  NextToken(l); ASSERT(l.t.kind = tINT); ASSERT(l.t.iVal = 101);
+  NextToken(l); ASSERT(l.t.kind = tINT); ASSERT(l.t.iVal = 102);
+  NextToken(l); ASSERT(l.t.kind = tLPAREN);
+  NextToken(l); ASSERT(l.t.kind = tINT); ASSERT(l.t.iVal = 103);
+  NextToken(l); ASSERT(l.t.kind = tRPAREN);
+  NextToken(l); ASSERT(l.t.kind = tIDENT);
+  NextToken(l); ASSERT(l.t.kind = tINT); ASSERT(l.t.iVal = 104);
+  NextToken(l); ASSERT(l.t.kind = tIDENT);
+  NextToken(l); ASSERT(l.t.kind = tREAL); ASSERT(ABS(l.t.rVal - 0.1) < 0.00001);
+  NextToken(l); ASSERT(l.t.kind = tREAL); ASSERT(ABS(l.t.rVal - 0.1e4) < 0.00001);
+  NextToken(l); ASSERT(l.t.kind = tREAL); ASSERT(ABS(l.t.rVal - 0.08e-3) < 0.00001);
+  NextToken(l); ASSERT(l.t.kind = tREAL); ASSERT(ABS(l.t.rVal - 128.3) < 0.00001);
   FOR k := tPLUS TO tDOTDOT DO
-    NextToken(l);
-    ASSERT(l.t.kind = k);
+    NextToken(l); ASSERT(l.t.kind = k);
   END;
-  NextToken(l);
-  ASSERT(l.t.kind = tINT);
-  ASSERT(l.t.iVal = 10);
-  NextToken(l);
-  ASSERT(l.t.kind = tDOTDOT);
-  NextToken(l);
-  ASSERT(l.t.kind = tINT);
-  ASSERT(l.t.iVal = 20);
-  NextToken(l);
-  ASSERT(l.t.kind = tXOR);
-  NextToken(l);
-  ASSERT(l.t.kind = tEOF);
-  NextToken(l);
-  ASSERT(l.t.kind = tEOF);
+  NextToken(l); ASSERT(l.t.kind = tINT); ASSERT(l.t.iVal = 10);
+  NextToken(l); ASSERT(l.t.kind = tDOTDOT);
+  NextToken(l); ASSERT(l.t.kind = tINT); ASSERT(l.t.iVal = 20);
+  NextToken(l); ASSERT(l.t.kind = tXOR);
+  NextToken(l); ASSERT(l.t.kind = tEOF);
+  NextToken(l); ASSERT(l.t.kind = tEOF);
+
   LexerInitFromFile(l, "Lex.ob");
   Out.Mute;
   REPEAT

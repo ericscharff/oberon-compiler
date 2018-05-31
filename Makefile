@@ -8,7 +8,7 @@ run: out.prg
 out.prg: out.c runtime.c
 	$(CC) -g -Wall -Wextra -Wpedantic -o $(@) out.c
 
-out.c: oberon Parse.ob
+out.c: oberon AST.ob
 	./oberon
 
 oberon: main.c ast.c buf.c lex.c parse.c type.c resolve.c c_codegen.c

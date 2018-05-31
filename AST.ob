@@ -1,0 +1,74 @@
+MODULE AST;
+
+IMPORT Lex, Out;
+
+CONST
+  declEND = 1001;
+
+TYPE
+  StringId = Lex.PoolIndex;
+  DeclKind = INTEGER;
+  Decl     = POINTER TO DeclDesc;
+  DeclDesc = RECORD
+    kind :DeclKind;
+    next :Decl;
+    name :StringId;
+    (* type to come *)
+  END;
+
+PROCEDURE AddDecl(VAR l :Lex.Lexer; VAR chain :Decl; name :StringId) :Decl;
+VAR
+  p, d :Decl;
+BEGIN
+  NEW(d);
+  d.name := name;
+  d.kind := 2;
+  d.next := NIL;
+  IF chain = NIL THEN
+    NEW(chain);
+    chain.kind := declEND;
+    chain.name := 0;
+    chain.next := NIL;
+  END;
+  IF chain.kind = declEND THEN
+    d.next := chain;
+    chain := d;
+  ELSE
+    p := chain;
+    WHILE (p.next.kind # declEND) & (p.name # name) DO
+      p := p.next;
+    END;
+    IF p.name = name THEN
+      Lex.ErrorLn(l, "already defined");
+    ELSE
+      d.next := p.next;
+      p.next := d;
+    END;
+  END;
+  RETURN d
+END AddDecl;
+
+PROCEDURE TestAST;
+VAR
+  l :Lex.Lexer;
+  d :Decl;
+BEGIN
+  Lex.LexerInitFromString(l, "");
+  d := NIL;
+  AddDecl(l, d, Lex.DebugLexerAddString(l, "alpha"));
+  AddDecl(l, d, Lex.DebugLexerAddString(l, "beta"));
+  AddDecl(l, d, Lex.DebugLexerAddString(l, "gamma"));
+  AddDecl(l, d, Lex.DebugLexerAddString(l, "delta"));
+  WHILE d # NIL DO
+    Out.Str("Element: kind: ");
+    Out.Int(d.kind);
+    Out.Str(" name: ");
+    Out.Int(d.name);
+    Out.Ln;
+    d := d.next;
+  END;
+END TestAST;
+
+BEGIN
+  TestAST
+END AST.

@@ -61,6 +61,9 @@ void gen_type(Type *t, const char *packageName, const char *name) {
         assert(0);
         break;
       case TYPE_POINTER:
+        if (t->pointer_type.element_type->kind == TYPE_RECORD) {
+          gen_str("struct ");
+        }
         gen_type(t->pointer_type.element_type, "", "");
         gen_str(" *");
         gen_qname(packageName, name);
