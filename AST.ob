@@ -3,26 +3,67 @@ MODULE AST;
 IMPORT Lex, Out;
 
 CONST
+  typeNil     = 1;
+  typeInteger = 2;
+  typeReal    = 3;
+  typeBoolean = 4;
+  typeChar    = 5;
+  typeSet     = 6;
+  typeString  = 7;
+
+  declConst = 1;
+  declType  = 2;
+  declVar   = 3;
+
   declEND = 1001;
 
 TYPE
   StringId = Lex.PoolIndex;
+  TypeKind = INTEGER;
+  Type = POINTER TO TypeDesc;
+  TypeDesc = RECORD
+    kind :TypeKind;
+  END;
   DeclKind = INTEGER;
   Decl     = POINTER TO DeclDesc;
   DeclDesc = RECORD
     kind :DeclKind;
     next :Decl;
     name :StringId;
+    typ  :Type;
     (* type to come *)
   END;
 
-PROCEDURE AddDecl(VAR l :Lex.Lexer; VAR chain :Decl; name :StringId) :Decl;
+VAR
+  scope :Decl;
+
+PROCEDURE LookupDecl(l :Lex.Lexer; moduleName, name :StringId) :Decl;
+VAR
+  p :Decl;
+BEGIN
+  p := scope;
+  IF moduleName # 0 THEN
+    (* TODO: Lookup MODULE from imprt *)
+  ELSE
+    WHILE (p # NIL) & (p.name # name) DO
+      p := p.next;
+    END;
+    IF p = NIL THEN
+      Lex.Error(l, "");
+      Lex.OutStr(l, name);
+      Out.PrintLn(" undefined");
+    END;
+  END;
+  RETURN p
+END LookupDecl;
+
+PROCEDURE AddDecl(l :Lex.Lexer; VAR chain :Decl; name :StringId) :Decl;
 VAR
   p, d :Decl;
 BEGIN
   NEW(d);
   d.name := name;
-  d.kind := 2;
+  d.kind := 0;
   d.next := NIL;
   IF chain = NIL THEN
     NEW(chain);
@@ -50,29 +91,74 @@ BEGIN
   RETURN d
 END AddDecl;
 
+PROCEDURE NewType(VAR t :Type; kind :TypeKind);
+BEGIN
+  NEW(t);
+  t.kind := kind;
+END NewType;
+
+PROCEDURE AddTypeDecl(VAR l :Lex.Lexer; name :StringId; t :Type);
+VAR
+  d :Decl;
+BEGIN
+  d := AddDecl(l, scope, name);
+  d.kind := declType;
+  d.typ := t;
+END AddTypeDecl;
+
+PROCEDURE InitGlobalScope(VAR l :Lex.Lexer);
+VAR
+  t :Type;
+BEGIN
+  scope := NIL;
+  NewType(t, typeNil);
+  AddTypeDecl(l, Lex.Intern(l, "NIL"), t);
+  NewType(t, typeInteger);
+  AddTypeDecl(l, Lex.Intern(l, "INTEGER"), t);
+  AddTypeDecl(l, Lex.Intern(l, "BYTE"), t);
+  NewType(t, typeReal);
+  AddTypeDecl(l, Lex.Intern(l, "REAL"), t);
+  NewType(t, typeBoolean);
+  AddTypeDecl(l, Lex.Intern(l, "BOOLEAN"), t);
+  NewType(t, typeChar);
+  AddTypeDecl(l, Lex.Intern(l, "CHAR"), t);
+  NewType(t, typeSet);
+  AddTypeDecl(l, Lex.Intern(l, "SET"), t);
+END InitGlobalScope;
+
 PROCEDURE TestAST;
 VAR
   l :Lex.Lexer;
   d :Decl;
+  t :Type;
 BEGIN
   Lex.LexerInitFromString(l, "");
   d := NIL;
-  AddDecl(l, d, Lex.DebugLexerAddString(l, "alpha"));
-  AddDecl(l, d, Lex.DebugLexerAddString(l, "beta"));
-  AddDecl(l, d, Lex.DebugLexerAddString(l, "gamma"));
-  AddDecl(l, d, Lex.DebugLexerAddString(l, "delta"));
-  AddDecl(l, d, Lex.DebugLexerAddString(l, "alpha"));
-  AddDecl(l, d, Lex.DebugLexerAddString(l, "beta"));
-  AddDecl(l, d, Lex.DebugLexerAddString(l, "gamma"));
-  AddDecl(l, d, Lex.DebugLexerAddString(l, "delta"));
-  WHILE d # NIL DO
-    Out.Str("Element: kind: ");
-    Out.Int(d.kind);
-    Out.Str(" name: ");
-    Out.Int(d.name);
-    Out.Ln;
-    d := d.next;
-  END;
+  AddDecl(l, d, 10);
+  AddDecl(l, d, 20);
+  AddDecl(l, d, 30);
+  AddDecl(l, d, 40);
+  (* Expected error cases *)
+  Out.Mute;
+  AddDecl(l, d, 10);
+  AddDecl(l, d, 20);
+  AddDecl(l, d, 30);
+  AddDecl(l, d, 40);
+  scope := d;
+  ASSERT(LookupDecl(l, 0, 20) # NIL);
+  ASSERT(LookupDecl(l, 0, 100) = NIL);
+  Out.Unmute;
+  InitGlobalScope(l);
+  ASSERT(LookupDecl(l, 0, Lex.Intern(l, "NIL")) # NIL);
+  d := LookupDecl(l, 0, Lex.Intern(l, "NIL"));
+  ASSERT(d.kind = declType);
+  ASSERT(d.typ.kind = typeNil);
+  d := LookupDecl(l, 0, Lex.Intern(l, "INTEGER"));
+  ASSERT(d.kind = declType);
+  t := d.typ;
+  d := LookupDecl(l, 0, Lex.Intern(l, "BYTE"));
+  ASSERT(t = d.typ);
+  Out.PrintLn("PASS: AST test");
 END TestAST;
 
 BEGIN

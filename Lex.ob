@@ -232,6 +232,11 @@ BEGIN
   StringInternRange(sp, "XOR", 0, 9);
 END AddKeywords;
 
+PROCEDURE Intern*(VAR l :Lexer; s :ARRAY OF CHAR) :PoolIndex;
+BEGIN
+  RETURN StringIntern(l.sp, s)
+END Intern;
+
 PROCEDURE OutStr*(l :Lexer; s :PoolIndex);
 BEGIN
   Out.StrI(l.sp.buf, s);
