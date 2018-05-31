@@ -3,13 +3,17 @@ MODULE AST;
 IMPORT Lex, Out;
 
 CONST
-  typeNil     = 1;
-  typeInteger = 2;
-  typeReal    = 3;
-  typeBoolean = 4;
-  typeChar    = 5;
-  typeSet     = 6;
-  typeString  = 7;
+  typeNil       = 1;
+  typeInteger   = 2;
+  typeReal      = 3;
+  typeBoolean   = 4;
+  typeChar      = 5;
+  typeSet       = 6;
+  typeString    = 7;
+  typePointer   = 8;
+  typeArray     = 9;
+  typeRecord    = 10;
+  typeProcedure = 11;
 
   declConst = 1;
   declType  = 2;
@@ -20,12 +24,14 @@ CONST
 TYPE
   StringId = Lex.PoolIndex;
   TypeKind = INTEGER;
-  Type = POINTER TO TypeDesc;
+  Type*    = POINTER TO TypeDesc;
+  Decl*    = POINTER TO DeclDesc;
   TypeDesc = RECORD
-    kind :TypeKind;
+    kind   :TypeKind;
+    base   :Type; (* POINTER type, ARRAY element, RECORD base, PROCEDURE return type *)
+    fields :Decl; (* RECORD fields or PROCEDURE formal parameters *)
   END;
   DeclKind = INTEGER;
-  Decl     = POINTER TO DeclDesc;
   DeclDesc = RECORD
     kind :DeclKind;
     next :Decl;
@@ -37,22 +43,18 @@ TYPE
 VAR
   scope :Decl;
 
-PROCEDURE LookupDecl(l :Lex.Lexer; moduleName, name :StringId) :Decl;
+PROCEDURE LookupDecl*(l :Lex.Lexer; name :StringId) :Decl;
 VAR
   p :Decl;
 BEGIN
   p := scope;
-  IF moduleName # 0 THEN
-    (* TODO: Lookup MODULE from imprt *)
-  ELSE
-    WHILE (p # NIL) & (p.name # name) DO
-      p := p.next;
-    END;
-    IF p = NIL THEN
-      Lex.Error(l, "");
-      Lex.OutStr(l, name);
-      Out.PrintLn(" undefined");
-    END;
+  WHILE (p # NIL) & (p.name # name) DO
+    p := p.next;
+  END;
+  IF p = NIL THEN
+    Lex.Error(l, "");
+    Lex.OutStr(l, name);
+    Out.PrintLn(" undefined");
   END;
   RETURN p
 END LookupDecl;
@@ -95,7 +97,27 @@ PROCEDURE NewType(VAR t :Type; kind :TypeKind);
 BEGIN
   NEW(t);
   t.kind := kind;
+  t.base := NIL;
+  t.fields := NIL;
 END NewType;
+
+PROCEDURE NewPointerType*(base :Type) :Type;
+VAR
+  t :Type;
+BEGIN
+  NewType(t, typePointer);
+  t.base := base;
+  RETURN t
+END NewPointerType;
+
+PROCEDURE NewArrayType*(base :Type) :Type;
+VAR
+  t :Type;
+BEGIN
+  NewType(t, typeArray);
+  t.base := base;
+  RETURN t
+END NewArrayType;
 
 PROCEDURE AddTypeDecl(VAR l :Lex.Lexer; name :StringId; t :Type);
 VAR
@@ -106,7 +128,7 @@ BEGIN
   d.typ := t;
 END AddTypeDecl;
 
-PROCEDURE InitGlobalScope(VAR l :Lex.Lexer);
+PROCEDURE InitGlobalScope*(VAR l :Lex.Lexer);
 VAR
   t :Type;
 BEGIN
@@ -145,18 +167,18 @@ BEGIN
   AddDecl(l, d, 30);
   AddDecl(l, d, 40);
   scope := d;
-  ASSERT(LookupDecl(l, 0, 20) # NIL);
-  ASSERT(LookupDecl(l, 0, 100) = NIL);
+  ASSERT(LookupDecl(l, 20) # NIL);
+  ASSERT(LookupDecl(l, 100) = NIL);
   Out.Unmute;
   InitGlobalScope(l);
-  ASSERT(LookupDecl(l, 0, Lex.Intern(l, "NIL")) # NIL);
-  d := LookupDecl(l, 0, Lex.Intern(l, "NIL"));
+  ASSERT(LookupDecl(l, Lex.Intern(l, "NIL")) # NIL);
+  d := LookupDecl(l, Lex.Intern(l, "NIL"));
   ASSERT(d.kind = declType);
   ASSERT(d.typ.kind = typeNil);
-  d := LookupDecl(l, 0, Lex.Intern(l, "INTEGER"));
+  d := LookupDecl(l, Lex.Intern(l, "INTEGER"));
   ASSERT(d.kind = declType);
   t := d.typ;
-  d := LookupDecl(l, 0, Lex.Intern(l, "BYTE"));
+  d := LookupDecl(l, Lex.Intern(l, "BYTE"));
   ASSERT(t = d.typ);
   Out.PrintLn("PASS: AST test");
 END TestAST;

@@ -1,6 +1,6 @@
 MODULE Parse;
 
-IMPORT Lex, Out;
+IMPORT AST, Lex, Out;
 
 TYPE
   StringId = Lex.PoolIndex;
@@ -9,7 +9,7 @@ VAR
   l :Lex.Lexer;
   ParseExpression :PROCEDURE;
   ParseStatementSequence :PROCEDURE;
-  ParseType :PROCEDURE;
+  ParseType :PROCEDURE () :AST.Type;
   ParseDeclarationSequence :PROCEDURE;
 
 PROCEDURE IsToken(kind :Lex.TokenKind) :BOOLEAN;
@@ -56,9 +56,10 @@ BEGIN
   RETURN Lex.ImportHack(l, ident)
 END IsImportedModule;
 
-PROCEDURE ParseQualident;
+PROCEDURE ParseQualident() :AST.Decl;
 VAR
   (*moduleName,*) ident :StringId;
+  d :AST.Decl;
 BEGIN
   ident := ExpectIdentifier();
   IF IsImportedModule(ident) THEN
@@ -67,8 +68,10 @@ BEGIN
     ident := ExpectIdentifier();
     (* lookup moduleName.ident *)
   ELSE
+    d := AST.LookupDecl(l, ident);
     (* lookup ident *)
   END;
+  RETURN d
 END ParseQualident;
 
 PROCEDURE ParseQualidentAndGetType;
@@ -463,7 +466,9 @@ BEGIN
   ParseFormalParameters;
 END ParseProcedureType;
 
-PROCEDURE ParseType0;
+PROCEDURE ParseType0() :AST.Type;
+VAR
+  t :AST.Type;
 BEGIN
   IF IsToken(Lex.tIDENT) THEN
     ParseQualident;
@@ -478,6 +483,7 @@ BEGIN
   ELSE
     Lex.ErrorLn(l, "identifier, ARRAY, RECORD, POINTER, or PROCEDURE expected");
   END;
+  RETURN t
 END ParseType0;
 
 PROCEDURE ParseConstDeclaration;
@@ -612,9 +618,12 @@ END ParseModule;
 PROCEDURE TestParse;
 BEGIN
   Lex.LexerInitFromString(l, "WHILE i < 10 DO a;b;c; i := i + 1 END; j := i;");
+  AST.InitGlobalScope(l);
   Lex.NextToken(l);
   ParseStatementSequence;
-  Lex.LexerInitFromString(l, "RECORD (Wow) a, b, c :POINTER TO J; k :REAL; m:ARRAY 2,3,4OF CHAR END;"); Lex.NextToken(l);
+  Lex.LexerInitFromString(l, "RECORD (Wow) a, b, c :POINTER TO J; k :REAL; m:ARRAY 2,3,4OF CHAR END;");
+  AST.InitGlobalScope(l);
+  Lex.NextToken(l);
   ParseType;
   Lex.LexerInitFromString(l, "
   MODULE abc;
@@ -623,12 +632,20 @@ BEGIN
   FooRec = ARRAY 5, 10, 15, 20 OF INTEGER;
   q* = INTEGER; r = q;
   END abc.
-  "); Lex.NextToken(l);
+  ");
+  AST.InitGlobalScope(l);
+  Lex.NextToken(l);
+  ParseModule;
+  Lex.LexerInitFromFile(l, "AST.ob");
+  AST.InitGlobalScope(l);
+  Lex.NextToken(l);
   ParseModule;
   Lex.LexerInitFromFile(l, "Lex.ob");
+  AST.InitGlobalScope(l);
   Lex.NextToken(l);
   ParseModule;
   Lex.LexerInitFromFile(l, "Parse.ob");
+  AST.InitGlobalScope(l);
   Lex.NextToken(l);
   ParseModule;
   Out.PrintLn("PASS: Parser test");
