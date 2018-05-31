@@ -840,6 +840,14 @@ void gen_decl(Decl *d) {
           }
         }
       }
+      // DRIBBLE
+#if 0
+      geni();
+      gen_str("puts(\"");
+      gen_qname(d->package_name, d->name);
+      gen_str("\");\n");
+#endif
+      // END DRIBBLE
       gen_statements(d->proc_decl.body);
       if (d->proc_decl.ret_val) {
         geni();

@@ -89,28 +89,29 @@ CONST
   tEOF*         = 68;
 
 TYPE
-  PoolIndex   = INTEGER;
+  PoolIndex*  = INTEGER;
   StringPool* = RECORD
     buf     :ARRAY PoolSize OF CHAR;
     last    :PoolIndex;
     buckets :ARRAY NumBuckets OF PoolIndex;
   END;
-  Token       = RECORD
-    kind :INTEGER;
-    sVal :PoolIndex;
-    iVal :INTEGER;
-    rVal :REAL;
+  TokenKind*  = INTEGER;
+  Token*      = RECORD
+    kind* :INTEGER;
+    sVal* :PoolIndex;
+    iVal* :INTEGER;
+    rVal* :REAL;
   END;
   Lexer*      = RECORD
     sp       :StringPool;
     buf      :ARRAY BufSize OF CHAR;
     fileName :PoolIndex;
     pos      :INTEGER;
-    t        :Token;
+    t*       :Token;
   END;
 
 VAR
-  TokenNames :ARRAY tEOF+1, KwdSize OF CHAR;
+  TokenNames* :ARRAY tEOF+1, KwdSize OF CHAR;
 
 PROCEDURE PoolInit(VAR sp :StringPool);
 VAR
@@ -231,7 +232,7 @@ BEGIN
   StringInternRange(sp, "XOR", 0, 9);
 END AddKeywords;
 
-PROCEDURE Error(VAR l :Lexer; s :ARRAY OF CHAR);
+PROCEDURE Error*(VAR l :Lexer; s :ARRAY OF CHAR);
 BEGIN
   l.buf[l.pos] := 0X;
   l.buf[l.pos+1] := 0X;
@@ -243,7 +244,7 @@ BEGIN
   Out.Str(s);
 END Error;
 
-PROCEDURE ErrorLn(VAR l :Lexer; s :ARRAY OF CHAR);
+PROCEDURE ErrorLn*(VAR l :Lexer; s :ARRAY OF CHAR);
 BEGIN
   Error(l, s);
   Out.Ln;
@@ -255,7 +256,7 @@ BEGIN
   c := l.buf[l.pos];
 END Next;
 
-PROCEDURE LexerInitFromFile(VAR l :Lexer; fileName :ARRAY OF CHAR);
+PROCEDURE LexerInitFromFile*(VAR l :Lexer; fileName :ARRAY OF CHAR);
 BEGIN
   PoolInit(l.sp);
   AddKeywords(l.sp);
@@ -264,7 +265,7 @@ BEGIN
   l.pos := 0;
 END LexerInitFromFile;
 
-PROCEDURE LexerInitFromString(VAR l :Lexer; s :ARRAY OF CHAR);
+PROCEDURE LexerInitFromString*(VAR l :Lexer; s :ARRAY OF CHAR);
 BEGIN
   PoolInit(l.sp);
   AddKeywords(l.sp);
@@ -475,7 +476,7 @@ BEGIN
   END;
 END ScanComment;
 
-PROCEDURE NextToken(VAR l :Lexer);
+PROCEDURE NextToken*(VAR l :Lexer);
 BEGIN
   l.t.kind := -1;
   REPEAT
@@ -645,7 +646,7 @@ BEGIN
   Out.Unmute;
   (* Regular cases *)
   LexerInitFromString(l, "
-      Test Hello World Test
+      Test Hello World Test alpha..beta
   ARRAY       BEGIN       BY          CASE        CONST
   DIV         DO          ELSE        ELSIF       END
   FALSE       FOR         IF          IMPORT      IN
@@ -673,6 +674,14 @@ BEGIN
   NextToken(l);
   ASSERT(l.t.kind = tIDENT);
   ASSERT(l.t.sVal = StringIntern(l.sp, "Test"));
+  NextToken(l);
+  ASSERT(l.t.kind = tIDENT);
+  ASSERT(l.t.sVal = StringIntern(l.sp, "alpha"));
+  NextToken(l);
+  ASSERT(l.t.kind = tDOTDOT);
+  NextToken(l);
+  ASSERT(l.t.kind = tIDENT);
+  ASSERT(l.t.sVal = StringIntern(l.sp, "beta"));
   FOR k := tARRAY TO tXOR DO
     NextToken(l);
     ASSERT(l.t.kind = k)
@@ -751,6 +760,11 @@ BEGIN
   Out.Unmute;
   Out.PrintLn("PASS: Lexer test");
 END TestLexer;
+
+PROCEDURE ImportHack*(VAR l :Lexer; s :INTEGER) :BOOLEAN;
+BEGIN
+  RETURN (s = StringIntern(l.sp, "Out")) OR (s = StringIntern(l.sp, "Lex")) OR (s = StringIntern(l.sp, "Parse"))
+END ImportHack;
 
 BEGIN
   InitTokenNames;

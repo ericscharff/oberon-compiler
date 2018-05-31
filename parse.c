@@ -137,14 +137,14 @@ Expr *parse_designator(void) {
 
 Expr **parse_actual_parameters(void) {
   Expr **args = NULL;
-  match_token(TOKEN_LPAREN);
+  expect_token(TOKEN_LPAREN);
   if (!is_token(TOKEN_RPAREN)) {
     buf_push(args, parse_expression());
     while (match_token(TOKEN_COMMA)) {
       buf_push(args, parse_expression());
     }
   }
-  match_token(TOKEN_RPAREN);
+  expect_token(TOKEN_RPAREN);
   return args;
 }
 

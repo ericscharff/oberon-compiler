@@ -1,0 +1,635 @@
+MODULE Parse;
+
+IMPORT Lex, Out;
+
+TYPE
+  StringId = Lex.PoolIndex;
+
+VAR
+  l :Lex.Lexer;
+  ParseExpression :PROCEDURE;
+  ParseStatementSequence :PROCEDURE;
+  ParseType :PROCEDURE;
+  ParseDeclarationSequence :PROCEDURE;
+
+PROCEDURE IsToken(kind :Lex.TokenKind) :BOOLEAN;
+BEGIN
+  RETURN l.t.kind = kind
+END IsToken;
+
+PROCEDURE MatchToken(kind :Lex.TokenKind) :BOOLEAN;
+VAR
+  found :BOOLEAN;
+BEGIN
+  IF IsToken(kind) THEN
+    Lex.NextToken(l);
+    found := TRUE;
+  ELSE
+    found := FALSE;
+  END;
+  RETURN found
+END MatchToken;
+
+PROCEDURE ExpectToken(kind :Lex.TokenKind);
+BEGIN
+  IF IsToken(kind) THEN
+    Lex.NextToken(l);
+  ELSE
+    Lex.Error(l, "Expected ");
+    Out.Str(Lex.TokenNames[kind]);
+    Out.Str(", got ");
+    Out.PrintLn(Lex.TokenNames[l.t.kind]);
+  END;
+END ExpectToken;
+
+PROCEDURE ExpectIdentifier() :StringId;
+VAR
+  s :StringId;
+BEGIN
+  s := l.t.sVal;
+  ExpectToken(Lex.tIDENT);
+  RETURN s
+END ExpectIdentifier;
+
+PROCEDURE IsImportedModule(ident :StringId) :BOOLEAN;
+BEGIN
+  RETURN Lex.ImportHack(l, ident)
+END IsImportedModule;
+
+PROCEDURE ParseQualident;
+VAR
+  (*moduleName,*) ident :StringId;
+BEGIN
+  ident := ExpectIdentifier();
+  IF IsImportedModule(ident) THEN
+    (*moduleName := ident; *)
+    ExpectToken(Lex.tDOT);
+    ident := ExpectIdentifier();
+    (* lookup moduleName.ident *)
+  ELSE
+    (* lookup ident *)
+  END;
+END ParseQualident;
+
+PROCEDURE ParseQualidentAndGetType;
+BEGIN
+  ParseQualident;
+  (* Get decl's type *)
+END ParseQualidentAndGetType;
+
+PROCEDURE ParseSetElement;
+BEGIN
+  ParseExpression;
+  IF MatchToken(Lex.tDOTDOT) THEN
+    ParseExpression;
+  END;
+END ParseSetElement;
+
+PROCEDURE ParseSet;
+BEGIN
+  ExpectToken(Lex.tLBRACE);
+  IF IsToken(Lex.tRBRACE) THEN
+    (* empty set *)
+  ELSE
+    ParseSetElement;
+    WHILE MatchToken(Lex.tCOMMA) DO
+      ParseSetElement;
+    END;
+  END;
+  ExpectToken(Lex.tRBRACE);
+END ParseSet;
+
+PROCEDURE IsTypeGuard() :BOOLEAN;
+BEGIN
+  RETURN FALSE
+END IsTypeGuard;
+
+PROCEDURE ParseDesignator;
+BEGIN
+  ParseQualident;
+  WHILE IsToken(Lex.tDOT) OR IsToken(Lex.tLBRACK) OR IsToken(Lex.tCARET) OR
+        (IsTypeGuard() & IsToken(Lex.tLPAREN)) DO
+    IF MatchToken(Lex.tDOT) THEN
+      (* identref - lookup decl *)
+      ExpectIdentifier;
+    ELSIF MatchToken(Lex.tLBRACK) THEN
+      (* arrayref *)
+      ParseExpression;
+      WHILE MatchToken(Lex.tCOMMA) DO
+        ParseExpression;
+      END;
+      ExpectToken(Lex.tRBRACK);
+    ELSIF MatchToken(Lex.tCARET) THEN
+      (* pointerderef *)
+    ELSIF IsTypeGuard() & MatchToken(Lex.tLPAREN) THEN
+      (* typeguard *)
+      ParseQualident;
+    ELSE
+      ASSERT(FALSE);
+    END
+  END;
+END ParseDesignator;
+
+PROCEDURE ParseActualParameters;
+BEGIN
+  ExpectToken(Lex.tLPAREN);
+  IF ~IsToken(Lex.tRPAREN) THEN
+    ParseExpression;
+    WHILE MatchToken(Lex.tCOMMA) DO
+      ParseExpression;
+    END;
+  END;
+  ExpectToken(Lex.tRPAREN);
+END ParseActualParameters;
+
+PROCEDURE ParseFactor;
+BEGIN
+  IF IsToken(Lex.tINT) THEN
+    MatchToken(Lex.tINT);
+  ELSIF IsToken(Lex.tREAL) THEN
+    MatchToken(Lex.tREAL);
+  ELSIF IsToken(Lex.tSTRING) THEN
+    MatchToken(Lex.tSTRING);
+  ELSIF MatchToken(Lex.tNIL) THEN
+    (* nil *)
+  ELSIF MatchToken(Lex.tTRUE) THEN
+    (* true *)
+  ELSIF MatchToken(Lex.tFALSE) THEN
+    (* false *)
+  ELSIF MatchToken(Lex.tFALSE) THEN
+    (* false *)
+  ELSIF IsToken(Lex.tLBRACE) THEN
+    ParseSet;
+  ELSIF IsToken(Lex.tIDENT) THEN
+    ParseDesignator;
+    IF IsToken(Lex.tLPAREN) THEN
+      ParseActualParameters;
+    END;
+  ELSIF MatchToken(Lex.tLPAREN) THEN
+    ParseExpression;
+    ExpectToken(Lex.tRPAREN);
+  ELSIF MatchToken(Lex.tTILDE) THEN
+    ParseFactor;
+  ELSE
+    Lex.ErrorLn(l, "Factor expected");
+  END;
+END ParseFactor;
+
+PROCEDURE IsMulOperator() :BOOLEAN;
+BEGIN
+  RETURN IsToken(Lex.tSTAR) OR IsToken(Lex.tSLASH) OR IsToken(Lex.tDIV) OR
+         IsToken(Lex.tMOD) OR IsToken(Lex.tAMP) OR IsToken(Lex.tXOR)
+END IsMulOperator;
+
+PROCEDURE ParseTerm;
+BEGIN
+  ParseFactor;
+  WHILE IsMulOperator() DO
+    (* TokenKind op = token.kind; *)
+    Lex.NextToken(l);
+    ParseFactor;
+  END;
+END ParseTerm;
+
+PROCEDURE IsAddOperator() :BOOLEAN;
+BEGIN
+  RETURN IsToken(Lex.tPLUS) OR IsToken(Lex.tMINUS) OR IsToken(Lex.tOR)
+END IsAddOperator;
+
+PROCEDURE ParseSimpleExpression;
+BEGIN
+  IF MatchToken(Lex.tPLUS) THEN
+    (* unary plus *)
+  ELSIF MatchToken(Lex.tMINUS) THEN
+    (* unary minus *)
+  END;
+
+  ParseTerm;
+  WHILE IsAddOperator() DO
+    (* TokenKind op = token.kind; *)
+    Lex.NextToken(l);
+    ParseTerm;
+  END;
+END ParseSimpleExpression;
+
+PROCEDURE IsRelation() :BOOLEAN;
+BEGIN
+  RETURN IsToken(Lex.tEQ) OR IsToken(Lex.tPOUND) OR IsToken(Lex.tLT) OR
+         IsToken(Lex.tLTEQ) OR IsToken(Lex.tGT) OR IsToken(Lex.tGTEQ) OR
+         IsToken(Lex.tIN) OR IsToken(Lex.tIS)
+END IsRelation;
+
+PROCEDURE ParseExpression0;
+BEGIN
+  ParseSimpleExpression;
+  IF IsRelation() THEN
+    (* TokenKind op = token.kind; *)
+    Lex.NextToken(l);
+    ParseSimpleExpression;
+  END;
+END ParseExpression0;
+
+PROCEDURE ParseIfStatement;
+BEGIN
+  ExpectToken(Lex.tIF);
+  ParseExpression;
+  ExpectToken(Lex.tTHEN);
+  ParseStatementSequence;
+  WHILE MatchToken(Lex.tELSIF) DO
+    ParseExpression;
+    ExpectToken(Lex.tTHEN);
+    ParseStatementSequence;
+  END;
+  IF MatchToken(Lex.tELSE) THEN
+    ParseStatementSequence;
+  END;
+  ExpectToken(Lex.tEND);
+END ParseIfStatement;
+
+PROCEDURE ParseCaseLabel;
+BEGIN
+  IF IsToken(Lex.tINT) OR IsToken(Lex.tSTRING) OR IsToken(Lex.tIDENT) THEN
+    ParseFactor;
+  ELSE
+    Lex.ErrorLn(l, "Case label (INTEGER, STRING, IDENT) expected");
+  END;
+END ParseCaseLabel;
+
+PROCEDURE ParseCaseLabelRange;
+BEGIN
+  ParseCaseLabel;
+  IF MatchToken(Lex.tDOTDOT) THEN
+    ParseCaseLabel;
+  END;
+END ParseCaseLabelRange;
+
+PROCEDURE ParseCaseLabelList;
+BEGIN
+  ParseCaseLabelRange;
+  WHILE MatchToken(Lex.tCOMMA) DO
+    ParseCaseLabelRange;
+  END;
+END ParseCaseLabelList;
+
+PROCEDURE ParseCase;
+BEGIN
+  IF IsToken(Lex.tINT) OR IsToken(Lex.tSTRING) OR IsToken(Lex.tIDENT) THEN
+    ParseCaseLabelList;
+    ExpectToken(Lex.tCOLON);
+    ParseStatementSequence;
+  END;
+END ParseCase;
+
+PROCEDURE ParseCaseStatement;
+BEGIN
+  ExpectToken(Lex.tCASE);
+  ParseExpression;
+  ExpectToken(Lex.tOF);
+  ParseCase;
+  WHILE MatchToken(Lex.tVBAR) DO
+    ParseCase;
+  END;
+  ExpectToken(Lex.tEND);
+END ParseCaseStatement;
+
+PROCEDURE ParseWhileStatement;
+BEGIN
+  ExpectToken(Lex.tWHILE);
+  ParseExpression;
+  ExpectToken(Lex.tDO);
+  ParseStatementSequence;
+  WHILE MatchToken(Lex.tELSIF) DO
+    ParseExpression;
+    ExpectToken(Lex.tDO);
+    ParseStatementSequence;
+  END;
+  ExpectToken(Lex.tEND);
+END ParseWhileStatement;
+
+PROCEDURE ParseRepeatStatement;
+BEGIN
+  ExpectToken(Lex.tREPEAT);
+  ParseStatementSequence;
+  ExpectToken(Lex.tUNTIL);
+  ParseExpression;
+END ParseRepeatStatement;
+
+PROCEDURE ParseForStatement;
+BEGIN
+  ExpectToken(Lex.tFOR);
+  ExpectIdentifier;
+  ExpectToken(Lex.tASSIGN);
+  ParseExpression;
+  ExpectToken(Lex.tTO);
+  ParseExpression;
+  IF MatchToken(Lex.tBY) THEN
+    ParseExpression;
+  END;
+  ExpectToken(Lex.tDO);
+  ParseStatementSequence;
+  ExpectToken(Lex.tEND);
+END ParseForStatement;
+
+PROCEDURE ParseAssignOrProcCall;
+BEGIN
+  ParseDesignator;
+  IF MatchToken(Lex.tASSIGN) THEN
+    (* Assignment *)
+    ParseExpression;
+  ELSE
+    (* Procedure call *)
+    IF IsToken(Lex.tLPAREN) THEN
+      ParseActualParameters;
+    END;
+  END;
+END ParseAssignOrProcCall;
+
+PROCEDURE ParseStatement;
+BEGIN
+  IF IsToken(Lex.tIF) THEN
+    ParseIfStatement;
+  ELSIF IsToken(Lex.tCASE) THEN
+    ParseCaseStatement;
+  ELSIF IsToken(Lex.tWHILE) THEN
+    ParseWhileStatement;
+  ELSIF IsToken(Lex.tREPEAT) THEN
+    ParseRepeatStatement;
+  ELSIF IsToken(Lex.tFOR) THEN
+    ParseForStatement;
+  ELSIF IsToken(Lex.tIDENT) THEN
+    ParseAssignOrProcCall;
+  ELSE
+    (* Empty *)
+  END;
+END ParseStatement;
+
+PROCEDURE ParseStatementSequence0;
+BEGIN
+  ParseStatement;
+  WHILE MatchToken(Lex.tSEMI) DO
+    ParseStatement;
+  END;
+END ParseStatementSequence0;
+
+PROCEDURE ParseIdentDef;
+BEGIN
+  ExpectIdentifier;
+  MatchToken(Lex.tSTAR);
+END ParseIdentDef;
+
+PROCEDURE ParseIdentList;
+BEGIN
+  ParseIdentDef;
+  WHILE MatchToken(Lex.tCOMMA) DO
+    ParseIdentDef;
+  END;
+END ParseIdentList;
+
+PROCEDURE ParseArrayType;
+BEGIN
+  ExpectToken(Lex.tARRAY);
+  ParseExpression;
+  WHILE MatchToken(Lex.tCOMMA) DO
+    ParseExpression;
+  END;
+  ExpectToken(Lex.tOF);
+  ParseType;
+END ParseArrayType;
+
+PROCEDURE ParseRecordType;
+BEGIN
+  ExpectToken(Lex.tRECORD);
+  IF MatchToken(Lex.tLPAREN) THEN
+    ParseQualident;
+    ExpectToken(Lex.tRPAREN);
+  END;
+  IF IsToken(Lex.tIDENT) THEN
+    REPEAT
+      ParseIdentList;
+      ExpectToken(Lex.tCOLON);
+      ParseType;
+      MatchToken(Lex.tSEMI);
+    UNTIL IsToken(Lex.tEND) OR IsToken(Lex.tEOF)
+  END;
+  ExpectToken(Lex.tEND);
+END ParseRecordType;
+
+PROCEDURE ParsePointerType;
+BEGIN
+  ExpectToken(Lex.tPOINTER);
+  ExpectToken(Lex.tTO);
+  ParseType;
+END ParsePointerType;
+
+PROCEDURE ParseFPSection;
+BEGIN
+  MatchToken(Lex.tVAR);
+  ExpectIdentifier;
+  WHILE MatchToken(Lex.tCOMMA) DO
+    ExpectIdentifier;
+  END;
+  ExpectToken(Lex.tCOLON);
+  (* The formal descrition of Oberon-07 is rather restrictive here. This *)
+  (* could just as easily be :<TYPE> where TYPE is any type. Oberon-07   *)
+  (* requires that the type be an identifier, although the "official"    *)
+  (* Oberon-07 compiler (in Project Oberon 2013) actually allows         *)
+  (* procedures here, *)
+  WHILE MatchToken(Lex.tARRAY) DO
+    (* ARRAY OF ... *)
+    ExpectToken(Lex.tOF);
+  END;
+  ParseQualident;
+END ParseFPSection;
+
+PROCEDURE ParseFormalParameters;
+BEGIN
+  IF MatchToken(Lex.tLPAREN) THEN
+    IF IsToken(Lex.tVAR) OR IsToken(Lex.tIDENT) THEN
+      ParseFPSection;
+    END;
+    WHILE MatchToken(Lex.tSEMI) DO
+      ParseFPSection;
+    END;
+    ExpectToken(Lex.tRPAREN);
+    IF MatchToken(Lex.tCOLON) THEN
+      ParseQualident;
+    END;
+  END;
+END ParseFormalParameters;
+
+PROCEDURE ParseProcedureType;
+BEGIN
+  ExpectToken(Lex.tPROCEDURE);
+  ParseFormalParameters;
+END ParseProcedureType;
+
+PROCEDURE ParseType0;
+BEGIN
+  IF IsToken(Lex.tIDENT) THEN
+    ParseQualident;
+  ELSIF IsToken(Lex.tARRAY) THEN
+    ParseArrayType;
+  ELSIF IsToken(Lex.tRECORD) THEN
+    ParseRecordType;
+  ELSIF IsToken(Lex.tPOINTER) THEN
+    ParsePointerType;
+  ELSIF IsToken(Lex.tPROCEDURE) THEN
+    ParseProcedureType;
+  ELSE
+    Lex.ErrorLn(l, "identifier, ARRAY, RECORD, POINTER, or PROCEDURE expected");
+  END;
+END ParseType0;
+
+PROCEDURE ParseConstDeclaration;
+BEGIN
+  ParseIdentDef;
+  ExpectToken(Lex.tEQ);
+  ParseExpression;
+END ParseConstDeclaration;
+
+PROCEDURE ParseTypeDeclaration;
+BEGIN
+  ParseIdentDef;
+  ExpectToken(Lex.tEQ);
+  ParseType;
+END ParseTypeDeclaration;
+
+PROCEDURE ParseVarDeclaration;
+BEGIN
+  ParseIdentList;
+  ExpectToken(Lex.tCOLON);
+  ParseType;
+END ParseVarDeclaration;
+
+PROCEDURE ParseProcedureBody;
+BEGIN
+  ParseDeclarationSequence;
+  IF MatchToken(Lex.tBEGIN) THEN
+    ParseStatementSequence;
+  END;
+  IF MatchToken(Lex.tRETURN) THEN
+    ParseExpression;
+  END;
+  ExpectToken(Lex.tEND);
+END ParseProcedureBody;
+
+PROCEDURE ParseProcedureHeading;
+BEGIN
+  MatchToken(Lex.tNATIVE);
+  ExpectToken(Lex.tPROCEDURE);
+  ParseIdentDef;
+  ParseFormalParameters;
+END ParseProcedureHeading;
+
+PROCEDURE ParseProcedureDeclaration;
+VAR
+  e :StringId;
+BEGIN
+  ParseProcedureHeading;
+  ExpectToken(Lex.tSEMI);
+  ParseProcedureBody;
+  e := ExpectIdentifier();
+  IF 0 = e THEN
+    (* TODO *)
+    Lex.ErrorLn(l, "Procedure end name must match start");
+  END;
+END ParseProcedureDeclaration;
+
+PROCEDURE ParseDeclarationSequence0;
+BEGIN
+  IF MatchToken(Lex.tCONST) THEN
+    WHILE IsToken(Lex.tIDENT) DO
+      ParseConstDeclaration;
+      ExpectToken(Lex.tSEMI);
+    END;
+  END;
+  IF MatchToken(Lex.tTYPE) THEN
+    WHILE IsToken(Lex.tIDENT) DO
+      ParseTypeDeclaration;
+      ExpectToken(Lex.tSEMI);
+    END;
+  END;
+  IF MatchToken(Lex.tVAR) THEN
+    WHILE IsToken(Lex.tIDENT) DO
+      ParseVarDeclaration;
+      ExpectToken(Lex.tSEMI);
+    END;
+  END;
+  WHILE IsToken(Lex.tPROCEDURE) OR IsToken(Lex.tNATIVE) DO
+    ParseProcedureDeclaration;
+    ExpectToken(Lex.tSEMI);
+  END;
+END ParseDeclarationSequence0;
+
+PROCEDURE ParseImport;
+BEGIN
+  ExpectIdentifier;
+  IF MatchToken(Lex.tASSIGN) THEN
+    ExpectIdentifier;
+  END;
+END ParseImport;
+
+PROCEDURE ParseImportList;
+BEGIN
+  ExpectToken(Lex.tIMPORT);
+  ParseImport;
+  WHILE MatchToken(Lex.tCOMMA) DO
+    ParseImport;
+  END;
+  ExpectToken(Lex.tSEMI);
+END ParseImportList;
+
+PROCEDURE ParseModule;
+VAR
+  s, e :StringId;
+BEGIN
+  ExpectToken(Lex.tMODULE);
+  s := ExpectIdentifier();
+  ExpectToken(Lex.tSEMI);
+  IF IsToken(Lex.tIMPORT) THEN
+    ParseImportList;
+  END;
+  ParseDeclarationSequence;
+  IF MatchToken(Lex.tBEGIN) THEN
+    ParseStatementSequence;
+  END;
+  ExpectToken(Lex.tEND);
+  e := ExpectIdentifier();
+  IF s # e THEN
+    Lex.ErrorLn(l, "Module end name must match start");
+  END;
+  ExpectToken(Lex.tDOT);
+END ParseModule;
+
+PROCEDURE TestParse;
+BEGIN
+  Lex.LexerInitFromString(l, "WHILE i < 10 DO a;b;c; i := i + 1 END; j := i;");
+  Lex.NextToken(l);
+  ParseStatementSequence;
+  Lex.LexerInitFromString(l, "RECORD (Wow) a, b, c :POINTER TO J; k :REAL; m:ARRAY 2,3,4OF CHAR END;"); Lex.NextToken(l);
+  ParseType;
+  Lex.LexerInitFromString(l, "
+  MODULE abc;
+  CONST k=1*2+3+4;
+  TYPE MySet* = SET;
+  FooRec = ARRAY 5, 10, 15, 20 OF INTEGER;
+  q* = INTEGER; r = q;
+  END abc.
+  "); Lex.NextToken(l);
+  ParseModule;
+  Lex.LexerInitFromFile(l, "Lex.ob");
+  Lex.NextToken(l);
+  ParseModule;
+  Lex.LexerInitFromFile(l, "Parse.ob");
+  Lex.NextToken(l);
+  ParseModule;
+  Out.PrintLn("PASS: Parser test");
+END TestParse;
+
+BEGIN
+  ParseExpression := ParseExpression0;
+  ParseStatementSequence := ParseStatementSequence0;
+  ParseType := ParseType0;
+  ParseDeclarationSequence := ParseDeclarationSequence0;
+  TestParse
+END Parse.
