@@ -237,10 +237,8 @@ BEGIN
   Out.StrI(l.sp.buf, s);
 END OutStr;
 
-PROCEDURE Error*(VAR l :Lexer; s :ARRAY OF CHAR);
+PROCEDURE Error*(l :Lexer; s :ARRAY OF CHAR);
 BEGIN
-  l.buf[l.pos] := 0X;
-  l.buf[l.pos+1] := 0X;
   Out.Str("Err!");
   OutStr(l, l.fileName);
   Out.Str("!");
@@ -249,7 +247,7 @@ BEGIN
   Out.Str(s);
 END Error;
 
-PROCEDURE ErrorLn*(VAR l :Lexer; s :ARRAY OF CHAR);
+PROCEDURE ErrorLn*(l :Lexer; s :ARRAY OF CHAR);
 BEGIN
   Error(l, s);
   Out.Ln;
@@ -455,6 +453,7 @@ BEGIN
   ELSE
     l.pos := start;
     ErrorLn(l, "Unterminated string");
+    l.buf[l.pos] := 0X;
   END;
 END ScanString;
 
@@ -475,6 +474,7 @@ BEGIN
   IF l.buf[l.pos] = 0X THEN
     l.pos := start;
     ErrorLn(l, "Unterminated comment");
+    l.buf[l.pos] := 0X;
   ELSE
     (* l.pos IS pointing at terminating star *)
     INC(l.pos, 2);
@@ -636,12 +636,6 @@ BEGIN
   ASSERT(StringIntern(sp, "B") = 20);
   Out.PrintLn("PASS: String pool test");
 END TestPool;
-
-(* Only for testing *)
-PROCEDURE DebugLexerAddString*(VAR l :Lexer; s :ARRAY OF CHAR) :PoolIndex;
-BEGIN
-  RETURN StringIntern(l.sp, s)
-END DebugLexerAddString;
 
 PROCEDURE TestLexer;
 VAR
