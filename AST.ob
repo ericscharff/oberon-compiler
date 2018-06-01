@@ -15,29 +15,29 @@ CONST
   typeRecord    = 10;
   typeProcedure = 11;
 
-  declConst = 1;
-  declType  = 2;
-  declVar   = 3;
+  declConst  = 1;
+  declType*  = 2;
+  declVar    = 3;
 
   declEND = 1001;
 
 TYPE
-  StringId = Lex.PoolIndex;
-  TypeKind = INTEGER;
-  Type*    = POINTER TO TypeDesc;
-  Decl*    = POINTER TO DeclDesc;
-  TypeDesc = RECORD
+  StringId  = Lex.PoolIndex;
+  TypeKind  = INTEGER;
+  Type*     = POINTER TO TypeDesc;
+  Decl*     = POINTER TO DeclDesc;
+  TypeDesc  = RECORD
     kind   :TypeKind;
     base   :Type; (* POINTER type, ARRAY element, RECORD base, PROCEDURE return type *)
     fields :Decl; (* RECORD fields or PROCEDURE formal parameters *)
   END;
-  DeclKind = INTEGER;
-  DeclDesc = RECORD
-    kind :DeclKind;
-    next :Decl;
-    name :StringId;
-    typ  :Type;
-    (* type to come *)
+  DeclKind  = INTEGER;
+  DeclDesc  = RECORD
+    kind*     :DeclKind;
+    next      :Decl;
+    name*     :StringId;
+    typ*      :Type;
+    exported* :BOOLEAN;
   END;
 
 VAR
@@ -59,7 +59,7 @@ BEGIN
   RETURN p
 END LookupDecl;
 
-PROCEDURE AddDecl(l :Lex.Lexer; VAR chain :Decl; name :StringId) :Decl;
+PROCEDURE AddDecl*(l :Lex.Lexer; VAR chain :Decl; name :StringId) :Decl;
 VAR
   p, d :Decl;
 BEGIN
@@ -67,8 +67,8 @@ BEGIN
   d.name := name;
   d.kind := 0;
   d.next := NIL;
-  IF chain = NIL THEN
-    NEW(chain);
+  d.exported := FALSE;
+  IF chain = NIL THEN NEW(chain);
     chain.kind := declEND;
     chain.name := 0;
     chain.next := NIL;
@@ -92,6 +92,11 @@ BEGIN
   END;
   RETURN d
 END AddDecl;
+
+PROCEDURE AddScopeDecl*(l :Lex.Lexer; name :StringId) :Decl;
+BEGIN
+  RETURN AddDecl(l, scope, name)
+END AddScopeDecl;
 
 PROCEDURE NewType(VAR t :Type; kind :TypeKind);
 BEGIN
@@ -147,6 +152,24 @@ BEGIN
   NewType(t, typeSet);
   AddTypeDecl(l, Lex.Intern(l, "SET"), t);
 END InitGlobalScope;
+
+PROCEDURE OpenScope*() :Decl;
+VAR
+  d, oldScope :Decl;
+BEGIN
+  NEW(d);
+  d.kind := declEND;
+  d.name := 0;
+  d.next := scope;
+  oldScope := scope;
+  scope := d;
+  RETURN oldScope
+END OpenScope;
+
+PROCEDURE CloseScope*(s :Decl);
+BEGIN
+  scope := s;
+END CloseScope;
 
 PROCEDURE TestAST;
 VAR

@@ -374,10 +374,17 @@ BEGIN
   END;
 END ParseStatementSequence0;
 
-PROCEDURE ParseIdentDef;
+PROCEDURE ParseIdentDef() :AST.Decl;
+VAR
+  d :AST.Decl;
+  n :StringId;
 BEGIN
-  ExpectIdentifier;
-  MatchToken(Lex.tSTAR);
+  n := ExpectIdentifier();
+  d := AST.AddScopeDecl(l, n);
+  IF MatchToken(Lex.tSTAR) THEN
+    d.exported := TRUE;
+  END;
+  RETURN d
 END ParseIdentDef;
 
 PROCEDURE ParseIdentList;
@@ -468,10 +475,18 @@ END ParseProcedureType;
 
 PROCEDURE ParseType0() :AST.Type;
 VAR
+  d :AST.Decl;
   t :AST.Type;
 BEGIN
   IF IsToken(Lex.tIDENT) THEN
-    ParseQualident;
+    d := ParseQualident();
+    IF d.kind # AST.declType THEN
+      Lex.Error(l, "");
+      Lex.OutStr(l, d.name);
+      Out.PrintLn(" is not a TYPE");
+    ELSE
+      t := d.typ;
+    END;
   ELSIF IsToken(Lex.tARRAY) THEN
     ParseArrayType;
   ELSIF IsToken(Lex.tRECORD) THEN
@@ -494,10 +509,15 @@ BEGIN
 END ParseConstDeclaration;
 
 PROCEDURE ParseTypeDeclaration;
+VAR
+  d :AST.Decl;
+  t :AST.Type;
 BEGIN
-  ParseIdentDef;
+  d := ParseIdentDef();
   ExpectToken(Lex.tEQ);
-  ParseType;
+  d.kind := AST.declType;
+  d.typ := ParseType();
+
 END ParseTypeDeclaration;
 
 PROCEDURE ParseVarDeclaration;
@@ -592,7 +612,9 @@ END ParseImportList;
 PROCEDURE ParseModule;
 VAR
   s, e :StringId;
+  d    :AST.Decl;
 BEGIN
+  d := AST.OpenScope();
   ExpectToken(Lex.tMODULE);
   s := ExpectIdentifier();
   ExpectToken(Lex.tSEMI);
@@ -613,10 +635,12 @@ BEGIN
     Out.PrintLn("]");
   END;
   ExpectToken(Lex.tDOT);
+  AST.CloseScope(d);
 END ParseModule;
 
 PROCEDURE TestParse;
 BEGIN
+(*
   Lex.LexerInitFromString(l, "WHILE i < 10 DO a;b;c; i := i + 1 END; j := i;");
   AST.InitGlobalScope(l);
   Lex.NextToken(l);
@@ -645,6 +669,11 @@ BEGIN
   Lex.NextToken(l);
   ParseModule;
   Lex.LexerInitFromFile(l, "Parse.ob");
+  AST.InitGlobalScope(l);
+  Lex.NextToken(l);
+  ParseModule;
+  *)
+  Lex.LexerInitFromString(l, "MODULE x; TYPE a = INTEGER; b* = CHAR; c = REAL; END x.");
   AST.InitGlobalScope(l);
   Lex.NextToken(l);
   ParseModule;
