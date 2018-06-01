@@ -673,7 +673,7 @@ BEGIN
   Lex.NextToken(l);
   ParseModule;
   *)
-  Lex.LexerInitFromString(l, "MODULE x; TYPE a = INTEGER; b* = CHAR; c = REAL; END x.");
+  Lex.LexerInitFromString(l, "MODULE x; TYPE a = INTEGER; b* = CHAR; c = REAL; d = a; END x.");
   AST.InitGlobalScope(l);
   Lex.NextToken(l);
   ParseModule;
