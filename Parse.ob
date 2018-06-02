@@ -789,52 +789,15 @@ END ImportHelper;
 
 PROCEDURE TestParse;
 BEGIN
-(*
-  Lex.LexerInitFromString(l, "WHILE i < 10 DO a;b;c; i := i + 1 END; j := i;");
-  Lex.NextToken(l);
-  ParseStatementSequence;
-  Lex.LexerInitFromString(l, "RECORD (Wow) a, b, c :POINTER TO J; k :REAL; m:ARRAY 2,3,4OF CHAR END;");
-  Lex.NextToken(l);
-  ParseType;
-  Lex.LexerInitFromString(l, "
-  MODULE abc;
-  CONST k=1*2+3+4;
-  TYPE MySet* = SET;
-  FooRec = ARRAY 5, 10, 15, 20 OF INTEGER;
-  q* = INTEGER; r = q;
-  END abc.
-  ");
-  Lex.NextToken(l);
-  ParseModule;
   Lex.LexerInitFromFile(l, "AST.ob");
   Lex.NextToken(l);
   ParseModule;
+  AST.TestCleanup(); importCacheEnd := 0;
   Lex.LexerInitFromFile(l, "Lex.ob");
   Lex.NextToken(l);
   ParseModule;
+  AST.TestCleanup(); importCacheEnd := 0;
   Lex.LexerInitFromFile(l, "Parse.ob");
-  Lex.NextToken(l);
-  ParseModule;
-  *)
-  Lex.LexerInitFromString(l, "MODULE x;
-  IMPORT Base1;
-  TYPE
-  Zzzz = Base1.A;
-  Wow = POINTER TO R2;
-  R1 = RECORD a, b*, c, d :INTEGER; END;
-  R2 = RECORD (R1) e, f*, g :INTEGER; END;
-  Z1 = POINTER TO R1;
-  Z2 = POINTER TO R2;
-  Z3 = POINTER TO R3;
-  R3 = RECORD z :Z3; i :INTEGER END;
-  aa = ARRAY 10,20 OF INTEGER;
-  P1 = PROCEDURE;
-  P2 = PROCEDURE () :CHAR;
-  P3 = PROCEDURE (a, b, c :INTEGER; VAR d :REAL; VAR e, f :CHAR) :SET;
-  a = INTEGER; b* = CHAR; c = REAL; d = a; VAR rr :R1;
-  PROCEDURE X1; BEGIN rr.a := 4; X1 END X1;
-  PROCEDURE Zen(xa, xb :INTEGER); VAR rr :INTEGER; BEGIN rr := xa + xb; END Zen;
-  END x.");
   Lex.NextToken(l);
   ParseModule;
   Out.PrintLn("PASS: Parser test");

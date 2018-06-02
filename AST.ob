@@ -277,6 +277,15 @@ BEGIN
     AddTypeDecl(l, Lex.Intern(l, "CHAR"), t);
     NewType(t, typeSet);
     AddTypeDecl(l, Lex.Intern(l, "SET"), t);
+    (* stuff to fix *)
+    AddTypeDecl(l, Lex.Intern(l, "INC"), t);
+    AddTypeDecl(l, Lex.Intern(l, "DEC"), t);
+    AddTypeDecl(l, Lex.Intern(l, "ASSERT"), t);
+    AddTypeDecl(l, Lex.Intern(l, "ORD"), t);
+    AddTypeDecl(l, Lex.Intern(l, "CHR"), t);
+    AddTypeDecl(l, Lex.Intern(l, "FLT"), t);
+    AddTypeDecl(l, Lex.Intern(l, "ABS"), t);
+    AddTypeDecl(l, Lex.Intern(l, "NEW"), t);
     globalScope := scope;
   END;
   scope := globalScope;
@@ -339,6 +348,12 @@ BEGIN
   scope := s;
 END CloseScope;
 
+PROCEDURE TestCleanup*;
+BEGIN
+  scope := NIL;
+  globalScope := NIL;
+END TestCleanup;
+
 PROCEDURE TestAST;
 VAR
   l :Lex.Lexer;
@@ -371,8 +386,7 @@ BEGIN
   t := d.typ;
   d := LookupDecl(l, Lex.Intern(l, "BYTE"));
   ASSERT(t = d.typ);
-  scope := NIL;
-  globalScope := NIL;
+  TestCleanup;
   Out.PrintLn("PASS: AST test");
 END TestAST;
 
