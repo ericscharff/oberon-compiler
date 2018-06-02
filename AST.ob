@@ -15,13 +15,14 @@ CONST
   typeRecord    = 10;
   typeProcedure = 11;
 
-  declConst      = 1;
-  declType*      = 2;
-  declVar*       = 3;
-  declProcedure* = 4;
-  declParam*     = 5;
-  declVarParam*  = 6;
-  declField*     = 7;
+  declImport     = 1;
+  declConst      = 2;
+  declType*      = 3;
+  declVar*       = 4;
+  declProcedure* = 5;
+  declParam*     = 6;
+  declVarParam*  = 7;
+  declField*     = 8;
 
   declEND = 1001;
 
@@ -42,6 +43,7 @@ TYPE
     name*     :StringId;
     typ*      :Type;
     exported* :BOOLEAN;
+    decls*    :Decl; (* If kind = IMPORT then this field IS the imported MODULE's declarations *)
   END;
   Forward   = POINTER TO FwdDecl;
   FwdDecl   = RECORD
