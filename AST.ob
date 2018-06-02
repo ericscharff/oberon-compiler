@@ -17,7 +17,7 @@ CONST
 
   declConst     = 1;
   declType*     = 2;
-  declVar       = 3;
+  declVar*      = 3;
   declParam*    = 4;
   declVarParam* = 5;
   declField*    = 6;

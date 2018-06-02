@@ -412,14 +412,6 @@ BEGIN
   RETURN d
 END ParseIdentDef;
 
-PROCEDURE ParseIdentList;
-BEGIN
-  ParseIdentDef;
-  WHILE MatchToken(Lex.tCOMMA) DO
-    ParseIdentDef;
-  END;
-END ParseIdentList;
-
 PROCEDURE ParseArrayType() :AST.Type;
 VAR
   outer, current, last :AST.Type;
@@ -467,7 +459,7 @@ BEGIN
       WHILE (firstField # NIL) & (lastField # NIL) & (firstField # lastField.next) DO
         firstField.kind := AST.declField;
         firstField.typ := fieldType;
-	firstField := firstField.next;
+        firstField := firstField.next;
       END;
       MatchToken(Lex.tSEMI);
     UNTIL IsToken(Lex.tEND) OR IsToken(Lex.tEOF)
@@ -592,10 +584,22 @@ BEGIN
 END ParseTypeDeclaration;
 
 PROCEDURE ParseVarDeclaration;
+VAR
+  first, last :AST.Decl;
+  t           :AST.Type;
 BEGIN
-  ParseIdentList;
+  first := ParseIdentDef();
+  last := first;
+  WHILE MatchToken(Lex.tCOMMA) DO
+    last := ParseIdentDef();
+  END;
   ExpectToken(Lex.tCOLON);
-  ParseType;
+  t := ParseType();
+  WHILE (first # NIL) & (last # NIL) & (first # last.next) DO
+    first.kind := AST.declVar;
+    first.typ := t;
+    first := first.next;
+  END;
 END ParseVarDeclaration;
 
 PROCEDURE ParseProcedureBody;
@@ -757,7 +761,7 @@ BEGIN
   P1 = PROCEDURE;
   P2 = PROCEDURE () :CHAR;
   P3 = PROCEDURE (a, b, c :INTEGER; VAR d :REAL; VAR e, f :CHAR) :SET;
-  a = INTEGER; b* = CHAR; c = REAL; d = a; END x.");
+  a = INTEGER; b* = CHAR; c = REAL; d = a; VAR rr :R1; END x.");
   AST.InitGlobalScope(l);
   Lex.NextToken(l);
   ParseModule;
