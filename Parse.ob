@@ -59,21 +59,24 @@ BEGIN
 END ExpectIdentifier;
 
 PROCEDURE IsImportedModule(ident :StringId) :BOOLEAN;
+VAR
+  d :AST.Decl;
 BEGIN
-  RETURN Lex.ImportHack(l, ident)
+  d := AST.LookupDecl(l, ident);
+  RETURN (d # NIL) & (d.kind = AST.declImport)
 END IsImportedModule;
 
 PROCEDURE ParseQualident() :AST.Decl;
 VAR
-  (*moduleName,*) ident :StringId;
+  moduleName, ident :StringId;
   d :AST.Decl;
 BEGIN
   ident := ExpectIdentifier();
   IF IsImportedModule(ident) THEN
-    (*moduleName := ident; *)
+    moduleName := ident;
     ExpectToken(Lex.tDOT);
     ident := ExpectIdentifier();
-    (* lookup moduleName.ident *)
+    d := AST.LookupImport(l, moduleName, ident);
   ELSE
     d := AST.LookupDecl(l, ident);
     (* lookup ident *)
@@ -816,6 +819,7 @@ BEGIN
   Lex.LexerInitFromString(l, "MODULE x;
   IMPORT Base1;
   TYPE
+  Zzzz = Base1.A;
   Wow = POINTER TO R2;
   R1 = RECORD a, b*, c, d :INTEGER; END;
   R2 = RECORD (R1) e, f*, g :INTEGER; END;

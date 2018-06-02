@@ -16,7 +16,7 @@ CONST
   typeProcedure = 11;
   typeImport    = 12;
 
-  declImport     = 1;
+  declImport*    = 1;
   declConst      = 2;
   declType*      = 3;
   declVar*       = 4;
@@ -66,7 +66,6 @@ BEGIN
   RETURN p
 END LookupDecl0;
 
-
 PROCEDURE LookupDecl*(l :Lex.Lexer; name :StringId) :Decl;
 VAR
   p :Decl;
@@ -79,6 +78,32 @@ BEGIN
   END;
   RETURN p
 END LookupDecl;
+
+PROCEDURE LookupImport*(l :Lex.Lexer; moduleName, name :StringId) :Decl;
+VAR
+  p, d :Decl;
+BEGIN
+  d := LookupDecl(l, moduleName);
+  ASSERT(d.kind = declImport);
+  p := d.typ.fields;
+  WHILE (p # NIL) & (p.name # name) DO
+    p := p.next;
+  END;
+  IF p = NIL THEN
+    Lex.Error(l, "");
+    Lex.OutStr(l, moduleName);
+    Out.Str(".");
+    Lex.OutStr(l, name);
+    Out.PrintLn(" undefined");
+  ELSIF ~p.exported THEN
+    Lex.Error(l, "");
+    Lex.OutStr(l, moduleName);
+    Out.Str(".");
+    Lex.OutStr(l, name);
+    Out.PrintLn(" is not exported");
+  END;
+  RETURN p
+END LookupImport;
 
 PROCEDURE AddDecl*(l :Lex.Lexer; VAR chain :Decl; name :StringId) :Decl;
 VAR

@@ -768,11 +768,6 @@ BEGIN
   Out.PrintLn("PASS: Lexer test");
 END TestLexer;
 
-PROCEDURE ImportHack*(VAR l :Lexer; s :INTEGER) :BOOLEAN;
-BEGIN
-  RETURN (s = StringIntern(l.sp, "Out")) OR (s = StringIntern(l.sp, "Lex")) OR (s = StringIntern(l.sp, "Parse")) OR (s = StringIntern(l.sp, "AST"))
-END ImportHack;
-
 BEGIN
   InitTokenNames;
   TestPool;
