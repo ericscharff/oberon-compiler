@@ -1,0 +1,69 @@
+MODULE Resolve;
+
+IMPORT AST, Lex, Out;
+
+CONST
+  exprVal*         = 1; (* CONST value *)
+  exprUnary*       = 2;
+  exprBinary*      = 3;
+  expridentRef     = 4;
+  exprProcCall     = 5;
+  exprFieldRef     = 6;
+  exprPointerDeref = 7;
+  exprArrayRef     = 8;
+  exprTypeguard    = 9;
+
+TYPE
+  Expr*     = POINTER TO ExprDesc;
+  ExprKind  = INTEGER;
+  (*
+  A call to a PROCEDURE, e.g., MyProc(arg1, Proc2(a, b), arr[i], 4) looks like
+  Expr:
+    kind  --> exprProcCall
+    lhs   --> Expr:
+                kind --> exprIdentDef
+                decl --> Decl FOR MyProc
+    rhs   --> Expr:
+                kind --> exprIdentDef
+                decl --> Decl FOR arg1
+                next --> Expr:
+                           kind --> exprProcCall
+                           lhs  --> Expr:
+                                      kind --> exprIdentRef
+                                      decl --> decl for Proc2
+                           rhs  --> Expr:
+                                      kind --> exprIdentRef
+                                      decl --> decl for a
+                                      next --> Expr:
+                                                 kind -> exprIdentRef
+                                                 decl -> decl for b
+                                                 next -> NIL
+                           next --> Expr:
+                                      kind --> exprArrayRef
+                                      lhs -> Expr (identRef FOR arr)
+                                      rhs -> Expr (identRef FOR i)
+                                      next -> Expr:
+                                                kind --> exprVal
+                                                iVal --> 4
+                                                typ  --> typeInteger
+                                                next --> NIL
+  In other words, a proc call's lhs is the PROCEDURE's definition,
+  the rhs is the first arg, and then follows the next chain OF those args.
+  *)
+  ExprDesc  = RECORD
+    kind  :ExprKind;
+    typ   :AST.Type;
+    op    :Lex.TokenKind; (* for unary, binary                            *)
+    lhs   :Expr;          (* for unary, binary, the base expr for         *)
+                          (* arrayRef, pointerDeref, fieldRef, typeGuard, *)
+                          (* PROCEDURE call designator                    *)
+    rhs   :Expr;          (* for binary, also first arg PROCEDURE call    *)
+                          (* for arrayRef, expr OF ARRAY index            *)
+    next  :Expr;          (* for PROCEDURE call,next arg in list          *)
+    decl  :AST.Decl;      (* for identRef and typeguard                   *)
+    iVal  :INTEGER;       (* for INTEGER, SET, BOOLEAN, STRING (StringId) *)
+                          (* for fieldref, StringId OF field name         *)
+    rVal  :REAL;
+  END;
+
+END Resolve.
