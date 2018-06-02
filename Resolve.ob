@@ -1,6 +1,6 @@
 MODULE Resolve;
 
-IMPORT AST, Lex, Out;
+IMPORT Decls, Lex, Out;
 
 CONST
   exprVal*         = 1; (* CONST value *)
@@ -52,7 +52,7 @@ TYPE
   *)
   ExprDesc  = RECORD
     kind  :ExprKind;
-    typ   :AST.Type;
+    typ   :Decls.Type;
     op    :Lex.TokenKind; (* for unary, binary                            *)
     lhs   :Expr;          (* for unary, binary, the base expr for         *)
                           (* arrayRef, pointerDeref, fieldRef, typeGuard, *)
@@ -60,7 +60,7 @@ TYPE
     rhs   :Expr;          (* for binary, also first arg PROCEDURE call    *)
                           (* for arrayRef, expr OF ARRAY index            *)
     next  :Expr;          (* for PROCEDURE call,next arg in list          *)
-    decl  :AST.Decl;      (* for identRef and typeguard                   *)
+    decl  :Decls.Decl;    (* for identRef and typeguard                   *)
     iVal  :INTEGER;       (* for INTEGER, SET, BOOLEAN, STRING (StringId) *)
                           (* for fieldref, StringId OF field name         *)
     rVal  :REAL;

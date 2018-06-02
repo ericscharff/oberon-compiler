@@ -1,4 +1,4 @@
-MODULE AST;
+MODULE Decls;
 
 IMPORT Lex, Out;
 
@@ -353,7 +353,7 @@ BEGIN
   globalScope := NIL;
 END TestCleanup;
 
-PROCEDURE TestAST;
+PROCEDURE TestDecls;
 VAR
   l :Lex.Lexer;
   d :Decl;
@@ -386,10 +386,10 @@ BEGIN
   d := LookupDecl(l, Lex.Intern(l, "BYTE"));
   ASSERT(t = d.typ);
   TestCleanup;
-  Out.PrintLn("PASS: AST test");
-END TestAST;
+  Out.PrintLn("PASS: Decls test");
+END TestDecls;
 
 BEGIN
   globalScope := NIL;
-  TestAST
-END AST.
+  TestDecls
+END Decls.

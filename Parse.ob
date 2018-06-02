@@ -1,21 +1,21 @@
 MODULE Parse;
 
-IMPORT AST, Lex, Out, Resolve;
+IMPORT Decls, Lex, Out, Resolve;
 
 TYPE
   StringId = Lex.PoolIndex;
   CachedImport = RECORD
     name  :StringId;
-    decls :AST.Decl;
+    decls :Decls.Decl;
   END;
 VAR
   l :Lex.Lexer;
   importCache :ARRAY 128 OF CachedImport;
   importCacheEnd :INTEGER;
-  lastModuleDecls :AST.Decl;
+  lastModuleDecls :Decls.Decl;
   ParseExpression :PROCEDURE;
   ParseStatementSequence :PROCEDURE;
-  ParseType :PROCEDURE () :AST.Type;
+  ParseType :PROCEDURE () :Decls.Type;
   ParseDeclarationSequence :PROCEDURE;
   importCallback :Lex.LexCallback;
 
@@ -60,40 +60,40 @@ END ExpectIdentifier;
 
 PROCEDURE IsImportedModule(ident :StringId) :BOOLEAN;
 VAR
-  d :AST.Decl;
+  d :Decls.Decl;
 BEGIN
-  d := AST.LookupDecl(l, ident);
-  RETURN (d # NIL) & (d.kind = AST.declImport)
+  d := Decls.LookupDecl(l, ident);
+  RETURN (d # NIL) & (d.kind = Decls.declImport)
 END IsImportedModule;
 
-PROCEDURE ParseQualident() :AST.Decl;
+PROCEDURE ParseQualident() :Decls.Decl;
 VAR
   moduleName, ident :StringId;
-  d :AST.Decl;
+  d :Decls.Decl;
 BEGIN
   ident := ExpectIdentifier();
   IF IsImportedModule(ident) THEN
     moduleName := ident;
     ExpectToken(Lex.tDOT);
     ident := ExpectIdentifier();
-    d := AST.LookupImport(l, moduleName, ident);
+    d := Decls.LookupImport(l, moduleName, ident);
   ELSE
-    d := AST.LookupDecl(l, ident);
+    d := Decls.LookupDecl(l, ident);
     (* lookup ident *)
   END;
   RETURN d
 END ParseQualident;
 
-PROCEDURE ParseQualidentAndGetType() :AST.Type;
+PROCEDURE ParseQualidentAndGetType() :Decls.Type;
 VAR
-  d :AST.Decl;
-  t :AST.Type;
+  d :Decls.Decl;
+  t :Decls.Type;
 BEGIN
   t := NIL;
   d := ParseQualident();
   IF d # NIL THEN
     t := d.typ;
-    IF d.kind # AST.declType THEN
+    IF d.kind # Decls.declType THEN
       Lex.Error(l, "");
       Lex.OutStr(l, d.name);
       Out.PrintLn(" is not a TYPE");
@@ -396,42 +396,42 @@ BEGIN
   END;
 END ParseStatementSequence0;
 
-PROCEDURE ParseFieldIdentDef(VAR recordScope :AST.Decl) :AST.Decl;
+PROCEDURE ParseFieldIdentDef(VAR recordScope :Decls.Decl) :Decls.Decl;
 VAR
-  d    :AST.Decl;
+  d    :Decls.Decl;
   name :StringId;
 BEGIN
   name := ExpectIdentifier();
-  d := AST.AddDecl(l, recordScope, name);
+  d := Decls.AddDecl(l, recordScope, name);
   IF MatchToken(Lex.tSTAR) THEN
     d.exported := TRUE;
   END;
   RETURN d
 END ParseFieldIdentDef;
 
-PROCEDURE ParseIdentDef() :AST.Decl;
+PROCEDURE ParseIdentDef() :Decls.Decl;
 VAR
-  d :AST.Decl;
+  d :Decls.Decl;
   n :StringId;
 BEGIN
   n := ExpectIdentifier();
-  d := AST.AddScopeDecl(l, n);
+  d := Decls.AddScopeDecl(l, n);
   IF MatchToken(Lex.tSTAR) THEN
     d.exported := TRUE;
   END;
   RETURN d
 END ParseIdentDef;
 
-PROCEDURE ParseArrayType() :AST.Type;
+PROCEDURE ParseArrayType() :Decls.Type;
 VAR
-  outer, current, last :AST.Type;
+  outer, current, last :Decls.Type;
 BEGIN
   ExpectToken(Lex.tARRAY);
-  outer := AST.NewArrayType(NIL);
+  outer := Decls.NewArrayType(NIL);
   last := outer;
   ParseExpression;
   WHILE MatchToken(Lex.tCOMMA) DO
-    current := AST.NewArrayType(NIL);
+    current := Decls.NewArrayType(NIL);
     last.base := current;
     last := current;
     ParseExpression;
@@ -442,10 +442,10 @@ BEGIN
   RETURN outer
 END ParseArrayType;
 
-PROCEDURE ParseRecordType() :AST.Type;
+PROCEDURE ParseRecordType() :Decls.Type;
 VAR
-  r, base, fieldType              :AST.Type;
-  baseDecl, firstField, lastField :AST.Decl;
+  r, base, fieldType              :Decls.Type;
+  baseDecl, firstField, lastField :Decls.Decl;
 BEGIN
   base := NIL;
   ExpectToken(Lex.tRECORD);
@@ -456,7 +456,7 @@ BEGIN
       base := baseDecl.typ;
     END;
   END;
-  r := AST.NewRecordType(l, base);
+  r := Decls.NewRecordType(l, base);
   IF IsToken(Lex.tIDENT) THEN
     REPEAT
       firstField := ParseFieldIdentDef(r.fields);
@@ -467,7 +467,7 @@ BEGIN
       ExpectToken(Lex.tCOLON);
       fieldType := ParseType();
       WHILE (firstField # NIL) & (lastField # NIL) & (firstField # lastField.next) DO
-        firstField.kind := AST.declField;
+        firstField.kind := Decls.declField;
         firstField.typ := fieldType;
         firstField := firstField.next;
       END;
@@ -478,36 +478,36 @@ BEGIN
   RETURN r
 END ParseRecordType;
 
-PROCEDURE ParsePointerType() :AST.Type;
+PROCEDURE ParsePointerType() :Decls.Type;
 VAR
-  t :AST.Type;
+  t :Decls.Type;
 BEGIN
   ExpectToken(Lex.tPOINTER);
   ExpectToken(Lex.tTO);
   IF IsToken(Lex.tIDENT) THEN
-    t := AST.NewPointerTypeByName(l, ExpectIdentifier());
+    t := Decls.NewPointerTypeByName(l, ExpectIdentifier());
   ELSE
-    t := AST.NewPointerType(l, ParseType());
+    t := Decls.NewPointerType(l, ParseType());
   END;
   RETURN t
 END ParsePointerType;
 
-PROCEDURE ParseFPSection(procType :AST.Type);
+PROCEDURE ParseFPSection(procType :Decls.Type);
 VAR
   name                  :StringId;
-  firstParam, lastParam :AST.Decl;
-  paramType             :AST.Type;
+  firstParam, lastParam :Decls.Decl;
+  paramType             :Decls.Type;
   varParameter          :BOOLEAN;
 BEGIN
   varParameter := MatchToken(Lex.tVAR);
   name := ExpectIdentifier();
-  firstParam := AST.AddDecl(l, procType.fields, name);
+  firstParam := Decls.AddDecl(l, procType.fields, name);
   lastParam := firstParam;
-  IF varParameter THEN firstParam.kind := AST.declVarParam ELSE firstParam.kind := AST.declParam END;
+  IF varParameter THEN firstParam.kind := Decls.declVarParam ELSE firstParam.kind := Decls.declParam END;
   WHILE MatchToken(Lex.tCOMMA) DO
     name := ExpectIdentifier();
-    lastParam := AST.AddDecl(l, procType.fields, name);
-    IF varParameter THEN lastParam.kind := AST.declVarParam ELSE lastParam.kind := AST.declParam END;
+    lastParam := Decls.AddDecl(l, procType.fields, name);
+    IF varParameter THEN lastParam.kind := Decls.declVarParam ELSE lastParam.kind := Decls.declParam END;
   END;
   ExpectToken(Lex.tCOLON);
   (* The formal descrition of Oberon-07 is rather restrictive here. This *)
@@ -527,11 +527,11 @@ BEGIN
   END;
 END ParseFPSection;
 
-PROCEDURE ParseFormalParameters() :AST.Type;
+PROCEDURE ParseFormalParameters() :Decls.Type;
 VAR
-  t :AST.Type;
+  t :Decls.Type;
 BEGIN
-  t := AST.NewProcedureType();
+  t := Decls.NewProcedureType();
   IF MatchToken(Lex.tLPAREN) THEN
     IF IsToken(Lex.tVAR) OR IsToken(Lex.tIDENT) THEN
       ParseFPSection(t);
@@ -547,15 +547,15 @@ BEGIN
   RETURN t
 END ParseFormalParameters;
 
-PROCEDURE ParseProcedureType() :AST.Type;
+PROCEDURE ParseProcedureType() :Decls.Type;
 BEGIN
   ExpectToken(Lex.tPROCEDURE);
   RETURN ParseFormalParameters()
 END ParseProcedureType;
 
-PROCEDURE ParseType0() :AST.Type;
+PROCEDURE ParseType0() :Decls.Type;
 VAR
-  t :AST.Type;
+  t :Decls.Type;
 BEGIN
   t := NIL;
   IF IsToken(Lex.tIDENT) THEN
@@ -583,20 +583,20 @@ END ParseConstDeclaration;
 
 PROCEDURE ParseTypeDeclaration;
 VAR
-  d :AST.Decl;
-  t :AST.Type;
+  d :Decls.Decl;
+  t :Decls.Type;
 BEGIN
   d := ParseIdentDef();
   ExpectToken(Lex.tEQ);
-  d.kind := AST.declType;
+  d.kind := Decls.declType;
   d.typ := ParseType();
 
 END ParseTypeDeclaration;
 
 PROCEDURE ParseVarDeclaration;
 VAR
-  first, last :AST.Decl;
-  t           :AST.Type;
+  first, last :Decls.Decl;
+  t           :Decls.Type;
 BEGIN
   first := ParseIdentDef();
   last := first;
@@ -606,18 +606,18 @@ BEGIN
   ExpectToken(Lex.tCOLON);
   t := ParseType();
   WHILE (first # NIL) & (last # NIL) & (first # last.next) DO
-    first.kind := AST.declVar;
+    first.kind := Decls.declVar;
     first.typ := t;
     first := first.next;
   END;
 END ParseVarDeclaration;
 
-PROCEDURE ParseProcedureBody(procDecl :AST.Decl);
+PROCEDURE ParseProcedureBody(procDecl :Decls.Decl);
 VAR
-  oldScope :AST.Decl;
+  oldScope :Decls.Decl;
 BEGIN
-  oldScope := AST.OpenScope();
-  AST.AddFormalParamsToScope(l, procDecl);
+  oldScope := Decls.OpenScope();
+  Decls.AddFormalParamsToScope(l, procDecl);
   ParseDeclarationSequence;
   IF MatchToken(Lex.tBEGIN) THEN
     ParseStatementSequence;
@@ -626,24 +626,24 @@ BEGIN
     ParseExpression;
   END;
   ExpectToken(Lex.tEND);
-  AST.CloseScope(oldScope);
+  Decls.CloseScope(oldScope);
 END ParseProcedureBody;
 
-PROCEDURE ParseProcedureHeading() :AST.Decl;
+PROCEDURE ParseProcedureHeading() :Decls.Decl;
 VAR
-  d :AST.Decl;
+  d :Decls.Decl;
 BEGIN
   MatchToken(Lex.tNATIVE);
   ExpectToken(Lex.tPROCEDURE);
   d := ParseIdentDef();
-  d.kind := AST.declProcedure;
+  d.kind := Decls.declProcedure;
   d.typ := ParseFormalParameters();
   RETURN d
 END ParseProcedureHeading;
 
 PROCEDURE ParseProcedureDeclaration;
 VAR
-  d       :AST.Decl;
+  d       :Decls.Decl;
   endName :StringId;
 BEGIN
   d := ParseProcedureHeading();
@@ -673,7 +673,7 @@ BEGIN
       ExpectToken(Lex.tSEMI);
     END;
   END;
-  AST.ResolveForwards(l);
+  Decls.ResolveForwards(l);
   IF MatchToken(Lex.tVAR) THEN
     WHILE IsToken(Lex.tIDENT) DO
       ParseVarDeclaration;
@@ -686,10 +686,10 @@ BEGIN
   END;
 END ParseDeclarationSequence0;
 
-PROCEDURE GetModuleImports(moduleName :StringId) :AST.Decl;
+PROCEDURE GetModuleImports(moduleName :StringId) :Decls.Decl;
 VAR
   i :INTEGER;
-  d :AST.Decl;
+  d :Decls.Decl;
 BEGIN
   i := 0;
   WHILE (i < importCacheEnd) & (importCache[i].name # moduleName) DO
@@ -711,7 +711,7 @@ END GetModuleImports;
 PROCEDURE ParseImport;
 VAR
   name, alias :StringId;
-  d           :AST.Decl;
+  d           :Decls.Decl;
 BEGIN
   name := ExpectIdentifier();
   alias := name;
@@ -719,7 +719,7 @@ BEGIN
     name := ExpectIdentifier();
   END;
   d := GetModuleImports(name);
-  AST.AddImportDecl(l, alias, d);
+  Decls.AddImportDecl(l, alias, d);
 END ParseImport;
 
 PROCEDURE ParseImportList;
@@ -735,10 +735,10 @@ END ParseImportList;
 PROCEDURE ParseModule;
 VAR
   s, e :StringId;
-  d    :AST.Decl;
+  d    :Decls.Decl;
 BEGIN
-  AST.InitGlobalScope(l);
-  d := AST.OpenScope();
+  Decls.InitGlobalScope(l);
+  d := Decls.OpenScope();
   ExpectToken(Lex.tMODULE);
   s := ExpectIdentifier();
   ExpectToken(Lex.tSEMI);
@@ -759,14 +759,14 @@ BEGIN
     Out.PrintLn("]");
   END;
   ExpectToken(Lex.tDOT);
-  lastModuleDecls := AST.CurrentScope();
-  AST.CloseScope(d);
+  lastModuleDecls := Decls.CurrentScope();
+  Decls.CloseScope(d);
 END ParseModule;
 
 (* This is called by the lexer. See Lex.ImportHelper. *)
 PROCEDURE ImportHelper;
 VAR
-  savedScope :AST.Decl;
+  savedScope :Decls.Decl;
 BEGIN
   (* ParseModule (below) will set the state back to the global scope. *)
   (* Thus, we save the previous MODULE's scope here, parse the new    *)
@@ -781,22 +781,22 @@ BEGIN
   (* 7) Add decl FOR B to X's scope                                   *)
   (* This savedScope call ensures we hold on to the A and B defs      *)
   (* after all the global scope resetting.                            *)
-  savedScope := AST.CurrentScope();
+  savedScope := Decls.CurrentScope();
   Lex.NextToken(l);
   ParseModule;
-  AST.CloseScope(savedScope);
+  Decls.CloseScope(savedScope);
 END ImportHelper;
 
 PROCEDURE TestParse;
 BEGIN
-  Lex.LexerInitFromFile(l, "AST.ob");
+  Lex.LexerInitFromFile(l, "Decls.ob");
   Lex.NextToken(l);
   ParseModule;
-  AST.TestCleanup(); importCacheEnd := 0;
+  Decls.TestCleanup(); importCacheEnd := 0;
   Lex.LexerInitFromFile(l, "Lex.ob");
   Lex.NextToken(l);
   ParseModule;
-  AST.TestCleanup(); importCacheEnd := 0;
+  Decls.TestCleanup(); importCacheEnd := 0;
   Lex.LexerInitFromFile(l, "Parse.ob");
   Lex.NextToken(l);
   ParseModule;
