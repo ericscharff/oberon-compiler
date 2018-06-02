@@ -1,4 +1,4 @@
-MODULE Resolve;
+MODULE AST;
 
 IMPORT Decls, Lex, Out;
 
@@ -66,4 +66,4 @@ TYPE
     rVal  :REAL;
   END;
 
-END Resolve.
+END AST.

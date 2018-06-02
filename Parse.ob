@@ -1,6 +1,6 @@
 MODULE Parse;
 
-IMPORT Decls, Lex, Out, Resolve;
+IMPORT AST, Decls, Lex, Out;
 
 TYPE
   StringId = Lex.PoolIndex;
