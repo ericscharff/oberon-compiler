@@ -4,13 +4,20 @@ IMPORT AST, Lex, Out;
 
 TYPE
   StringId = Lex.PoolIndex;
-
+  CachedImport = RECORD
+    name  :StringId;
+    decls :AST.Decl;
+  END;
 VAR
   l :Lex.Lexer;
+  importCache :ARRAY 128 OF CachedImport;
+  importCacheEnd :INTEGER;
+  lastModuleDecls :AST.Decl;
   ParseExpression :PROCEDURE;
   ParseStatementSequence :PROCEDURE;
   ParseType :PROCEDURE () :AST.Type;
   ParseDeclarationSequence :PROCEDURE;
+  importCallback :Lex.LexCallback;
 
 PROCEDURE IsToken(kind :Lex.TokenKind) :BOOLEAN;
 BEGIN
@@ -676,12 +683,40 @@ BEGIN
   END;
 END ParseDeclarationSequence0;
 
-PROCEDURE ParseImport;
+PROCEDURE GetModuleImports(moduleName :StringId) :AST.Decl;
+VAR
+  i :INTEGER;
+  d :AST.Decl;
 BEGIN
-  ExpectIdentifier;
-  IF MatchToken(Lex.tASSIGN) THEN
-    ExpectIdentifier;
+  i := 0;
+  WHILE (i < importCacheEnd) & (importCache[i].name # moduleName) DO
+    INC(i);
   END;
+  IF importCache[i].name = moduleName THEN
+    d := importCache[i].decls;
+  ELSE
+    ASSERT(importCacheEnd < 128);
+    Lex.ImportHelper(l, moduleName, importCallback);
+    d := lastModuleDecls;
+    importCache[importCacheEnd].name := moduleName;
+    importCache[importCacheEnd].decls := d;
+    INC(importCacheEnd);
+  END;
+  RETURN d
+END GetModuleImports;
+
+PROCEDURE ParseImport;
+VAR
+  name, alias :StringId;
+  d           :AST.Decl;
+BEGIN
+  name := ExpectIdentifier();
+  alias := name;
+  IF MatchToken(Lex.tASSIGN) THEN
+    name := ExpectIdentifier();
+  END;
+  d := GetModuleImports(name);
+  AST.AddImportDecl(l, alias, d);
 END ParseImport;
 
 PROCEDURE ParseImportList;
@@ -720,8 +755,17 @@ BEGIN
     Out.PrintLn("]");
   END;
   ExpectToken(Lex.tDOT);
+  lastModuleDecls := AST.CurrentScope();
   AST.CloseScope(d);
 END ParseModule;
+
+(* This is called by the lexer. See Lex.ImportHelper. *)
+PROCEDURE ImportHelper;
+BEGIN
+  Out.PrintLn("Import helper");
+  Lex.NextToken(l);
+  ParseModule;
+END ImportHelper;
 
 PROCEDURE TestParse;
 BEGIN
@@ -758,7 +802,9 @@ BEGIN
   Lex.NextToken(l);
   ParseModule;
   *)
-  Lex.LexerInitFromString(l, "MODULE x; TYPE
+  Lex.LexerInitFromString(l, "MODULE x;
+  IMPORT Base1;
+  TYPE
   Wow = POINTER TO R2;
   R1 = RECORD a, b*, c, d :INTEGER; END;
   R2 = RECORD (R1) e, f*, g :INTEGER; END;
@@ -781,9 +827,11 @@ BEGIN
 END TestParse;
 
 BEGIN
+  importCacheEnd := 0;
   ParseExpression := ParseExpression0;
   ParseStatementSequence := ParseStatementSequence0;
   ParseType := ParseType0;
   ParseDeclarationSequence := ParseDeclarationSequence0;
+  importCallback := ImportHelper;
   TestParse
 END Parse.

@@ -14,6 +14,7 @@ CONST
   typeArray     = 9;
   typeRecord    = 10;
   typeProcedure = 11;
+  typeImport    = 12;
 
   declImport     = 1;
   declConst      = 2;
@@ -34,7 +35,7 @@ TYPE
   TypeDesc  = RECORD
     kind    :TypeKind;
     base*   :Type; (* POINTER type, ARRAY element, RECORD base, PROCEDURE return type *)
-    fields* :Decl; (* RECORD fields or PROCEDURE formal parameters, or name of forward decl *)
+    fields* :Decl; (* RECORD fields / PROCEDURE formal parameters / IMPORT decls / name of forward decl *)
   END;
   DeclKind  = INTEGER;
   DeclDesc  = RECORD
@@ -43,7 +44,6 @@ TYPE
     name*     :StringId;
     typ*      :Type;
     exported* :BOOLEAN;
-    decls*    :Decl; (* If kind = IMPORT then this field IS the imported MODULE's declarations *)
   END;
   Forward   = POINTER TO FwdDecl;
   FwdDecl   = RECORD
@@ -87,6 +87,7 @@ BEGIN
   NEW(d);
   d.name := name;
   d.kind := 0;
+  d.typ := NIL;
   d.next := NIL;
   d.exported := FALSE;
   IF chain = NIL THEN NEW(chain);
@@ -126,6 +127,16 @@ BEGIN
   t.base := NIL;
   t.fields := NIL;
 END NewType;
+
+PROCEDURE AddImportDecl*(l :Lex.Lexer; name :StringId; decls :Decl);
+VAR
+  d :Decl;
+BEGIN
+  d := AddScopeDecl(l, name);
+  d.kind := declImport;
+  NewType(d.typ, typeImport);
+  d.typ.fields := decls;
+END AddImportDecl;
 
 PROCEDURE NewArrayType*(base :Type) :Type;
 VAR
@@ -275,6 +286,11 @@ BEGIN
     formal := formal.next;
   END;
 END AddFormalParamsToScope;
+
+PROCEDURE CurrentScope*(): Decl;
+BEGIN
+  RETURN scope
+END CurrentScope;
 
 PROCEDURE OpenScope*() :Decl;
 VAR

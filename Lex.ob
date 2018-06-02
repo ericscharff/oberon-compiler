@@ -109,6 +109,7 @@ TYPE
     pos      :INTEGER;
     t*       :Token;
   END;
+  LexCallback* = PROCEDURE;
 
 VAR
   TokenNames* :ARRAY tEOF+1, KwdSize OF CHAR;
@@ -281,6 +282,47 @@ BEGIN
   l.fileName := StringIntern(l.sp, "<string>");
   l.pos := 0;
 END LexerInitFromString;
+
+(*
+ImportHelper is called by the parser whenever it wants to parse an imported
+file.  First, it saves the current state of the lexer on its own stack. It
+opens a file based on the moduleName "<fileName>.Ob". It then calls the
+callback which can do anything, but presumably parses the MODULE just fed into
+the lexer. Once complete, the state of the lexer is restored. This allows
+temporarily lexing a new file (an imported MODULE) and THEN returning back
+to the original MODULE.
+*)
+PROCEDURE ImportHelper*(VAR l :Lexer; moduleName :PoolIndex; callback :LexCallback);
+VAR
+  savedBuf      :ARRAY BufSize OF CHAR;
+  savedFileName :PoolIndex;
+  fileName      :ARRAY 128 OF CHAR;
+  savedPos, i   :INTEGER;
+  savedToken    :Token;
+BEGIN
+  savedBuf := l.buf;
+  savedFileName := l.fileName;
+  savedPos := l.pos;
+  savedToken := l.t;
+  (* Make "<moduleName>.ob" *)
+  i := 0;
+  WHILE l.sp.buf[moduleName + i] # 0X DO
+    fileName[i] := l.sp.buf[moduleName + i];
+    INC(i);
+  END;
+  fileName[i] := ".";
+  fileName[i+1] := "o";
+  fileName[i+2] := "b";
+  fileName[i+3] := 0X;
+  Out.ReadFile(fileName, l.buf);
+  l.fileName := StringIntern(l.sp, fileName);
+  l.pos := 0;
+  callback;
+  l.t := savedToken;
+  l.pos := savedPos;
+  l.fileName := savedFileName;
+  l.buf := savedBuf;
+END ImportHelper;
 
 PROCEDURE ScanIdent(VAR l :Lexer);
 VAR
