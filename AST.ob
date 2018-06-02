@@ -42,11 +42,17 @@ TYPE
     typ*      :Type;
     exported* :BOOLEAN;
   END;
+  Forward   = POINTER TO FwdDecl;
+  FwdDecl   = RECORD
+    t    :Type;
+    next :Forward;
+  END;
 
 VAR
   scope :Decl;
+  fwds  :Forward;
 
-PROCEDURE LookupDecl0*(name :StringId) :Decl;
+PROCEDURE LookupDecl0(name :StringId) :Decl;
 VAR
   p :Decl;
 BEGIN
@@ -127,14 +133,48 @@ BEGIN
   RETURN t
 END NewArrayType;
 
-PROCEDURE NewPointerType*(base :Type) :Type;
+PROCEDURE NewPointerType*(l :Lex.Lexer; base :Type) :Type;
 VAR
   t :Type;
 BEGIN
-  NewType(t, typePointer);
-  t.base := base;
+  t := NIL;
+  IF (base # NIL) & (base.kind # typeRecord) THEN
+    Lex.ErrorLn(l, "Pointer base type must be a RECORD");
+  ELSE
+    NewType(t, typePointer);
+    t.base := base;
+  END;
   RETURN t
 END NewPointerType;
+
+PROCEDURE NewPointerTypeByName*(l :Lex.Lexer; name :StringId) :Type;
+VAR
+  d :Decl;
+  f :Forward;
+  t :Type;
+BEGIN
+  t := NIL;
+  d := LookupDecl0(name);
+  IF d = NIL THEN
+    (* forward decl *)
+    NewType(t, typePointer);
+    NEW(t.fields);
+    t.fields.name := name;
+    t.fields.next := NIL;
+    NEW(f);
+    f.t := t;
+    f.next := fwds;
+    fwds := f;
+  ELSE
+    IF d.kind # declType THEN
+      Lex.Error(l, "");
+      Lex.OutStr(l, d.name);
+      Out.PrintLn(" is not a TYPE");
+    END;
+    t := NewPointerType(l, d.typ);
+  END;
+  RETURN t
+END NewPointerTypeByName;
 
 PROCEDURE NewProcedureType*() :Type;
 VAR
@@ -183,6 +223,7 @@ VAR
   t :Type;
 BEGIN
   scope := NIL;
+  fwds := NIL;
   NewType(t, typeNil);
   AddTypeDecl(l, Lex.Intern(l, "NIL"), t);
   NewType(t, typeInteger);
@@ -197,6 +238,25 @@ BEGIN
   NewType(t, typeSet);
   AddTypeDecl(l, Lex.Intern(l, "SET"), t);
 END InitGlobalScope;
+
+PROCEDURE ResolveForwards*(l :Lex.Lexer);
+VAR
+  d :Decl;
+BEGIN
+  WHILE fwds # NIL DO
+    ASSERT(fwds.t.kind = typePointer);
+    d := LookupDecl(l, fwds.t.fields.name);
+    IF (d # NIL) & (d.kind = declType) & (d.typ.kind = typeRecord) THEN
+      fwds.t.base := d.typ;
+      fwds.t.fields := NIL;
+    ELSE
+      Lex.Error(l, "Bad forward declaration ");
+      Lex.OutStr(l, fwds.t.fields.name);
+      Out.Ln;
+    END;
+    fwds := fwds.next;
+  END;
+END ResolveForwards;
 
 PROCEDURE OpenScope*() :Decl;
 VAR

@@ -476,11 +476,18 @@ BEGIN
   RETURN r
 END ParseRecordType;
 
-PROCEDURE ParsePointerType;
+PROCEDURE ParsePointerType() :AST.Type;
+VAR
+  t :AST.Type;
 BEGIN
   ExpectToken(Lex.tPOINTER);
   ExpectToken(Lex.tTO);
-  ParseType;
+  IF IsToken(Lex.tIDENT) THEN
+    t := AST.NewPointerTypeByName(l, ExpectIdentifier());
+  ELSE
+    t := AST.NewPointerType(l, ParseType());
+  END;
+  RETURN t
 END ParsePointerType;
 
 PROCEDURE ParseFPSection(procType :AST.Type);
@@ -556,7 +563,7 @@ BEGIN
   ELSIF IsToken(Lex.tRECORD) THEN
     t := ParseRecordType();
   ELSIF IsToken(Lex.tPOINTER) THEN
-    ParsePointerType;
+    t := ParsePointerType();
   ELSIF IsToken(Lex.tPROCEDURE) THEN
     t := ParseProcedureType();
   ELSE
@@ -643,6 +650,7 @@ BEGIN
       ExpectToken(Lex.tSEMI);
     END;
   END;
+  AST.ResolveForwards(l);
   IF MatchToken(Lex.tVAR) THEN
     WHILE IsToken(Lex.tIDENT) DO
       ParseVarDeclaration;
@@ -738,12 +746,17 @@ BEGIN
   ParseModule;
   *)
   Lex.LexerInitFromString(l, "MODULE x; TYPE
+  Wow = POINTER TO R2;
+  R1 = RECORD a, b*, c, d :INTEGER; END;
+  R2 = RECORD (R1) e, f*, g :INTEGER; END;
+  Z1 = POINTER TO R1;
+  Z2 = POINTER TO R2;
+  Z3 = POINTER TO R3;
+  R3 = RECORD z :Z3; i :INTEGER END;
+  aa = ARRAY 10,20 OF INTEGER;
   P1 = PROCEDURE;
   P2 = PROCEDURE () :CHAR;
   P3 = PROCEDURE (a, b, c :INTEGER; VAR d :REAL; VAR e, f :CHAR) :SET;
-  R1 = RECORD a, b*, c, d :INTEGER; END;
-  R2 = RECORD (R1) e, f*, g :INTEGER; END;
-  aa = ARRAY 10,20 OF INTEGER;
   a = INTEGER; b* = CHAR; c = REAL; d = a; END x.");
   AST.InitGlobalScope(l);
   Lex.NextToken(l);
