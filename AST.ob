@@ -15,9 +15,12 @@ CONST
   typeRecord    = 10;
   typeProcedure = 11;
 
-  declConst  = 1;
-  declType*  = 2;
-  declVar    = 3;
+  declConst     = 1;
+  declType*     = 2;
+  declVar       = 3;
+  declParam*    = 4;
+  declVarParam* = 5;
+  declField*    = 6;
 
   declEND = 1001;
 
@@ -27,14 +30,14 @@ TYPE
   Type*     = POINTER TO TypeDesc;
   Decl*     = POINTER TO DeclDesc;
   TypeDesc  = RECORD
-    kind   :TypeKind;
-    base   :Type; (* POINTER type, ARRAY element, RECORD base, PROCEDURE return type *)
-    fields :Decl; (* RECORD fields or PROCEDURE formal parameters *)
+    kind    :TypeKind;
+    base*   :Type; (* POINTER type, ARRAY element, RECORD base, PROCEDURE return type *)
+    fields* :Decl; (* RECORD fields or PROCEDURE formal parameters, or name of forward decl *)
   END;
   DeclKind  = INTEGER;
   DeclDesc  = RECORD
     kind*     :DeclKind;
-    next      :Decl;
+    next*     :Decl;
     name*     :StringId;
     typ*      :Type;
     exported* :BOOLEAN;
@@ -106,6 +109,15 @@ BEGIN
   t.fields := NIL;
 END NewType;
 
+PROCEDURE NewArrayType*(base :Type) :Type;
+VAR
+  t :Type;
+BEGIN
+  NewType(t, typeArray);
+  t.base := base;
+  RETURN t
+END NewArrayType;
+
 PROCEDURE NewPointerType*(base :Type) :Type;
 VAR
   t :Type;
@@ -115,14 +127,38 @@ BEGIN
   RETURN t
 END NewPointerType;
 
-PROCEDURE NewArrayType*(base :Type) :Type;
+PROCEDURE NewProcedureType*() :Type;
 VAR
   t :Type;
 BEGIN
-  NewType(t, typeArray);
-  t.base := base;
+  NewType(t, typeProcedure);
   RETURN t
-END NewArrayType;
+END NewProcedureType;
+
+PROCEDURE NewRecordType*(l :Lex.Lexer; base :Type) :Type;
+VAR
+  t        :Type;
+  d, dCopy :Decl;
+BEGIN
+  NewType(t, typeRecord);
+  t.base := base;
+  IF base # NIL THEN
+    IF base.kind = typeRecord THEN
+      (* Copy fields from base *)
+      d := base.fields;
+      WHILE (d # NIL) & (d.kind # declEND) DO
+        dCopy := AddDecl(l, t.fields, d.name);
+	dCopy.kind := d.kind;
+	dCopy.typ := d.typ;
+	dCopy.exported := d.exported;
+	d := d.next;
+      END;
+    ELSE
+      Lex.ErrorLn(l, "RECORD base type is not a RECORD");
+    END;
+  END;
+  RETURN t
+END NewRecordType;
 
 PROCEDURE AddTypeDecl(VAR l :Lex.Lexer; name :StringId; t :Type);
 VAR

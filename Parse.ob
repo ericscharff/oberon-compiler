@@ -74,10 +74,22 @@ BEGIN
   RETURN d
 END ParseQualident;
 
-PROCEDURE ParseQualidentAndGetType;
+PROCEDURE ParseQualidentAndGetType() :AST.Type;
+VAR
+  d :AST.Decl;
+  t :AST.Type;
 BEGIN
-  ParseQualident;
-  (* Get decl's type *)
+  t := NIL;
+  d := ParseQualident();
+  IF d # NIL THEN
+    t := d.typ;
+    IF d.kind # AST.declType THEN
+      Lex.Error(l, "");
+      Lex.OutStr(l, d.name);
+      Out.PrintLn(" is not a TYPE");
+    END;
+  END;
+  RETURN t
 END ParseQualidentAndGetType;
 
 PROCEDURE ParseSetElement;
@@ -374,6 +386,19 @@ BEGIN
   END;
 END ParseStatementSequence0;
 
+PROCEDURE ParseFieldIdentDef(VAR recordScope :AST.Decl) :AST.Decl;
+VAR
+  d    :AST.Decl;
+  name :StringId;
+BEGIN
+  name := ExpectIdentifier();
+  d := AST.AddDecl(l, recordScope, name);
+  IF MatchToken(Lex.tSTAR) THEN
+    d.exported := TRUE;
+  END;
+  RETURN d
+END ParseFieldIdentDef;
+
 PROCEDURE ParseIdentDef() :AST.Decl;
 VAR
   d :AST.Decl;
@@ -395,33 +420,60 @@ BEGIN
   END;
 END ParseIdentList;
 
-PROCEDURE ParseArrayType;
+PROCEDURE ParseArrayType() :AST.Type;
+VAR
+  outer, current, last :AST.Type;
 BEGIN
   ExpectToken(Lex.tARRAY);
+  outer := AST.NewArrayType(NIL);
+  last := outer;
   ParseExpression;
   WHILE MatchToken(Lex.tCOMMA) DO
+    current := AST.NewArrayType(NIL);
+    last.base := current;
+    last := current;
     ParseExpression;
   END;
   ExpectToken(Lex.tOF);
-  ParseType;
+  current := ParseType();
+  last.base := current;
+  RETURN outer
 END ParseArrayType;
 
-PROCEDURE ParseRecordType;
+PROCEDURE ParseRecordType() :AST.Type;
+VAR
+  r, base, fieldType              :AST.Type;
+  baseDecl, firstField, lastField :AST.Decl;
 BEGIN
+  base := NIL;
   ExpectToken(Lex.tRECORD);
   IF MatchToken(Lex.tLPAREN) THEN
-    ParseQualident;
+    baseDecl := ParseQualident();
     ExpectToken(Lex.tRPAREN);
+    IF baseDecl # NIL THEN
+      base := baseDecl.typ;
+    END;
   END;
+  r := AST.NewRecordType(l, base);
   IF IsToken(Lex.tIDENT) THEN
     REPEAT
-      ParseIdentList;
+      firstField := ParseFieldIdentDef(r.fields);
+      lastField := firstField;
+      WHILE MatchToken(Lex.tCOMMA) DO
+        lastField := ParseFieldIdentDef(r.fields);
+      END;
       ExpectToken(Lex.tCOLON);
-      ParseType;
+      fieldType := ParseType();
+      WHILE (firstField # NIL) & (lastField # NIL) & (firstField # lastField.next) DO
+        firstField.kind := AST.declField;
+        firstField.typ := fieldType;
+	firstField := firstField.next;
+      END;
       MatchToken(Lex.tSEMI);
     UNTIL IsToken(Lex.tEND) OR IsToken(Lex.tEOF)
   END;
   ExpectToken(Lex.tEND);
+  RETURN r
 END ParseRecordType;
 
 PROCEDURE ParsePointerType;
@@ -431,12 +483,22 @@ BEGIN
   ParseType;
 END ParsePointerType;
 
-PROCEDURE ParseFPSection;
+PROCEDURE ParseFPSection(procType :AST.Type);
+VAR
+  name                  :StringId;
+  firstParam, lastParam :AST.Decl;
+  paramType             :AST.Type;
+  varParameter          :BOOLEAN;
 BEGIN
-  MatchToken(Lex.tVAR);
-  ExpectIdentifier;
+  varParameter := MatchToken(Lex.tVAR);
+  name := ExpectIdentifier();
+  firstParam := AST.AddDecl(l, procType.fields, name);
+  lastParam := firstParam;
+  IF varParameter THEN firstParam.kind := AST.declVarParam ELSE firstParam.kind := AST.declParam END;
   WHILE MatchToken(Lex.tCOMMA) DO
-    ExpectIdentifier;
+    name := ExpectIdentifier();
+    lastParam := AST.AddDecl(l, procType.fields, name);
+    IF varParameter THEN lastParam.kind := AST.declVarParam ELSE lastParam.kind := AST.declParam END;
   END;
   ExpectToken(Lex.tCOLON);
   (* The formal descrition of Oberon-07 is rather restrictive here. This *)
@@ -447,54 +509,56 @@ BEGIN
   WHILE MatchToken(Lex.tARRAY) DO
     (* ARRAY OF ... *)
     ExpectToken(Lex.tOF);
+    (* TODO: Open Array *)
   END;
-  ParseQualident;
+  paramType := ParseQualidentAndGetType();
+  WHILE (firstParam # NIL) & (lastParam # NIL) & (firstParam # lastParam.next) DO
+    firstParam.typ := paramType;
+    firstParam := firstParam.next;
+  END;
 END ParseFPSection;
 
-PROCEDURE ParseFormalParameters;
+PROCEDURE ParseFormalParameters() :AST.Type;
+VAR
+  t :AST.Type;
 BEGIN
+  t := AST.NewProcedureType();
   IF MatchToken(Lex.tLPAREN) THEN
     IF IsToken(Lex.tVAR) OR IsToken(Lex.tIDENT) THEN
-      ParseFPSection;
+      ParseFPSection(t);
     END;
     WHILE MatchToken(Lex.tSEMI) DO
-      ParseFPSection;
+      ParseFPSection(t);
     END;
     ExpectToken(Lex.tRPAREN);
     IF MatchToken(Lex.tCOLON) THEN
-      ParseQualident;
+      t.base := ParseQualidentAndGetType();
     END;
   END;
+  RETURN t
 END ParseFormalParameters;
 
-PROCEDURE ParseProcedureType;
+PROCEDURE ParseProcedureType() :AST.Type;
 BEGIN
   ExpectToken(Lex.tPROCEDURE);
-  ParseFormalParameters;
+  RETURN ParseFormalParameters()
 END ParseProcedureType;
 
 PROCEDURE ParseType0() :AST.Type;
 VAR
-  d :AST.Decl;
   t :AST.Type;
 BEGIN
+  t := NIL;
   IF IsToken(Lex.tIDENT) THEN
-    d := ParseQualident();
-    IF d.kind # AST.declType THEN
-      Lex.Error(l, "");
-      Lex.OutStr(l, d.name);
-      Out.PrintLn(" is not a TYPE");
-    ELSE
-      t := d.typ;
-    END;
+    t := ParseQualidentAndGetType();
   ELSIF IsToken(Lex.tARRAY) THEN
-    ParseArrayType;
+    t := ParseArrayType();
   ELSIF IsToken(Lex.tRECORD) THEN
-    ParseRecordType;
+    t := ParseRecordType();
   ELSIF IsToken(Lex.tPOINTER) THEN
     ParsePointerType;
   ELSIF IsToken(Lex.tPROCEDURE) THEN
-    ParseProcedureType;
+    t := ParseProcedureType();
   ELSE
     Lex.ErrorLn(l, "identifier, ARRAY, RECORD, POINTER, or PROCEDURE expected");
   END;
@@ -673,7 +737,14 @@ BEGIN
   Lex.NextToken(l);
   ParseModule;
   *)
-  Lex.LexerInitFromString(l, "MODULE x; TYPE a = INTEGER; b* = CHAR; c = REAL; d = a; END x.");
+  Lex.LexerInitFromString(l, "MODULE x; TYPE
+  P1 = PROCEDURE;
+  P2 = PROCEDURE () :CHAR;
+  P3 = PROCEDURE (a, b, c :INTEGER; VAR d :REAL; VAR e, f :CHAR) :SET;
+  R1 = RECORD a, b*, c, d :INTEGER; END;
+  R2 = RECORD (R1) e, f*, g :INTEGER; END;
+  aa = ARRAY 10,20 OF INTEGER;
+  a = INTEGER; b* = CHAR; c = REAL; d = a; END x.");
   AST.InitGlobalScope(l);
   Lex.NextToken(l);
   ParseModule;
