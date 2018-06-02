@@ -52,7 +52,7 @@ TYPE
   END;
 
 VAR
-  scope :Decl;
+  scope, globalScope :Decl;
   fwds  :Forward;
 
 PROCEDURE LookupDecl0(name :StringId) :Decl;
@@ -236,21 +236,25 @@ PROCEDURE InitGlobalScope*(VAR l :Lex.Lexer);
 VAR
   t :Type;
 BEGIN
-  scope := NIL;
   fwds := NIL;
-  NewType(t, typeNil);
-  AddTypeDecl(l, Lex.Intern(l, "NIL"), t);
-  NewType(t, typeInteger);
-  AddTypeDecl(l, Lex.Intern(l, "INTEGER"), t);
-  AddTypeDecl(l, Lex.Intern(l, "BYTE"), t);
-  NewType(t, typeReal);
-  AddTypeDecl(l, Lex.Intern(l, "REAL"), t);
-  NewType(t, typeBoolean);
-  AddTypeDecl(l, Lex.Intern(l, "BOOLEAN"), t);
-  NewType(t, typeChar);
-  AddTypeDecl(l, Lex.Intern(l, "CHAR"), t);
-  NewType(t, typeSet);
-  AddTypeDecl(l, Lex.Intern(l, "SET"), t);
+  IF globalScope = NIL THEN
+    scope := NIL;
+    NewType(t, typeNil);
+    AddTypeDecl(l, Lex.Intern(l, "NIL"), t);
+    NewType(t, typeInteger);
+    AddTypeDecl(l, Lex.Intern(l, "INTEGER"), t);
+    AddTypeDecl(l, Lex.Intern(l, "BYTE"), t);
+    NewType(t, typeReal);
+    AddTypeDecl(l, Lex.Intern(l, "REAL"), t);
+    NewType(t, typeBoolean);
+    AddTypeDecl(l, Lex.Intern(l, "BOOLEAN"), t);
+    NewType(t, typeChar);
+    AddTypeDecl(l, Lex.Intern(l, "CHAR"), t);
+    NewType(t, typeSet);
+    AddTypeDecl(l, Lex.Intern(l, "SET"), t);
+    globalScope := scope;
+  END;
+  scope := globalScope;
 END InitGlobalScope;
 
 PROCEDURE ResolveForwards*(l :Lex.Lexer);
@@ -342,9 +346,12 @@ BEGIN
   t := d.typ;
   d := LookupDecl(l, Lex.Intern(l, "BYTE"));
   ASSERT(t = d.typ);
+  scope := NIL;
+  globalScope := NIL;
   Out.PrintLn("PASS: AST test");
 END TestAST;
 
 BEGIN
+  globalScope := NIL;
   TestAST
 END AST.

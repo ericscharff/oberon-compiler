@@ -734,6 +734,7 @@ VAR
   s, e :StringId;
   d    :AST.Decl;
 BEGIN
+  AST.InitGlobalScope(l);
   d := AST.OpenScope();
   ExpectToken(Lex.tMODULE);
   s := ExpectIdentifier();
@@ -761,21 +762,35 @@ END ParseModule;
 
 (* This is called by the lexer. See Lex.ImportHelper. *)
 PROCEDURE ImportHelper;
+VAR
+  savedScope :AST.Decl;
 BEGIN
-  Out.PrintLn("Import helper");
+  (* ParseModule (below) will set the state back to the global scope. *)
+  (* Thus, we save the previous MODULE's scope here, parse the new    *)
+  (* MODULE, and then restore the old state. This handles a case like *)
+  (* MODULE X imports A, B.                                           *)
+  (* 1) start MODULE X parse (reset to global scope)                  *)
+  (* 2) start MODULE A parse (reset TO global scope)                  *)
+  (* 3) end MODULE A parse (a decls saved in lastModuleDecls)         *)
+  (* 4) Add decl FOR A to X's scope                                   *)
+  (* 5) start MODULE B parse (reset TO global scope)                  *)
+  (* 6) end MODULE B parse (a decls saved in lastModuleDecls)         *)
+  (* 7) Add decl FOR B to X's scope                                   *)
+  (* This savedScope call ensures we hold on to the A and B defs      *)
+  (* after all the global scope resetting.                            *)
+  savedScope := AST.CurrentScope();
   Lex.NextToken(l);
   ParseModule;
+  AST.CloseScope(savedScope);
 END ImportHelper;
 
 PROCEDURE TestParse;
 BEGIN
 (*
   Lex.LexerInitFromString(l, "WHILE i < 10 DO a;b;c; i := i + 1 END; j := i;");
-  AST.InitGlobalScope(l);
   Lex.NextToken(l);
   ParseStatementSequence;
   Lex.LexerInitFromString(l, "RECORD (Wow) a, b, c :POINTER TO J; k :REAL; m:ARRAY 2,3,4OF CHAR END;");
-  AST.InitGlobalScope(l);
   Lex.NextToken(l);
   ParseType;
   Lex.LexerInitFromString(l, "
@@ -786,19 +801,15 @@ BEGIN
   q* = INTEGER; r = q;
   END abc.
   ");
-  AST.InitGlobalScope(l);
   Lex.NextToken(l);
   ParseModule;
   Lex.LexerInitFromFile(l, "AST.ob");
-  AST.InitGlobalScope(l);
   Lex.NextToken(l);
   ParseModule;
   Lex.LexerInitFromFile(l, "Lex.ob");
-  AST.InitGlobalScope(l);
   Lex.NextToken(l);
   ParseModule;
   Lex.LexerInitFromFile(l, "Parse.ob");
-  AST.InitGlobalScope(l);
   Lex.NextToken(l);
   ParseModule;
   *)
@@ -820,7 +831,6 @@ BEGIN
   PROCEDURE X1; BEGIN rr.a := 4; X1 END X1;
   PROCEDURE Zen(xa, xb :INTEGER); VAR rr :INTEGER; BEGIN rr := xa + xb; END Zen;
   END x.");
-  AST.InitGlobalScope(l);
   Lex.NextToken(l);
   ParseModule;
   Out.PrintLn("PASS: Parser test");
