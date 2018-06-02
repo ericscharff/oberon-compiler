@@ -46,7 +46,7 @@ TYPE
 VAR
   scope :Decl;
 
-PROCEDURE LookupDecl*(l :Lex.Lexer; name :StringId) :Decl;
+PROCEDURE LookupDecl0*(name :StringId) :Decl;
 VAR
   p :Decl;
 BEGIN
@@ -54,6 +54,15 @@ BEGIN
   WHILE (p # NIL) & (p.name # name) DO
     p := p.next;
   END;
+  RETURN p
+END LookupDecl0;
+
+
+PROCEDURE LookupDecl*(l :Lex.Lexer; name :StringId) :Decl;
+VAR
+  p :Decl;
+BEGIN
+  p := LookupDecl0(name);
   IF p = NIL THEN
     Lex.Error(l, "");
     Lex.OutStr(l, name);
