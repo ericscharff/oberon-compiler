@@ -15,12 +15,13 @@ CONST
   typeRecord    = 10;
   typeProcedure = 11;
 
-  declConst     = 1;
-  declType*     = 2;
-  declVar*      = 3;
-  declParam*    = 4;
-  declVarParam* = 5;
-  declField*    = 6;
+  declConst      = 1;
+  declType*      = 2;
+  declVar*       = 3;
+  declProcedure* = 4;
+  declParam*     = 5;
+  declVarParam*  = 6;
+  declField*     = 7;
 
   declEND = 1001;
 
@@ -257,6 +258,21 @@ BEGIN
     fwds := fwds.next;
   END;
 END ResolveForwards;
+
+PROCEDURE AddFormalParamsToScope*(l :Lex.Lexer; procDecl :Decl);
+VAR
+  formal, actual :Decl;
+BEGIN
+  ASSERT(procDecl.kind = declProcedure);
+  ASSERT(procDecl.typ.kind = typeProcedure);
+  formal := procDecl.typ.fields;
+  WHILE formal # NIL DO
+    actual := AddScopeDecl(l, formal.name);
+    actual.kind := formal.kind;
+    actual.typ := formal.typ;
+    formal := formal.next;
+  END;
+END AddFormalParamsToScope;
 
 PROCEDURE OpenScope*() :Decl;
 VAR

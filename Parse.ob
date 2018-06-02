@@ -602,8 +602,12 @@ BEGIN
   END;
 END ParseVarDeclaration;
 
-PROCEDURE ParseProcedureBody;
+PROCEDURE ParseProcedureBody(procDecl :AST.Decl);
+VAR
+  oldScope :AST.Decl;
 BEGIN
+  oldScope := AST.OpenScope();
+  AST.AddFormalParamsToScope(l, procDecl);
   ParseDeclarationSequence;
   IF MatchToken(Lex.tBEGIN) THEN
     ParseStatementSequence;
@@ -612,30 +616,35 @@ BEGIN
     ParseExpression;
   END;
   ExpectToken(Lex.tEND);
+  AST.CloseScope(oldScope);
 END ParseProcedureBody;
 
-PROCEDURE ParseProcedureHeading;
+PROCEDURE ParseProcedureHeading() :AST.Decl;
+VAR
+  d :AST.Decl;
 BEGIN
   MatchToken(Lex.tNATIVE);
   ExpectToken(Lex.tPROCEDURE);
-  ParseIdentDef;
-  ParseFormalParameters;
+  d := ParseIdentDef();
+  d.kind := AST.declProcedure;
+  d.typ := ParseFormalParameters();
+  RETURN d
 END ParseProcedureHeading;
 
 PROCEDURE ParseProcedureDeclaration;
 VAR
-  e :StringId;
+  d       :AST.Decl;
+  endName :StringId;
 BEGIN
-  ParseProcedureHeading;
+  d := ParseProcedureHeading();
   ExpectToken(Lex.tSEMI);
-  ParseProcedureBody;
-  e := ExpectIdentifier();
-  IF 0 = e THEN
-    (* TODO *)
+  ParseProcedureBody(d);
+  endName := ExpectIdentifier();
+  IF d.name # endName THEN
     Lex.Error(l, "Procedure end name [");
-    Lex.OutStr(l, e);
+    Lex.OutStr(l, endName);
     Out.Str("] must match start name [");
-    (* Lex.OutStr(l, s); *)
+    Lex.OutStr(l, d.name);
     Out.PrintLn("]");
   END;
 END ParseProcedureDeclaration;
@@ -761,7 +770,10 @@ BEGIN
   P1 = PROCEDURE;
   P2 = PROCEDURE () :CHAR;
   P3 = PROCEDURE (a, b, c :INTEGER; VAR d :REAL; VAR e, f :CHAR) :SET;
-  a = INTEGER; b* = CHAR; c = REAL; d = a; VAR rr :R1; END x.");
+  a = INTEGER; b* = CHAR; c = REAL; d = a; VAR rr :R1;
+  PROCEDURE X1; BEGIN rr.a := 4; X1 END X1;
+  PROCEDURE Zen(xa, xb :INTEGER); VAR rr :INTEGER; BEGIN rr := xa + xb; END Zen;
+  END x.");
   AST.InitGlobalScope(l);
   Lex.NextToken(l);
   ParseModule;
