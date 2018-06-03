@@ -63,6 +63,7 @@ TYPE
   A call to a PROCEDURE, e.g., MyProc(arg1, Proc2(a, b), arr[i], 4) looks like
   Expr:
     kind  --> exprProcCall
+    iVal  --> 4
     lhs   --> Expr:
                 kind --> exprIdentDef
                 decl --> Decl FOR MyProc
@@ -71,6 +72,7 @@ TYPE
                 decl --> Decl FOR arg1
                 next --> Expr:
                            kind --> exprProcCall
+                           iVal --> 2
                            lhs  --> Expr:
                                       kind --> exprIdentRef
                                       decl --> decl for Proc2
@@ -106,6 +108,7 @@ TYPE
     decl   :Decl;          (* for identRef and typeguard                   *)
     iVal*  :INTEGER;       (* for INTEGER, BOOLEAN, STRING (StringId)      *)
                            (* for fieldref, StringId OF field name         *)
+                           (* for PROCEDURE call, number OF actual params  *)
     rVal   :REAL;
     setVal :SET;
   END;
