@@ -26,6 +26,12 @@ void Out_Int(int i) {
   }
 }
 
+void Out_Real(float r) {
+  if (!Out_muted) {
+    printf("%g", r);
+  }
+}
+
 void Out_Str(const char *s) {
   if (!Out_muted) {
     fputs(s, stdout);

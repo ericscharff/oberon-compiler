@@ -369,6 +369,7 @@ BEGIN
          Out.Str(TypeKindNames[e.typ.kind]);
          CASE e.typ.kind OF
            typeInteger, typeBoolean: Out.Str(" "); Out.Int(e.iVal);
+           | typeReal: Out.Str(" "); Out.Real(e.rVal);
            | typeSet: Out.Str(" "); Out.Int(ORD(e.setVal));
          END;
      | exprUnary :

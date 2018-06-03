@@ -241,7 +241,8 @@ END IsAddOperator;
 
 PROCEDURE ParseSimpleExpression() :AST.Expr;
 VAR
-  e :AST.Expr;
+  e  :AST.Expr;
+  op :Lex.TokenKind;
 BEGIN
   IF MatchToken(Lex.tPLUS) THEN
     (* unary plus *)
@@ -251,9 +252,9 @@ BEGIN
 
   e := ParseTerm();
   WHILE IsAddOperator() DO
-    (* TokenKind op = token.kind; *)
+    op := l.t.kind;
     Lex.NextToken(l);
-    ParseTerm;
+    e := AST.NewExprBinary(l, op, e, ParseTerm(), Decls.booleanType);
   END;
   RETURN e (* TODO *)
 END ParseSimpleExpression;
@@ -267,15 +268,16 @@ END IsRelation;
 
 PROCEDURE ParseExpression0() :AST.Expr;
 VAR
-  e :AST.Expr;
+  e  :AST.Expr;
+  op :Lex.TokenKind;
 BEGIN
   e := ParseSimpleExpression();
   IF IsRelation() THEN
-    (* TokenKind op = token.kind; *)
+    op := l.t.kind;
     Lex.NextToken(l);
-    ParseSimpleExpression;
+    e := AST.NewExprBinary(l, op, e, ParseSimpleExpression(), Decls.booleanType);
   END;
-  RETURN e (* TODO *)
+  RETURN e
 END ParseExpression0;
 
 PROCEDURE ParseIfStatement;
