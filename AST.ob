@@ -30,12 +30,12 @@ CONST
   exprVal*         = 1; (* CONST value *)
   exprUnary*       = 2;
   exprBinary*      = 3;
-  expridentRef     = 4;
+  exprIdentRef     = 4;
   exprProcCall     = 5;
   exprFieldRef     = 6;
   exprPointerDeref = 7;
   exprArrayRef     = 8;
-  exprTypeguard    = 9;
+  exprTypeGuard    = 9;
 
 TYPE
   StringId  = Lex.PoolIndex;
@@ -185,7 +185,7 @@ VAR
   e :Expr;
 BEGIN
   NewExpr(e, exprVal, typ);
-  e.iVal := 0;
+  e.setVal := {};
   RETURN e
 END NewExprSet;
 
@@ -246,6 +246,33 @@ BEGIN
   END;
   RETURN e
 END NewExprSetRange;
+
+PROCEDURE DumpExpr*(e :Expr);
+BEGIN
+  IF e = NIL THEN
+    Out.PrintLn("(NIL EXPR)");
+  ELSE
+    Out.Str("(");
+    CASE e.kind OF
+       exprVal :
+         Out.Str("VAL ");
+         Out.Str(TypeKindNames[e.typ.kind]);
+         CASE e.typ.kind OF
+           typeInteger, typeBoolean: Out.Str(" "); Out.Int(e.iVal);
+           | typeSet: Out.Str(" "); Out.Int(ORD(e.setVal));
+         END;
+     | exprUnary :
+     | exprBinary :
+     | exprIdentRef :
+     | exprProcCall :
+     | exprFieldRef :
+     | exprPointerDeref :
+     | exprArrayRef :
+     | exprTypeGuard :
+    END;
+    Out.PrintLn(")");
+  END;
+END DumpExpr;
 
 PROCEDURE InitTypeKindNames;
 BEGIN

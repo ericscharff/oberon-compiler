@@ -197,7 +197,7 @@ BEGIN
   ELSIF MatchToken(Lex.tFALSE) THEN
     e := AST.NewExprBoolean(0, Decls.booleanType);
   ELSIF IsToken(Lex.tLBRACE) THEN
-    ParseSet();
+    e := ParseSet();
   ELSIF IsToken(Lex.tIDENT) THEN
     ParseDesignator;
     IF IsToken(Lex.tLPAREN) THEN
@@ -211,7 +211,7 @@ BEGIN
   ELSE
     Lex.ErrorLn(l, "Factor expected");
   END;
-  RETURN e
+  RETURN e (* TODO *)
 END ParseFactor;
 
 PROCEDURE IsMulOperator() :BOOLEAN;
@@ -220,14 +220,17 @@ BEGIN
          IsToken(Lex.tMOD) OR IsToken(Lex.tAMP) OR IsToken(Lex.tXOR)
 END IsMulOperator;
 
-PROCEDURE ParseTerm;
+PROCEDURE ParseTerm() :AST.Expr;
+VAR
+  e :AST.Expr;
 BEGIN
-  ParseFactor;
+  e := ParseFactor();
   WHILE IsMulOperator() DO
     (* TokenKind op = token.kind; *)
     Lex.NextToken(l);
     ParseFactor;
   END;
+  RETURN e (* TODO *)
 END ParseTerm;
 
 PROCEDURE IsAddOperator() :BOOLEAN;
@@ -235,7 +238,9 @@ BEGIN
   RETURN IsToken(Lex.tPLUS) OR IsToken(Lex.tMINUS) OR IsToken(Lex.tOR)
 END IsAddOperator;
 
-PROCEDURE ParseSimpleExpression;
+PROCEDURE ParseSimpleExpression() :AST.Expr;
+VAR
+  e :AST.Expr;
 BEGIN
   IF MatchToken(Lex.tPLUS) THEN
     (* unary plus *)
@@ -243,12 +248,13 @@ BEGIN
     (* unary minus *)
   END;
 
-  ParseTerm;
+  e := ParseTerm();
   WHILE IsAddOperator() DO
     (* TokenKind op = token.kind; *)
     Lex.NextToken(l);
     ParseTerm;
   END;
+  RETURN e (* TODO *)
 END ParseSimpleExpression;
 
 PROCEDURE IsRelation() :BOOLEAN;
@@ -262,13 +268,13 @@ PROCEDURE ParseExpression0() :AST.Expr;
 VAR
   e :AST.Expr;
 BEGIN
-  ParseSimpleExpression;
+  e := ParseSimpleExpression();
   IF IsRelation() THEN
     (* TokenKind op = token.kind; *)
     Lex.NextToken(l);
     ParseSimpleExpression;
   END;
-  RETURN NIL (* TODO *)
+  RETURN e (* TODO *)
 END ParseExpression0;
 
 PROCEDURE ParseIfStatement;
@@ -595,7 +601,7 @@ PROCEDURE ParseConstDeclaration;
 BEGIN
   ParseIdentDef;
   ExpectToken(Lex.tEQ);
-  ParseExpression;
+  AST.DumpExpr(ParseExpression());
 END ParseConstDeclaration;
 
 PROCEDURE ParseTypeDeclaration;
