@@ -274,13 +274,13 @@ END NewExprSetRange;
 
 PROCEDURE ExpectTypeMatch(l :Lex.Lexer; op :Lex.TokenKind; lhs, rhs :Expr);
 BEGIN
-  IF lhs.typ.kind # rhs.typ.kind THEN
+  IF lhs.typ # rhs.typ THEN
     Lex.Error(l, "Type mismatch for op [");
     Out.Str(Lex.TokenNames[op]);
     Out.Str("] got ");
     Out.Str(TypeKindNames[lhs.typ.kind]);
     Out.Str(" and ");
-    Out.Str(TypeKindNames[rhs.typ.kind]);
+    Out.PrintLn(TypeKindNames[rhs.typ.kind]);
   END;
 END ExpectTypeMatch;
 
