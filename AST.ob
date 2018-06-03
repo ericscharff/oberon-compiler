@@ -47,6 +47,7 @@ TYPE
     kind*   :TypeKind;
     base*   :Type; (* POINTER type, ARRAY element, RECORD base, PROCEDURE return type *)
     fields* :Decl; (* RECORD fields / PROCEDURE formal parameters / IMPORT decls / name of forward decl *)
+    length* :INTEGER; (* ARRAY length, PROCEDURE number of parameters *)
   END;
   DeclKind  = INTEGER;
   DeclDesc  = RECORD
@@ -103,7 +104,7 @@ TYPE
                            (* for arrayRef, expr OF ARRAY index            *)
     next   :Expr;          (* for PROCEDURE call,next arg in list          *)
     decl   :Decl;          (* for identRef and typeguard                   *)
-    iVal   :INTEGER;       (* for INTEGER, BOOLEAN, STRING (StringId)      *)
+    iVal*  :INTEGER;       (* for INTEGER, BOOLEAN, STRING (StringId)      *)
                            (* for fieldref, StringId OF field name         *)
     rVal   :REAL;
     setVal :SET;

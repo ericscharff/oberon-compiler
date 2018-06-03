@@ -21,4 +21,7 @@ CONST
   four = two + two;
   eight = four * two;
   eightyfour = eight * 10 + four;
+
+TYPE
+  A = ARRAY eight, four OF INTEGER;
 END Simple.

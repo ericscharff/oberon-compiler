@@ -454,16 +454,17 @@ END ParseIdentDef;
 PROCEDURE ParseArrayType() :AST.Type;
 VAR
   outer, current, last :AST.Type;
+  e                    :AST.Expr;
 BEGIN
   ExpectToken(Lex.tARRAY);
-  outer := Decls.NewArrayType(NIL);
+  e := ParseExpression();
+  outer := Decls.NewArrayType(l, e);
   last := outer;
-  ParseExpression;
   WHILE MatchToken(Lex.tCOMMA) DO
-    current := Decls.NewArrayType(NIL);
+    e := ParseExpression();
+    current := Decls.NewArrayType(l, e);
     last.base := current;
     last := current;
-    ParseExpression;
   END;
   ExpectToken(Lex.tOF);
   current := ParseType();

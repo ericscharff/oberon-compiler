@@ -112,6 +112,7 @@ BEGIN
   t.kind := kind;
   t.base := NIL;
   t.fields := NIL;
+  t.length := 0;
 END NewType;
 
 PROCEDURE AddImportDecl*(l :Lex.Lexer; name :StringId; decls :AST.Decl);
@@ -124,12 +125,16 @@ BEGIN
   d.typ.fields := decls;
 END AddImportDecl;
 
-PROCEDURE NewArrayType*(base :AST.Type) :AST.Type;
+PROCEDURE NewArrayType*(l :Lex.Lexer; length :AST.Expr) :AST.Type;
 VAR
   t :AST.Type;
 BEGIN
   NewType(t, AST.typeArray);
-  t.base := base;
+  IF AST.IsConst(length) & (length.typ.kind = AST.typeInteger) THEN
+    t.length := length.iVal;
+  ELSE
+    Lex.ErrorLn(l, "ARRAY length must be a CONST INTEGER");
+  END;
   RETURN t
 END NewArrayType;
 
