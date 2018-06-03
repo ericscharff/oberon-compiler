@@ -617,10 +617,10 @@ BEGIN
   d.kind := AST.declConst;
   d.typ := e.typ;
   d.expr := e;
-  AST.DumpExpr(e);
   IF ~AST.IsConst(e) THEN
     Lex.ErrorLn(l, "CONST declaration is not constant");
   END;
+  AST.DumpDecl(l, d);
 END ParseConstDeclaration;
 
 PROCEDURE ParseTypeDeclaration;

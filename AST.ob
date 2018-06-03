@@ -115,6 +115,7 @@ TYPE
 
 VAR
   TypeKindNames :ARRAY typeEND, 10 OF CHAR;
+  DumpExpr :PROCEDURE (l :Lex.Lexer; e :Expr);
 
 PROCEDURE ExpectType(l :Lex.Lexer; e :Expr; kind :TypeKind);
 BEGIN
@@ -381,7 +382,27 @@ BEGIN
   RETURN e
 END NewExprBinary;
 
-PROCEDURE DumpExpr*(e :Expr);
+PROCEDURE DumpDecl*(l :Lex.Lexer; d :Decl);
+BEGIN
+  Out.Str("(DECL ");
+  Lex.OutStr(l, d.name);
+  Out.Str(" ");
+  CASE d.kind OF
+  declImport: Out.Str("IMPORT ")
+  | declConst: Out.Str("CONST "); DumpExpr(l, d.expr);
+  | declType: Out.Str("TYPE ");
+  | declVar: Out.Str("VAR ");
+  | declProcedure: Out.Str("PROCEDURE ");
+  | declParam: Out.Str("PARAM ");
+  | declVarParam: Out.Str("VARPARAM ");
+  | declEND: Out.Str("SCOPE END ");
+  END;
+  Out.Str(TypeKindNames[d.typ.kind]);
+  Out.PrintLn(")");
+
+END DumpDecl;
+
+PROCEDURE DumpExpr0*(l :Lex.Lexer; e :Expr);
 BEGIN
   IF e = NIL THEN
     Out.PrintLn("(NIL EXPR)");
@@ -397,8 +418,22 @@ BEGIN
            | typeSet: Out.Str(" "); Out.Int(ORD(e.setVal));
          END;
      | exprUnary :
+         Out.Str("UNARY ");
+         Out.Str(Lex.TokenNames[e.op]);
+         Out.Str(" ");
+         Out.Str(TypeKindNames[e.typ.kind]);
+         DumpExpr(l, e.lhs);
      | exprBinary :
+         Out.Str("BINARY ");
+         Out.Str(Lex.TokenNames[e.op]);
+         Out.Str(" ");
+         Out.Str(TypeKindNames[e.typ.kind]);
+         DumpExpr(l, e.lhs);
+         Out.Str(" ");
+         DumpExpr(l, e.rhs);
      | exprIdentRef :
+         Out.Str("IDENTREF ");
+         DumpDecl(l, e.decl);
      | exprProcCall :
      | exprFieldRef :
      | exprPointerDeref :
@@ -407,7 +442,7 @@ BEGIN
     END;
     Out.PrintLn(")");
   END;
-END DumpExpr;
+END DumpExpr0;
 
 PROCEDURE InitTypeKindNames;
 BEGIN
@@ -426,5 +461,6 @@ BEGIN
 END InitTypeKindNames;
 
 BEGIN
+  DumpExpr := DumpExpr0;
   InitTypeKindNames;
 END AST.
