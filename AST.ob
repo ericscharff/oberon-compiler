@@ -298,20 +298,20 @@ BEGIN
   e.op := op;
   e.lhs := lhs;
   CASE op OF
-      Lex.tPLUS, Lex.tMINUS:
+      Lex.tPLUS:
+      IF lhs.typ.kind IN {typeInteger, typeReal, typeSet} THEN
+        e := lhs;
+      ELSE
+        Lex.ErrorLn(l, "Expected INTEGER, REAL, or SET");
+      END;
+    | Lex.tMINUS:
       IF lhs.typ.kind IN {typeInteger, typeReal, typeSet} THEN
         IF IsConst(lhs) THEN
           e.kind := exprVal;
           (* we do every operation, even if some are invalid, because one will be right *)
-          IF op = Lex.tPLUS THEN
-            e.iVal := lhs.iVal;
-            e.rVal := lhs.rVal;
-            e.setVal := lhs.setVal;
-          ELSIF op = Lex.tMINUS THEN
-            e.iVal := -lhs.iVal;
-            e.rVal := -lhs.rVal;
-            e.setVal := -lhs.setVal;
-          END;
+          e.iVal := -lhs.iVal;
+          e.rVal := -lhs.rVal;
+          e.setVal := -lhs.setVal;
         END;
       ELSE
         Lex.ErrorLn(l, "Expected INTEGER, REAL, or SET");
