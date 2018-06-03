@@ -468,10 +468,12 @@ BEGIN
   ExpectToken(Lex.tARRAY);
   e := ParseExpression();
   outer := Decls.NewArrayType(l, e);
+  ASSERT(e.iVal > 0);
   last := outer;
   WHILE MatchToken(Lex.tCOMMA) DO
     e := ParseExpression();
     current := Decls.NewArrayType(l, e);
+    ASSERT(e.iVal > 0);
     last.base := current;
     last := current;
   END;
@@ -535,10 +537,11 @@ PROCEDURE ParseFPSection(procType :AST.Type);
 VAR
   name                  :StringId;
   firstParam, lastParam :AST.Decl;
-  paramType             :AST.Type;
-  varParameter          :BOOLEAN;
+  paramType, arrType    :AST.Type;
+  varParameter, openArr :BOOLEAN;
 BEGIN
   varParameter := MatchToken(Lex.tVAR);
+  openArr := FALSE;
   name := ExpectIdentifier();
   firstParam := Decls.AddDecl(l, procType.fields, name);
   lastParam := firstParam;
@@ -554,12 +557,17 @@ BEGIN
   (* requires that the type be an identifier, although the "official"    *)
   (* Oberon-07 compiler (in Project Oberon 2013) actually allows         *)
   (* procedures here, *)
-  WHILE MatchToken(Lex.tARRAY) DO
+  IF MatchToken(Lex.tARRAY) THEN
     (* ARRAY OF ... *)
     ExpectToken(Lex.tOF);
-    (* TODO: Open Array *)
+    openArr := TRUE;
   END;
   paramType := ParseQualidentAndGetType();
+  IF openArr THEN
+    arrType := Decls.NewArrayType(l, AST.NewExprInteger(0, Decls.integerType));
+    arrType.base := paramType;
+    paramType := arrType;
+  END;
   WHILE (firstParam # NIL) & (lastParam # NIL) & (firstParam # lastParam.next) DO
     firstParam.typ := paramType;
     firstParam := firstParam.next;
