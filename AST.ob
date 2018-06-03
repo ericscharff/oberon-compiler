@@ -290,6 +290,44 @@ BEGIN
   RETURN good
 END ExpectTypeMatch;
 
+PROCEDURE NewExprUnary*(l :Lex.Lexer; op :Lex.TokenKind; lhs :Expr) :Expr;
+VAR
+  e :Expr;
+BEGIN
+  NewExpr(e, exprUnary, lhs.typ);
+  e.op := op;
+  e.lhs := lhs;
+  CASE op OF
+      Lex.tPLUS, Lex.tMINUS:
+      IF lhs.typ.kind IN {typeInteger, typeReal, typeSet} THEN
+        IF IsConst(lhs) THEN
+          e.kind := exprVal;
+          (* we do every operation, even if some are invalid, because one will be right *)
+          IF op = Lex.tPLUS THEN
+            e.iVal := lhs.iVal;
+            e.rVal := lhs.rVal;
+            e.setVal := lhs.setVal;
+          ELSIF op = Lex.tMINUS THEN
+            e.iVal := -lhs.iVal;
+            e.rVal := -lhs.rVal;
+            e.setVal := -lhs.setVal;
+          END;
+        END;
+      ELSE
+        Lex.ErrorLn(l, "Expected INTEGER, REAL, or SET");
+      END;
+    | Lex.tTILDE:
+      IF lhs.typ.kind = typeBoolean THEN
+        IF IsConst(lhs) THEN
+          (* evaluate *)
+        END;
+      ELSE
+        Lex.ErrorLn(l, "Expected BOOLEAN");
+      END;
+  END;
+  RETURN e
+END NewExprUnary;
+
 PROCEDURE NewExprBinary*(l :Lex.Lexer; op :Lex.TokenKind; lhs, rhs :Expr; booleanType :Type) :Expr;
 VAR
   e :Expr;

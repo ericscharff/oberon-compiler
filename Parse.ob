@@ -210,7 +210,7 @@ BEGIN
     e := ParseExpression();
     ExpectToken(Lex.tRPAREN);
   ELSIF MatchToken(Lex.tTILDE) THEN
-    ParseFactor;
+    e := AST.NewExprUnary(l, Lex.tTILDE, ParseFactor());
   ELSE
     Lex.ErrorLn(l, "Factor expected");
   END;
@@ -244,22 +244,31 @@ END IsAddOperator;
 
 PROCEDURE ParseSimpleExpression() :AST.Expr;
 VAR
-  e  :AST.Expr;
-  op :Lex.TokenKind;
+  e                     :AST.Expr;
+  op                    :Lex.TokenKind;
+  unaryPlus, unaryMinus :BOOLEAN;
 BEGIN
+  unaryPlus := FALSE;
+  unaryMinus := FALSE;
   IF MatchToken(Lex.tPLUS) THEN
-    (* unary plus *)
+    unaryPlus := TRUE;
   ELSIF MatchToken(Lex.tMINUS) THEN
-    (* unary minus *)
+    unaryMinus := TRUE;
   END;
 
   e := ParseTerm();
+  IF unaryPlus THEN
+    e := AST.NewExprUnary(l, Lex.tPLUS, e);
+  END;
+  IF unaryMinus THEN
+    e := AST.NewExprUnary(l, Lex.tMINUS, e);
+  END;
   WHILE IsAddOperator() DO
     op := l.t.kind;
     Lex.NextToken(l);
     e := AST.NewExprBinary(l, op, e, ParseTerm(), Decls.booleanType);
   END;
-  RETURN e (* TODO *)
+  RETURN e
 END ParseSimpleExpression;
 
 PROCEDURE IsRelation() :BOOLEAN;

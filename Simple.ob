@@ -27,5 +27,5 @@ TYPE
 VAR
   i1, i2, i3, i4 :INTEGER;
 BEGIN
-  i1 := i1 * i2 + i3 * i4 + 3 + i4
+  i1 := i1 * (-i2) + i3 * i4 + 3 + i4
 END Simple.
