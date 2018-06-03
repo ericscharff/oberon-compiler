@@ -106,4 +106,9 @@ TYPE
     rVal  :REAL;
   END;
 
+PROCEDURE NewExprInteger*(iVal :INTEGER; type :Type) :Expr;
+BEGIN
+  RETURN NIL
+END NewExprInteger;
+
 END AST.

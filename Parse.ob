@@ -168,9 +168,11 @@ BEGIN
 END ParseActualParameters;
 
 PROCEDURE ParseFactor;
+VAR
+  e :AST.Expr;
 BEGIN
   IF IsToken(Lex.tINT) THEN
-    (* e := AST.NewExprInteger(l.t.iVal); *)
+    e := AST.NewExprInteger(l.t.iVal, Decls.integerType);
     MatchToken(Lex.tINT);
   ELSIF IsToken(Lex.tREAL) THEN
     MatchToken(Lex.tREAL);
