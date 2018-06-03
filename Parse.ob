@@ -204,7 +204,7 @@ BEGIN
       ParseActualParameters;
     END;
   ELSIF MatchToken(Lex.tLPAREN) THEN
-    ParseExpression;
+    e := ParseExpression();
     ExpectToken(Lex.tRPAREN);
   ELSIF MatchToken(Lex.tTILDE) THEN
     ParseFactor;
@@ -222,15 +222,16 @@ END IsMulOperator;
 
 PROCEDURE ParseTerm() :AST.Expr;
 VAR
-  e :AST.Expr;
+  e  :AST.Expr;
+  op :Lex.TokenKind;
 BEGIN
   e := ParseFactor();
   WHILE IsMulOperator() DO
-    (* TokenKind op = token.kind; *)
+    op := l.t.kind;
     Lex.NextToken(l);
-    ParseFactor;
+    e := AST.NewExprBinary(l, op, e, ParseFactor(), Decls.booleanType);
   END;
-  RETURN e (* TODO *)
+  RETURN e
 END ParseTerm;
 
 PROCEDURE IsAddOperator() :BOOLEAN;
@@ -592,7 +593,7 @@ BEGIN
   ELSIF IsToken(Lex.tPROCEDURE) THEN
     t := ParseProcedureType();
   ELSE
-    Lex.ErrorLn(l, "identifier, ARRAY, RECORD, POINTER, or PROCEDURE expected");
+    Lex.ErrorLn(l, "Identifier, ARRAY, RECORD, POINTER, or PROCEDURE expected");
   END;
   RETURN t
 END ParseType0;

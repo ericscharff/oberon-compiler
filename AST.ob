@@ -247,6 +247,116 @@ BEGIN
   RETURN e
 END NewExprSetRange;
 
+PROCEDURE ExpectTypeMatch(l :Lex.Lexer; op :Lex.TokenKind; lhs, rhs :Expr);
+BEGIN
+  IF lhs.typ.kind # rhs.typ.kind THEN
+    Lex.Error(l, "Type mismatch for op [");
+    Out.Str(Lex.TokenNames[op]);
+    Out.Str("] got ");
+    Out.Str(TypeKindNames[lhs.typ.kind]);
+    Out.Str(" and ");
+    Out.Str(TypeKindNames[rhs.typ.kind]);
+  END;
+END ExpectTypeMatch;
+
+PROCEDURE NewExprBinary*(l :Lex.Lexer; op :Lex.TokenKind; lhs, rhs :Expr; booleanType :Type) :Expr;
+VAR
+  e :Expr;
+BEGIN
+  NewExpr(e, exprBinary, lhs.typ);
+  e.op := op;
+  e.lhs := lhs;
+  e.rhs := rhs;
+  CASE op OF
+      Lex.tPLUS, Lex.tMINUS, Lex.tSTAR, Lex.tSLASH:
+      ExpectTypeMatch(l, op, lhs, rhs);
+      IF lhs.typ.kind IN {typeInteger, typeReal, typeSet} THEN
+        IF IsConst(lhs) & IsConst(rhs) THEN
+          e.kind := exprVal;
+          (* we do every operation, even if some are invalid, because one will be right *)
+          IF op = Lex.tPLUS THEN
+            e.iVal := lhs.iVal + rhs.iVal;
+            e.rVal := lhs.rVal + rhs.rVal;
+            e.setVal := lhs.setVal + rhs.setVal;
+          ELSIF op = Lex.tMINUS THEN
+            e.iVal := lhs.iVal - rhs.iVal;
+            e.rVal := lhs.rVal - rhs.rVal;
+            e.setVal := lhs.setVal - rhs.setVal;
+          ELSIF op = Lex.tSTAR THEN
+            e.iVal := lhs.iVal * rhs.iVal;
+            e.rVal := lhs.rVal * rhs.rVal;
+            e.setVal := lhs.setVal * rhs.setVal;
+          ELSIF op = Lex.tSLASH THEN
+            (* avoid division by zero by instead returning a wrong answer *)
+            IF rhs.iVal = 0 THEN e.iVal := 0 ELSE e.iVal := lhs.iVal / rhs.iVal END;
+            IF rhs.rVal = 0.0 THEN e.rVal := 0.0 ELSE e.rVal := lhs.rVal / rhs.rVal END;
+            e.setVal := lhs.setVal / rhs.setVal;
+          END;
+        END;
+      ELSE
+        Lex.ErrorLn(l, "Expected INTEGER, REAL, or SET");
+      END;
+    | Lex.tDIV, Lex.tMOD, Lex.tXOR:
+      ExpectTypeMatch(l, op, lhs, rhs);
+      IF lhs.typ.kind = typeInteger THEN
+        IF IsConst(lhs) & IsConst(rhs) THEN
+          e.kind := exprVal;
+          IF op = Lex.tDIV THEN
+            e.iVal := lhs.iVal DIV rhs.iVal;
+          ELSIF op = Lex.tMOD THEN
+            e.iVal := lhs.iVal MOD rhs.iVal;
+          ELSIF op = Lex.tXOR THEN
+            e.iVal := lhs.iVal XOR rhs.iVal;
+          END;
+        END;
+      ELSE
+        Lex.ErrorLn(l, "Expected INTEGER");
+      END;
+    | Lex.tAMP, Lex.tOR:
+      ExpectTypeMatch(l, op, lhs, rhs);
+      IF lhs.typ.kind = typeBoolean THEN
+        IF IsConst(lhs) & IsConst(rhs) THEN
+          (* evaluate *)
+        END;
+      ELSE
+        Lex.ErrorLn(l, "Expected BOOLEAN");
+      END;
+    | Lex.tLT, Lex.tGT, Lex.tLTEQ, Lex.tGTEQ:
+      e.typ := booleanType;
+      ExpectTypeMatch(l, op, lhs, rhs);
+      IF lhs.typ.kind IN {typeInteger, typeReal, typeSet, typeString, typeChar} THEN
+        IF IsConst(lhs) & IsConst(rhs) THEN
+          (* evaluate *)
+        END;
+      ELSE
+        Lex.ErrorLn(l, "Expected INTEGER, REAL, SET, STRING, or CHAR");
+      END;
+    | Lex.tEQ, Lex.tPOUND:
+      e.typ := booleanType;
+      ExpectTypeMatch(l, op, lhs, rhs);
+      IF lhs.typ.kind IN {typeInteger, typeReal, typeSet, typeString, typeChar, typePointer, typeProcedure} THEN
+        IF IsConst(lhs) & IsConst(rhs) THEN
+          (* evaluate *)
+        END;
+      ELSE
+        Lex.ErrorLn(l, "Expected INTEGER, REAL, SET, STRING, CHAR, POINTER, or PROCEDURE");
+      END;
+    | Lex.tIN:
+      e.typ := booleanType;
+      IF (lhs.typ.kind = typeInteger) & (rhs.typ.kind = typeSet) THEN
+        IF IsConst(lhs) & IsConst(rhs) THEN
+          (* evaluate *)
+        END;
+      ELSE
+        Lex.ErrorLn(l, "Expected INTEGER and SET expected");
+      END;
+    | Lex.tIS:
+      e.typ := booleanType;
+      (* (T0 x T1) -> BOOLEAN *)
+  END;
+  RETURN e
+END NewExprBinary;
+
 PROCEDURE DumpExpr*(e :Expr);
 BEGIN
   IF e = NIL THEN
