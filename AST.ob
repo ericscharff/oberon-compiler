@@ -272,9 +272,14 @@ BEGIN
   RETURN e
 END NewExprSetRange;
 
-PROCEDURE ExpectTypeMatch(l :Lex.Lexer; op :Lex.TokenKind; lhs, rhs :Expr);
+PROCEDURE ExpectTypeMatch(l :Lex.Lexer; op :Lex.TokenKind; lhs, rhs :Expr) :BOOLEAN;
+VAR
+  good :BOOLEAN;
 BEGIN
-  IF lhs.typ # rhs.typ THEN
+  good := FALSE;
+  IF lhs.typ = rhs.typ THEN
+    good := TRUE;
+  ELSE
     Lex.Error(l, "Type mismatch for op [");
     Out.Str(Lex.TokenNames[op]);
     Out.Str("] got ");
@@ -282,6 +287,7 @@ BEGIN
     Out.Str(" and ");
     Out.PrintLn(TypeKindNames[rhs.typ.kind]);
   END;
+  RETURN good
 END ExpectTypeMatch;
 
 PROCEDURE NewExprBinary*(l :Lex.Lexer; op :Lex.TokenKind; lhs, rhs :Expr; booleanType :Type) :Expr;
@@ -294,8 +300,8 @@ BEGIN
   e.rhs := rhs;
   CASE op OF
       Lex.tPLUS, Lex.tMINUS, Lex.tSTAR, Lex.tSLASH:
-      ExpectTypeMatch(l, op, lhs, rhs);
-      IF lhs.typ.kind IN {typeInteger, typeReal, typeSet} THEN
+      IF ExpectTypeMatch(l, op, lhs, rhs) &
+         (lhs.typ.kind IN {typeInteger, typeReal, typeSet}) THEN
         IF IsConst(lhs) & IsConst(rhs) THEN
           e.kind := exprVal;
           (* we do every operation, even if some are invalid, because one will be right *)
@@ -322,8 +328,8 @@ BEGIN
         Lex.ErrorLn(l, "Expected INTEGER, REAL, or SET");
       END;
     | Lex.tDIV, Lex.tMOD, Lex.tXOR:
-      ExpectTypeMatch(l, op, lhs, rhs);
-      IF lhs.typ.kind = typeInteger THEN
+      IF ExpectTypeMatch(l, op, lhs, rhs) &
+         (lhs.typ.kind = typeInteger) THEN
         IF IsConst(lhs) & IsConst(rhs) THEN
           e.kind := exprVal;
           IF op = Lex.tDIV THEN
@@ -338,8 +344,8 @@ BEGIN
         Lex.ErrorLn(l, "Expected INTEGER");
       END;
     | Lex.tAMP, Lex.tOR:
-      ExpectTypeMatch(l, op, lhs, rhs);
-      IF lhs.typ.kind = typeBoolean THEN
+      IF ExpectTypeMatch(l, op, lhs, rhs) &
+         (lhs.typ.kind = typeBoolean) THEN
         IF IsConst(lhs) & IsConst(rhs) THEN
           (* evaluate *)
         END;
@@ -348,8 +354,8 @@ BEGIN
       END;
     | Lex.tLT, Lex.tGT, Lex.tLTEQ, Lex.tGTEQ:
       e.typ := booleanType;
-      ExpectTypeMatch(l, op, lhs, rhs);
-      IF lhs.typ.kind IN {typeInteger, typeReal, typeSet, typeString, typeChar} THEN
+      IF ExpectTypeMatch(l, op, lhs, rhs) &
+         (lhs.typ.kind IN {typeInteger, typeReal, typeSet, typeString, typeChar}) THEN
         IF IsConst(lhs) & IsConst(rhs) THEN
           (* evaluate *)
         END;
@@ -358,8 +364,8 @@ BEGIN
       END;
     | Lex.tEQ, Lex.tPOUND:
       e.typ := booleanType;
-      ExpectTypeMatch(l, op, lhs, rhs);
-      IF lhs.typ.kind IN {typeInteger, typeReal, typeSet, typeString, typeChar, typePointer, typeProcedure} THEN
+      IF ExpectTypeMatch(l, op, lhs, rhs) &
+         (lhs.typ.kind IN {typeInteger, typeReal, typeSet, typeString, typeChar, typePointer, typeProcedure}) THEN
         IF IsConst(lhs) & IsConst(rhs) THEN
           (* evaluate *)
         END;
