@@ -11,6 +11,7 @@ TYPE
   END;
 
 VAR
+  nilType*, integerType*, realType*, booleanType*, charType*, setType* :AST.Type;
   scope, globalScope :AST.Decl;
   fwds  :Forward;
 
@@ -217,34 +218,32 @@ BEGIN
 END AddTypeDecl;
 
 PROCEDURE InitGlobalScope*(VAR l :Lex.Lexer);
-VAR
-  t :AST.Type;
 BEGIN
   fwds := NIL;
   IF globalScope = NIL THEN
     scope := NIL;
-    NewType(t, AST.typeNil);
-    AddTypeDecl(l, Lex.Intern(l, "NIL"), t);
-    NewType(t, AST.typeInteger);
-    AddTypeDecl(l, Lex.Intern(l, "INTEGER"), t);
-    AddTypeDecl(l, Lex.Intern(l, "BYTE"), t);
-    NewType(t, AST.typeReal);
-    AddTypeDecl(l, Lex.Intern(l, "REAL"), t);
-    NewType(t, AST.typeBoolean);
-    AddTypeDecl(l, Lex.Intern(l, "BOOLEAN"), t);
-    NewType(t, AST.typeChar);
-    AddTypeDecl(l, Lex.Intern(l, "CHAR"), t);
-    NewType(t, AST.typeSet);
-    AddTypeDecl(l, Lex.Intern(l, "SET"), t);
+    NewType(nilType, AST.typeNil);
+    AddTypeDecl(l, Lex.Intern(l, "NIL"), nilType);
+    NewType(integerType, AST.typeInteger);
+    AddTypeDecl(l, Lex.Intern(l, "INTEGER"), integerType);
+    AddTypeDecl(l, Lex.Intern(l, "BYTE"), integerType);
+    NewType(realType, AST.typeReal);
+    AddTypeDecl(l, Lex.Intern(l, "REAL"), realType);
+    NewType(booleanType, AST.typeBoolean);
+    AddTypeDecl(l, Lex.Intern(l, "BOOLEAN"), booleanType);
+    NewType(charType, AST.typeChar);
+    AddTypeDecl(l, Lex.Intern(l, "CHAR"), charType);
+    NewType(setType, AST.typeSet);
+    AddTypeDecl(l, Lex.Intern(l, "SET"), setType);
     (* stuff to fix *)
-    AddTypeDecl(l, Lex.Intern(l, "INC"), t);
-    AddTypeDecl(l, Lex.Intern(l, "DEC"), t);
-    AddTypeDecl(l, Lex.Intern(l, "ASSERT"), t);
-    AddTypeDecl(l, Lex.Intern(l, "ORD"), t);
-    AddTypeDecl(l, Lex.Intern(l, "CHR"), t);
-    AddTypeDecl(l, Lex.Intern(l, "FLT"), t);
-    AddTypeDecl(l, Lex.Intern(l, "ABS"), t);
-    AddTypeDecl(l, Lex.Intern(l, "NEW"), t);
+    AddTypeDecl(l, Lex.Intern(l, "INC"), nilType);
+    AddTypeDecl(l, Lex.Intern(l, "DEC"), nilType);
+    AddTypeDecl(l, Lex.Intern(l, "ASSERT"), nilType);
+    AddTypeDecl(l, Lex.Intern(l, "ORD"), nilType);
+    AddTypeDecl(l, Lex.Intern(l, "CHR"), nilType);
+    AddTypeDecl(l, Lex.Intern(l, "FLT"), nilType);
+    AddTypeDecl(l, Lex.Intern(l, "ABS"), nilType);
+    AddTypeDecl(l, Lex.Intern(l, "NEW"), nilType);
     globalScope := scope;
   END;
   scope := globalScope;
