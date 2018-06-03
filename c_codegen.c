@@ -113,6 +113,9 @@ void gen_type(Type *t, const char *packageName, const char *name) {
         if (t->procedure_type.params) {
           for (size_t i = 0; i < buf_len(t->procedure_type.params); i++) {
             gen_type(t->procedure_type.params[i].type, "", "");
+            if (t->procedure_type.params[i].type->kind == TYPE_RECORD) {
+              gen_str("*");
+            }
             if (i != buf_len(t->procedure_type.params) - 1) {
               gen_str(", ");
             }
