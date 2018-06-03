@@ -171,21 +171,22 @@ PROCEDURE ParseFactor;
 VAR
   e :AST.Expr;
 BEGIN
+  e := AST.NewExprNil(Decls.nilType);
   IF IsToken(Lex.tINT) THEN
     e := AST.NewExprInteger(l.t.iVal, Decls.integerType);
     MatchToken(Lex.tINT);
   ELSIF IsToken(Lex.tREAL) THEN
+    e := AST.NewExprReal(l.t.rVal, Decls.realType);
     MatchToken(Lex.tREAL);
   ELSIF IsToken(Lex.tSTRING) THEN
+    e := AST.NewExprString(l.t.sVal, Decls.stringType);
     MatchToken(Lex.tSTRING);
   ELSIF MatchToken(Lex.tNIL) THEN
-    (* nil *)
+    e := AST.NewExprNil(Decls.nilType);
   ELSIF MatchToken(Lex.tTRUE) THEN
-    (* true *)
+    e := AST.NewExprBoolean(1, Decls.booleanType);
   ELSIF MatchToken(Lex.tFALSE) THEN
-    (* false *)
-  ELSIF MatchToken(Lex.tFALSE) THEN
-    (* false *)
+    e := AST.NewExprBoolean(0, Decls.booleanType);
   ELSIF IsToken(Lex.tLBRACE) THEN
     ParseSet;
   ELSIF IsToken(Lex.tIDENT) THEN

@@ -106,9 +106,56 @@ TYPE
     rVal  :REAL;
   END;
 
-PROCEDURE NewExprInteger*(iVal :INTEGER; type :Type) :Expr;
+PROCEDURE NewExpr(VAR e :Expr; kind :ExprKind; typ :Type);
 BEGIN
-  RETURN NIL
+  NEW(e);
+  e.kind := kind;
+  e.typ := typ;
+END NewExpr;
+
+PROCEDURE NewExprInteger*(iVal :INTEGER; typ :Type) :Expr;
+VAR
+  e :Expr;
+BEGIN
+  NewExpr(e, exprVal, typ);
+  e.iVal := iVal;
+  RETURN e
 END NewExprInteger;
+
+PROCEDURE NewExprReal*(rVal :REAL; typ :Type) :Expr;
+VAR
+  e :Expr;
+BEGIN
+  NewExpr(e, exprVal, typ);
+  e.rVal := rVal;
+  RETURN e
+END NewExprReal;
+
+PROCEDURE NewExprString*(sVal :StringId; typ :Type) :Expr;
+VAR
+  e :Expr;
+BEGIN
+  NewExpr(e, exprVal, typ);
+  e.iVal := sVal;
+  RETURN e
+END NewExprString;
+
+PROCEDURE NewExprNil*(typ :Type) :Expr;
+VAR
+  e :Expr;
+BEGIN
+  NewExpr(e, exprVal, typ);
+  e.iVal := 0;
+  RETURN e
+END NewExprNil;
+
+PROCEDURE NewExprBoolean*(bVal :INTEGER; typ :Type) :Expr;
+VAR
+  e :Expr;
+BEGIN
+  NewExpr(e, exprVal, typ);
+  e.iVal := bVal;
+  RETURN e
+END NewExprBoolean;
 
 END AST.
