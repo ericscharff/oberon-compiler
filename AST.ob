@@ -1,8 +1,31 @@
 MODULE AST;
 
-IMPORT Decls, Lex, Out;
+IMPORT Lex, Out;
 
 CONST
+  typeNil*       = 1;
+  typeInteger*   = 2;
+  typeReal*      = 3;
+  typeBoolean*   = 4;
+  typeChar*      = 5;
+  typeSet*       = 6;
+  typeString*    = 7;
+  typePointer*   = 8;
+  typeArray*     = 9;
+  typeRecord*    = 10;
+  typeProcedure* = 11;
+  typeImport*    = 12;
+
+  declImport*    = 1;
+  declConst*     = 2;
+  declType*      = 3;
+  declVar*       = 4;
+  declProcedure* = 5;
+  declParam*     = 6;
+  declVarParam*  = 7;
+  declField*     = 8;
+  declEND* = 1001;
+
   exprVal*         = 1; (* CONST value *)
   exprUnary*       = 2;
   exprBinary*      = 3;
@@ -14,6 +37,23 @@ CONST
   exprTypeguard    = 9;
 
 TYPE
+  StringId  = Lex.PoolIndex;
+  TypeKind* = INTEGER;
+  Type*     = POINTER TO TypeDesc;
+  Decl*     = POINTER TO DeclDesc;
+  TypeDesc  = RECORD
+    kind*   :TypeKind;
+    base*   :Type; (* POINTER type, ARRAY element, RECORD base, PROCEDURE return type *)
+    fields* :Decl; (* RECORD fields / PROCEDURE formal parameters / IMPORT decls / name of forward decl *)
+  END;
+  DeclKind  = INTEGER;
+  DeclDesc  = RECORD
+    kind*     :DeclKind;
+    next*     :Decl;
+    name*     :StringId;
+    typ*      :Type;
+    exported* :BOOLEAN;
+  END;
   Expr*     = POINTER TO ExprDesc;
   ExprKind  = INTEGER;
   (*
@@ -52,7 +92,7 @@ TYPE
   *)
   ExprDesc  = RECORD
     kind  :ExprKind;
-    typ   :Decls.Type;
+    typ   :Type;
     op    :Lex.TokenKind; (* for unary, binary                            *)
     lhs   :Expr;          (* for unary, binary, the base expr for         *)
                           (* arrayRef, pointerDeref, fieldRef, typeGuard, *)
@@ -60,7 +100,7 @@ TYPE
     rhs   :Expr;          (* for binary, also first arg PROCEDURE call    *)
                           (* for arrayRef, expr OF ARRAY index            *)
     next  :Expr;          (* for PROCEDURE call,next arg in list          *)
-    decl  :Decls.Decl;    (* for identRef and typeguard                   *)
+    decl  :Decl;          (* for identRef and typeguard                   *)
     iVal  :INTEGER;       (* for INTEGER, SET, BOOLEAN, STRING (StringId) *)
                           (* for fieldref, StringId OF field name         *)
     rVal  :REAL;

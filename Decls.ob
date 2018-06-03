@@ -1,62 +1,22 @@
 MODULE Decls;
 
-IMPORT Lex, Out;
-
-CONST
-  typeNil       = 1;
-  typeInteger   = 2;
-  typeReal      = 3;
-  typeBoolean   = 4;
-  typeChar      = 5;
-  typeSet       = 6;
-  typeString    = 7;
-  typePointer   = 8;
-  typeArray     = 9;
-  typeRecord    = 10;
-  typeProcedure = 11;
-  typeImport    = 12;
-
-  declImport*    = 1;
-  declConst      = 2;
-  declType*      = 3;
-  declVar*       = 4;
-  declProcedure* = 5;
-  declParam*     = 6;
-  declVarParam*  = 7;
-  declField*     = 8;
-  declEND = 1001;
+IMPORT AST, Lex, Out;
 
 TYPE
   StringId  = Lex.PoolIndex;
-  TypeKind  = INTEGER;
-  Type*     = POINTER TO TypeDesc;
-  Decl*     = POINTER TO DeclDesc;
-  TypeDesc  = RECORD
-    kind    :TypeKind;
-    base*   :Type; (* POINTER type, ARRAY element, RECORD base, PROCEDURE return type *)
-    fields* :Decl; (* RECORD fields / PROCEDURE formal parameters / IMPORT decls / name of forward decl *)
-  END;
-  DeclKind  = INTEGER;
-  DeclDesc  = RECORD
-    kind*     :DeclKind;
-    next*     :Decl;
-    name*     :StringId;
-    typ*      :Type;
-    exported* :BOOLEAN;
-  END;
   Forward   = POINTER TO FwdDecl;
   FwdDecl   = RECORD
-    t    :Type;
+    t    :AST.Type;
     next :Forward;
   END;
 
 VAR
-  scope, globalScope :Decl;
+  scope, globalScope :AST.Decl;
   fwds  :Forward;
 
-PROCEDURE LookupDecl0(name :StringId) :Decl;
+PROCEDURE LookupDecl0(name :StringId) :AST.Decl;
 VAR
-  p :Decl;
+  p :AST.Decl;
 BEGIN
   p := scope;
   WHILE (p # NIL) & (p.name # name) DO
@@ -65,9 +25,9 @@ BEGIN
   RETURN p
 END LookupDecl0;
 
-PROCEDURE LookupDecl*(l :Lex.Lexer; name :StringId) :Decl;
+PROCEDURE LookupDecl*(l :Lex.Lexer; name :StringId) :AST.Decl;
 VAR
-  p :Decl;
+  p :AST.Decl;
 BEGIN
   p := LookupDecl0(name);
   IF p = NIL THEN
@@ -78,12 +38,12 @@ BEGIN
   RETURN p
 END LookupDecl;
 
-PROCEDURE LookupImport*(l :Lex.Lexer; moduleName, name :StringId) :Decl;
+PROCEDURE LookupImport*(l :Lex.Lexer; moduleName, name :StringId) :AST.Decl;
 VAR
-  p, d :Decl;
+  p, d :AST.Decl;
 BEGIN
   d := LookupDecl(l, moduleName);
-  ASSERT(d.kind = declImport);
+  ASSERT(d.kind = AST.declImport);
   p := d.typ.fields;
   WHILE (p # NIL) & (p.name # name) DO
     p := p.next;
@@ -104,9 +64,9 @@ BEGIN
   RETURN p
 END LookupImport;
 
-PROCEDURE AddDecl*(l :Lex.Lexer; VAR chain :Decl; name :StringId) :Decl;
+PROCEDURE AddDecl*(l :Lex.Lexer; VAR chain :AST.Decl; name :StringId) :AST.Decl;
 VAR
-  p, d :Decl;
+  p, d :AST.Decl;
 BEGIN
   NEW(d);
   d.name := name;
@@ -115,16 +75,16 @@ BEGIN
   d.next := NIL;
   d.exported := FALSE;
   IF chain = NIL THEN NEW(chain);
-    chain.kind := declEND;
+    chain.kind := AST.declEND;
     chain.name := 0;
     chain.next := NIL;
   END;
-  IF chain.kind = declEND THEN
+  IF chain.kind = AST.declEND THEN
     d.next := chain;
     chain := d;
   ELSE
     p := chain;
-    WHILE (p.next.kind # declEND) & (p.name # name) DO
+    WHILE (p.next.kind # AST.declEND) & (p.name # name) DO
       p := p.next;
     END;
     IF p.name = name THEN
@@ -139,12 +99,12 @@ BEGIN
   RETURN d
 END AddDecl;
 
-PROCEDURE AddScopeDecl*(l :Lex.Lexer; name :StringId) :Decl;
+PROCEDURE AddScopeDecl*(l :Lex.Lexer; name :StringId) :AST.Decl;
 BEGIN
   RETURN AddDecl(l, scope, name)
 END AddScopeDecl;
 
-PROCEDURE NewType(VAR t :Type; kind :TypeKind);
+PROCEDURE NewType(VAR t :AST.Type; kind :AST.TypeKind);
 BEGIN
   NEW(t);
   t.kind := kind;
@@ -152,50 +112,50 @@ BEGIN
   t.fields := NIL;
 END NewType;
 
-PROCEDURE AddImportDecl*(l :Lex.Lexer; name :StringId; decls :Decl);
+PROCEDURE AddImportDecl*(l :Lex.Lexer; name :StringId; decls :AST.Decl);
 VAR
-  d :Decl;
+  d :AST.Decl;
 BEGIN
   d := AddScopeDecl(l, name);
-  d.kind := declImport;
-  NewType(d.typ, typeImport);
+  d.kind := AST.declImport;
+  NewType(d.typ, AST.typeImport);
   d.typ.fields := decls;
 END AddImportDecl;
 
-PROCEDURE NewArrayType*(base :Type) :Type;
+PROCEDURE NewArrayType*(base :AST.Type) :AST.Type;
 VAR
-  t :Type;
+  t :AST.Type;
 BEGIN
-  NewType(t, typeArray);
+  NewType(t, AST.typeArray);
   t.base := base;
   RETURN t
 END NewArrayType;
 
-PROCEDURE NewPointerType*(l :Lex.Lexer; base :Type) :Type;
+PROCEDURE NewPointerType*(l :Lex.Lexer; base :AST.Type) :AST.Type;
 VAR
-  t :Type;
+  t :AST.Type;
 BEGIN
   t := NIL;
-  IF (base # NIL) & (base.kind # typeRecord) THEN
+  IF (base # NIL) & (base.kind # AST.typeRecord) THEN
     Lex.ErrorLn(l, "Pointer base type must be a RECORD");
   ELSE
-    NewType(t, typePointer);
+    NewType(t, AST.typePointer);
     t.base := base;
   END;
   RETURN t
 END NewPointerType;
 
-PROCEDURE NewPointerTypeByName*(l :Lex.Lexer; name :StringId) :Type;
+PROCEDURE NewPointerTypeByName*(l :Lex.Lexer; name :StringId) :AST.Type;
 VAR
-  d :Decl;
+  d :AST.Decl;
   f :Forward;
-  t :Type;
+  t :AST.Type;
 BEGIN
   t := NIL;
   d := LookupDecl0(name);
   IF d = NIL THEN
     (* forward decl *)
-    NewType(t, typePointer);
+    NewType(t, AST.typePointer);
     NEW(t.fields);
     t.fields.name := name;
     t.fields.next := NIL;
@@ -204,7 +164,7 @@ BEGIN
     f.next := fwds;
     fwds := f;
   ELSE
-    IF d.kind # declType THEN
+    IF d.kind # AST.declType THEN
       Lex.Error(l, "");
       Lex.OutStr(l, d.name);
       Out.PrintLn(" is not a TYPE");
@@ -214,26 +174,26 @@ BEGIN
   RETURN t
 END NewPointerTypeByName;
 
-PROCEDURE NewProcedureType*() :Type;
+PROCEDURE NewProcedureType*() :AST.Type;
 VAR
-  t :Type;
+  t :AST.Type;
 BEGIN
-  NewType(t, typeProcedure);
+  NewType(t, AST.typeProcedure);
   RETURN t
 END NewProcedureType;
 
-PROCEDURE NewRecordType*(l :Lex.Lexer; base :Type) :Type;
+PROCEDURE NewRecordType*(l :Lex.Lexer; base :AST.Type) :AST.Type;
 VAR
-  t        :Type;
-  d, dCopy :Decl;
+  t        :AST.Type;
+  d, dCopy :AST.Decl;
 BEGIN
-  NewType(t, typeRecord);
+  NewType(t, AST.typeRecord);
   t.base := base;
   IF base # NIL THEN
-    IF base.kind = typeRecord THEN
+    IF base.kind = AST.typeRecord THEN
       (* Copy fields from base *)
       d := base.fields;
-      WHILE (d # NIL) & (d.kind # declEND) DO
+      WHILE (d # NIL) & (d.kind # AST.declEND) DO
         dCopy := AddDecl(l, t.fields, d.name);
 	dCopy.kind := d.kind;
 	dCopy.typ := d.typ;
@@ -247,34 +207,34 @@ BEGIN
   RETURN t
 END NewRecordType;
 
-PROCEDURE AddTypeDecl(VAR l :Lex.Lexer; name :StringId; t :Type);
+PROCEDURE AddTypeDecl(VAR l :Lex.Lexer; name :StringId; t :AST.Type);
 VAR
-  d :Decl;
+  d :AST.Decl;
 BEGIN
   d := AddDecl(l, scope, name);
-  d.kind := declType;
+  d.kind := AST.declType;
   d.typ := t;
 END AddTypeDecl;
 
 PROCEDURE InitGlobalScope*(VAR l :Lex.Lexer);
 VAR
-  t :Type;
+  t :AST.Type;
 BEGIN
   fwds := NIL;
   IF globalScope = NIL THEN
     scope := NIL;
-    NewType(t, typeNil);
+    NewType(t, AST.typeNil);
     AddTypeDecl(l, Lex.Intern(l, "NIL"), t);
-    NewType(t, typeInteger);
+    NewType(t, AST.typeInteger);
     AddTypeDecl(l, Lex.Intern(l, "INTEGER"), t);
     AddTypeDecl(l, Lex.Intern(l, "BYTE"), t);
-    NewType(t, typeReal);
+    NewType(t, AST.typeReal);
     AddTypeDecl(l, Lex.Intern(l, "REAL"), t);
-    NewType(t, typeBoolean);
+    NewType(t, AST.typeBoolean);
     AddTypeDecl(l, Lex.Intern(l, "BOOLEAN"), t);
-    NewType(t, typeChar);
+    NewType(t, AST.typeChar);
     AddTypeDecl(l, Lex.Intern(l, "CHAR"), t);
-    NewType(t, typeSet);
+    NewType(t, AST.typeSet);
     AddTypeDecl(l, Lex.Intern(l, "SET"), t);
     (* stuff to fix *)
     AddTypeDecl(l, Lex.Intern(l, "INC"), t);
@@ -292,12 +252,12 @@ END InitGlobalScope;
 
 PROCEDURE ResolveForwards*(l :Lex.Lexer);
 VAR
-  d :Decl;
+  d :AST.Decl;
 BEGIN
   WHILE fwds # NIL DO
-    ASSERT(fwds.t.kind = typePointer);
+    ASSERT(fwds.t.kind = AST.typePointer);
     d := LookupDecl(l, fwds.t.fields.name);
-    IF (d # NIL) & (d.kind = declType) & (d.typ.kind = typeRecord) THEN
+    IF (d # NIL) & (d.kind = AST.declType) & (d.typ.kind = AST.typeRecord) THEN
       fwds.t.base := d.typ;
       fwds.t.fields := NIL;
     ELSE
@@ -309,12 +269,12 @@ BEGIN
   END;
 END ResolveForwards;
 
-PROCEDURE AddFormalParamsToScope*(l :Lex.Lexer; procDecl :Decl);
+PROCEDURE AddFormalParamsToScope*(l :Lex.Lexer; procDecl :AST.Decl);
 VAR
-  formal, actual :Decl;
+  formal, actual :AST.Decl;
 BEGIN
-  ASSERT(procDecl.kind = declProcedure);
-  ASSERT(procDecl.typ.kind = typeProcedure);
+  ASSERT(procDecl.kind = AST.declProcedure);
+  ASSERT(procDecl.typ.kind = AST.typeProcedure);
   formal := procDecl.typ.fields;
   WHILE formal # NIL DO
     actual := AddScopeDecl(l, formal.name);
@@ -324,17 +284,17 @@ BEGIN
   END;
 END AddFormalParamsToScope;
 
-PROCEDURE CurrentScope*(): Decl;
+PROCEDURE CurrentScope*(): AST.Decl;
 BEGIN
   RETURN scope
 END CurrentScope;
 
-PROCEDURE OpenScope*() :Decl;
+PROCEDURE OpenScope*() :AST.Decl;
 VAR
-  d, oldScope :Decl;
+  d, oldScope :AST.Decl;
 BEGIN
   NEW(d);
-  d.kind := declEND;
+  d.kind := AST.declEND;
   d.name := 0;
   d.next := scope;
   oldScope := scope;
@@ -342,7 +302,7 @@ BEGIN
   RETURN oldScope
 END OpenScope;
 
-PROCEDURE CloseScope*(s :Decl);
+PROCEDURE CloseScope*(s :AST.Decl);
 BEGIN
   scope := s;
 END CloseScope;
@@ -356,8 +316,8 @@ END TestCleanup;
 PROCEDURE TestDecls;
 VAR
   l :Lex.Lexer;
-  d :Decl;
-  t :Type;
+  d :AST.Decl;
+  t :AST.Type;
 BEGIN
   Lex.LexerInitFromString(l, "");
   d := NIL;
@@ -378,10 +338,10 @@ BEGIN
   InitGlobalScope(l);
   ASSERT(LookupDecl(l, Lex.Intern(l, "NIL")) # NIL);
   d := LookupDecl(l, Lex.Intern(l, "NIL"));
-  ASSERT(d.kind = declType);
-  ASSERT(d.typ.kind = typeNil);
+  ASSERT(d.kind = AST.declType);
+  ASSERT(d.typ.kind = AST.typeNil);
   d := LookupDecl(l, Lex.Intern(l, "INTEGER"));
-  ASSERT(d.kind = declType);
+  ASSERT(d.kind = AST.declType);
   t := d.typ;
   d := LookupDecl(l, Lex.Intern(l, "BYTE"));
   ASSERT(t = d.typ);
