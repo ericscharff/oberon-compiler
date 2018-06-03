@@ -189,6 +189,20 @@ BEGIN
   RETURN t
 END NewProcedureType;
 
+PROCEDURE CountProcedureArgs*(t :AST.Type);
+VAR
+  i :INTEGER;
+  p :AST.Decl;
+BEGIN
+  i := 0;
+  p := t.fields;
+  WHILE p # NIL DO
+    INC(i);
+    p := p.next;
+  END;
+  t.length := i;
+END CountProcedureArgs;
+
 PROCEDURE NewRecordType*(l :Lex.Lexer; base :AST.Type) :AST.Type;
 VAR
   t        :AST.Type;
