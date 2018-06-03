@@ -104,7 +104,7 @@ TYPE
                            (* PROCEDURE call designator                    *)
     rhs    :Expr;          (* for binary, also first arg PROCEDURE call    *)
                            (* for arrayRef, expr OF ARRAY index            *)
-    next   :Expr;          (* for PROCEDURE call,next arg in list          *)
+    next*  :Expr;          (* for PROCEDURE call,next arg in list          *)
     decl   :Decl;          (* for identRef and typeguard                   *)
     iVal*  :INTEGER;       (* for INTEGER, BOOLEAN, STRING (StringId)      *)
                            (* for fieldref, StringId OF field name         *)
@@ -139,6 +139,7 @@ BEGIN
   NEW(e);
   e.kind := kind;
   e.typ := typ;
+  e.next := NIL;
 END NewExpr;
 
 PROCEDURE NewExprIdentRef*(d :Decl) :Expr;
@@ -272,14 +273,18 @@ BEGIN
   RETURN e
 END NewExprSetRange;
 
-PROCEDURE ExpectTypeMatch(l :Lex.Lexer; op :Lex.TokenKind; lhs, rhs :Expr) :BOOLEAN;
+PROCEDURE AssignmentCompatable(l :Lex.Lexer; a, b :Type) :BOOLEAN;
+BEGIN
+  (* TODO - much more *)
+  RETURN a = b
+END AssignmentCompatable;
+
+PROCEDURE ExprCompatable(l :Lex.Lexer; op :Lex.TokenKind; lhs, rhs :Expr) :BOOLEAN;
 VAR
   good :BOOLEAN;
 BEGIN
-  good := FALSE;
-  IF lhs.typ = rhs.typ THEN
-    good := TRUE;
-  ELSE
+  good := AssignmentCompatable(l, lhs.typ, rhs.typ);
+  IF ~good THEN
     Lex.Error(l, "Type mismatch for op [");
     Out.Str(Lex.TokenNames[op]);
     Out.Str("] got ");
@@ -288,7 +293,7 @@ BEGIN
     Out.PrintLn(TypeKindNames[rhs.typ.kind]);
   END;
   RETURN good
-END ExpectTypeMatch;
+END ExprCompatable;
 
 PROCEDURE NewExprUnary*(l :Lex.Lexer; op :Lex.TokenKind; lhs :Expr) :Expr;
 VAR
@@ -338,7 +343,7 @@ BEGIN
   e.rhs := rhs;
   CASE op OF
       Lex.tPLUS, Lex.tMINUS, Lex.tSTAR, Lex.tSLASH:
-      IF ExpectTypeMatch(l, op, lhs, rhs) &
+      IF ExprCompatable(l, op, lhs, rhs) &
          (lhs.typ.kind IN {typeInteger, typeReal, typeSet}) THEN
         IF IsConst(lhs) & IsConst(rhs) THEN
           e.kind := exprVal;
@@ -366,7 +371,7 @@ BEGIN
         Lex.ErrorLn(l, "Expected INTEGER, REAL, or SET");
       END;
     | Lex.tDIV, Lex.tMOD, Lex.tXOR:
-      IF ExpectTypeMatch(l, op, lhs, rhs) &
+      IF ExprCompatable(l, op, lhs, rhs) &
          (lhs.typ.kind = typeInteger) THEN
         IF IsConst(lhs) & IsConst(rhs) THEN
           e.kind := exprVal;
@@ -382,7 +387,7 @@ BEGIN
         Lex.ErrorLn(l, "Expected INTEGER");
       END;
     | Lex.tAMP, Lex.tOR:
-      IF ExpectTypeMatch(l, op, lhs, rhs) &
+      IF ExprCompatable(l, op, lhs, rhs) &
          (lhs.typ.kind = typeBoolean) THEN
         IF IsConst(lhs) & IsConst(rhs) THEN
           (* evaluate *)
@@ -392,7 +397,7 @@ BEGIN
       END;
     | Lex.tLT, Lex.tGT, Lex.tLTEQ, Lex.tGTEQ:
       e.typ := booleanType;
-      IF ExpectTypeMatch(l, op, lhs, rhs) &
+      IF ExprCompatable(l, op, lhs, rhs) &
          (lhs.typ.kind IN {typeInteger, typeReal, typeSet, typeString, typeChar}) THEN
         IF IsConst(lhs) & IsConst(rhs) THEN
           (* evaluate *)
@@ -402,7 +407,7 @@ BEGIN
       END;
     | Lex.tEQ, Lex.tPOUND:
       e.typ := booleanType;
-      IF ExpectTypeMatch(l, op, lhs, rhs) &
+      IF ExprCompatable(l, op, lhs, rhs) &
          (lhs.typ.kind IN {typeInteger, typeReal, typeSet, typeString, typeChar, typePointer, typeProcedure}) THEN
         IF IsConst(lhs) & IsConst(rhs) THEN
           (* evaluate *)
@@ -425,6 +430,62 @@ BEGIN
   END;
   RETURN e
 END NewExprBinary;
+
+PROCEDURE ExpectArgMatch(l :Lex.Lexer; arg :INTEGER; actual :Expr; formal :Decl);
+BEGIN
+(* actual type = formal type 
+  ARRAY OF char TO string
+  ARRAY OF <t> TO open ARRAY <t>
+  VAR parameters must be assignable
+
+  assignable = VAR and not imported
+             or param and not RECORD
+             or varparam
+  *)
+  AssignmentCompatable(l, actual.typ, formal.typ);
+END ExpectArgMatch;
+
+PROCEDURE NewExprProcCall*(l :Lex.Lexer; proc, args :Expr) :Expr;
+VAR
+  e, arg   :Expr;
+  i, count :INTEGER;
+  formal   :Decl;
+BEGIN
+  e := proc;
+  IF proc.typ.kind = typeProcedure THEN
+    i := 0;
+    count := proc.typ.length;
+    NewExpr(e, exprProcCall, proc.typ.base); (* base = return type *)
+    e.lhs := proc;
+    e.rhs := args;
+    arg := args;
+    WHILE arg # NIL DO
+      INC(i);
+      arg := arg.next;
+    END;
+    IF i = count THEN
+      i := 1;
+      arg := args;
+      formal := proc.typ.fields;
+      WHILE count > 0 DO
+        ExpectArgMatch(l, i, arg, formal);
+        DEC(count);
+        INC(i);
+        formal := formal.next;
+        arg := arg.next;
+      END;
+    ELSE
+      Lex.Error(l, "Expected ");
+      Out.Int(count);
+      Out.Str(" parameters, got ");
+      Out.Int(i);
+      Out.Ln;
+    END;
+  ELSE
+    Lex.ErrorLn(l, "designator is not a PROCEDURE");
+  END;
+  RETURN e
+END NewExprProcCall;
 
 PROCEDURE DumpDecl*(l :Lex.Lexer; d :Decl);
 BEGIN

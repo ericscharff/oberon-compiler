@@ -167,16 +167,22 @@ BEGIN
   RETURN e (* TODO *)
 END ParseDesignator;
 
-PROCEDURE ParseActualParameters;
+PROCEDURE ParseActualParameters() :AST.Expr;
+VAR
+  head, tail :AST.Expr;
 BEGIN
+  head := NIL;
   ExpectToken(Lex.tLPAREN);
   IF ~IsToken(Lex.tRPAREN) THEN
-    ParseExpression;
+    head := ParseExpression();
+    tail := head;
     WHILE MatchToken(Lex.tCOMMA) DO
-      ParseExpression;
+      tail.next := ParseExpression();
+      tail := tail.next;
     END;
   END;
   ExpectToken(Lex.tRPAREN);
+  RETURN head
 END ParseActualParameters;
 
 PROCEDURE ParseFactor() :AST.Expr;
@@ -204,7 +210,7 @@ BEGIN
   ELSIF IsToken(Lex.tIDENT) THEN
     e := ParseDesignator();
     IF IsToken(Lex.tLPAREN) THEN
-      ParseActualParameters;
+      e := AST.NewExprProcCall(l, e, ParseActualParameters());
     END;
   ELSIF MatchToken(Lex.tLPAREN) THEN
     e := ParseExpression();
@@ -214,7 +220,7 @@ BEGIN
   ELSE
     Lex.ErrorLn(l, "Factor expected");
   END;
-  RETURN e (* TODO *)
+  RETURN e
 END ParseFactor;
 
 PROCEDURE IsMulOperator() :BOOLEAN;
