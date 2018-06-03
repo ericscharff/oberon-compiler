@@ -42,6 +42,7 @@ TYPE
   TypeKind* = INTEGER;
   Type*     = POINTER TO TypeDesc;
   Decl*     = POINTER TO DeclDesc;
+  Expr*     = POINTER TO ExprDesc;
   TypeDesc  = RECORD
     kind*   :TypeKind;
     base*   :Type; (* POINTER type, ARRAY element, RECORD base, PROCEDURE return type *)
@@ -53,9 +54,9 @@ TYPE
     next*     :Decl;
     name*     :StringId;
     typ*      :Type;
+    expr*     :Expr;      (* for CONST declarations *)
     exported* :BOOLEAN;
   END;
-  Expr*     = POINTER TO ExprDesc;
   ExprKind  = INTEGER;
   (*
   A call to a PROCEDURE, e.g., MyProc(arg1, Proc2(a, b), arr[i], 4) looks like
@@ -93,7 +94,7 @@ TYPE
   *)
   ExprDesc  = RECORD
     kind   :ExprKind;
-    typ    :Type;
+    typ*   :Type;
     op     :Lex.TokenKind; (* for unary, binary                            *)
     lhs    :Expr;          (* for unary, binary, the base expr for         *)
                            (* arrayRef, pointerDeref, fieldRef, typeGuard, *)
@@ -123,7 +124,7 @@ BEGIN
   END;
 END ExpectType;
 
-PROCEDURE IsConst(e :Expr) :BOOLEAN;
+PROCEDURE IsConst*(e :Expr) :BOOLEAN;
 BEGIN
   RETURN e.kind = exprVal
 END IsConst;
@@ -134,6 +135,25 @@ BEGIN
   e.kind := kind;
   e.typ := typ;
 END NewExpr;
+
+PROCEDURE NewExprIdentRef*(d :Decl) :Expr;
+VAR
+  e :Expr;
+BEGIN
+  ASSERT(d # NIL);
+  ASSERT(d.typ # NIL);
+  NewExpr(e, exprIdentRef, d.typ);
+  e.decl := d;
+  IF d.kind = declConst THEN
+    ASSERT(d.typ = d.expr.typ);
+    ASSERT(d.expr.kind = exprVal);
+    e.kind := exprVal;
+    e.iVal := d.expr.iVal;
+    e.rVal := d.expr.rVal;
+    e.setVal := d.expr.setVal;
+  END;
+  RETURN e
+END NewExprIdentRef;
 
 PROCEDURE NewExprInteger*(iVal :INTEGER; typ :Type) :Expr;
 VAR

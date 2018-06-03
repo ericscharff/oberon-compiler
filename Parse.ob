@@ -138,9 +138,11 @@ BEGIN
   RETURN FALSE
 END IsTypeGuard;
 
-PROCEDURE ParseDesignator;
+PROCEDURE ParseDesignator() :AST.Expr;
+VAR
+  e :AST.Expr;
 BEGIN
-  ParseQualident;
+  e := AST.NewExprIdentRef(ParseQualident());
   WHILE IsToken(Lex.tDOT) OR IsToken(Lex.tLBRACK) OR IsToken(Lex.tCARET) OR
         (IsTypeGuard() & IsToken(Lex.tLPAREN)) DO
     IF MatchToken(Lex.tDOT) THEN
@@ -162,6 +164,7 @@ BEGIN
       ASSERT(FALSE);
     END
   END;
+  RETURN e (* TODO *)
 END ParseDesignator;
 
 PROCEDURE ParseActualParameters;
@@ -199,7 +202,7 @@ BEGIN
   ELSIF IsToken(Lex.tLBRACE) THEN
     e := ParseSet();
   ELSIF IsToken(Lex.tIDENT) THEN
-    ParseDesignator;
+    e := ParseDesignator();
     IF IsToken(Lex.tLPAREN) THEN
       ParseActualParameters;
     END;
@@ -601,10 +604,21 @@ BEGIN
 END ParseType0;
 
 PROCEDURE ParseConstDeclaration;
+VAR
+  d :AST.Decl;
+  e :AST.Expr;
+  t :AST.Type;
 BEGIN
-  ParseIdentDef;
+  d := ParseIdentDef();
   ExpectToken(Lex.tEQ);
-  AST.DumpExpr(ParseExpression());
+  e := ParseExpression();
+  d.kind := AST.declConst;
+  d.typ := e.typ;
+  d.expr := e;
+  AST.DumpExpr(e);
+  IF ~AST.IsConst(e) THEN
+    Lex.ErrorLn(l, "CONST declaration is not constant");
+  END;
 END ParseConstDeclaration;
 
 PROCEDURE ParseTypeDeclaration;

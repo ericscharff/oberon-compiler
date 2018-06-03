@@ -15,4 +15,10 @@ CONST
   l = 33 MOD 11;
   m = 34 MOD 11;
   n = (33 DIV 11) * 8 + 10;
+  o = a * b + k * l;
+  one = 1;
+  two = one + one;
+  four = two + two;
+  eight = four * two;
+  eightyfour = eight * 10 + four;
 END Simple.
