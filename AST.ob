@@ -115,7 +115,7 @@ TYPE
 
 VAR
   TypeKindNames :ARRAY typeEND, 10 OF CHAR;
-  DumpExpr :PROCEDURE (l :Lex.Lexer; e :Expr);
+  DumpExpr* :PROCEDURE (l :Lex.Lexer; e :Expr);
 
 PROCEDURE ExpectType(l :Lex.Lexer; e :Expr; kind :TypeKind);
 BEGIN

@@ -389,7 +389,7 @@ BEGIN
   ParseDesignator;
   IF MatchToken(Lex.tASSIGN) THEN
     (* Assignment *)
-    ParseExpression;
+    AST.DumpExpr(l, ParseExpression());
   ELSE
     (* Procedure call *)
     IF IsToken(Lex.tLPAREN) THEN
