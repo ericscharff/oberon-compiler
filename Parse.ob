@@ -13,7 +13,7 @@ VAR
   importCache :ARRAY 128 OF CachedImport;
   importCacheEnd :INTEGER;
   lastModuleDecls :AST.Decl;
-  ParseExpression :PROCEDURE;
+  ParseExpression :PROCEDURE () :AST.Expr;
   ParseStatementSequence :PROCEDURE;
   ParseType :PROCEDURE () :AST.Type;
   ParseDeclarationSequence :PROCEDURE;
@@ -102,26 +102,35 @@ BEGIN
   RETURN t
 END ParseQualidentAndGetType;
 
-PROCEDURE ParseSetElement;
+PROCEDURE ParseSetElement() :AST.Expr;
+VAR
+  e :AST.Expr;
 BEGIN
-  ParseExpression;
+  e := ParseExpression();
   IF MatchToken(Lex.tDOTDOT) THEN
-    ParseExpression;
+    e := AST.NewExprSetRange(l, e, ParseExpression(), Decls.setType);
+  ELSE
+    e := AST.NewExprSetElement(l, e, Decls.setType);
   END;
+  RETURN e
 END ParseSetElement;
 
-PROCEDURE ParseSet;
+PROCEDURE ParseSet() :AST.Expr;
+VAR
+  e :AST.Expr;
 BEGIN
   ExpectToken(Lex.tLBRACE);
   IF IsToken(Lex.tRBRACE) THEN
     (* empty set *)
+    e := AST.NewExprSet(Decls.setType);
   ELSE
-    ParseSetElement;
+    e := ParseSetElement();
     WHILE MatchToken(Lex.tCOMMA) DO
-      ParseSetElement;
+      e := AST.NewExprSetUnion(l, e, ParseSetElement());
     END;
   END;
   ExpectToken(Lex.tRBRACE);
+  RETURN e
 END ParseSet;
 
 PROCEDURE IsTypeGuard() :BOOLEAN;
@@ -167,7 +176,7 @@ BEGIN
   ExpectToken(Lex.tRPAREN);
 END ParseActualParameters;
 
-PROCEDURE ParseFactor;
+PROCEDURE ParseFactor() :AST.Expr;
 VAR
   e :AST.Expr;
 BEGIN
@@ -188,7 +197,7 @@ BEGIN
   ELSIF MatchToken(Lex.tFALSE) THEN
     e := AST.NewExprBoolean(0, Decls.booleanType);
   ELSIF IsToken(Lex.tLBRACE) THEN
-    ParseSet;
+    ParseSet();
   ELSIF IsToken(Lex.tIDENT) THEN
     ParseDesignator;
     IF IsToken(Lex.tLPAREN) THEN
@@ -202,6 +211,7 @@ BEGIN
   ELSE
     Lex.ErrorLn(l, "Factor expected");
   END;
+  RETURN e
 END ParseFactor;
 
 PROCEDURE IsMulOperator() :BOOLEAN;
@@ -248,7 +258,9 @@ BEGIN
          IsToken(Lex.tIN) OR IsToken(Lex.tIS)
 END IsRelation;
 
-PROCEDURE ParseExpression0;
+PROCEDURE ParseExpression0() :AST.Expr;
+VAR
+  e :AST.Expr;
 BEGIN
   ParseSimpleExpression;
   IF IsRelation() THEN
@@ -256,6 +268,7 @@ BEGIN
     Lex.NextToken(l);
     ParseSimpleExpression;
   END;
+  RETURN NIL (* TODO *)
 END ParseExpression0;
 
 PROCEDURE ParseIfStatement;
@@ -793,6 +806,7 @@ END ImportHelper;
 
 PROCEDURE TestParse;
 BEGIN
+(*
   Lex.LexerInitFromFile(l, "Decls.ob");
   Lex.NextToken(l);
   ParseModule;
@@ -802,6 +816,10 @@ BEGIN
   ParseModule;
   Decls.TestCleanup(); importCacheEnd := 0;
   Lex.LexerInitFromFile(l, "Parse.ob");
+  Lex.NextToken(l);
+  ParseModule;
+*)
+  Lex.LexerInitFromFile(l, "Simple.ob");
   Lex.NextToken(l);
   ParseModule;
   Out.PrintLn("PASS: Parser test");

@@ -15,6 +15,7 @@ CONST
   typeRecord*    = 10;
   typeProcedure* = 11;
   typeImport*    = 12;
+  typeEND        = 13;
 
   declImport*    = 1;
   declConst*     = 2;
@@ -91,20 +92,41 @@ TYPE
   the rhs is the first arg, and then follows the next chain OF those args.
   *)
   ExprDesc  = RECORD
-    kind  :ExprKind;
-    typ   :Type;
-    op    :Lex.TokenKind; (* for unary, binary                            *)
-    lhs   :Expr;          (* for unary, binary, the base expr for         *)
-                          (* arrayRef, pointerDeref, fieldRef, typeGuard, *)
-                          (* PROCEDURE call designator                    *)
-    rhs   :Expr;          (* for binary, also first arg PROCEDURE call    *)
-                          (* for arrayRef, expr OF ARRAY index            *)
-    next  :Expr;          (* for PROCEDURE call,next arg in list          *)
-    decl  :Decl;          (* for identRef and typeguard                   *)
-    iVal  :INTEGER;       (* for INTEGER, SET, BOOLEAN, STRING (StringId) *)
-                          (* for fieldref, StringId OF field name         *)
-    rVal  :REAL;
+    kind   :ExprKind;
+    typ    :Type;
+    op     :Lex.TokenKind; (* for unary, binary                            *)
+    lhs    :Expr;          (* for unary, binary, the base expr for         *)
+                           (* arrayRef, pointerDeref, fieldRef, typeGuard, *)
+                           (* PROCEDURE call designator                    *)
+    rhs    :Expr;          (* for binary, also first arg PROCEDURE call    *)
+                           (* for arrayRef, expr OF ARRAY index            *)
+    next   :Expr;          (* for PROCEDURE call,next arg in list          *)
+    decl   :Decl;          (* for identRef and typeguard                   *)
+    iVal   :INTEGER;       (* for INTEGER, BOOLEAN, STRING (StringId)      *)
+                           (* for fieldref, StringId OF field name         *)
+    rVal   :REAL;
+    setVal :SET;
   END;
+
+VAR
+  TypeKindNames :ARRAY typeEND, 10 OF CHAR;
+
+PROCEDURE ExpectType(l :Lex.Lexer; e :Expr; kind :TypeKind);
+BEGIN
+  ASSERT(e # NIL);
+  ASSERT(e.typ # NIL);
+  IF e.typ.kind # kind THEN
+    Lex.Error(l, "Expected ");
+    Out.Str(TypeKindNames[kind]);
+    Out.Str(", got ");
+    Out.PrintLn(TypeKindNames[e.typ.kind]);
+  END;
+END ExpectType;
+
+PROCEDURE IsConst(e :Expr) :BOOLEAN;
+BEGIN
+  RETURN e.kind = exprVal
+END IsConst;
 
 PROCEDURE NewExpr(VAR e :Expr; kind :ExprKind; typ :Type);
 BEGIN
@@ -158,4 +180,89 @@ BEGIN
   RETURN e
 END NewExprBoolean;
 
+PROCEDURE NewExprSet*(typ :Type) :Expr;
+VAR
+  e :Expr;
+BEGIN
+  NewExpr(e, exprVal, typ);
+  e.iVal := 0;
+  RETURN e
+END NewExprSet;
+
+PROCEDURE NewExprSetUnion*(l :Lex.Lexer; lhs, rhs :Expr) :Expr;
+VAR
+  e :Expr;
+BEGIN
+  ExpectType(l, lhs, typeSet);
+  ExpectType(l, rhs, typeSet);
+  IF IsConst(lhs) & IsConst(rhs) THEN
+    e := NewExprSet(lhs.typ);
+    e.setVal := lhs.setVal + rhs.setVal;
+  ELSE
+    NewExpr(e, exprBinary, lhs.typ);
+    e.op := Lex.tPLUS;
+    e.lhs := lhs;
+    e.rhs := rhs;
+  END;
+  RETURN e
+END NewExprSetUnion;
+
+PROCEDURE NewExprSetElement*(l :Lex.Lexer; elt :Expr; setType :Type) :Expr;
+VAR
+  e :Expr;
+BEGIN
+  ExpectType(l, elt, typeInteger);
+  IF IsConst(elt) THEN
+    IF (elt.iVal < 0) OR (elt.iVal > 31) THEN
+      Lex.Error(l, "Value ");
+      Out.Int(elt.iVal);
+      Out.PrintLn(" out OF range of SET 0..31");
+    ELSE
+      e := NewExprSet(setType);
+      e.setVal := {elt.iVal};
+    END;
+  ELSE
+    NewExpr(e, exprUnary, setType);
+    e.op := Lex.tAsSetElt;
+    e.lhs := elt;
+  END;
+  RETURN e
+END NewExprSetElement;
+
+PROCEDURE NewExprSetRange*(l :Lex.Lexer; lhs, rhs :Expr; setType :Type) :Expr;
+VAR
+  e :Expr;
+BEGIN
+  ExpectType(l, lhs, typeInteger);
+  ExpectType(l, rhs, typeInteger);
+  IF IsConst(lhs) & IsConst(rhs) THEN
+    e := NewExprSet(setType);
+    e.setVal := {lhs.iVal .. rhs.iVal};
+  ELSE
+    NewExpr(e, exprBinary, setType);
+    e.op := Lex.tDOTDOT;
+    e.lhs := lhs;
+    e.rhs := rhs;
+  END;
+  RETURN e
+END NewExprSetRange;
+
+PROCEDURE InitTypeKindNames;
+BEGIN
+  TypeKindNames[typeNil]       := "NIL";
+  TypeKindNames[typeInteger]   := "INTEGER";
+  TypeKindNames[typeReal]      := "REAL";
+  TypeKindNames[typeBoolean]   := "BOOLEAN";
+  TypeKindNames[typeChar]      := "CHAR";
+  TypeKindNames[typeSet]       := "SET";
+  TypeKindNames[typeString]    := "STRING";
+  TypeKindNames[typePointer]   := "POINTER";
+  TypeKindNames[typeArray]     := "ARRAY";
+  TypeKindNames[typeRecord]    := "RECORD";
+  TypeKindNames[typeProcedure] := "PROCEDURE";
+  TypeKindNames[typeImport]    := "IMPORT";
+END InitTypeKindNames;
+
+BEGIN
+  InitTypeKindNames;
 END AST.
