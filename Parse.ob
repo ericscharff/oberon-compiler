@@ -146,7 +146,7 @@ BEGIN
   WHILE IsToken(Lex.tDOT) OR IsToken(Lex.tLBRACK) OR IsToken(Lex.tCARET) OR
         (IsTypeGuard() & IsToken(Lex.tLPAREN)) DO
     IF MatchToken(Lex.tDOT) THEN
-      (* identref - lookup decl *)
+      (* fieldref - lookup field, possibly adding pointer deref *)
       ExpectIdentifier;
     ELSIF MatchToken(Lex.tLBRACK) THEN
       (* arrayref *)
