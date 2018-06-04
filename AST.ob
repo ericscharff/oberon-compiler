@@ -200,7 +200,7 @@ BEGIN
     END;
     IF d.name = name THEN
       (* TODO - handle private fields *)
-      NewExpr(e, exprPointerDeref, d.typ);
+      NewExpr(e, exprFieldRef, d.typ);
       e.lhs := base;
       e.iVal := name;
     ELSE
@@ -653,7 +653,13 @@ BEGIN
            p := p.next;
          END;
      | exprFieldRef :
+         Out.Str("FIELDREF ");
+         DumpExpr(l, e.lhs);
+         Out.Str(" ");
+         Lex.OutStr(l, e.iVal);
      | exprPointerDeref :
+         Out.Str("POINTERDEREF ");
+         DumpExpr(l, e.lhs);
      | exprArrayRef :
      | exprTypeGuard :
     END;

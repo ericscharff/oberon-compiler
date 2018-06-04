@@ -23,9 +23,12 @@ CONST
   eightyfour = eight * 10 + four;
 
 TYPE
-  A = ARRAY eight, four OF INTEGER;
+  R1 = RECORD a, b :INTEGER; c :RECORD c1, c2 :INTEGER END END;
+  A = ARRAY eight, four OF R1;
 VAR
   i1, i2, i3, i4 :INTEGER;
+  a :A;
+  r :R1;
 BEGIN
-  i1 := i1 * (+i2) + i3 * i4 + 3 + i4
+  i1 := i1 * (+i2) + i3 * i4 + 3 + i4 + r.c.c1
 END Simple.
