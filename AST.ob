@@ -553,6 +553,7 @@ BEGIN
       END;
     | Lex.tIS:
       e.typ := booleanType;
+      ASSERT(FALSE); (* TODO - runtime type checks *)
       (* (T0 x T1) -> BOOLEAN *)
   END;
   RETURN e
