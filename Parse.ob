@@ -148,10 +148,9 @@ BEGIN
     IF MatchToken(Lex.tDOT) THEN
       e := AST.NewExprFieldRef(l, e, ExpectIdentifier());
     ELSIF MatchToken(Lex.tLBRACK) THEN
-      (* arrayref *)
-      ParseExpression;
+      e := AST.NewExprArrayRef(l, e, ParseExpression());
       WHILE MatchToken(Lex.tCOMMA) DO
-        ParseExpression;
+        e := AST.NewExprArrayRef(l, e, ParseExpression());
       END;
       ExpectToken(Lex.tRBRACK);
     ELSIF MatchToken(Lex.tCARET) THEN

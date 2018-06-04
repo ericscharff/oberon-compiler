@@ -27,8 +27,8 @@ TYPE
   A = ARRAY eight, four OF R1;
 VAR
   i1, i2, i3, i4 :INTEGER;
-  a :A;
+  aaaa :A;
   r :R1;
 BEGIN
-  i1 := i1 * (+i2) + i3 * i4 + 3 + i4 + r.c.c1
+  i1 := i1 * (+i2) + i3 * i4 + 3 + i4 + r.c.c1 + aaaa[2][3].c.c2;
 END Simple.

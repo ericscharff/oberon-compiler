@@ -214,6 +214,36 @@ BEGIN
   RETURN e
 END NewExprFieldRef;
 
+PROCEDURE NewExprArrayRef*(l :Lex.Lexer; base, index :Expr) :Expr;
+VAR
+  e :Expr;
+  d :Decl;
+BEGIN
+  e := base;
+  IF base.typ.kind = typeArray THEN
+    IF index.typ.kind = typeInteger THEN
+      IF (index.kind = exprVal) & (base.typ.length > 0) &
+         ((index.iVal < 0) OR (index.iVal >= base.typ.length)) THEN
+        Lex.Error(l, "Array index ");
+        Out.Int(index.iVal);
+        Out.Str(" out OF range for ARRAY OF length ");
+        Out.Int(base.typ.length);
+        Out.Ln;
+      ELSE
+        NewExpr(e, exprArrayRef, base.typ.base);
+        e.lhs := base;
+        e.rhs := index;
+      END;
+    ELSE
+      Lex.Error(l, "ARRAY index must be an INTEGER, got ");
+      Out.PrintLn(TypeKindNames[index.typ.kind]);
+    END;
+  ELSE
+    Lex.ErrorLn(l, "Not an ARRAY");
+  END;
+  RETURN e
+END NewExprArrayRef;
+
 PROCEDURE NewExprInteger*(iVal :INTEGER; typ :Type) :Expr;
 VAR
   e :Expr;
@@ -661,6 +691,10 @@ BEGIN
          Out.Str("POINTERDEREF ");
          DumpExpr(l, e.lhs);
      | exprArrayRef :
+         Out.Str("ARRAYREF ");
+         DumpExpr(l, e.lhs);
+         Out.Str(" ");
+         DumpExpr(l, e.rhs);
      | exprTypeGuard :
     END;
     Out.PrintLn(")");
