@@ -196,7 +196,7 @@ VAR
 BEGIN
   i := 0;
   p := t.fields;
-  WHILE p # NIL DO
+  WHILE (p # NIL) & (p.kind # AST.declEND) DO
     INC(i);
     p := p.next;
   END;
@@ -216,10 +216,10 @@ BEGIN
       d := base.fields;
       WHILE (d # NIL) & (d.kind # AST.declEND) DO
         dCopy := AddDecl(l, t.fields, d.name);
-	dCopy.kind := d.kind;
-	dCopy.typ := d.typ;
-	dCopy.exported := d.exported;
-	d := d.next;
+        dCopy.kind := d.kind;
+        dCopy.typ := d.typ;
+        dCopy.exported := d.exported;
+        d := d.next;
       END;
     ELSE
       Lex.ErrorLn(l, "RECORD base type is not a RECORD");

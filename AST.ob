@@ -111,6 +111,7 @@ TYPE
                            (* for PROCEDURE call, number OF actual params  *)
     rVal   :REAL;
     setVal :SET;
+    assignable :BOOLEAN;
   END;
 
 VAR
@@ -140,6 +141,7 @@ BEGIN
   e.kind := kind;
   e.typ := typ;
   e.next := NIL;
+  e.assignable := FALSE;
 END NewExpr;
 
 PROCEDURE NewExprIdentRef*(d :Decl) :Expr;
@@ -150,6 +152,13 @@ BEGIN
   ASSERT(d.typ # NIL);
   NewExpr(e, exprIdentRef, d.typ);
   e.decl := d;
+  IF (d.kind = declVar (* & not imported *)) OR
+     ((d.kind = declParam) & ~(d.typ.kind IN {typeArray, typeRecord})) OR
+     (d.kind = declVarParam) THEN
+    e.assignable := TRUE;
+  ELSE
+    e.assignable := FALSE;
+  END;
   IF d.kind = declConst THEN
     ASSERT(d.typ = d.expr.typ);
     ASSERT(d.expr.kind = exprVal);
@@ -160,6 +169,50 @@ BEGIN
   END;
   RETURN e
 END NewExprIdentRef;
+
+PROCEDURE NewExprPointerDeref*(l :Lex.Lexer; base :Expr) :Expr;
+VAR
+  e :Expr;
+BEGIN
+  NewExpr(e, exprPointerDeref, base.typ);
+  e.lhs := base;
+  IF base.typ.kind = typePointer THEN
+    e.typ := base.typ.base;
+  ELSE
+    Lex.ErrorLn(l, "not a POINTER");
+  END;
+  RETURN e
+END NewExprPointerDeref;
+
+PROCEDURE NewExprFieldRef*(l :Lex.Lexer; base :Expr; name :StringId) :Expr;
+VAR
+  e :Expr;
+  d :Decl;
+BEGIN
+  e := base;
+  IF base.typ.kind = typePointer THEN
+    base := NewExprPointerDeref(l, base);
+  END;
+  IF base.typ.kind = typeRecord THEN
+    d := base.typ.fields;
+    WHILE (d # NIL) & (d.kind # declEND) & (d.name # name) DO
+      d := d.next;
+    END;
+    IF d.name = name THEN
+      (* TODO - handle private fields *)
+      NewExpr(e, exprPointerDeref, d.typ);
+      e.lhs := base;
+      e.iVal := name;
+    ELSE
+      Lex.Error(l, "Field ");
+      Lex.OutStr(l, name);
+      Out.PrintLn(" not found");
+    END;
+  ELSE
+    Lex.ErrorLn(l, "Not a RECORD");
+  END;
+  RETURN e
+END NewExprFieldRef;
 
 PROCEDURE NewExprInteger*(iVal :INTEGER; typ :Type) :Expr;
 VAR
@@ -273,18 +326,60 @@ BEGIN
   RETURN e
 END NewExprSetRange;
 
-PROCEDURE AssignmentCompatable(l :Lex.Lexer; a, b :Type) :BOOLEAN;
+PROCEDURE IsStringType(t :Type) :BOOLEAN;
 BEGIN
-  (* TODO - much more *)
+  RETURN (t.kind = typeString) OR ((t.kind = typeArray) & (t.base.kind = typeChar))
+END IsStringType;
+
+(* does a extend b *)
+PROCEDURE Extends(a, b :Type) :BOOLEAN;
+BEGIN
+  ASSERT(a.kind = typeRecord);
+  ASSERT(b.kind = typeRecord);
+  WHILE (a # NIL) & (a # b) DO
+    a := a.base;
+  END;
   RETURN a = b
+END Extends;
+
+PROCEDURE IsOpenArray(t :Type) :BOOLEAN;
+BEGIN
+  RETURN (t.kind = typeArray) & (t.length = 0)
+END IsOpenArray;
+
+(* Is b := a legal? Note that this is not symmetric, for example, *)
+(* b := "hello"; is legal if b is an array of char, but           *)
+(* "hello" := b would not be legal. When doing comparasons (e.g., *)
+(* for boolean =, it is necessar to comapre a to b OR b to a      *)
+PROCEDURE AssignmentCompatable(l :Lex.Lexer; a, b :Type; aSval, bSval :StringId) :BOOLEAN;
+BEGIN
+  RETURN
+    (a = b) OR
+    ((a.kind = typeString) & (b.kind = typeString)) OR
+    ((a.kind = typeChar) & (b.kind = typeString) & Lex.IsOneChar(l, bSval)) OR
+    ((b.kind = typeChar) & (a.kind = typeString) & Lex.IsOneChar(l, aSval)) OR
+    ((a.kind = typeNil) & (b.kind = typePointer)) OR
+    ((a.kind = typeNil) & (b.kind = typeProcedure)) OR
+    ((a.kind = typePointer) & (b.kind = typePointer) & Extends(a.base, b.base)) OR
+    ((a.kind = typeRecord) & (b.kind = typeRecord) & Extends(a, b)) OR
+    ((a.kind = typeString) & (b.kind = typeArray) & (b.base.kind = typeChar))
+    (* Strictly speaking, that last case is not true in Oberon. You cannot  *)
+    (* assign one array to another, except for strings. However, this is    *)
+    (* meant to be used for parameter checking, where the formal is an open *)
+    (* array, and the actual is an array of that type. This test passes to  *)
+    (* support argument passing, but should fail elsewhere (e.g., arrays    *)
+    (* cannot be assigned to because is_assignable is FALSE, and arrays     *)
 END AssignmentCompatable;
 
 PROCEDURE ExprCompatable(l :Lex.Lexer; op :Lex.TokenKind; lhs, rhs :Expr) :BOOLEAN;
 VAR
   good :BOOLEAN;
 BEGIN
-  good := AssignmentCompatable(l, lhs.typ, rhs.typ);
-  IF ~good THEN
+  IF AssignmentCompatable(l, lhs.typ, rhs.typ, lhs.iVal, rhs.iVal) OR
+     AssignmentCompatable(l, rhs.typ, lhs.typ, rhs.iVal, lhs.iVal) THEN
+    good := TRUE;
+  ELSE
+    good := FALSE;
     Lex.Error(l, "Type mismatch for op [");
     Out.Str(Lex.TokenNames[op]);
     Out.Str("] got ");
@@ -398,7 +493,8 @@ BEGIN
     | Lex.tLT, Lex.tGT, Lex.tLTEQ, Lex.tGTEQ:
       e.typ := booleanType;
       IF ExprCompatable(l, op, lhs, rhs) &
-         (lhs.typ.kind IN {typeInteger, typeReal, typeSet, typeString, typeChar}) THEN
+         (IsStringType(lhs.typ) OR
+          (lhs.typ.kind IN {typeInteger, typeReal, typeSet, typeString, typeChar})) THEN
         IF IsConst(lhs) & IsConst(rhs) THEN
           (* evaluate *)
         END;
@@ -408,7 +504,8 @@ BEGIN
     | Lex.tEQ, Lex.tPOUND:
       e.typ := booleanType;
       IF ExprCompatable(l, op, lhs, rhs) &
-         (lhs.typ.kind IN {typeInteger, typeReal, typeSet, typeString, typeChar, typePointer, typeProcedure}) THEN
+         (IsStringType(lhs.typ) OR
+          (lhs.typ.kind IN {typeInteger, typeReal, typeSet, typeString, typeChar, typePointer, typeProcedure})) THEN
         IF IsConst(lhs) & IsConst(rhs) THEN
           (* evaluate *)
         END;
@@ -433,16 +530,21 @@ END NewExprBinary;
 
 PROCEDURE ExpectArgMatch(l :Lex.Lexer; arg :INTEGER; actual :Expr; formal :Decl);
 BEGIN
-(* actual type = formal type 
-  ARRAY OF char TO string
-  ARRAY OF <t> TO open ARRAY <t>
-  VAR parameters must be assignable
-
-  assignable = VAR and not imported
-             or param and not RECORD
-             or varparam
-  *)
-  AssignmentCompatable(l, actual.typ, formal.typ);
+  IF IsOpenArray(formal.typ) & (actual.typ.kind = typeArray) &
+     (actual.typ.base = formal.typ.base) THEN
+    (* Good - ARRAY OF X - ARRAY n OF X *)
+  ELSIF (formal.kind = declVarParam) & ~actual.assignable THEN
+    Lex.Error(l, "For argument ");
+    Out.Int(arg);
+    Out.PrintLn(", param is not assignable (expected VAR param)");
+  ELSIF ~AssignmentCompatable(l, actual.typ, formal.typ, actual.iVal, actual.iVal) THEN
+    Lex.Error(l, "For argument ");
+    Out.Int(arg);
+    Out.Str(", expected ");
+    Out.Str(TypeKindNames[formal.typ.kind]);
+    Out.Str(", got ");
+    Out.PrintLn(TypeKindNames[actual.typ.kind]);
+  END;
 END ExpectArgMatch;
 
 PROCEDURE NewExprProcCall*(l :Lex.Lexer; proc, args :Expr) :Expr;
@@ -508,6 +610,8 @@ BEGIN
 END DumpDecl;
 
 PROCEDURE DumpExpr0*(l :Lex.Lexer; e :Expr);
+VAR
+  p :Expr;
 BEGIN
   IF e = NIL THEN
     Out.PrintLn("(NIL EXPR)");
@@ -520,6 +624,7 @@ BEGIN
          CASE e.typ.kind OF
            typeInteger, typeBoolean: Out.Str(" "); Out.Int(e.iVal);
            | typeReal: Out.Str(" "); Out.Real(e.rVal);
+           | typeString: Out.Str(" "); Out.Str(22X); Lex.OutStr(l, e.iVal); Out.Str(22X);
            | typeSet: Out.Str(" "); Out.Int(ORD(e.setVal));
          END;
      | exprUnary :
@@ -540,6 +645,13 @@ BEGIN
          Out.Str("IDENTREF ");
          DumpDecl(l, e.decl);
      | exprProcCall :
+         Out.Str("PROCCALL ");
+         DumpExpr(l, e.lhs);
+         p := e.rhs;
+         WHILE p # NIL DO
+           DumpExpr(l, p);
+           p := p.next;
+         END;
      | exprFieldRef :
      | exprPointerDeref :
      | exprArrayRef :

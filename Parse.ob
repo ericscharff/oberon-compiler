@@ -146,8 +146,7 @@ BEGIN
   WHILE IsToken(Lex.tDOT) OR IsToken(Lex.tLBRACK) OR IsToken(Lex.tCARET) OR
         (IsTypeGuard() & IsToken(Lex.tLPAREN)) DO
     IF MatchToken(Lex.tDOT) THEN
-      (* fieldref - lookup field, possibly adding pointer deref *)
-      ExpectIdentifier;
+      e := AST.NewExprFieldRef(l, e, ExpectIdentifier());
     ELSIF MatchToken(Lex.tLBRACK) THEN
       (* arrayref *)
       ParseExpression;
@@ -156,7 +155,7 @@ BEGIN
       END;
       ExpectToken(Lex.tRBRACK);
     ELSIF MatchToken(Lex.tCARET) THEN
-      (* pointerderef *)
+      e := AST.NewExprPointerDeref(l, e);
     ELSIF IsTypeGuard() & MatchToken(Lex.tLPAREN) THEN
       (* typeguard *)
       ParseQualident;
@@ -595,6 +594,8 @@ BEGIN
     ExpectToken(Lex.tRPAREN);
     IF MatchToken(Lex.tCOLON) THEN
       t.base := ParseQualidentAndGetType();
+    ELSE
+      t.base := Decls.nilType;
     END;
   END;
   Decls.CountProcedureArgs(t);

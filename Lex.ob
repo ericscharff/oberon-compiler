@@ -243,6 +243,11 @@ BEGIN
   Out.StrI(l.sp.buf, s);
 END OutStr;
 
+PROCEDURE IsOneChar*(l :Lexer; s :PoolIndex) :BOOLEAN;
+BEGIN
+  RETURN (l.sp.buf[s] = 0X) OR (l.sp.buf[s+1] = 0X)
+END IsOneChar;
+
 PROCEDURE Error*(l :Lexer; s :ARRAY OF CHAR);
 BEGIN
   Out.Str("Err!");

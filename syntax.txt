@@ -45,7 +45,7 @@ ProcedureCall = designator [ActualParameters].
 StatementSequence = statement {";" statement}.
 IfStatement = IF expression THEN StatementSequence
  {ELSIF expression THEN StatementSequence}
- [ELSE StatementSequence] END. 
+ [ELSE StatementSequence] END.
 CaseStatement = CASE expression OF case {"|" case} END.
 case = [CaseLabelList ":" StatementSequence].
 CaseLabelList = LabelRange {"," LabelRange}.
@@ -70,4 +70,4 @@ FormalType = {ARRAY OF} qualident.
 module = MODULE ident ";" [ImportList] DeclarationSequence
  [BEGIN StatementSequence] END ident "." .
 ImportList = IMPORT import {"," import} ";".
-import = ident [":=" ident]. 
+import = ident [":=" ident].
