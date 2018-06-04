@@ -176,6 +176,7 @@ VAR
 BEGIN
   NewExpr(e, exprPointerDeref, base.typ);
   e.lhs := base;
+  e.assignable := base.assignable;
   IF base.typ.kind = typePointer THEN
     e.typ := base.typ.base;
   ELSE
@@ -203,6 +204,7 @@ BEGIN
       NewExpr(e, exprFieldRef, d.typ);
       e.lhs := base;
       e.iVal := name;
+      e.assignable := base.assignable;
     ELSE
       Lex.Error(l, "Field ");
       Lex.OutStr(l, name);
@@ -233,6 +235,7 @@ BEGIN
         NewExpr(e, exprArrayRef, base.typ.base);
         e.lhs := base;
         e.rhs := index;
+        e.assignable := base.assignable;
       END;
     ELSE
       Lex.Error(l, "ARRAY index must be an INTEGER, got ");
@@ -243,6 +246,11 @@ BEGIN
   END;
   RETURN e
 END NewExprArrayRef;
+
+PROCEDURE NewExprTypeGuard*(l :Lex.Lexer; base :Expr; newType :Decl) :Expr;
+BEGIN
+  RETURN NIL
+END NewExprTypeGuard;
 
 PROCEDURE NewExprInteger*(iVal :INTEGER; typ :Type) :Expr;
 VAR

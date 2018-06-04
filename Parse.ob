@@ -156,13 +156,12 @@ BEGIN
     ELSIF MatchToken(Lex.tCARET) THEN
       e := AST.NewExprPointerDeref(l, e);
     ELSIF IsTypeGuard() & MatchToken(Lex.tLPAREN) THEN
-      (* typeguard *)
-      ParseQualident;
+      e := AST.NewExprTypeGuard(l, e, ParseQualident());
     ELSE
       ASSERT(FALSE);
     END
   END;
-  RETURN e (* TODO *)
+  RETURN e
 END ParseDesignator;
 
 PROCEDURE ParseActualParameters() :AST.Expr;

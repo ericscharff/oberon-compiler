@@ -30,5 +30,5 @@ VAR
   aaaa :A;
   r :R1;
 BEGIN
-  i1 := i1 * (+i2) + i3 * i4 + 3 + i4 + r.c.c1 + aaaa[2][3].c.c2;
+  i1 := i1 * (+i2) + i3 * i4 + 3 + i4 + r.c.c1 + aaaa[2, 3].c.c2;
 END Simple.
