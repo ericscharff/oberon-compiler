@@ -402,7 +402,7 @@ BEGIN
   ParseDesignator;
   IF MatchToken(Lex.tASSIGN) THEN
     (* Assignment *)
-    AST.DumpExpr(l, ParseExpression());
+    ParseExpression();
   ELSE
     (* Procedure call *)
     IF IsToken(Lex.tLPAREN) THEN
@@ -643,7 +643,6 @@ BEGIN
   IF ~AST.IsConst(e) THEN
     Lex.ErrorLn(l, "CONST declaration is not constant");
   END;
-  AST.DumpDecl(l, d);
 END ParseConstDeclaration;
 
 PROCEDURE ParseTypeDeclaration;
