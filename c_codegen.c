@@ -219,6 +219,8 @@ void gen_unary_expr(TokenKind op, Expr *expr) {
     gen_str("(");
     gen_expr(expr);
     gen_str(")");
+  } else if (op == TOKEN_PLUS) {
+    gen_expr(expr);
   } else if (op == TOKEN_TILDE) {
     gen_str("!(");
     gen_expr(expr);
