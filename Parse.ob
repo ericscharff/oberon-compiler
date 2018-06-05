@@ -133,9 +133,9 @@ BEGIN
   RETURN e
 END ParseSet;
 
-PROCEDURE IsTypeGuard() :BOOLEAN;
+PROCEDURE IsTypeGuard(e :AST.Expr) :BOOLEAN;
 BEGIN
-  RETURN FALSE
+  RETURN (e.typ.kind = AST.typePointer) OR ((e.typ.kind = AST.typeRecord) & (e.kind = AST.exprIdentRef) & (e.decl.kind = AST.declVarParam))
 END IsTypeGuard;
 
 PROCEDURE ParseDesignator() :AST.Expr;
@@ -144,7 +144,7 @@ VAR
 BEGIN
   e := AST.NewExprIdentRef(ParseQualident());
   WHILE IsToken(Lex.tDOT) OR IsToken(Lex.tLBRACK) OR IsToken(Lex.tCARET) OR
-        (IsTypeGuard() & IsToken(Lex.tLPAREN)) DO
+        (IsTypeGuard(e) & IsToken(Lex.tLPAREN)) DO
     IF MatchToken(Lex.tDOT) THEN
       e := AST.NewExprFieldRef(l, e, ExpectIdentifier());
     ELSIF MatchToken(Lex.tLBRACK) THEN
@@ -155,8 +155,9 @@ BEGIN
       ExpectToken(Lex.tRBRACK);
     ELSIF MatchToken(Lex.tCARET) THEN
       e := AST.NewExprPointerDeref(l, e);
-    ELSIF IsTypeGuard() & MatchToken(Lex.tLPAREN) THEN
+    ELSIF IsTypeGuard(e) & MatchToken(Lex.tLPAREN) THEN
       e := AST.NewExprTypeGuard(l, e, ParseQualident());
+      ExpectToken(Lex.tRPAREN);
     ELSE
       ASSERT(FALSE);
     END

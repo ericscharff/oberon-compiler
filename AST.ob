@@ -30,7 +30,7 @@ CONST
   exprVal*         = 1; (* CONST value *)
   exprUnary*       = 2;
   exprBinary*      = 3;
-  exprIdentRef     = 4;
+  exprIdentRef*    = 4;
   exprProcCall     = 5;
   exprFieldRef     = 6;
   exprPointerDeref = 7;
@@ -96,7 +96,7 @@ TYPE
   the rhs is the first arg, and then follows the next chain OF those args.
   *)
   ExprDesc  = RECORD
-    kind   :ExprKind;
+    kind*  :ExprKind;
     typ*   :Type;
     op     :Lex.TokenKind; (* for unary, binary                            *)
     lhs    :Expr;          (* for unary, binary, the base expr for         *)
@@ -105,7 +105,7 @@ TYPE
     rhs    :Expr;          (* for binary, also first arg PROCEDURE call    *)
                            (* for arrayRef, expr OF ARRAY index            *)
     next*  :Expr;          (* for PROCEDURE call,next arg in list          *)
-    decl   :Decl;          (* for identRef and typeguard                   *)
+    decl*  :Decl;          (* for identRef and typeguard                   *)
     iVal*  :INTEGER;       (* for INTEGER, BOOLEAN, STRING (StringId)      *)
                            (* for fieldref, StringId OF field name         *)
                            (* for PROCEDURE call, number OF actual params  *)
@@ -129,6 +129,71 @@ BEGIN
     Out.PrintLn(TypeKindNames[e.typ.kind]);
   END;
 END ExpectType;
+
+PROCEDURE IsStringType(t :Type) :BOOLEAN;
+BEGIN
+  RETURN (t.kind = typeString) OR ((t.kind = typeArray) & (t.base.kind = typeChar))
+END IsStringType;
+
+(* does a extend b *)
+PROCEDURE Extends(a, b :Type) :BOOLEAN;
+BEGIN
+  ASSERT(a.kind = typeRecord);
+  ASSERT(b.kind = typeRecord);
+  WHILE (a # NIL) & (a # b) DO
+    a := a.base;
+  END;
+  RETURN a = b
+END Extends;
+
+PROCEDURE IsOpenArray(t :Type) :BOOLEAN;
+BEGIN
+  RETURN (t.kind = typeArray) & (t.length = 0)
+END IsOpenArray;
+
+(* Is b := a legal? Note that this is not symmetric, for example, *)
+(* b := "hello"; is legal if b is an array of char, but           *)
+(* "hello" := b would not be legal. When doing comparasons (e.g., *)
+(* for boolean =, it is necessar to comapre a to b OR b to a      *)
+PROCEDURE AssignmentCompatable(l :Lex.Lexer; a, b :Type; aSval, bSval :StringId) :BOOLEAN;
+BEGIN
+  RETURN
+    (a = b) OR
+    ((a.kind = typeString) & (b.kind = typeString)) OR
+    ((a.kind = typeChar) & (b.kind = typeString) & Lex.IsOneChar(l, bSval)) OR
+    ((b.kind = typeChar) & (a.kind = typeString) & Lex.IsOneChar(l, aSval)) OR
+    ((a.kind = typeNil) & (b.kind = typePointer)) OR
+    ((a.kind = typeNil) & (b.kind = typeProcedure)) OR
+    ((a.kind = typePointer) & (b.kind = typePointer) & Extends(a.base, b.base)) OR
+    ((a.kind = typeRecord) & (b.kind = typeRecord) & Extends(a, b)) OR
+    ((a.kind = typeString) & (b.kind = typeArray) & (b.base.kind = typeChar))
+    (* Strictly speaking, that last case is not true in Oberon. You cannot  *)
+    (* assign one array to another, except for strings. However, this is    *)
+    (* meant to be used for parameter checking, where the formal is an open *)
+    (* array, and the actual is an array of that type. This test passes to  *)
+    (* support argument passing, but should fail elsewhere (e.g., arrays    *)
+    (* cannot be assigned to because is_assignable is FALSE, and arrays     *)
+END AssignmentCompatable;
+
+PROCEDURE ExprCompatable(l :Lex.Lexer; op :Lex.TokenKind; lhs, rhs :Expr) :BOOLEAN;
+VAR
+  good :BOOLEAN;
+BEGIN
+  IF AssignmentCompatable(l, lhs.typ, rhs.typ, lhs.iVal, rhs.iVal) OR
+     AssignmentCompatable(l, rhs.typ, lhs.typ, rhs.iVal, lhs.iVal) THEN
+    good := TRUE;
+  ELSE
+    good := FALSE;
+    Lex.Error(l, "Type mismatch for op [");
+    Out.Str(Lex.TokenNames[op]);
+    Out.Str("] got ");
+    Out.Str(TypeKindNames[lhs.typ.kind]);
+    Out.Str(" and ");
+    Out.PrintLn(TypeKindNames[rhs.typ.kind]);
+  END;
+  RETURN good
+END ExprCompatable;
+
 
 PROCEDURE IsConst*(e :Expr) :BOOLEAN;
 BEGIN
@@ -248,8 +313,26 @@ BEGIN
 END NewExprArrayRef;
 
 PROCEDURE NewExprTypeGuard*(l :Lex.Lexer; base :Expr; newType :Decl) :Expr;
+VAR
+  e :Expr;
 BEGIN
-  RETURN NIL
+  e := base;
+  IF (newType.kind = declType) & (newType.typ.kind IN {typeRecord, typePointer}) THEN
+    IF ((base.typ.kind = typePointer) & (newType.typ.kind = typePointer) & Extends(newType.typ.base, base.typ.base)) OR
+       ((base.typ.kind = typeRecord) & (newType.typ.kind = typeRecord) & Extends(newType.typ, base.typ)) THEN
+      NewExpr(e, exprTypeGuard, newType.typ);
+      e.lhs := base;
+      e.decl := newType;
+      e.assignable := base.assignable;
+    ELSE
+      Lex.ErrorLn(l, "Guarded and base type are unrelated");
+    END;
+  ELSE
+    Lex.Error(l, "Declaration ");
+    Lex.OutStr(l, newType.name);
+    Out.PrintLn(" must be a POINTER or RECORD type");
+  END;
+  RETURN e
 END NewExprTypeGuard;
 
 PROCEDURE NewExprInteger*(iVal :INTEGER; typ :Type) :Expr;
@@ -363,70 +446,6 @@ BEGIN
   END;
   RETURN e
 END NewExprSetRange;
-
-PROCEDURE IsStringType(t :Type) :BOOLEAN;
-BEGIN
-  RETURN (t.kind = typeString) OR ((t.kind = typeArray) & (t.base.kind = typeChar))
-END IsStringType;
-
-(* does a extend b *)
-PROCEDURE Extends(a, b :Type) :BOOLEAN;
-BEGIN
-  ASSERT(a.kind = typeRecord);
-  ASSERT(b.kind = typeRecord);
-  WHILE (a # NIL) & (a # b) DO
-    a := a.base;
-  END;
-  RETURN a = b
-END Extends;
-
-PROCEDURE IsOpenArray(t :Type) :BOOLEAN;
-BEGIN
-  RETURN (t.kind = typeArray) & (t.length = 0)
-END IsOpenArray;
-
-(* Is b := a legal? Note that this is not symmetric, for example, *)
-(* b := "hello"; is legal if b is an array of char, but           *)
-(* "hello" := b would not be legal. When doing comparasons (e.g., *)
-(* for boolean =, it is necessar to comapre a to b OR b to a      *)
-PROCEDURE AssignmentCompatable(l :Lex.Lexer; a, b :Type; aSval, bSval :StringId) :BOOLEAN;
-BEGIN
-  RETURN
-    (a = b) OR
-    ((a.kind = typeString) & (b.kind = typeString)) OR
-    ((a.kind = typeChar) & (b.kind = typeString) & Lex.IsOneChar(l, bSval)) OR
-    ((b.kind = typeChar) & (a.kind = typeString) & Lex.IsOneChar(l, aSval)) OR
-    ((a.kind = typeNil) & (b.kind = typePointer)) OR
-    ((a.kind = typeNil) & (b.kind = typeProcedure)) OR
-    ((a.kind = typePointer) & (b.kind = typePointer) & Extends(a.base, b.base)) OR
-    ((a.kind = typeRecord) & (b.kind = typeRecord) & Extends(a, b)) OR
-    ((a.kind = typeString) & (b.kind = typeArray) & (b.base.kind = typeChar))
-    (* Strictly speaking, that last case is not true in Oberon. You cannot  *)
-    (* assign one array to another, except for strings. However, this is    *)
-    (* meant to be used for parameter checking, where the formal is an open *)
-    (* array, and the actual is an array of that type. This test passes to  *)
-    (* support argument passing, but should fail elsewhere (e.g., arrays    *)
-    (* cannot be assigned to because is_assignable is FALSE, and arrays     *)
-END AssignmentCompatable;
-
-PROCEDURE ExprCompatable(l :Lex.Lexer; op :Lex.TokenKind; lhs, rhs :Expr) :BOOLEAN;
-VAR
-  good :BOOLEAN;
-BEGIN
-  IF AssignmentCompatable(l, lhs.typ, rhs.typ, lhs.iVal, rhs.iVal) OR
-     AssignmentCompatable(l, rhs.typ, lhs.typ, rhs.iVal, lhs.iVal) THEN
-    good := TRUE;
-  ELSE
-    good := FALSE;
-    Lex.Error(l, "Type mismatch for op [");
-    Out.Str(Lex.TokenNames[op]);
-    Out.Str("] got ");
-    Out.Str(TypeKindNames[lhs.typ.kind]);
-    Out.Str(" and ");
-    Out.PrintLn(TypeKindNames[rhs.typ.kind]);
-  END;
-  RETURN good
-END ExprCompatable;
 
 PROCEDURE NewExprUnary*(l :Lex.Lexer; op :Lex.TokenKind; lhs :Expr) :Expr;
 VAR
@@ -705,6 +724,10 @@ BEGIN
          Out.Str(" ");
          DumpExpr(l, e.rhs);
      | exprTypeGuard :
+         Out.Str("TYPEGUARD ");
+         DumpExpr(l, e.lhs);
+         Out.Str(" ");
+         DumpDecl(l, e.decl);
     END;
     Out.PrintLn(")");
   END;
