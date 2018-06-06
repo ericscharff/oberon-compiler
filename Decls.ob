@@ -309,7 +309,8 @@ BEGIN
   IF (args = NIL) OR (args.next # NIL) THEN
     Lex.ErrorLn(l, "ORD expects 1 argument");
   END;
-  IF args.typ.kind IN {AST.typeSet, AST.typeChar, AST.typeBoolean} THEN
+  IF (args.typ.kind IN {AST.typeSet, AST.typeChar, AST.typeBoolean}) OR
+     ((args.typ.kind = AST.typeString) & Lex.IsOneChar(l, args.iVal)) THEN
     e.typ := integerType;
   ELSE
     Lex.ErrorLn(l, "ORD expects CHAR, BOOLEAN, or SET");
