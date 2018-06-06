@@ -285,6 +285,22 @@ BEGIN
   RETURN e
 END builtinInc;
 
+PROCEDURE builtinAssert(l :Lex.Lexer; args :AST.Expr) :AST.Expr;
+VAR
+  e :AST.Expr;
+BEGIN
+  AST.NewExpr(e, AST.exprBuiltin, nilType);
+  IF (args = NIL) OR (args.next # NIL) THEN
+    Lex.ErrorLn(l, "ASSERT expects 1 argument");
+  END;
+  IF args.typ.kind = AST.typeBoolean THEN
+    e.typ := args.typ;
+  ELSE
+    Lex.ErrorLn(l, "ASSERT expects a BOOLEAN");
+  END;
+  RETURN e
+END builtinAssert;
+
 PROCEDURE InitGlobalScope*(VAR l :Lex.Lexer);
 BEGIN
   fwds := NIL;
@@ -308,8 +324,8 @@ BEGIN
     AddBuiltin(l, Lex.Intern(l, "ABS"), builtinAbs);
     AddBuiltin(l, Lex.Intern(l, "INC"), builtinInc);
     AddBuiltin(l, Lex.Intern(l, "DEC"), builtinInc);
+    AddBuiltin(l, Lex.Intern(l, "ASSERT"), builtinAssert);
     (* stuff to fix *)
-    AddTypeDecl(l, Lex.Intern(l, "ASSERT"), nilType);
     AddTypeDecl(l, Lex.Intern(l, "ORD"), nilType);
     AddTypeDecl(l, Lex.Intern(l, "CHR"), nilType);
     AddTypeDecl(l, Lex.Intern(l, "FLT"), nilType);
