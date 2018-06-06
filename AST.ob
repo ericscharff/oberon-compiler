@@ -126,7 +126,7 @@ TYPE
                            (* for builtin procedure, unique identifier     *)
     rVal   :REAL;
     setVal :SET;
-    assignable :BOOLEAN;
+    assignable* :BOOLEAN;
   END;
 
 VAR

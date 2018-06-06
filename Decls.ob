@@ -268,6 +268,23 @@ BEGIN
   RETURN e
 END builtinAbs;
 
+PROCEDURE builtinInc(l :Lex.Lexer; args :AST.Expr) :AST.Expr;
+VAR
+  e :AST.Expr;
+BEGIN
+  AST.NewExpr(e, AST.exprBuiltin, nilType);
+  IF (args = NIL) OR ((args.next # NIL) & (args.next.next # NIL)) THEN
+    Lex.ErrorLn(l, "INC/DEC expects 1 or 2 arguments");
+  END;
+  IF ~args.assignable THEN
+    Lex.ErrorLn(l, "First argument to INC/DEC must be assignable");
+  END;
+  IF (args.next # NIL) & (args.next.typ.kind # AST.typeInteger) THEN
+    Lex.ErrorLn(l, "Second arg to INC/DEC must be an INTEGER");
+  END;
+  RETURN e
+END builtinInc;
+
 PROCEDURE InitGlobalScope*(VAR l :Lex.Lexer);
 BEGIN
   fwds := NIL;
@@ -289,9 +306,9 @@ BEGIN
     NewType(stringType, AST.typeString);
     (* Builins *)
     AddBuiltin(l, Lex.Intern(l, "ABS"), builtinAbs);
+    AddBuiltin(l, Lex.Intern(l, "INC"), builtinInc);
+    AddBuiltin(l, Lex.Intern(l, "DEC"), builtinInc);
     (* stuff to fix *)
-    AddTypeDecl(l, Lex.Intern(l, "INC"), nilType);
-    AddTypeDecl(l, Lex.Intern(l, "DEC"), nilType);
     AddTypeDecl(l, Lex.Intern(l, "ASSERT"), nilType);
     AddTypeDecl(l, Lex.Intern(l, "ORD"), nilType);
     AddTypeDecl(l, Lex.Intern(l, "CHR"), nilType);
