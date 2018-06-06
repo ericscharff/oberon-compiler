@@ -67,6 +67,8 @@ struct Type {
   const char *name;          // Only declared types have names;
   const char *package_name;  // Only declared types have package names
   bool resolved;             // Filled in by resolver
+  bool needs_typeinfo;       // Does this type need runtime type informationt
+  int type_id;
   union {
     ArrayType array_type;
     PointerType pointer_type;
@@ -90,6 +92,9 @@ Type *type_pool_current;
 Type *type_pool_end;
 
 void init_builtin_types(void) {
+  for (int i = 0; i < TYPE_POOL_SIZE; i++) {
+    type_pool[i].type_id = i;
+  }
   booleanType.kind = TYPE_BOOLEAN;
   byteType.kind = TYPE_BYTE;
   charType.kind = TYPE_CHAR;
@@ -112,6 +117,7 @@ Type *new_type_incomplete(void) {
   Type *t = alloc_type();
   t->kind = TYPE_INCOMPLETE;
   t->resolved = false;
+  t->needs_typeinfo = false;
   t->name = NULL;
   t->package_name = NULL;
   return t;
@@ -121,6 +127,7 @@ Type *new_type_array(Expr *num_elements_expr) {
   Type *t = alloc_type();
   t->kind = TYPE_ARRAY;
   t->resolved = false;
+  t->needs_typeinfo = false;
   t->name = NULL;
   t->package_name = NULL;
   t->array_type.element_type = NULL;
@@ -132,6 +139,7 @@ Type *new_type_pointer(Type *element_type) {
   Type *t = alloc_type();
   t->kind = TYPE_POINTER;
   t->resolved = false;
+  t->needs_typeinfo = false;
   t->name = NULL;
   t->package_name = NULL;
   t->pointer_type.element_type = element_type;
@@ -142,6 +150,7 @@ Type *new_type_procedure(FormalParameter *params, Type *return_type) {
   Type *t = alloc_type();
   t->kind = TYPE_PROCEDURE;
   t->resolved = false;
+  t->needs_typeinfo = false;
   t->name = NULL;
   t->package_name = NULL;
   t->procedure_type.params = params;
@@ -154,6 +163,7 @@ Type *new_type_builtin_procedure(const char *name) {
   Type *t = alloc_type();
   t->kind = TYPE_BUILTIN_PROCEDURE;
   t->resolved = false;
+  t->needs_typeinfo = false;
   t->name = name;
   t->package_name = NULL;
   t->procedure_type.params = NULL;
@@ -164,6 +174,7 @@ Type *new_type_builtin_procedure(const char *name) {
 Type *new_type_record(Type *base_type, RecordField *fields) {
   Type *t = alloc_type();
   t->resolved = false;
+  t->needs_typeinfo = false;
   t->kind = TYPE_RECORD;
   t->name = NULL;
   t->package_name = NULL;
@@ -251,6 +262,31 @@ bool is_extension_of(Type *b, Type *a) {
         return true;
       }
     }
+  }
+  return false;
+}
+
+void set_needs_typeinfo(Type *t) {
+  if (t->kind == TYPE_POINTER) {
+    t = t->pointer_type.element_type;
+  }
+  assert(t->kind == TYPE_RECORD);
+  while (t) {
+    t->needs_typeinfo = true;
+    t = t->record_type.base_type;
+  }
+}
+
+bool needs_typeinfo(Type *t) {
+  if (t->kind == TYPE_POINTER) {
+    t = t->pointer_type.element_type;
+  }
+  assert(t->kind == TYPE_RECORD);
+  while (t) {
+    if (t->needs_typeinfo) {
+      return true;
+    }
+    t = t->record_type.base_type;
   }
   return false;
 }

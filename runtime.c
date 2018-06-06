@@ -7,6 +7,17 @@
 #define ASSERT assert
 #define oberon_abs(x) ((x) < 0) ? -(x) : (x)
 
+// Does the runtime type of a extend b
+bool does_type_extend(oberon_typeid a, oberon_typeid b) {
+  while (a) {
+    if (a == b) {
+      return true;
+    }
+    a = oberon_typeinfos[a];
+  }
+  return false;
+}
+
 int make_set_range(int s, int e) {
   int r = 0;
   while (s <= e) {

@@ -113,6 +113,7 @@ TYPE
 
 VAR
   TokenNames* :ARRAY tEOF+1, KwdSize OF CHAR;
+  fatal :BOOLEAN;
 
 PROCEDURE PoolInit(VAR sp :StringPool);
 VAR
@@ -248,6 +249,46 @@ BEGIN
   RETURN (l.sp.buf[s] = 0X) OR (l.sp.buf[s+1] = 0X)
 END IsOneChar;
 
+PROCEDURE Mute*;
+BEGIN
+  Out.Mute;
+  fatal := FALSE;
+END Mute;
+
+PROCEDURE Unmute*;
+BEGIN
+  Out.Unmute;
+  fatal := TRUE;
+END Unmute;
+
+PROCEDURE Str*(s :ARRAY OF CHAR);
+BEGIN
+  Out.Str(s);
+END Str;
+
+PROCEDURE Int*(i :INTEGER);
+BEGIN
+  Out.Int(i);
+END Int;
+
+PROCEDURE Ln*;
+BEGIN
+  Out.Ln;
+  IF fatal THEN ASSERT(FALSE) END;
+END Ln;
+
+PROCEDURE PrintLn*(s :ARRAY OF CHAR);
+BEGIN
+  Out.Str(s);
+  Ln;
+END PrintLn;
+
+PROCEDURE InfoPrintLn*(s :ARRAY OF CHAR);
+BEGIN
+  Out.Str(s);
+  Out.Ln;
+END InfoPrintLn;
+
 PROCEDURE Error*(l :Lexer; s :ARRAY OF CHAR);
 BEGIN
   Out.Str("Err!");
@@ -261,7 +302,7 @@ END Error;
 PROCEDURE ErrorLn*(l :Lexer; s :ARRAY OF CHAR);
 BEGIN
   Error(l, s);
-  Out.Ln;
+  Ln;
 END ErrorLn;
 
 PROCEDURE Next(VAR l :Lexer; VAR c :CHAR);
@@ -686,7 +727,7 @@ BEGIN
   ASSERT(StringIntern(sp, "A") = 0);
   ASSERT(StringIntern(sp, "PROCEDURE") = 10);
   ASSERT(StringIntern(sp, "B") = 20);
-  Out.PrintLn("PASS: String pool test");
+  InfoPrintLn("PASS: String pool test");
 END TestPool;
 
 PROCEDURE TestLexer;
@@ -695,13 +736,15 @@ VAR
   k :INTEGER;
 BEGIN
   (* Error cases *)
-  Out.Mute;
+  fatal := FALSE;
+  Mute;
   LexerInitFromString(l, "0C "); NextToken(l);
   LexerInitFromString(l, "100X"); NextToken(l);
   LexerInitFromString(l, "   "); l.buf[0] := 22X; NextToken(l);
   LexerInitFromString(l, "(* "); NextToken(l);
-  Out.Unmute;
+  Unmute;
   (* Regular cases *)
+  fatal := TRUE;
   LexerInitFromString(l, "
       Test Hello World Test alpha..beta
   ARRAY       BEGIN       BY          CASE        CONST
@@ -756,9 +799,9 @@ BEGIN
   NextToken(l); ASSERT(l.t.kind = tEOF);
 
   LexerInitFromFile(l, "Lex.ob");
-  Out.Mute;
   REPEAT
     NextToken(l);
+    (*
     Out.Str(TokenNames[l.t.kind]);
     IF l.t.kind = tINT THEN
       Out.Str(" ");
@@ -768,9 +811,9 @@ BEGIN
       OutStr(l, l.t.sVal);
     END;
     Out.Ln;
+    *)
   UNTIL l.t.kind = tEOF;
-  Out.Unmute;
-  Out.PrintLn("PASS: Lexer test");
+  InfoPrintLn("PASS: Lexer test");
 END TestLexer;
 
 BEGIN

@@ -1,6 +1,6 @@
 MODULE Decls;
 
-IMPORT AST, Lex, Out;
+IMPORT AST, Lex;
 
 TYPE
   StringId  = Lex.PoolIndex;
@@ -21,7 +21,7 @@ VAR
   p :AST.Decl;
 BEGIN
   p := scope;
-  WHILE (p # NIL) & (p.name # name) DO
+  WHILE (p # NIL) & (p.qname.name # name) DO
     p := p.next;
   END;
   RETURN p
@@ -35,7 +35,7 @@ BEGIN
   IF p = NIL THEN
     Lex.Error(l, "");
     Lex.OutStr(l, name);
-    Out.PrintLn(" undefined");
+    Lex.PrintLn(" undefined");
   END;
   RETURN p
 END LookupDecl;
@@ -47,21 +47,21 @@ BEGIN
   d := LookupDecl(l, moduleName);
   ASSERT(d.kind = AST.declImport);
   p := d.typ.fields;
-  WHILE (p # NIL) & (p.name # name) DO
+  WHILE (p # NIL) & (p.qname.name # name) DO
     p := p.next;
   END;
   IF p = NIL THEN
     Lex.Error(l, "");
     Lex.OutStr(l, moduleName);
-    Out.Str(".");
+    Lex.Str(".");
     Lex.OutStr(l, name);
-    Out.PrintLn(" undefined");
+    Lex.PrintLn(" undefined");
   ELSIF ~p.exported THEN
     Lex.Error(l, "");
     Lex.OutStr(l, moduleName);
-    Out.Str(".");
+    Lex.Str(".");
     Lex.OutStr(l, name);
-    Out.PrintLn(" is not exported");
+    Lex.PrintLn(" is not exported");
   END;
   RETURN p
 END LookupImport;
@@ -71,14 +71,16 @@ VAR
   p, d :AST.Decl;
 BEGIN
   NEW(d);
-  d.name := name;
+  d.qname.name := name;
+  d.qname.moduleName := AST.currentModuleName;
   d.kind := 0;
   d.typ := NIL;
   d.next := NIL;
   d.exported := FALSE;
   IF chain = NIL THEN NEW(chain);
     chain.kind := AST.declEND;
-    chain.name := 0;
+    chain.qname.name := 0;
+    chain.qname.moduleName := AST.currentModuleName;
     chain.next := NIL;
   END;
   IF chain.kind = AST.declEND THEN
@@ -86,13 +88,13 @@ BEGIN
     chain := d;
   ELSE
     p := chain;
-    WHILE (p.next.kind # AST.declEND) & (p.name # name) DO
+    WHILE (p.next.kind # AST.declEND) & (p.qname.name # name) DO
       p := p.next;
     END;
-    IF p.name = name THEN
+    IF p.qname.name = name THEN
       Lex.Error(l, "");
       Lex.OutStr(l, name);
-      Out.PrintLn(" already defined");
+      Lex.PrintLn(" already defined");
     ELSE
       d.next := p.next;
       p.next := d;
@@ -113,6 +115,7 @@ BEGIN
   t.base := NIL;
   t.fields := NIL;
   t.length := 0;
+  t.needTypeInfo := FALSE;
 END NewType;
 
 PROCEDURE AddImportDecl*(l :Lex.Lexer; name :StringId; decls :AST.Decl);
@@ -164,7 +167,8 @@ BEGIN
     (* forward decl *)
     NewType(t, AST.typePointer);
     NEW(t.fields);
-    t.fields.name := name;
+    t.fields.qname.name := name;
+    t.fields.qname.moduleName := AST.currentModuleName;
     t.fields.next := NIL;
     NEW(f);
     f.t := t;
@@ -173,8 +177,8 @@ BEGIN
   ELSE
     IF d.kind # AST.declType THEN
       Lex.Error(l, "");
-      Lex.OutStr(l, d.name);
-      Out.PrintLn(" is not a TYPE");
+      Lex.OutStr(l, d.qname.name);
+      Lex.PrintLn(" is not a TYPE");
     END;
     t := NewPointerType(l, d.typ);
   END;
@@ -215,7 +219,7 @@ BEGIN
       (* Copy fields from base *)
       d := base.fields;
       WHILE (d # NIL) & (d.kind # AST.declEND) DO
-        dCopy := AddDecl(l, t.fields, d.name);
+        dCopy := AddDecl(l, t.fields, d.qname.name);
         dCopy.kind := d.kind;
         dCopy.typ := d.typ;
         dCopy.exported := d.exported;
@@ -237,6 +241,33 @@ BEGIN
   d.typ := t;
 END AddTypeDecl;
 
+PROCEDURE AddBuiltin(VAR l :Lex.Lexer; name :StringId; callback :AST.BuiltinResolver);
+VAR
+  d :AST.Decl;
+BEGIN
+  d := AddDecl(l, scope, name);
+  d.kind := AST.declBuiltin;
+  d.typ := nilType;
+  d.resolver := callback;
+END AddBuiltin;
+
+(* Native procedure declarations. Lowercase names because they are private callbacks *)
+PROCEDURE builtinAbs(l :Lex.Lexer; args :AST.Expr) :AST.Expr;
+VAR
+  e :AST.Expr;
+BEGIN
+  AST.NewExpr(e, AST.exprBuiltin, nilType);
+  IF (args = NIL) OR (args.next # NIL) THEN
+    Lex.ErrorLn(l, "ABS expects 1 argument");
+  END;
+  IF args.typ.kind IN {AST.typeInteger, AST.typeReal} THEN
+    e.typ := args.typ;
+  ELSE
+    Lex.ErrorLn(l, "ABS expects INTEGER or REAL");
+  END;
+  RETURN e
+END builtinAbs;
+
 PROCEDURE InitGlobalScope*(VAR l :Lex.Lexer);
 BEGIN
   fwds := NIL;
@@ -256,6 +287,8 @@ BEGIN
     NewType(setType, AST.typeSet);
     AddTypeDecl(l, Lex.Intern(l, "SET"), setType);
     NewType(stringType, AST.typeString);
+    (* Builins *)
+    AddBuiltin(l, Lex.Intern(l, "ABS"), builtinAbs);
     (* stuff to fix *)
     AddTypeDecl(l, Lex.Intern(l, "INC"), nilType);
     AddTypeDecl(l, Lex.Intern(l, "DEC"), nilType);
@@ -263,7 +296,6 @@ BEGIN
     AddTypeDecl(l, Lex.Intern(l, "ORD"), nilType);
     AddTypeDecl(l, Lex.Intern(l, "CHR"), nilType);
     AddTypeDecl(l, Lex.Intern(l, "FLT"), nilType);
-    AddTypeDecl(l, Lex.Intern(l, "ABS"), nilType);
     AddTypeDecl(l, Lex.Intern(l, "NEW"), nilType);
     globalScope := scope;
   END;
@@ -276,14 +308,14 @@ VAR
 BEGIN
   WHILE fwds # NIL DO
     ASSERT(fwds.t.kind = AST.typePointer);
-    d := LookupDecl(l, fwds.t.fields.name);
+    d := LookupDecl(l, fwds.t.fields.qname.name);
     IF (d # NIL) & (d.kind = AST.declType) & (d.typ.kind = AST.typeRecord) THEN
       fwds.t.base := d.typ;
       fwds.t.fields := NIL;
     ELSE
       Lex.Error(l, "Bad forward declaration ");
-      Lex.OutStr(l, fwds.t.fields.name);
-      Out.Ln;
+      Lex.OutStr(l, fwds.t.fields.qname.name);
+      Lex.Ln;
     END;
     fwds := fwds.next;
   END;
@@ -297,7 +329,7 @@ BEGIN
   ASSERT(procDecl.typ.kind = AST.typeProcedure);
   formal := procDecl.typ.fields;
   WHILE formal # NIL DO
-    actual := AddScopeDecl(l, formal.name);
+    actual := AddScopeDecl(l, formal.qname.name);
     actual.kind := formal.kind;
     actual.typ := formal.typ;
     formal := formal.next;
@@ -315,7 +347,8 @@ VAR
 BEGIN
   NEW(d);
   d.kind := AST.declEND;
-  d.name := 0;
+  d.qname.name := 0;
+  d.qname.moduleName := AST.currentModuleName;
   d.next := scope;
   oldScope := scope;
   scope := d;
@@ -346,7 +379,7 @@ BEGIN
   AddDecl(l, d, 30);
   AddDecl(l, d, 40);
   (* Expected error cases *)
-  Out.Mute;
+  Lex.Mute;
   AddDecl(l, d, 10);
   AddDecl(l, d, 20);
   AddDecl(l, d, 30);
@@ -354,7 +387,7 @@ BEGIN
   scope := d;
   ASSERT(LookupDecl(l, 20) # NIL);
   ASSERT(LookupDecl(l, 100) = NIL);
-  Out.Unmute;
+  Lex.Unmute;
   InitGlobalScope(l);
   ASSERT(LookupDecl(l, Lex.Intern(l, "NIL")) # NIL);
   d := LookupDecl(l, Lex.Intern(l, "NIL"));
@@ -366,7 +399,7 @@ BEGIN
   d := LookupDecl(l, Lex.Intern(l, "BYTE"));
   ASSERT(t = d.typ);
   TestCleanup;
-  Out.PrintLn("PASS: Decls test");
+  Lex.InfoPrintLn("PASS: Decls test");
 END TestDecls;
 
 BEGIN

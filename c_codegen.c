@@ -90,6 +90,10 @@ void gen_type(Type *t, const char *packageName, const char *name) {
         gen_qname(packageName, name);
         gen_str(" {\n");
         codegenIndent++;
+        if (t->needs_typeinfo) {
+          geni();
+          gen_str("oberon_typeid _tid;\n");
+        }
         for (size_t i = 0; i < buf_len(t->record_type.fields); i++) {
           geni();
           gen_type(t->record_type.fields[i].type, NULL,
@@ -355,7 +359,29 @@ void gen_binary_expr(TokenKind op, Expr *lhs, Expr *rhs) {
       gen_expr(rhs);
       gen_str(")");
       break;
-    case TOKEN_IS:
+    case TOKEN_IS: {
+      Expr fieldRef;
+      Expr deref;
+      fieldRef.kind = EXPR_FIELDREF;
+      fieldRef.fieldref.field_name = "_tid";
+      fieldRef.fieldref.expr = lhs;
+      fieldRef.is_const = false;
+      if (lhs->type->kind == TYPE_POINTER) {
+        deref.kind = EXPR_POINTERDEREF;
+        deref.pointerderef.expr = lhs;
+        deref.is_const = false;
+        fieldRef.fieldref.expr = &deref;
+      }
+      gen_str("does_type_extend(");
+      gen_expr(&fieldRef);
+      if (rhs->type->kind == TYPE_POINTER) {
+        buf_printf(codegenBuf, ", %d)",
+                   rhs->type->pointer_type.element_type->type_id);
+      } else {
+        buf_printf(codegenBuf, ", %d)", rhs->type->type_id);
+      }
+      break;
+    }
     default:
       assert(0);
       break;
@@ -414,12 +440,20 @@ void gen_builtin_procedure(Expr *proc, Expr **args) {
     gen_qname(p->type->pointer_type.element_type->package_name,
               p->type->pointer_type.element_type->name);
     gen_str("))");
+    if (p->type->pointer_type.element_type->needs_typeinfo) {
+      gen_str("; ");
+      gen_expr(p);
+      buf_printf(codegenBuf, "->_tid = %d",
+                 p->type->pointer_type.element_type->type_id);
+    }
   } else {
     assert(0);
   }
 }
 
 bool is_record(Type *t) { return t->kind == TYPE_RECORD; }
+
+bool is_pointer(Type *t) { return t->kind == TYPE_POINTER; }
 
 void gen_proccall(Expr *proc, Expr **args) {
   assert(proc);
@@ -430,13 +464,21 @@ void gen_proccall(Expr *proc, Expr **args) {
     gen_str("(");
     for (size_t i = 0; i < buf_len(args); i++) {
       bool recordFormal = is_record(proc->type->procedure_type.params[i].type);
+      bool pointerFormal =
+          is_pointer(proc->type->procedure_type.params[i].type);
       bool needCast =
-          recordFormal &&
-          proc->type->procedure_type.params[i].type != args[i]->type;
+          (recordFormal &&
+           proc->type->procedure_type.params[i].type != args[i]->type) ||
+          (pointerFormal &&
+           proc->type->procedure_type.params[i].type != args[i]->type);
       if (needCast) {
         gen_str("(");
         gen_type(proc->type->procedure_type.params[i].type, "", "");
-        gen_str("*)(");
+        if (recordFormal) {
+          gen_str("*)(");
+        } else {
+          gen_str(")(");
+        }
       }
       if (proc->type->procedure_type.params[i].is_var_parameter ||
           recordFormal) {
@@ -769,7 +811,7 @@ void gen_decl(Decl *d) {
 #endif
       break;
     case DECL_TYPE:
-      assert(0);
+      // Do nothing, typedefs were already generated
       break;
     case DECL_VAR:
       // Only generate global vars
@@ -845,6 +887,13 @@ void gen_decl(Decl *d) {
                      d->proc_decl.decls[i].package_name,
                      d->proc_decl.decls[i].name);
             gen_str(";\n");
+            if (d->proc_decl.decls[i].type->needs_typeinfo) {
+              geni();
+              gen_qname(d->proc_decl.decls[i].package_name,
+                        d->proc_decl.decls[i].name);
+              buf_printf(codegenBuf, "._tid = %d;\n",
+                         (d->proc_decl.decls[i].type->type_id));
+            }
           }
         }
       }
@@ -874,6 +923,28 @@ void gen_decl(Decl *d) {
 }
 
 void generate_c_code(Type **types, Decl **decls) {
+  gen_str("typedef int oberon_typeid;\n");
+  bool need_codegen_inits = false;
+  for (size_t i = 0; i < buf_len(types); i++) {
+    if (types[i]->needs_typeinfo) {
+      need_codegen_inits = true;
+      break;
+    }
+  }
+  if (need_codegen_inits) {
+    gen_str("oberon_typeid oberon_typeinfos[1024] = {\n");
+    for (size_t i = 0; i < buf_len(types); i++) {
+      if (types[i]->needs_typeinfo) {
+        buf_printf(codegenBuf, "  [%d] = %d,\n", types[i]->type_id,
+                   (types[i]->record_type.base_type
+                        ? types[i]->record_type.base_type->type_id
+                        : 0));
+      }
+    }
+    gen_str("};\n");
+  } else {
+    gen_str("oberon_typeid oberon_typeinfos[1];\n");
+  }
   gen_str("#include \"runtime.c\"\n\n");
 
   for (size_t i = 0; i < buf_len(types); i++) {

@@ -1,34 +1,94 @@
 MODULE Simple;
 
-CONST
-  a = 1;
-  b = 2;
-  c = {};
-  d = {3};
-  e = {1, 3, 5, 10..15};
-  f = 20+30;
-  g = 20*30;
-  h = 2*3 + 4*5;
-  i = 2.5 * 9.5;
-  j = {1} + {10};
-  k = 33 DIV 11;
-  l = 33 MOD 11;
-  m = 34 MOD 11;
-  n = (33 DIV 11) * 8 + 10;
-  o = a * b + k * l;
-  one = 1;
-  two = one + one;
-  four = two + two;
-  eight = four * two;
-  eightyfour = eight * 10 + four;
+IMPORT Out;
 
 TYPE
-  R1 = RECORD a, b :INTEGER; c :RECORD c1, c2 :INTEGER END END;
-  A = ARRAY eight, four OF R1;
-VAR
-  i1, i2, i3, i4 :INTEGER;
-  aaaa :A;
-  r :R1;
+  PR1 = POINTER TO R1;
+  PR2 = POINTER TO R2;
+  PR3 = POINTER TO R3;
+  PR4 = POINTER TO R4;
+  PS1 = POINTER TO S1;
+  R1 = RECORD a :INTEGER END;
+  S1 = RECORD s :INTEGER; END;
+  R2 = RECORD (R1) b :INTEGER END;
+  R3 = RECORD (R2) c :INTEGER END;
+  R4 = RECORD (R3) d :INTEGER END;
+
+PROCEDURE tf(b :BOOLEAN);
 BEGIN
-  i1 := i1 * (+i2) + i3 * i4 + 3 + i4 + r.c.c1 + aaaa[2, 3].c.c2;
+  IF b THEN
+    Out.PrintLn("TRUE");
+  ELSE
+    Out.PrintLn("FALSE");
+  END;
+END tf;
+
+PROCEDURE BasePtrTypes(a, b, c, d :PR1);
+BEGIN
+  Out.PrintLn("R1");
+  tf(a IS PR1);
+  tf(a IS PR2);
+  tf(a IS PR3);
+  tf(a IS PR4);
+  Out.PrintLn("R2");
+  tf(b IS PR1);
+  tf(b IS PR2);
+  tf(b IS PR3);
+  tf(b IS PR4);
+  Out.PrintLn("R3");
+  tf(c IS PR1);
+  tf(c IS PR2);
+  tf(c IS PR3);
+  tf(c IS PR4);
+  Out.PrintLn("R4");
+  tf(d IS PR1);
+  tf(d IS PR2);
+  tf(d IS PR3);
+  tf(d IS PR4);
+END BasePtrTypes;
+
+PROCEDURE BaseTypes(VAR a, b, c, d :R1; s :S1);
+BEGIN
+  Out.PrintLn("R1");
+  tf(a IS R1);
+  tf(a IS R2);
+  tf(a IS R3);
+  tf(a IS R4);
+  Out.PrintLn("R2");
+  tf(b IS R1);
+  tf(b IS R2);
+  tf(b IS R3);
+  tf(b IS R4);
+  Out.PrintLn("R3");
+  tf(c IS R1);
+  tf(c IS R2);
+  tf(c IS R3);
+  tf(c IS R4);
+  Out.PrintLn("R4");
+  tf(d IS R1);
+  tf(d IS R2);
+  tf(d IS R3);
+  tf(d IS R4);
+  a.a := s.s;
+END BaseTypes;
+
+PROCEDURE SimpleTest;
+VAR
+  vr1 :R1;
+  vr2 :R2;
+  vr3 :R3;
+  vr4 :R4;
+  s1  :S1;
+  pvr1 :PR1;
+  pvr2 :PR2;
+  pvr3 :PR3;
+  pvr4 :PR4;
+BEGIN
+  BaseTypes(vr1, vr2, vr3, vr4, s1);
+  NEW(pvr1); NEW(pvr2); NEW(pvr3); NEW(pvr4);
+  BasePtrTypes(pvr1, pvr2, pvr3, pvr4);
+END SimpleTest;
+
+BEGIN
+  SimpleTest
 END Simple.

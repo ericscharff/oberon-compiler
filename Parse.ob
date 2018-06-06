@@ -1,6 +1,6 @@
 MODULE Parse;
 
-IMPORT AST, Decls, Lex, Out;
+IMPORT AST, Decls, Lex;
 
 TYPE
   StringId = Lex.PoolIndex;
@@ -43,9 +43,9 @@ BEGIN
     Lex.NextToken(l);
   ELSE
     Lex.Error(l, "Expected ");
-    Out.Str(Lex.TokenNames[kind]);
-    Out.Str(", got ");
-    Out.PrintLn(Lex.TokenNames[l.t.kind]);
+    Lex.Str(Lex.TokenNames[kind]);
+    Lex.Str(", got ");
+    Lex.PrintLn(Lex.TokenNames[l.t.kind]);
   END;
 END ExpectToken;
 
@@ -95,8 +95,8 @@ BEGIN
     t := d.typ;
     IF d.kind # AST.declType THEN
       Lex.Error(l, "");
-      Lex.OutStr(l, d.name);
-      Out.PrintLn(" is not a TYPE");
+      Lex.OutStr(l, d.qname.name);
+      Lex.PrintLn(" is not a TYPE");
     END;
   END;
   RETURN t
@@ -714,12 +714,12 @@ BEGIN
   ExpectToken(Lex.tSEMI);
   ParseProcedureBody(d);
   endName := ExpectIdentifier();
-  IF d.name # endName THEN
+  IF d.qname.name # endName THEN
     Lex.Error(l, "Procedure end name [");
     Lex.OutStr(l, endName);
-    Out.Str("] must match start name [");
-    Lex.OutStr(l, d.name);
-    Out.PrintLn("]");
+    Lex.Str("] must match start name [");
+    Lex.OutStr(l, d.qname.name);
+    Lex.PrintLn("]");
   END;
 END ParseProcedureDeclaration;
 
@@ -798,13 +798,14 @@ END ParseImportList;
 
 PROCEDURE ParseModule;
 VAR
-  s, e :StringId;
-  d    :AST.Decl;
+  s, e, oldModule :StringId;
+  d               :AST.Decl;
 BEGIN
   Decls.InitGlobalScope(l);
-  d := Decls.OpenScope();
   ExpectToken(Lex.tMODULE);
   s := ExpectIdentifier();
+  oldModule := AST.SetModuleName(s);
+  d := Decls.OpenScope();
   ExpectToken(Lex.tSEMI);
   IF IsToken(Lex.tIMPORT) THEN
     ParseImportList;
@@ -818,12 +819,13 @@ BEGIN
   IF s # e THEN
     Lex.Error(l, "Module end name [");
     Lex.OutStr(l, e);
-    Out.Str("] must match start name [");
+    Lex.Str("] must match start name [");
     Lex.OutStr(l, s);
-    Out.PrintLn("]");
+    Lex.PrintLn("]");
   END;
   ExpectToken(Lex.tDOT);
   lastModuleDecls := Decls.CurrentScope();
+  AST.SetModuleName(oldModule);
   Decls.CloseScope(d);
 END ParseModule;
 
@@ -869,7 +871,7 @@ BEGIN
   Lex.LexerInitFromFile(l, "Simple.ob");
   Lex.NextToken(l);
   ParseModule;
-  Out.PrintLn("PASS: Parser test");
+  Lex.InfoPrintLn("PASS: Parser test");
 END TestParse;
 
 BEGIN

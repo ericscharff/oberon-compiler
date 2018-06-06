@@ -465,8 +465,20 @@ void resolve_binary_expr(Expr *e) {
       e->type = &booleanType;
       break;
     case TOKEN_IS:
+      assert(rhs->kind == EXPR_IDENTREF);
+      if (rhs->type->kind == TYPE_POINTER || rhs->type->kind == TYPE_RECORD) {
+        if (lhs->type->kind == TYPE_POINTER || lhs->is_var_param) {
+          set_needs_typeinfo(rhs->type);
+          set_needs_typeinfo(lhs->type);
+          e->type = &booleanType;
+        } else {
+          errorloc(e->loc, "left side of IS must be POINTER or VAR param");
+        }
+      } else {
+        errorloc(e->loc, "right side of IS must be POINTER or RECORD");
+      }
+      break;
     default:
-      assert(0);
       break;
   }
 
@@ -865,6 +877,7 @@ void resolve_typeguard(Expr *e) {
   assert(e->typeguard.expr);
   resolve_expr(e->typeguard.expr);
   resolve_type(e->typeguard.type);
+  set_needs_typeinfo(e->typeguard.type);
   Type *sourceType = e->typeguard.expr->type;
   Type *resultType = e->typeguard.type;
   if (is_extension_of(resultType, sourceType)) {

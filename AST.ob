@@ -1,6 +1,6 @@
 MODULE AST;
 
-IMPORT Lex, Out;
+IMPORT Lex;
 
 CONST
   typeNil*       = 1;
@@ -25,6 +25,7 @@ CONST
   declParam*     = 6;
   declVarParam*  = 7;
   declField*     = 8;
+  declBuiltin*   = 9;
   declEND* = 1001;
 
   exprVal*         = 1; (* CONST value *)
@@ -36,29 +37,42 @@ CONST
   exprPointerDeref = 7;
   exprArrayRef     = 8;
   exprTypeGuard    = 9;
+  exprBuiltin*     = 10;
 
 TYPE
-  StringId  = Lex.PoolIndex;
-  TypeKind* = INTEGER;
-  Type*     = POINTER TO TypeDesc;
-  Decl*     = POINTER TO DeclDesc;
-  Expr*     = POINTER TO ExprDesc;
-  TypeDesc  = RECORD
-    kind*   :TypeKind;
-    base*   :Type; (* POINTER type, ARRAY element, RECORD base, PROCEDURE return type *)
-    fields* :Decl; (* RECORD fields / PROCEDURE formal parameters / IMPORT decls / name of forward decl *)
-    length* :INTEGER; (* ARRAY length, PROCEDURE number of parameters *)
+  StringId         = Lex.PoolIndex;
+  QName            = RECORD moduleName*, name* :StringId END;
+  TypeKind*        = INTEGER;
+  Type*            = POINTER TO TypeDesc;
+  Decl*            = POINTER TO DeclDesc;
+  Expr*            = POINTER TO ExprDesc;
+  TypeDesc         = RECORD
+    kind*         :TypeKind;
+    base*         :Type;    (* POINTER type,                             *)
+                            (* ARRAY element,                            *)
+                            (* RECORD base,                              *)
+                            (* PROCEDURE return type                     *)
+    fields*       :Decl;    (* RECORD fields                             *)
+                            (* PROCEDURE formal parameters               *)
+                            (* IMPORT decls                              *)
+                            (* Name of forward decl                      *)
+    length*       :INTEGER; (* ARRAY length                              *)
+                            (* PROCEDURE number of parameters            *)
+    needTypeInfo* :BOOLEAN; (* Type uses IS or typeguard, and thus needs *)
+                            (* runtime info                              *)
   END;
-  DeclKind  = INTEGER;
-  DeclDesc  = RECORD
+  BuiltinResolver* = PROCEDURE (l :Lex.Lexer; args :Expr) :Expr;
+  DeclKind         = INTEGER;
+  DeclDesc         = RECORD
     kind*     :DeclKind;
     next*     :Decl;
-    name*     :StringId;
+    qname*    :QName;
     typ*      :Type;
-    expr*     :Expr;      (* for CONST declarations *)
+    expr*     :Expr;             (* for CONST declarations *)
     exported* :BOOLEAN;
+    resolver* :BuiltinResolver;  (* Handles native procedure calls *)
   END;
-  ExprKind  = INTEGER;
+  ExprKind         = INTEGER;
   (*
   A call to a PROCEDURE, e.g., MyProc(arg1, Proc2(a, b), arr[i], 4) looks like
   Expr:
@@ -109,14 +123,36 @@ TYPE
     iVal*  :INTEGER;       (* for INTEGER, BOOLEAN, STRING (StringId)      *)
                            (* for fieldref, StringId OF field name         *)
                            (* for PROCEDURE call, number OF actual params  *)
+                           (* for builtin procedure, unique identifier     *)
     rVal   :REAL;
     setVal :SET;
     assignable :BOOLEAN;
   END;
 
 VAR
+  currentModuleName* :StringId;
   TypeKindNames :ARRAY typeEND, 10 OF CHAR;
   DumpExpr* :PROCEDURE (l :Lex.Lexer; e :Expr);
+
+PROCEDURE SetModuleName*(name :StringId) :StringId;
+VAR
+  oldModuleName :StringId;
+BEGIN
+  oldModuleName := currentModuleName;
+  currentModuleName := name;
+  RETURN oldModuleName
+END SetModuleName;
+
+PROCEDURE IsImported(d :Decl) :BOOLEAN;
+BEGIN
+  ASSERT(d # NIL);
+  WHILE (d # NIL) & (d.kind # declEND) DO
+    d := d.next;
+  END;
+  ASSERT(d # NIL);
+  ASSERT(d.kind = declEND);
+  RETURN d.qname.moduleName # currentModuleName
+END IsImported;
 
 PROCEDURE ExpectType(l :Lex.Lexer; e :Expr; kind :TypeKind);
 BEGIN
@@ -124,9 +160,9 @@ BEGIN
   ASSERT(e.typ # NIL);
   IF e.typ.kind # kind THEN
     Lex.Error(l, "Expected ");
-    Out.Str(TypeKindNames[kind]);
-    Out.Str(", got ");
-    Out.PrintLn(TypeKindNames[e.typ.kind]);
+    Lex.Str(TypeKindNames[kind]);
+    Lex.Str(", got ");
+    Lex.PrintLn(TypeKindNames[e.typ.kind]);
   END;
 END ExpectType;
 
@@ -138,10 +174,10 @@ END IsStringType;
 (* does a extend b *)
 PROCEDURE Extends(a, b :Type) :BOOLEAN;
 BEGIN
-  ASSERT(a.kind = typeRecord);
-  ASSERT(b.kind = typeRecord);
-  WHILE (a # NIL) & (a # b) DO
-    a := a.base;
+  IF (a.kind # typeRecord) OR (b.kind = typeRecord) THEN
+    WHILE (a # NIL) & (a # b) DO
+      a := a.base;
+    END;
   END;
   RETURN a = b
 END Extends;
@@ -185,11 +221,11 @@ BEGIN
   ELSE
     good := FALSE;
     Lex.Error(l, "Type mismatch for op [");
-    Out.Str(Lex.TokenNames[op]);
-    Out.Str("] got ");
-    Out.Str(TypeKindNames[lhs.typ.kind]);
-    Out.Str(" and ");
-    Out.PrintLn(TypeKindNames[rhs.typ.kind]);
+    Lex.Str(Lex.TokenNames[op]);
+    Lex.Str("] got ");
+    Lex.Str(TypeKindNames[lhs.typ.kind]);
+    Lex.Str(" and ");
+    Lex.PrintLn(TypeKindNames[rhs.typ.kind]);
   END;
   RETURN good
 END ExprCompatable;
@@ -200,7 +236,7 @@ BEGIN
   RETURN e.kind = exprVal
 END IsConst;
 
-PROCEDURE NewExpr(VAR e :Expr; kind :ExprKind; typ :Type);
+PROCEDURE NewExpr*(VAR e :Expr; kind :ExprKind; typ :Type);
 BEGIN
   NEW(e);
   e.kind := kind;
@@ -217,7 +253,7 @@ BEGIN
   ASSERT(d.typ # NIL);
   NewExpr(e, exprIdentRef, d.typ);
   e.decl := d;
-  IF (d.kind = declVar (* & not imported *)) OR
+  IF ((d.kind = declVar) & ~IsImported(d)) OR
      ((d.kind = declParam) & ~(d.typ.kind IN {typeArray, typeRecord})) OR
      (d.kind = declVarParam) THEN
     e.assignable := TRUE;
@@ -261,11 +297,15 @@ BEGIN
   END;
   IF base.typ.kind = typeRecord THEN
     d := base.typ.fields;
-    WHILE (d # NIL) & (d.kind # declEND) & (d.name # name) DO
+    WHILE (d # NIL) & (d.kind # declEND) & (d.qname.name # name) DO
       d := d.next;
     END;
-    IF d.name = name THEN
-      (* TODO - handle private fields *)
+    IF d.qname.name = name THEN
+      IF IsImported(d) & ~d.exported THEN
+        Lex.Error(l, "Field ");
+        Lex.OutStr(l, name);
+        Lex.PrintLn(" is private");
+      END;
       NewExpr(e, exprFieldRef, d.typ);
       e.lhs := base;
       e.iVal := name;
@@ -273,7 +313,7 @@ BEGIN
     ELSE
       Lex.Error(l, "Field ");
       Lex.OutStr(l, name);
-      Out.PrintLn(" not found");
+      Lex.PrintLn(" not found");
     END;
   ELSE
     Lex.ErrorLn(l, "Not a RECORD");
@@ -292,10 +332,10 @@ BEGIN
       IF (index.kind = exprVal) & (base.typ.length > 0) &
          ((index.iVal < 0) OR (index.iVal >= base.typ.length)) THEN
         Lex.Error(l, "Array index ");
-        Out.Int(index.iVal);
-        Out.Str(" out OF range for ARRAY OF length ");
-        Out.Int(base.typ.length);
-        Out.Ln;
+        Lex.Int(index.iVal);
+        Lex.Str(" out OF range for ARRAY OF length ");
+        Lex.Int(base.typ.length);
+        Lex.Ln;
       ELSE
         NewExpr(e, exprArrayRef, base.typ.base);
         e.lhs := base;
@@ -304,13 +344,24 @@ BEGIN
       END;
     ELSE
       Lex.Error(l, "ARRAY index must be an INTEGER, got ");
-      Out.PrintLn(TypeKindNames[index.typ.kind]);
+      Lex.PrintLn(TypeKindNames[index.typ.kind]);
     END;
   ELSE
     Lex.ErrorLn(l, "Not an ARRAY");
   END;
   RETURN e
 END NewExprArrayRef;
+
+PROCEDURE SetGenTypeInfo(t :Type);
+BEGIN
+  IF t.kind = typePointer THEN
+    t := t.base;
+  END;
+  WHILE t # NIL DO
+    t.needTypeInfo := TRUE;
+    t := t.base;
+  END;
+END SetGenTypeInfo;
 
 PROCEDURE NewExprTypeGuard*(l :Lex.Lexer; base :Expr; newType :Decl) :Expr;
 VAR
@@ -324,13 +375,14 @@ BEGIN
       e.lhs := base;
       e.decl := newType;
       e.assignable := base.assignable;
+      SetGenTypeInfo(newType.typ);
     ELSE
       Lex.ErrorLn(l, "Guarded and base type are unrelated");
     END;
   ELSE
     Lex.Error(l, "Declaration ");
-    Lex.OutStr(l, newType.name);
-    Out.PrintLn(" must be a POINTER or RECORD type");
+    Lex.OutStr(l, newType.qname.name);
+    Lex.PrintLn(" must be a POINTER or RECORD type");
   END;
   RETURN e
 END NewExprTypeGuard;
@@ -411,12 +463,14 @@ PROCEDURE NewExprSetElement*(l :Lex.Lexer; elt :Expr; setType :Type) :Expr;
 VAR
   e :Expr;
 BEGIN
+  e := NewExprSet(setType);
+  e.setVal := {};
   ExpectType(l, elt, typeInteger);
   IF IsConst(elt) THEN
     IF (elt.iVal < 0) OR (elt.iVal > 31) THEN
       Lex.Error(l, "Value ");
-      Out.Int(elt.iVal);
-      Out.PrintLn(" out OF range of SET 0..31");
+      Lex.Int(elt.iVal);
+      Lex.PrintLn(" out OF range of SET 0..31");
     ELSE
       e := NewExprSet(setType);
       e.setVal := {elt.iVal};
@@ -580,8 +634,26 @@ BEGIN
       END;
     | Lex.tIS:
       e.typ := booleanType;
-      ASSERT(FALSE); (* TODO - runtime type checks *)
-      (* (T0 x T1) -> BOOLEAN *)
+      IF ~(lhs.typ.kind IN {typeRecord, typePointer}) THEN
+        Lex.ErrorLn(l, "LHS must be a POINTER or RECORD");
+      END;
+      IF ~(rhs.typ.kind IN {typeRecord, typePointer}) THEN
+        Lex.ErrorLn(l, "RHS must be a POINTER or RECORD");
+      END;
+      IF lhs.typ.kind # rhs.typ.kind THEN
+        Lex.ErrorLn(l, "LHS and RHS types must match");
+      END;
+      IF (lhs.kind = typeRecord) & ((lhs.kind # exprIdentRef) OR (lhs.decl.kind # declVarParam)) THEN
+        Lex.ErrorLn(l, "LHS must be a VAR parameter");
+      END;
+      IF (rhs.kind # exprIdentRef) OR (rhs.decl.kind # declType) THEN
+        Lex.ErrorLn(l, "RHS must be a type declaration");
+      END;
+      IF Extends(rhs.typ, lhs.typ) OR Extends(rhs.typ.base, lhs.typ.base) THEN
+        SetGenTypeInfo(rhs.typ);
+      ELSE
+        Lex.ErrorLn(l, "LHS and RHS types are unrelated");
+      END;
   END;
   RETURN e
 END NewExprBinary;
@@ -593,15 +665,15 @@ BEGIN
     (* Good - ARRAY OF X - ARRAY n OF X *)
   ELSIF (formal.kind = declVarParam) & ~actual.assignable THEN
     Lex.Error(l, "For argument ");
-    Out.Int(arg);
-    Out.PrintLn(", param is not assignable (expected VAR param)");
+    Lex.Int(arg);
+    Lex.PrintLn(", param is not assignable (expected VAR param)");
   ELSIF ~AssignmentCompatable(l, actual.typ, formal.typ, actual.iVal, actual.iVal) THEN
     Lex.Error(l, "For argument ");
-    Out.Int(arg);
-    Out.Str(", expected ");
-    Out.Str(TypeKindNames[formal.typ.kind]);
-    Out.Str(", got ");
-    Out.PrintLn(TypeKindNames[actual.typ.kind]);
+    Lex.Int(arg);
+    Lex.Str(", expected ");
+    Lex.Str(TypeKindNames[formal.typ.kind]);
+    Lex.Str(", got ");
+    Lex.PrintLn(TypeKindNames[actual.typ.kind]);
   END;
 END ExpectArgMatch;
 
@@ -636,22 +708,25 @@ BEGIN
       END;
     ELSE
       Lex.Error(l, "Expected ");
-      Out.Int(count);
-      Out.Str(" parameters, got ");
-      Out.Int(i);
-      Out.Ln;
+      Lex.Int(count);
+      Lex.Str(" parameters, got ");
+      Lex.Int(i);
+      Lex.Ln;
     END;
+  ELSIF (proc.kind = exprIdentRef) & (proc.decl.kind = declBuiltin) THEN
+    e := proc.decl.resolver(l, args);
   ELSE
     Lex.ErrorLn(l, "designator is not a PROCEDURE");
   END;
   RETURN e
 END NewExprProcCall;
 
+(*
 PROCEDURE DumpDecl*(l :Lex.Lexer; d :Decl);
 BEGIN
-  Out.Str("(DECL ");
-  Lex.OutStr(l, d.name);
-  Out.Str(" ");
+  Lex.Str("(DECL ");
+  Lex.OutStr(l, d.qname.name);
+  Lex.Str(" ");
   CASE d.kind OF
   declImport: Out.Str("IMPORT ")
   | declConst: Out.Str("CONST "); DumpExpr(l, d.expr);
@@ -732,6 +807,7 @@ BEGIN
     Out.PrintLn(")");
   END;
 END DumpExpr0;
+*)
 
 PROCEDURE InitTypeKindNames;
 BEGIN
@@ -750,6 +826,7 @@ BEGIN
 END InitTypeKindNames;
 
 BEGIN
-  DumpExpr := DumpExpr0;
+  currentModuleName := 0;
+(*  DumpExpr := DumpExpr0; *)
   InitTypeKindNames;
 END AST.
