@@ -43,13 +43,15 @@ void Out_Real(float r) {
   }
 }
 
-void Out_Str(const char *s) {
+void Out_Str(const char *s, size_t q) {
+  (void)q;
   if (!Out_muted) {
     fputs(s, stdout);
   }
 }
 
-void Out_StrI(const char *s, int offset) {
+void Out_StrI(const char *s, size_t q, int offset) {
+  (void)q;
   if (!Out_muted) {
     fputs(s + offset, stdout);
   }
@@ -65,7 +67,9 @@ void Out_Mute(void) { Out_muted = true; }
 
 void Out_Unmute(void) { Out_muted = false; }
 
-void Out_ReadFile(const char *fileName, char *buf) {
+void Out_ReadFile(const char *fileName, size_t q, char *buf, size_t r) {
+  (void)q;
+  (void)r;
   FILE *file = fopen(fileName, "rb");
   if (!file) {
     assert(0);

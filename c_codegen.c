@@ -455,6 +455,20 @@ bool is_record(Type *t) { return t->kind == TYPE_RECORD; }
 
 bool is_pointer(Type *t) { return t->kind == TYPE_POINTER; }
 
+void gen_lengthof(Expr *e) {
+  assert(e->type->kind == TYPE_ARRAY || e->type->kind == TYPE_STRING);
+  if (e->type->kind == TYPE_STRING) {
+    buf_printf(codegenBuf, "%d", strlen(e->val.sVal));
+  } else if (e->type->kind == TYPE_ARRAY && e->type->array_type.num_elements_expr) {
+    gen_expr(e->type->array_type.num_elements_expr);
+  } else if (e->kind == EXPR_IDENTREF) {
+    gen_qname(e->identref.package_name, e->identref.name);
+    gen_str("__len");
+  } else {
+    assert(0);
+  }
+}
+
 void gen_proccall(Expr *proc, Expr **args) {
   assert(proc);
   if (proc->type->kind == TYPE_BUILTIN_PROCEDURE) {
@@ -491,6 +505,10 @@ void gen_proccall(Expr *proc, Expr **args) {
       }
       if (needCast) {
         gen_str(")");
+      }
+      if (proc->type->procedure_type.params[i].is_open_array) {
+        gen_str(", ");
+        gen_lengthof(args[i]);
       }
       if (i != buf_len(args) - 1) {
         gen_str(", ");
@@ -896,6 +914,11 @@ void gen_decl(Decl *d) {
             formal = &varParam;
           }
           gen_type(formal, NULL, d->type->procedure_type.params[i].name);
+          if (d->type->procedure_type.params[i].is_open_array) {
+            gen_str(", size_t ");
+            gen_qname(NULL, d->type->procedure_type.params[i].name);
+            gen_str("__len");
+          }
           if (i != buf_len(d->type->procedure_type.params) - 1) {
             gen_str(", ");
           }
@@ -921,6 +944,12 @@ void gen_decl(Decl *d) {
             gen_initializers(d->proc_decl.decls[i].type,
                              d->proc_decl.decls[i].package_name,
                              d->proc_decl.decls[i].name);
+          } else if (d->type->procedure_type.params[i].is_open_array) {
+            // Generate code to avoid unused var reference
+            geni();
+            gen_str("(void)");
+            gen_qname(d->proc_decl.decls[i].package_name, d->proc_decl.decls[i].name);
+            gen_str("__len;\n");
           }
         }
       }
