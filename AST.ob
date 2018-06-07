@@ -174,12 +174,12 @@ END IsStringType;
 (* does a extend b *)
 PROCEDURE Extends(a, b :Type) :BOOLEAN;
 BEGIN
-  IF (a.kind # typeRecord) OR (b.kind = typeRecord) THEN
+  IF (a # NIL) & (b # NIL) & (a.kind = typeRecord) & (b.kind = typeRecord) THEN
     WHILE (a # NIL) & (a # b) DO
       a := a.base;
     END;
   END;
-  RETURN a = b
+  RETURN (a # NIL) & (b # NIL) & (a = b)
 END Extends;
 
 PROCEDURE IsOpenArray(t :Type) :BOOLEAN;
