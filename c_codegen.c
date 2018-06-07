@@ -787,6 +787,37 @@ void gen_statements(Statement *s) {
   }
 }
 
+void gen_init_helper(Type *t, const char *nameSoFar) {
+  char newName[1024];
+  if (t->needs_typeinfo) {
+    geni();
+    buf_printf(codegenBuf, "%s._tid = %d;\n", nameSoFar, t->type_id);
+  }
+  if (t->kind == TYPE_ARRAY && t->array_type.num_elements_expr->val.iVal) {
+    for (int i = 0; i < t->array_type.num_elements_expr->val.iVal; i++) {
+      snprintf(newName, 1024, "%s[%d]", nameSoFar, i);
+      gen_init_helper(t->array_type.element_type, newName);
+    }
+  }
+  if (t->kind == TYPE_RECORD) {
+    for (size_t i = 0; i < buf_len(t->record_type.fields); i++) {
+      snprintf(newName, 1024, "%s.%s", nameSoFar,
+               t->record_type.fields[i].name);
+      gen_init_helper(t->record_type.fields[i].type, newName);
+    }
+  }
+}
+
+void gen_initializers(Type *t, const char *packageName, const char *name) {
+  char nameSoFar[1024];
+  if (packageName && packageName[0]) {
+    snprintf(nameSoFar, 1024, "%s_%s", packageName, name);
+  } else {
+    snprintf(nameSoFar, 1024, "%s", name);
+  }
+  gen_init_helper(t, nameSoFar);
+}
+
 void gen_decl(Decl *d) {
   assert(d);
   geni();
@@ -887,13 +918,9 @@ void gen_decl(Decl *d) {
                      d->proc_decl.decls[i].package_name,
                      d->proc_decl.decls[i].name);
             gen_str(";\n");
-            if (d->proc_decl.decls[i].type->needs_typeinfo) {
-              geni();
-              gen_qname(d->proc_decl.decls[i].package_name,
-                        d->proc_decl.decls[i].name);
-              buf_printf(codegenBuf, "._tid = %d;\n",
-                         (d->proc_decl.decls[i].type->type_id));
-            }
+            gen_initializers(d->proc_decl.decls[i].type,
+                             d->proc_decl.decls[i].package_name,
+                             d->proc_decl.decls[i].name);
           }
         }
       }
