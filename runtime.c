@@ -7,6 +7,11 @@
 #define ASSERT assert
 #define oberon_abs(x) ((x) < 0) ? -(x) : (x)
 
+int checkbounds(int i, int len) {
+  assert(i >= 0 && i < len);
+  return i;
+}
+
 // Does the runtime type of a extend b
 bool does_type_extend(oberon_typeid a, oberon_typeid b) {
   while (a) {

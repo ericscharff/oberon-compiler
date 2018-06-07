@@ -3,6 +3,7 @@ void gen_expr(Expr *e);
 
 char *codegenBuf = NULL;
 int codegenIndent = 0;
+bool add_bounds_checks = false;
 
 void gen_str(const char *s) { buf_printf(codegenBuf, "%s", s); }
 
@@ -458,7 +459,7 @@ bool is_pointer(Type *t) { return t->kind == TYPE_POINTER; }
 void gen_lengthof(Expr *e) {
   assert(e->type->kind == TYPE_ARRAY || e->type->kind == TYPE_STRING);
   if (e->type->kind == TYPE_STRING) {
-    buf_printf(codegenBuf, "%d", strlen(e->val.sVal));
+    buf_printf(codegenBuf, "%d", strlen(e->val.sVal)+1);
   } else if (e->type->kind == TYPE_ARRAY && e->type->array_type.num_elements_expr) {
     gen_expr(e->type->array_type.num_elements_expr);
   } else if (e->kind == EXPR_IDENTREF) {
@@ -558,7 +559,15 @@ void gen_expr(Expr *e) {
       case EXPR_ARRAYREF:
         gen_expr(e->arrayref.expr);
         gen_str("[");
+        if (add_bounds_checks) {
+          gen_str("checkbounds(");
+        }
         gen_expr(e->arrayref.array_index);
+        if (add_bounds_checks) {
+          gen_str(", ");
+          gen_lengthof(e->arrayref.expr);
+          gen_str(")");
+        }
         gen_str("]");
         break;
       case EXPR_TYPEGUARD:
