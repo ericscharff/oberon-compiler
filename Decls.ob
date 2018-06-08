@@ -400,7 +400,7 @@ BEGIN
     AddBuiltin(l, Lex.Intern(l, "ORD"), builtinOrd);
     AddBuiltin(l, Lex.Intern(l, "CHR"), builtinChr);
     AddBuiltin(l, Lex.Intern(l, "FLT"), builtinFlt);
-    AddBuiltin(l, Lex.Intern(l, "NEW"), builtinFlt);
+    AddBuiltin(l, Lex.Intern(l, "NEW"), builtinNew);
     globalScope := scope;
   END;
   scope := globalScope;

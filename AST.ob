@@ -240,7 +240,29 @@ END IsOpenArray;
 (* "hello" := b would not be legal. When doing comparasons (e.g., *)
 (* for boolean =, it is necessar to comapre a to b OR b to a      *)
 PROCEDURE AssignmentCompatable(l :Lex.Lexer; a, b :Type; aSval, bSval :StringId) :BOOLEAN;
+VAR
+  procCompatable :BOOLEAN;
+  aParam, bParam :Decl;
+  len            :INTEGER;
 BEGIN
+  procCompatable := FALSE;
+  IF (a.kind = typeProcedure) & (b.kind = typeProcedure) THEN
+    (* Are RETURN type and arg lengths the same? *)
+    procCompatable := (a.base = b.base) & (a.length = b.length);
+    (* Are arguments the same *)
+    IF procCompatable & (a.length > 0) THEN
+      len := a.length;
+      aParam := a.fields;
+      bParam := b.fields;
+      WHILE (len > 0) & (aParam.kind # declEND) & (bParam.kind # declEND) DO
+        procCompatable := procCompatable & AssignmentCompatable(l, aParam.typ, bParam.typ, 0, 0);
+        aParam := aParam.next;
+        bParam := bParam.next;
+        DEC(len);
+      END;
+      procCompatable := procCompatable & (len = 0) & (aParam.kind = declEND) & (bParam.kind = declEND);
+    END;
+  END;
   RETURN
     (a = b) OR
     ((a.kind = typeString) & (b.kind = typeString)) OR
@@ -250,6 +272,7 @@ BEGIN
     ((a.kind = typeNil) & (b.kind = typeProcedure)) OR
     ((a.kind = typePointer) & (b.kind = typePointer) & Extends(a.base, b.base)) OR
     ((a.kind = typeRecord) & (b.kind = typeRecord) & Extends(a, b)) OR
+    ((a.kind = typeProcedure) & (b.kind = typeProcedure) & procCompatable) OR
     ((a.kind = typeString) & (b.kind = typeArray) & (b.base.kind = typeChar))
     (* Strictly speaking, that last case is not true in Oberon. You cannot  *)
     (* assign one array to another, except for strings. However, this is    *)
