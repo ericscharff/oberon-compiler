@@ -82,6 +82,7 @@ BEGIN
     chain.qname.name := 0;
     chain.qname.moduleName := AST.currentModuleName;
     chain.next := NIL;
+    chain.typ := NIL;
   END;
   IF chain.kind = AST.declEND THEN
     d.next := chain;
@@ -171,6 +172,7 @@ BEGIN
     t.fields.qname.name := name;
     t.fields.qname.moduleName := AST.currentModuleName;
     t.fields.next := NIL;
+    t.decl := NIL;
     NEW(f);
     f.t := t;
     f.next := fwds;
@@ -449,6 +451,7 @@ VAR
 BEGIN
   NEW(d);
   d.kind := AST.declEND;
+  d.typ := NIL;
   d.qname.name := 0;
   d.qname.moduleName := AST.currentModuleName;
   d.next := scope;

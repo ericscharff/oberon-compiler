@@ -290,7 +290,10 @@ BEGIN
   NEW(e);
   e.kind := kind;
   e.typ := typ;
+  e.lhs := NIL;
+  e.rhs := NIL;
   e.next := NIL;
+  e.decl := NIL;
   e.assignable := FALSE;
 END NewExpr;
 
