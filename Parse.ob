@@ -654,7 +654,9 @@ BEGIN
   ExpectToken(Lex.tEQ);
   d.kind := AST.declType;
   d.typ := ParseType();
-
+  IF d.typ.decl = NIL THEN
+    d.typ.decl := d;
+  END;
 END ParseTypeDeclaration;
 
 PROCEDURE ParseVarDeclaration;

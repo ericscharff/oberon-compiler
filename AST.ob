@@ -38,6 +38,18 @@ CONST
   exprArrayRef     = 8;
   exprTypeGuard    = 9;
   exprBuiltin*     = 10;
+  exprAssign       = 11;
+
+  stmtAssign   = 1;
+  stmtProcCall = 2;
+  stmtIf       = 3;
+  stmtWhile    = 4;
+  stmtRepeat   = 5;
+  stmtFor      = 6;
+  stmtCase     = 7;  (* Top level CASE node    *)
+  stmtCaseItem = 8;  (* Individual CASE clause *)
+  stmtElseIf   = 9;  (* ELSIF clauses          *)
+  stmtElse     = 10; (* ELSE for IF statement  *)
 
 TYPE
   StringId         = Lex.PoolIndex;
@@ -60,6 +72,8 @@ TYPE
                             (* PROCEDURE number of parameters            *)
     needTypeInfo* :BOOLEAN; (* Type uses IS or typeguard, and thus needs *)
                             (* runtime info                              *)
+    decl*         :Decl;    (* Optional. If defined as a TYPE, points to *)
+                            (* the declaration (name), NIL otherwise     *)
   END;
   BuiltinResolver* = PROCEDURE (l :Lex.Lexer; args :Expr) :Expr;
   DeclKind         = INTEGER;
@@ -116,8 +130,10 @@ TYPE
     lhs    :Expr;          (* for unary, binary, the base expr for         *)
                            (* arrayRef, pointerDeref, fieldRef, typeGuard, *)
                            (* PROCEDURE call designator                    *)
+                           (* for assignnemt, lvalue                       *)
     rhs    :Expr;          (* for binary, also first arg PROCEDURE call    *)
                            (* for arrayRef, expr OF ARRAY index            *)
+                           (* for assignment, rvalue                       *)
     next*  :Expr;          (* for PROCEDURE call,next arg in list          *)
     decl*  :Decl;          (* for identRef and typeguard                   *)
     iVal*  :INTEGER;       (* for INTEGER, BOOLEAN, STRING (StringId)      *)
@@ -127,6 +143,24 @@ TYPE
     rVal   :REAL;
     setVal :SET;
     assignable* :BOOLEAN;
+  END;
+
+  StmtKind* = INTEGER;
+  Stmt*     = POINTER TO StmtDesc;
+  StmtDesc  = RECORD
+    kind   :StmtKind;
+    cond   :Expr;     (* For assignment, this is an exprAssign        *)
+                      (* For WHILE and REPEAT, this is loop condition *)
+                      (* For ELSIF, this is a single ELSIF condition  *)
+                      (* For caseItem, this is a list of cases, using *)
+                      (* expr.next for each case                      *)
+                      (* For ELSE, this is ignored                    *)
+    body   :Stmt;     (* Body of a clause, the StatementSequence for  *)
+                      (* that node, chained together with next        *)
+    elsifs :Stmt;     (* Optional chain of ELSIF (and ELSE) for IF    *)
+                      (* and WHILE statements, for CASE, this is the  *)
+                      (* first caseItem                               *)
+    next   :Stmt;     (* next statement in the StatementSequence      *)
   END;
 
 VAR
@@ -154,6 +188,19 @@ BEGIN
   RETURN d.qname.moduleName # currentModuleName
 END IsImported;
 
+PROCEDURE OutTypeName(l :Lex.Lexer; t :Type);
+BEGIN
+  IF t.decl = NIL THEN
+    Lex.Str(TypeKindNames[t.kind]);
+  ELSE
+    IF t.decl.qname.moduleName # currentModuleName THEN
+      Lex.OutStr(l, t.decl.qname.moduleName);
+      Lex.Str(".");
+    END;
+    Lex.OutStr(l, t.decl.qname.name);
+  END;
+END OutTypeName;
+
 PROCEDURE ExpectType(l :Lex.Lexer; e :Expr; kind :TypeKind);
 BEGIN
   ASSERT(e # NIL);
@@ -162,7 +209,8 @@ BEGIN
     Lex.Error(l, "Expected ");
     Lex.Str(TypeKindNames[kind]);
     Lex.Str(", got ");
-    Lex.PrintLn(TypeKindNames[e.typ.kind]);
+    OutTypeName(l, e.typ);
+    Lex.Ln;
   END;
 END ExpectType;
 
@@ -223,9 +271,10 @@ BEGIN
     Lex.Error(l, "Type mismatch for op [");
     Lex.Str(Lex.TokenNames[op]);
     Lex.Str("] got ");
-    Lex.Str(TypeKindNames[lhs.typ.kind]);
+    OutTypeName(l, lhs.typ);
     Lex.Str(" and ");
-    Lex.PrintLn(TypeKindNames[rhs.typ.kind]);
+    OutTypeName(l, rhs.typ);
+    Lex.Ln;
   END;
   RETURN good
 END ExprCompatable;
@@ -344,7 +393,8 @@ BEGIN
       END;
     ELSE
       Lex.Error(l, "ARRAY index must be an INTEGER, got ");
-      Lex.PrintLn(TypeKindNames[index.typ.kind]);
+      OutTypeName(l, index.typ);
+      Lex.Ln;
     END;
   ELSE
     Lex.ErrorLn(l, "Not an ARRAY");
@@ -671,9 +721,10 @@ BEGIN
     Lex.Error(l, "For argument ");
     Lex.Int(arg);
     Lex.Str(", expected ");
-    Lex.Str(TypeKindNames[formal.typ.kind]);
+    OutTypeName(l, formal.typ);
     Lex.Str(", got ");
-    Lex.PrintLn(TypeKindNames[actual.typ.kind]);
+    OutTypeName(l, actual.typ);
+    Lex.Ln;
   END;
 END ExpectArgMatch;
 

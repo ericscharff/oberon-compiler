@@ -116,6 +116,7 @@ BEGIN
   t.fields := NIL;
   t.length := 0;
   t.needTypeInfo := FALSE;
+  t.decl := NIL;
 END NewType;
 
 PROCEDURE AddImportDecl*(l :Lex.Lexer; name :StringId; decls :AST.Decl);
@@ -239,6 +240,7 @@ BEGIN
   d := AddDecl(l, scope, name);
   d.kind := AST.declType;
   d.typ := t;
+  IF d.typ.decl = NIL THEN d.typ.decl := d END;
 END AddTypeDecl;
 
 PROCEDURE AddBuiltin(VAR l :Lex.Lexer; name :StringId; callback :AST.BuiltinResolver);

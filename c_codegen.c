@@ -459,8 +459,9 @@ bool is_pointer(Type *t) { return t->kind == TYPE_POINTER; }
 void gen_lengthof(Expr *e) {
   assert(e->type->kind == TYPE_ARRAY || e->type->kind == TYPE_STRING);
   if (e->type->kind == TYPE_STRING) {
-    buf_printf(codegenBuf, "%d", strlen(e->val.sVal)+1);
-  } else if (e->type->kind == TYPE_ARRAY && e->type->array_type.num_elements_expr) {
+    buf_printf(codegenBuf, "%d", strlen(e->val.sVal) + 1);
+  } else if (e->type->kind == TYPE_ARRAY &&
+             e->type->array_type.num_elements_expr) {
     gen_expr(e->type->array_type.num_elements_expr);
   } else if (e->kind == EXPR_IDENTREF) {
     gen_qname(e->identref.package_name, e->identref.name);
@@ -957,7 +958,8 @@ void gen_decl(Decl *d) {
             // Generate code to avoid unused var reference
             geni();
             gen_str("(void)");
-            gen_qname(d->proc_decl.decls[i].package_name, d->proc_decl.decls[i].name);
+            gen_qname(d->proc_decl.decls[i].package_name,
+                      d->proc_decl.decls[i].name);
             gen_str("__len;\n");
           }
         }
