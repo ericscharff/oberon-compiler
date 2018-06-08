@@ -399,17 +399,19 @@ END ParseForStatement;
 
 PROCEDURE ParseAssignOrProcCall;
 VAR
-  e :AST.Expr;
+  e, args :AST.Expr;
 BEGIN
   e := ParseDesignator();
   IF MatchToken(Lex.tASSIGN) THEN
     (* Assignment *)
-    ParseExpression();
+    e := AST.NewExprAssign(l, e, ParseExpression());
   ELSE
     (* Procedure call *)
+    args := NIL;
     IF IsToken(Lex.tLPAREN) THEN
-      e := AST.NewExprProcCall(l, e, ParseActualParameters());
+      args := ParseActualParameters();
     END;
+    e := AST.NewExprProcCall(l, e, args);
   END;
 END ParseAssignOrProcCall;
 

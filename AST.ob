@@ -193,7 +193,7 @@ BEGIN
   IF t.decl = NIL THEN
     Lex.Str(TypeKindNames[t.kind]);
   ELSE
-    IF t.decl.qname.moduleName # currentModuleName THEN
+    IF (t.decl.qname.moduleName > 0) & (t.decl.qname.moduleName # currentModuleName) THEN
       Lex.OutStr(l, t.decl.qname.moduleName);
       Lex.Str(".");
     END;
@@ -273,6 +273,7 @@ BEGIN
     ((a.kind = typePointer) & (b.kind = typePointer) & Extends(a.base, b.base)) OR
     ((a.kind = typeRecord) & (b.kind = typeRecord) & Extends(a, b)) OR
     ((a.kind = typeProcedure) & (b.kind = typeProcedure) & procCompatable) OR
+    ((a.kind = typeArray) & (a.base.kind = typeChar) & (b.kind = typeArray) & (b.base.kind = typeChar)) OR
     ((a.kind = typeString) & (b.kind = typeArray) & (b.base.kind = typeChar))
     (* Strictly speaking, that last case is not true in Oberon. You cannot  *)
     (* assign one array to another, except for strings. However, this is    *)
@@ -753,6 +754,21 @@ BEGIN
     Lex.Ln;
   END;
 END ExpectArgMatch;
+
+PROCEDURE NewExprAssign*(l :Lex.Lexer; lValue, rValue :Expr) :Expr;
+VAR
+  e :Expr;
+BEGIN
+  NewExpr(e, exprAssign, lValue.typ);
+  IF ~lValue.assignable THEN
+    Lex.ErrorLn(l, "lvalue of assignment is not assignable");
+  END;
+  IF ExprCompatable(l, Lex.tASSIGN, lValue, rValue) THEN
+    e.lhs := lValue;
+    e.rhs := rValue;
+  END;
+  RETURN e
+END NewExprAssign;
 
 PROCEDURE NewExprProcCall*(l :Lex.Lexer; proc, args :Expr) :Expr;
 VAR
