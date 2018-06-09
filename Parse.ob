@@ -382,29 +382,44 @@ BEGIN
 END ParseRepeatStatement;
 
 PROCEDURE ParseForStatement;
+VAR
+  d                          :AST.Decl;
+  startExpr, endExpr, byExpr :AST.Expr;
 BEGIN
   ExpectToken(Lex.tFOR);
-  ExpectIdentifier;
+  d := Decls.LookupDecl(l, ExpectIdentifier());
+  startExpr := AST.NewExprIdentRef(d);
   ExpectToken(Lex.tASSIGN);
-  ParseExpression;
+  startExpr := AST.NewExprAssign(l, startExpr, ParseExpression());
   ExpectToken(Lex.tTO);
-  ParseExpression;
+  (* We attempt to assign the end and by value to start, To ensure type *)
+  (* compatability, but tHen throw out the assignment bit, so that at   *)
+  (* the end, start is an assignment, end is a value (expr), and by is  *)
+  (* a value (expr).                                                    *)
+  endExpr := AST.NewExprAssign(l, startExpr.lhs, ParseExpression());
+  endExpr := endExpr.rhs;
+  byExpr := NIL;
   IF MatchToken(Lex.tBY) THEN
-    ParseExpression;
+    byExpr := AST.NewExprAssign(l, startExpr.lhs, ParseExpression());;
+    byExpr := byExpr.rhs;
   END;
+  startExpr.next := endExpr;
+  endExpr.next := byExpr;
   ExpectToken(Lex.tDO);
   ParseStatementSequence;
   ExpectToken(Lex.tEND);
 END ParseForStatement;
 
-PROCEDURE ParseAssignOrProcCall;
+PROCEDURE ParseAssignOrProcCall() :AST.Stmt;
 VAR
   e, args :AST.Expr;
+  s       :AST.Stmt;
 BEGIN
   e := ParseDesignator();
   IF MatchToken(Lex.tASSIGN) THEN
     (* Assignment *)
     e := AST.NewExprAssign(l, e, ParseExpression());
+    s := AST.NewStmtAssign(e);
   ELSE
     (* Procedure call *)
     args := NIL;
@@ -412,7 +427,9 @@ BEGIN
       args := ParseActualParameters();
     END;
     e := AST.NewExprProcCall(l, e, args);
+    s := AST.NewStmtProcCall(e);
   END;
+  RETURN s
 END ParseAssignOrProcCall;
 
 PROCEDURE ParseStatement;

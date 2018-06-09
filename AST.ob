@@ -127,11 +127,11 @@ TYPE
     kind*  :ExprKind;
     typ*   :Type;
     op     :Lex.TokenKind; (* for unary, binary                            *)
-    lhs    :Expr;          (* for unary, binary, the base expr for         *)
+    lhs*   :Expr;          (* for unary, binary, the base expr for         *)
                            (* arrayRef, pointerDeref, fieldRef, typeGuard, *)
                            (* PROCEDURE call designator                    *)
                            (* for assignnemt, lvalue                       *)
-    rhs    :Expr;          (* for binary, also first arg PROCEDURE call    *)
+    rhs*   :Expr;          (* for binary, also first arg PROCEDURE call    *)
                            (* for arrayRef, expr OF ARRAY index            *)
                            (* for assignment, rvalue                       *)
     next*  :Expr;          (* for PROCEDURE call,next arg in list          *)
@@ -813,6 +813,36 @@ BEGIN
   END;
   RETURN e
 END NewExprProcCall;
+
+PROCEDURE NewStmt(VAR s :Stmt; kind :StmtKind);
+BEGIN
+  NEW(s);
+  s.kind := kind;
+  s.cond := NIL;
+  s.body := NIL;
+  s.elsifs := NIL;
+  s.next := NIL;
+END NewStmt;
+
+PROCEDURE NewStmtAssign*(e :Expr) :Stmt;
+VAR
+  s: Stmt;
+BEGIN
+  ASSERT(e.kind = exprAssign);
+  NewStmt(s, stmtAssign);
+  s.cond := e;
+  RETURN s
+END NewStmtAssign;
+
+PROCEDURE NewStmtProcCall*(e :Expr) :Stmt;
+VAR
+  s: Stmt;
+BEGIN
+  ASSERT(e.kind IN {exprProcCall, exprBuiltin});
+  NewStmt(s, stmtProcCall);
+  s.cond := e;
+  RETURN s
+END NewStmtProcCall;
 
 (*
 PROCEDURE DumpDecl*(l :Lex.Lexer; d :Decl);
