@@ -14,7 +14,7 @@ VAR
   importCacheEnd :INTEGER;
   lastModuleDecls :AST.Decl;
   ParseExpression :PROCEDURE () :AST.Expr;
-  ParseStatementSequence :PROCEDURE;
+  ParseStatementSequence :PROCEDURE () :AST.Stmt;
   ParseType :PROCEDURE () :AST.Type;
   ParseDeclarationSequence :PROCEDURE;
   importCallback :Lex.LexCallback;
@@ -307,21 +307,27 @@ BEGIN
   RETURN e
 END ParseBooleanExpression;
 
-PROCEDURE ParseIfStatement;
+PROCEDURE ParseIfStatement() :AST.Stmt;
+VAR
+  s, tail :AST.Stmt;
+  cond    :AST.Expr;
 BEGIN
   ExpectToken(Lex.tIF);
-  ParseBooleanExpression;
+  cond := ParseBooleanExpression();
   ExpectToken(Lex.tTHEN);
-  ParseStatementSequence;
+  s := AST.NewStmtIf(cond, ParseStatementSequence());
+  tail := s;
   WHILE MatchToken(Lex.tELSIF) DO
-    ParseBooleanExpression;
+    cond := ParseBooleanExpression();
     ExpectToken(Lex.tTHEN);
-    ParseStatementSequence;
+    tail.next := AST.NewStmtElsIf(cond, ParseStatementSequence());
+    tail := tail.next;
   END;
   IF MatchToken(Lex.tELSE) THEN
-    ParseStatementSequence;
+    tail.next := AST.NewStmtElse(ParseStatementSequence());
   END;
   ExpectToken(Lex.tEND);
+  RETURN s
 END ParseIfStatement;
 
 PROCEDURE ParseCaseLabel;
@@ -370,32 +376,43 @@ BEGIN
   ExpectToken(Lex.tEND);
 END ParseCaseStatement;
 
-PROCEDURE ParseWhileStatement;
+PROCEDURE ParseWhileStatement() :AST.Stmt;
+VAR
+  s, tail :AST.Stmt;
+  cond    :AST.Expr;
 BEGIN
   ExpectToken(Lex.tWHILE);
-  ParseBooleanExpression;
+  cond := ParseBooleanExpression();
   ExpectToken(Lex.tDO);
-  ParseStatementSequence;
+  s := AST.NewStmtWhile(cond, ParseStatementSequence());
+  tail := s;
   WHILE MatchToken(Lex.tELSIF) DO
-    ParseBooleanExpression;
+    cond := ParseBooleanExpression();
     ExpectToken(Lex.tDO);
-    ParseStatementSequence;
+    tail.next := AST.NewStmtElsIf(cond, ParseStatementSequence());
+    tail := tail.next;
   END;
   ExpectToken(Lex.tEND);
+  RETURN s
 END ParseWhileStatement;
 
-PROCEDURE ParseRepeatStatement;
+PROCEDURE ParseRepeatStatement() :AST.Stmt;
+VAR
+  s    :AST.Stmt;
+  cond :AST.Expr;
 BEGIN
   ExpectToken(Lex.tREPEAT);
-  ParseStatementSequence;
+  s := ParseStatementSequence();
   ExpectToken(Lex.tUNTIL);
-  ParseBooleanExpression;
+  s := AST.NewStmtRepeat(ParseBooleanExpression(), s);
+  RETURN s
 END ParseRepeatStatement;
 
-PROCEDURE ParseForStatement;
+PROCEDURE ParseForStatement() :AST.Stmt;
 VAR
   d                          :AST.Decl;
   startExpr, endExpr, byExpr :AST.Expr;
+  s                          :AST.Stmt;
 BEGIN
   ExpectToken(Lex.tFOR);
   d := Decls.LookupDecl(l, ExpectIdentifier());
@@ -417,8 +434,9 @@ BEGIN
   startExpr.next := endExpr;
   endExpr.next := byExpr;
   ExpectToken(Lex.tDO);
-  ParseStatementSequence;
+  s := AST.NewStmtFor(startExpr, ParseStatementSequence());
   ExpectToken(Lex.tEND);
+  RETURN s
 END ParseForStatement;
 
 PROCEDURE ParseAssignOrProcCall() :AST.Stmt;
@@ -443,31 +461,40 @@ BEGIN
   RETURN s
 END ParseAssignOrProcCall;
 
-PROCEDURE ParseStatement;
+PROCEDURE ParseStatement() :AST.Stmt;
+VAR
+  s :AST.Stmt;
 BEGIN
   IF IsToken(Lex.tIF) THEN
-    ParseIfStatement;
+    s := ParseIfStatement();
   ELSIF IsToken(Lex.tCASE) THEN
     ParseCaseStatement;
   ELSIF IsToken(Lex.tWHILE) THEN
-    ParseWhileStatement;
+    s := ParseWhileStatement();
   ELSIF IsToken(Lex.tREPEAT) THEN
-    ParseRepeatStatement;
+    s := ParseRepeatStatement();
   ELSIF IsToken(Lex.tFOR) THEN
-    ParseForStatement;
+    s := ParseForStatement();
   ELSIF IsToken(Lex.tIDENT) THEN
-    ParseAssignOrProcCall;
+    s := ParseAssignOrProcCall();
   ELSE
     (* Empty *)
+    s := AST.NewStmtEmpty();
   END;
+  RETURN s
 END ParseStatement;
 
-PROCEDURE ParseStatementSequence0;
+PROCEDURE ParseStatementSequence0() :AST.Stmt;
+VAR
+  head, tail :AST.Stmt;
 BEGIN
-  ParseStatement;
+  head := ParseStatement();
+  tail := head;
   WHILE MatchToken(Lex.tSEMI) DO
-    ParseStatement;
+    tail.next := ParseStatement();
+    tail := tail.next;
   END;
+  RETURN head
 END ParseStatementSequence0;
 
 PROCEDURE ParseFieldIdentDef(VAR recordScope :AST.Decl) :AST.Decl;

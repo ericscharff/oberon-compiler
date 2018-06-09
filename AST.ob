@@ -48,8 +48,9 @@ CONST
   stmtFor      = 6;
   stmtCase     = 7;  (* Top level CASE node    *)
   stmtCaseItem = 8;  (* Individual CASE clause *)
-  stmtElseIf   = 9;  (* ELSIF clauses          *)
+  stmtElsIf    = 9;  (* ELSIF clauses          *)
   stmtElse     = 10; (* ELSE for IF statement  *)
+  stmtEmpty    = 11; (* Placeholder            *)
 
 TYPE
   StringId         = Lex.PoolIndex;
@@ -160,7 +161,7 @@ TYPE
     elsifs :Stmt;     (* Optional chain of ELSIF (and ELSE) for IF    *)
                       (* and WHILE statements, for CASE, this is the  *)
                       (* first caseItem                               *)
-    next   :Stmt;     (* next statement in the StatementSequence      *)
+    next*  :Stmt;     (* next statement in the StatementSequence      *)
   END;
 
 VAR
@@ -843,6 +844,79 @@ BEGIN
   s.cond := e;
   RETURN s
 END NewStmtProcCall;
+
+PROCEDURE NewStmtIf*(cond :Expr; body :Stmt) :Stmt;
+VAR
+  s :Stmt;
+BEGIN
+  ASSERT(cond.typ.kind = typeBoolean);
+  NewStmt(s, stmtIf);
+  s.cond := cond;
+  s.body := body;
+  RETURN s
+END NewStmtIf;
+
+PROCEDURE NewStmtElsIf*(cond :Expr; body :Stmt) :Stmt;
+VAR
+  s :Stmt;
+BEGIN
+  ASSERT(cond.typ.kind = typeBoolean);
+  NewStmt(s, stmtElsIf);
+  s.cond := cond;
+  s.body := body;
+  RETURN s
+END NewStmtElsIf;
+
+PROCEDURE NewStmtElse*(body :Stmt) :Stmt;
+VAR
+  s :Stmt;
+BEGIN
+  NewStmt(s, stmtElse);
+  s.body := body;
+  RETURN s
+END NewStmtElse;
+
+PROCEDURE NewStmtFor*(cond :Expr; body :Stmt) :Stmt;
+VAR
+  s :Stmt;
+BEGIN
+  ASSERT(cond.kind = exprAssign);
+  ASSERT(cond.typ.kind IN {typeInteger, typeReal});
+  NewStmt(s, stmtFor);
+  s.cond := cond;
+  s.body := body;
+  RETURN s
+END NewStmtFor;
+
+PROCEDURE NewStmtWhile*(cond :Expr; body :Stmt) :Stmt;
+VAR
+  s :Stmt;
+BEGIN
+  ASSERT(cond.typ.kind = typeBoolean);
+  NewStmt(s, stmtWhile);
+  s.cond := cond;
+  s.body := body;
+  RETURN s
+END NewStmtWhile;
+
+PROCEDURE NewStmtRepeat*(cond :Expr; body :Stmt) :Stmt;
+VAR
+  s :Stmt;
+BEGIN
+  ASSERT(cond.typ.kind = typeBoolean);
+  NewStmt(s, stmtRepeat);
+  s.cond := cond;
+  s.body := body;
+  RETURN s
+END NewStmtRepeat;
+
+PROCEDURE NewStmtEmpty*() :Stmt;
+VAR
+  s :Stmt;
+BEGIN
+  NewStmt(s, stmtEmpty);
+  RETURN s
+END NewStmtEmpty;
 
 (*
 PROCEDURE DumpDecl*(l :Lex.Lexer; d :Decl);
