@@ -296,14 +296,25 @@ BEGIN
   RETURN e
 END ParseExpression0;
 
+PROCEDURE ParseBooleanExpression() :AST.Expr;
+VAR
+  e :AST.Expr;
+BEGIN
+  e := ParseExpression();
+  IF e.typ.kind # AST.typeBoolean THEN
+    Lex.ErrorLn(l, "BOOLEAN expected");
+  END;
+  RETURN e
+END ParseBooleanExpression;
+
 PROCEDURE ParseIfStatement;
 BEGIN
   ExpectToken(Lex.tIF);
-  ParseExpression;
+  ParseBooleanExpression;
   ExpectToken(Lex.tTHEN);
   ParseStatementSequence;
   WHILE MatchToken(Lex.tELSIF) DO
-    ParseExpression;
+    ParseBooleanExpression;
     ExpectToken(Lex.tTHEN);
     ParseStatementSequence;
   END;
@@ -362,11 +373,11 @@ END ParseCaseStatement;
 PROCEDURE ParseWhileStatement;
 BEGIN
   ExpectToken(Lex.tWHILE);
-  ParseExpression;
+  ParseBooleanExpression;
   ExpectToken(Lex.tDO);
   ParseStatementSequence;
   WHILE MatchToken(Lex.tELSIF) DO
-    ParseExpression;
+    ParseBooleanExpression;
     ExpectToken(Lex.tDO);
     ParseStatementSequence;
   END;
@@ -378,7 +389,7 @@ BEGIN
   ExpectToken(Lex.tREPEAT);
   ParseStatementSequence;
   ExpectToken(Lex.tUNTIL);
-  ParseExpression;
+  ParseBooleanExpression;
 END ParseRepeatStatement;
 
 PROCEDURE ParseForStatement;
@@ -886,7 +897,7 @@ BEGIN
   Lex.NextToken(l);
   ParseModule;
   Decls.TestCleanup(); importCacheEnd := 0;
-  Lex.LexerInitFromFile(l, "Parse.ob");
+  Lex.LexerInitFromFile(l, "FibFact.ob");
   Lex.NextToken(l);
   ParseModule;
   Lex.InfoPrintLn("PASS: Parser test");
