@@ -330,50 +330,88 @@ BEGIN
   RETURN s
 END ParseIfStatement;
 
-PROCEDURE ParseCaseLabel;
+PROCEDURE ParseCaseLabel(caseVar :AST.Expr) :AST.Expr;
+VAR
+  cond :AST.Expr;
 BEGIN
+  cond := NIL;
   IF IsToken(Lex.tINT) OR IsToken(Lex.tSTRING) OR IsToken(Lex.tIDENT) THEN
-    ParseFactor;
+    cond := AST.NewExprBinary(l, Lex.tEQ, caseVar, ParseFactor(), Decls.booleanType);
+    IF ~AST.IsConst(cond.rhs) THEN
+      Lex.ErrorLn(l, "CASE label must be constant");
+    END;
   ELSE
     Lex.ErrorLn(l, "Case label (INTEGER, STRING, IDENT) expected");
   END;
+  RETURN cond
 END ParseCaseLabel;
 
-PROCEDURE ParseCaseLabelRange;
+PROCEDURE ParseCaseLabelRange(caseVar :AST.Expr) :AST.Expr;
+VAR
+  cond :AST.Expr;
 BEGIN
-  ParseCaseLabel;
+  cond := ParseCaseLabel(caseVar);
   IF MatchToken(Lex.tDOTDOT) THEN
-    ParseCaseLabel;
+    cond := AST.NewExprBinary(l, Lex.tCaseDotDot, cond, ParseCaseLabel(caseVar), Decls.booleanType);
   END;
+  RETURN cond
 END ParseCaseLabelRange;
 
-PROCEDURE ParseCaseLabelList;
+PROCEDURE ParseCaseLabelList(caseVar :AST.Expr) :AST.Expr;
+VAR
+  head, tail :AST.Expr;
 BEGIN
-  ParseCaseLabelRange;
+  head := ParseCaseLabelRange(caseVar);
+  tail := head;
   WHILE MatchToken(Lex.tCOMMA) DO
-    ParseCaseLabelRange;
+    tail.next := ParseCaseLabelRange(caseVar);
+    tail := tail.next;
   END;
+  RETURN head
 END ParseCaseLabelList;
 
-PROCEDURE ParseCase;
+PROCEDURE ParseCase(caseVar :AST.Expr) :AST.Stmt;
+VAR
+  s    :AST.Stmt;
+  cond :AST.Expr;
 BEGIN
+  s := NIL;
   IF IsToken(Lex.tINT) OR IsToken(Lex.tSTRING) OR IsToken(Lex.tIDENT) THEN
-    ParseCaseLabelList;
+    cond := ParseCaseLabelList(caseVar);
     ExpectToken(Lex.tCOLON);
-    ParseStatementSequence;
+    s := AST.NewStmtCaseItem(cond, ParseStatementSequence());
   END;
+  RETURN s
 END ParseCase;
 
-PROCEDURE ParseCaseStatement;
+PROCEDURE ParseCaseStatement() :AST.Stmt;
+VAR
+  cond          :AST.Expr;
+  s, head, tail :AST.Stmt;
 BEGIN
   ExpectToken(Lex.tCASE);
-  ParseExpression;
+  cond := ParseExpression();
+  IF ~(cond.typ.kind IN {AST.typeInteger, AST.typeChar}) THEN
+    Lex.ErrorLn(l, "CASE requires INTEGER or CHAR")
+  END;
   ExpectToken(Lex.tOF);
-  ParseCase;
+  head := ParseCase(cond);
+  tail := head;
   WHILE MatchToken(Lex.tVBAR) DO
-    ParseCase;
+    s := ParseCase(cond);
+    IF tail = NIL THEN
+      head := s;
+      tail := head;
+    ELSE
+      tail.next := s;
+      IF s # NIL THEN
+        tail := tail.next;
+      END;
+    END;
   END;
   ExpectToken(Lex.tEND);
+  s := AST.NewStmtCase(cond, head);
+  RETURN s
 END ParseCaseStatement;
 
 PROCEDURE ParseWhileStatement() :AST.Stmt;
@@ -468,7 +506,7 @@ BEGIN
   IF IsToken(Lex.tIF) THEN
     s := ParseIfStatement();
   ELSIF IsToken(Lex.tCASE) THEN
-    ParseCaseStatement;
+    s := ParseCaseStatement();
   ELSIF IsToken(Lex.tWHILE) THEN
     s := ParseWhileStatement();
   ELSIF IsToken(Lex.tREPEAT) THEN
