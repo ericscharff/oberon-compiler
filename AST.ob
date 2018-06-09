@@ -59,6 +59,7 @@ TYPE
   Type*            = POINTER TO TypeDesc;
   Decl*            = POINTER TO DeclDesc;
   Expr*            = POINTER TO ExprDesc;
+  Stmt*            = POINTER TO StmtDesc;
   TypeDesc         = RECORD
     kind*         :TypeKind;
     base*         :Type;    (* POINTER type,                             *)
@@ -83,7 +84,8 @@ TYPE
     next*     :Decl;
     qname*    :QName;
     typ*      :Type;
-    expr*     :Expr;             (* for CONST declarations *)
+    expr*     :Expr;             (* for CONST declarations         *)
+    body*     :Stmt;             (* PROCEDURE or MODULE body       *)
     exported* :BOOLEAN;
     resolver* :BuiltinResolver;  (* Handles native procedure calls *)
   END;
@@ -147,7 +149,6 @@ TYPE
   END;
 
   StmtKind* = INTEGER;
-  Stmt*     = POINTER TO StmtDesc;
   StmtDesc  = RECORD
     kind   :StmtKind;
     cond   :Expr;     (* For assignment, this is an exprAssign        *)

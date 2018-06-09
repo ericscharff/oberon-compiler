@@ -75,6 +75,8 @@ BEGIN
   d.qname.moduleName := AST.currentModuleName;
   d.kind := 0;
   d.typ := NIL;
+  d.expr := NIL;
+  d.body := NIL;
   d.next := NIL;
   d.exported := FALSE;
   IF chain = NIL THEN NEW(chain);
@@ -83,6 +85,8 @@ BEGIN
     chain.qname.moduleName := AST.currentModuleName;
     chain.next := NIL;
     chain.typ := NIL;
+    chain.expr := NIL;
+    chain.body := NIL;
   END;
   IF chain.kind = AST.declEND THEN
     d.next := chain;
@@ -452,6 +456,8 @@ BEGIN
   NEW(d);
   d.kind := AST.declEND;
   d.typ := NIL;
+  d.expr := NIL;
+  d.body := NIL;
   d.qname.name := 0;
   d.qname.moduleName := AST.currentModuleName;
   d.next := scope;
