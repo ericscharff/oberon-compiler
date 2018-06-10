@@ -965,6 +965,7 @@ BEGIN
   Lex.LexerInitFromFile(l, "Parse.ob");
   Lex.NextToken(l);
   ParseModule;
+  Decls.VisitModule(l, lastModuleDecls);
   Lex.InfoPrintLn("PASS: Parser test");
 END TestParse;
 

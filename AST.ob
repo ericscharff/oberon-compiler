@@ -79,6 +79,7 @@ TYPE
   END;
   BuiltinResolver* = PROCEDURE (l :Lex.Lexer; args :Expr) :Expr;
   DeclKind         = INTEGER;
+  DeclState        = INTEGER;
   DeclDesc         = RECORD
     kind*     :DeclKind;
     next*     :Decl;
@@ -89,6 +90,7 @@ TYPE
     body*     :Stmt;             (* PROCEDURE or MODULE body       *)
     exported* :BOOLEAN;
     resolver* :BuiltinResolver;  (* Handles native procedure calls *)
+    state*    :DeclState;
   END;
   ExprKind         = INTEGER;
   (*
@@ -151,19 +153,19 @@ TYPE
 
   StmtKind* = INTEGER;
   StmtDesc  = RECORD
-    kind   :StmtKind;
-    cond   :Expr;     (* For assignment, this is an exprAssign        *)
-                      (* For WHILE and REPEAT, this is loop condition *)
-                      (* For ELSIF, this is a single ELSIF condition  *)
-                      (* For caseItem, this is a list of cases, using *)
-                      (* expr.next for each case                      *)
-                      (* For ELSE, this is ignored                    *)
-    body   :Stmt;     (* Body of a clause, the StatementSequence for  *)
-                      (* that node, chained together with next        *)
-    elsifs :Stmt;     (* Optional chain of ELSIF (and ELSE) for IF    *)
-                      (* and WHILE statements, for CASE, this is the  *)
-                      (* first caseItem                               *)
-    next*  :Stmt;     (* next statement in the StatementSequence      *)
+    kind    :StmtKind;
+    cond*   :Expr;     (* For assignment, this is an exprAssign        *)
+                       (* For WHILE and REPEAT, this is loop condition *)
+                       (* For ELSIF, this is a single ELSIF condition  *)
+                       (* For caseItem, this is a list of cases, using *)
+                       (* expr.next for each case                      *)
+                       (* For ELSE, this is ignored                    *)
+    body*   :Stmt;     (* Body of a clause, the StatementSequence for  *)
+                       (* that node, chained together with next        *)
+    elsifs* :Stmt;     (* Optional chain of ELSIF (and ELSE) for IF    *)
+                       (* and WHILE statements, for CASE, this is the  *)
+                       (* first caseItem                               *)
+    next*   :Stmt;     (* next statement in the StatementSequence      *)
   END;
 
 VAR
