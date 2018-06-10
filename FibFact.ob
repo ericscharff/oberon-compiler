@@ -24,11 +24,17 @@ VAR
   b :BYTE;
   pOne :TakeOneReturnOne;
 
+PROCEDURE Trace(s :ARRAY OF CHAR);
+BEGIN
+  IF FALSE THEN Out.PrintLn(s) END
+END Trace;
+
 PROCEDURE FactIter*(n :INTEGER) :INTEGER;
 VAR
   i, r :INTEGER;
 BEGIN
-  Out.PrintLn("FactIter");
+  Trace("FactIter");
+  i := 1;
   r := 1;
   WHILE i <= n DO
     r := r * i;
@@ -40,7 +46,7 @@ END FactIter;
 PROCEDURE FactRec*(n :INTEGER) :INTEGER;
 VAR r :INTEGER;
 BEGIN
-  Out.PrintLn("FactRec");
+  Trace("FactRec");
   IF n <= 1 THEN
     r := 1
   ELSE
@@ -53,7 +59,7 @@ PROCEDURE FibIter*(n :INTEGER) :INTEGER;
 VAR
   prev, newPrev, fib :INTEGER;
 BEGIN
-  Out.PrintLn("FibIter");
+  Trace("FibIter");
   prev := 1;
   fib := 1;
   WHILE n > 1 DO
@@ -68,7 +74,7 @@ END FibIter;
 PROCEDURE FibRec*(n :INTEGER) :INTEGER;
 VAR r :INTEGER;
 BEGIN
-  Out.PrintLn("FibRec");
+  Trace("FibRec");
   IF n < 2 THEN
     r := 1
   ELSE
@@ -123,10 +129,10 @@ PROCEDURE TestFact; END TestFact;
 PROCEDURE TestMisc;
 
 BEGIN
-  FactIter(7);
-  FactRec(Seven);
-  FibIter(12);
-  FibRec(12);
+  Out.Int(FactIter(7)); Out.Ln;
+  Out.Int(FactRec(Seven)); Out.Ln;
+  Out.Int(FibIter(12)); Out.Ln;
+  Out.Int(FibRec(12)); Out.Ln;
   z.a := 10;
   z.b := -z.a + 1;
   PlusOne(z);
