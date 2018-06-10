@@ -14,10 +14,10 @@ TYPE
     t    :AST.Type;
     next :Forward;
   END;
-  ReachableDecl = POINTER TO ReachableDesc;
-  ReachableDesc = RECORD
-    d    :AST.Decl;
-    next :ReachableDecl;
+  ReachableDecl* = POINTER TO ReachableDesc;
+  ReachableDesc  = RECORD
+    d*    :AST.Decl;
+    next* :ReachableDecl;
   END;
 
 VAR
@@ -25,7 +25,7 @@ VAR
     charType*, setType*, stringType* :AST.Type;
   modInitName :StringId;
   scope, globalScope :AST.Decl;
-  reachableDecls :ReachableDecl;
+  reachableDecls* :ReachableDecl;
   fwds  :Forward;
   VisitDecl* :PROCEDURE (d :AST.Decl);
 

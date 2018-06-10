@@ -1,6 +1,6 @@
 MODULE Parse;
 
-IMPORT AST, Decls, Lex;
+IMPORT AST, CCodegen, Decls, Lex;
 
 TYPE
   StringId = Lex.PoolIndex;
@@ -955,10 +955,41 @@ BEGIN
 END ImportHelper;
 
 PROCEDURE TestParse;
+VAR
+  p :Decls.ReachableDecl;
 BEGIN
-  Lex.LexerInitFromFile(l, "FibFact.ob");
+  Lex.LexerInitFromFile(l, "Parse.ob");
   Lex.NextToken(l);
   ParseModule;
+  Decls.VisitDecl(lastModuleDecls);
+  p := Decls.reachableDecls;
+  WHILE p # NIL DO
+    IF (p.d.kind = AST.declType) & (p.d.typ.kind = AST.typePointer) THEN
+      CCodegen.Generate(l, p.d);
+    END;
+    p := p.next;
+  END;
+  p := Decls.reachableDecls;
+  WHILE p # NIL DO
+    IF (p.d.kind = AST.declType) & (p.d.typ.kind # AST.typePointer) THEN
+      CCodegen.Generate(l, p.d);
+    END;
+    p := p.next;
+  END;
+  p := Decls.reachableDecls;
+  WHILE p # NIL DO
+    IF p.d.kind = AST.declVar THEN
+      CCodegen.Generate(l, p.d);
+    END;
+    p := p.next;
+  END;
+  p := Decls.reachableDecls;
+  WHILE p # NIL DO
+    IF p.d.kind = AST.declProcedure THEN
+      CCodegen.Generate(l, p.d);
+    END;
+    p := p.next;
+  END;
   Lex.InfoPrintLn("PASS: Parser test");
 END TestParse;
 
