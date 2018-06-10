@@ -74,9 +74,7 @@ BEGIN
   RETURN p
 END LookupImport;
 
-PROCEDURE AddDecl*(l :Lex.Lexer; VAR chain :AST.Decl; name :StringId) :AST.Decl;
-VAR
-  p, d :AST.Decl;
+PROCEDURE NewDecl(VAR d :AST.Decl; name :StringId);
 BEGIN
   NEW(d);
   d.qname.name := name;
@@ -88,15 +86,16 @@ BEGIN
   d.next := NIL;
   d.exported := FALSE;
   d.state := stateUnresolved;
-  IF chain = NIL THEN NEW(chain);
+END NewDecl;
+
+PROCEDURE AddDecl*(l :Lex.Lexer; VAR chain :AST.Decl; name :StringId) :AST.Decl;
+VAR
+  p, d :AST.Decl;
+BEGIN
+  NewDecl(d, name);
+  IF chain = NIL THEN
+    NewDecl(chain, 0);
     chain.kind := AST.declEND;
-    chain.qname.name := 0;
-    chain.qname.moduleName := AST.currentModuleName;
-    chain.next := NIL;
-    chain.typ := NIL;
-    chain.expr := NIL;
-    chain.body := NIL;
-    chain.state := stateUnresolved;
   END;
   IF chain.kind = AST.declEND THEN
     d.next := chain;
@@ -182,11 +181,7 @@ BEGIN
   IF d = NIL THEN
     (* forward decl *)
     NewType(t, AST.typePointer);
-    NEW(t.fields);
-    t.fields.qname.name := name;
-    t.fields.qname.moduleName := AST.currentModuleName;
-    t.fields.next := NIL;
-    t.decl := NIL;
+    NewDecl(t.fields, name);
     NEW(f);
     f.t := t;
     f.next := fwds;
@@ -475,13 +470,8 @@ PROCEDURE OpenScope*() :AST.Decl;
 VAR
   d, oldScope :AST.Decl;
 BEGIN
-  NEW(d);
+  NewDecl(d, 0);
   d.kind := AST.declEND;
-  d.typ := NIL;
-  d.expr := NIL;
-  d.body := NIL;
-  d.qname.name := 0;
-  d.qname.moduleName := AST.currentModuleName;
   d.next := scope;
   oldScope := scope;
   scope := d;
