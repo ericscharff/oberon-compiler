@@ -1,6 +1,6 @@
 MODULE Decls;
 
-IMPORT AST, Lex, Out;
+IMPORT AST, Lex;
 
 CONST
   stateUnresolved = 0;
@@ -21,8 +21,7 @@ VAR
   modInitName :StringId;
   scope, globalScope :AST.Decl;
   fwds  :Forward;
-  VisitDecl* :PROCEDURE (l :Lex.Lexer; d :AST.Decl);
-  nDent :INTEGER;
+  VisitDecl* :PROCEDURE (d :AST.Decl);
 
 PROCEDURE LookupDecl0(name :StringId) :AST.Decl;
 VAR
@@ -486,79 +485,68 @@ BEGIN
   scope := s;
 END CloseScope;
 
-PROCEDURE VisitType(l :Lex.Lexer; t :AST.Type);
+PROCEDURE VisitType(t :AST.Type);
 VAR
   f :AST.Decl;
 BEGIN
   IF (t # NIL) & ~t.reachable THEN
     t.reachable := TRUE;
-    VisitType(l, t.base);
+    VisitType(t.base);
     f := t.fields;
     WHILE (f # NIL) & (f.kind # AST.declEND) DO
-      VisitType(l, f.typ);
+      VisitType(f.typ);
       f := f.next;
     END;
-    IF t.decl # NIL THEN VisitDecl(l, t.decl); END;
+    IF t.decl # NIL THEN VisitDecl(t.decl); END;
   END;
 END VisitType;
 
-PROCEDURE VisitExpr(l :Lex.Lexer; e :AST.Expr);
+PROCEDURE VisitExpr(e :AST.Expr);
 BEGIN
   WHILE e # NIL DO
-    VisitExpr(l, e.lhs);
-    VisitExpr(l, e.rhs);
-    VisitType(l, e.typ);
-    IF e.decl # NIL THEN VisitDecl(l, e.decl); END;
+    VisitExpr(e.lhs);
+    VisitExpr(e.rhs);
+    VisitType(e.typ);
+    IF e.decl # NIL THEN VisitDecl(e.decl); END;
     e := e.next;
   END;
 END VisitExpr;
 
-PROCEDURE VisitStatement(l :Lex.Lexer; s :AST.Stmt);
+PROCEDURE VisitStatement(s :AST.Stmt);
 BEGIN
   WHILE s # NIL DO
-    VisitExpr(l, s.cond);
-    VisitStatement(l, s.body);
-    VisitStatement(l, s.elsifs);
+    VisitExpr(s.cond);
+    VisitStatement(s.body);
+    VisitStatement(s.elsifs);
     s := s.next;
   END;
 END VisitStatement;
 
-PROCEDURE VisitDecl0(l :Lex.Lexer; d :AST.Decl);
+PROCEDURE VisitDecl0(d :AST.Decl);
 VAR
   i :INTEGER;
   p :AST.Decl;
 BEGIN
   IF d.state = stateUnresolved THEN
     d.state := stateResolving;
-    FOR i := 1 TO nDent DO Out.Str("  ") END;
-    Out.Str("Visiting ");
-    Lex.OutStr(l, d.qname.moduleName);
-    Out.Str(".");
-    Lex.OutStr(l, d.qname.name);
-    Out.Ln;
-    INC(nDent);
     IF d.qname.name = modInitName THEN
       (* MODULE inits are a bit special, they are followed by any dels *)
       (* that have been imported by the MODULE. Resolve these first.   *)
       p := d.next;
       WHILE p.kind # AST.declEND DO
         IF p.kind = AST.declImport THEN
-          VisitDecl(l, p.typ.fields);
+          VisitDecl(p.typ.fields);
         END;
         p := p.next;
       END;
     END;
-    VisitType(l, d.typ);
-    VisitStatement(l, d.body);
-    DEC(nDent);
+    VisitType(d.typ);
+    VisitStatement(d.body);
     d.state := stateResolved;
   ELSIF d.state = stateResolving THEN
     IF d.kind # AST.declProcedure THEN
-      Lex.Error(l, "Circular reference for ");
-      Lex.OutStr(l, d.qname.moduleName);
-      Out.Str(".");
-      Lex.OutStr(l, d.qname.name);
-      Lex.Ln;
+      (* Circular reference *)
+      ASSERT(FALSE);
     END;
   ELSE
     ASSERT(d.state = stateResolved);
@@ -608,7 +596,6 @@ BEGIN
 END TestDecls;
 
 BEGIN
-  nDent := 0;
   VisitDecl := VisitDecl0;
   globalScope := NIL;
   TestDecls

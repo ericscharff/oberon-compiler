@@ -956,20 +956,10 @@ END ImportHelper;
 
 PROCEDURE TestParse;
 BEGIN
-(*
-  Lex.LexerInitFromFile(l, "Decls.ob");
-  Lex.NextToken(l);
-  ParseModule;
-  Decls.TestCleanup(); importCacheEnd := 0;
-  Lex.LexerInitFromFile(l, "Lex.ob");
-  Lex.NextToken(l);
-  ParseModule;
-  Decls.TestCleanup(); importCacheEnd := 0;
-*)
   Lex.LexerInitFromFile(l, "Parse.ob");
   Lex.NextToken(l);
   ParseModule;
-  Decls.VisitDecl(l, lastModuleDecls);
+  Decls.VisitDecl(lastModuleDecls);
   Lex.InfoPrintLn("PASS: Parser test");
 END TestParse;
 
