@@ -1015,10 +1015,24 @@ void generate_c_code(Type **types, Decl **decls) {
   gen_str("#include \"runtime.c\"\n\n");
 
   for (size_t i = 0; i < buf_len(types); i++) {
-    gen_typedef(types[i], types[i]->package_name, types[i]->name);
+    if (types[i]->kind == TYPE_POINTER) {
+      gen_typedef(types[i], types[i]->package_name, types[i]->name);
+    }
+  }
+  for (size_t i = 0; i < buf_len(types); i++) {
+    if (types[i]->kind != TYPE_POINTER) {
+      gen_typedef(types[i], types[i]->package_name, types[i]->name);
+    }
   }
   for (size_t i = 0; i < buf_len(decls); i++) {
-    gen_decl(decls[i]);
+    if (decls[i]->kind == DECL_VAR) {
+      gen_decl(decls[i]);
+    }
+  }
+  for (size_t i = 0; i < buf_len(decls); i++) {
+    if (decls[i]->kind != DECL_VAR) {
+      gen_decl(decls[i]);
+    }
   }
   gen_str("\nint main(void) {\n");
   codegenIndent++;
