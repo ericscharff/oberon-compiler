@@ -13,6 +13,7 @@ TYPE
 VAR
   nilType*, integerType*, realType*, booleanType*,
     charType*, setType*, stringType* :AST.Type;
+  modInitName :StringId;
   scope, globalScope :AST.Decl;
   fwds  :Forward;
 
@@ -243,7 +244,7 @@ PROCEDURE NewModuleInitDecl*(VAR l :Lex.Lexer; body :AST.Stmt);
 VAR
   d :AST.Decl;
 BEGIN
-  d := AddDecl(l, scope, Lex.Intern(l, "_module_init_"));
+  d := AddDecl(l, scope, modInitName);
   d.kind := AST.declProcedure;
   d.typ := NewProcedureType();
   d.body := body;
@@ -416,6 +417,8 @@ BEGIN
     AddBuiltin(l, Lex.Intern(l, "FLT"), builtinFlt);
     AddBuiltin(l, Lex.Intern(l, "NEW"), builtinNew);
     globalScope := scope;
+    (* Special MODULE init function *)
+    modInitName := Lex.Intern(l, "_module_init_");
   END;
   scope := globalScope;
 END InitGlobalScope;
