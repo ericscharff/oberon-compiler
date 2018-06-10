@@ -76,6 +76,7 @@ TYPE
                             (* runtime info                              *)
     decl*         :Decl;    (* Optional. If defined as a TYPE, points to *)
                             (* the declaration (name), NIL otherwise     *)
+    reachable*    :BOOLEAN; (* This type is reachable and used.          *)
   END;
   BuiltinResolver* = PROCEDURE (l :Lex.Lexer; args :Expr) :Expr;
   DeclKind         = INTEGER;

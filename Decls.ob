@@ -131,6 +131,7 @@ BEGIN
   t.length := 0;
   t.needTypeInfo := FALSE;
   t.decl := NIL;
+  t.reachable := FALSE;
 END NewType;
 
 PROCEDURE AddImportDecl*(l :Lex.Lexer; name :StringId; decls :AST.Decl);
@@ -485,11 +486,28 @@ BEGIN
   scope := s;
 END CloseScope;
 
+PROCEDURE VisitType(l :Lex.Lexer; t :AST.Type);
+VAR
+  f :AST.Decl;
+BEGIN
+  IF (t # NIL) & ~t.reachable THEN
+    t.reachable := TRUE;
+    VisitType(l, t.base);
+    f := t.fields;
+    WHILE (f # NIL) & (f.kind # AST.declEND) DO
+      VisitType(l, f.typ);
+      f := f.next;
+    END;
+    IF t.decl # NIL THEN VisitDecl(l, t.decl); END;
+  END;
+END VisitType;
+
 PROCEDURE VisitExpr(l :Lex.Lexer; e :AST.Expr);
 BEGIN
   WHILE e # NIL DO
     VisitExpr(l, e.lhs);
     VisitExpr(l, e.rhs);
+    VisitType(l, e.typ);
     IF e.decl # NIL THEN VisitDecl(l, e.decl); END;
     e := e.next;
   END;
@@ -530,6 +548,7 @@ BEGIN
         p := p.next;
       END;
     END;
+    VisitType(l, d.typ);
     VisitStatement(l, d.body);
     DEC(nDent);
     d.state := stateResolved;
