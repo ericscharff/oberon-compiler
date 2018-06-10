@@ -783,10 +783,10 @@ BEGIN
   Decls.AddFormalParamsToScope(l, procDecl);
   ParseDeclarationSequence;
   IF MatchToken(Lex.tBEGIN) THEN
-    ParseStatementSequence;
+    procDecl.body := ParseStatementSequence();
   END;
   IF MatchToken(Lex.tRETURN) THEN
-    ParseExpression;
+    procDecl.expr := ParseExpression();
   END;
   ExpectToken(Lex.tEND);
   Decls.CloseScope(oldScope);
@@ -911,7 +911,7 @@ BEGIN
   END;
   ParseDeclarationSequence;
   IF MatchToken(Lex.tBEGIN) THEN
-    ParseStatementSequence;
+    Decls.NewModuleInitDecl(l, ParseStatementSequence());
   END;
   ExpectToken(Lex.tEND);
   e := ExpectIdentifier();
@@ -962,7 +962,7 @@ BEGIN
   Lex.NextToken(l);
   ParseModule;
   Decls.TestCleanup(); importCacheEnd := 0;
-  Lex.LexerInitFromFile(l, "FibFact.ob");
+  Lex.LexerInitFromFile(l, "Parse.ob");
   Lex.NextToken(l);
   ParseModule;
   Lex.InfoPrintLn("PASS: Parser test");

@@ -239,6 +239,16 @@ BEGIN
   RETURN t
 END NewRecordType;
 
+PROCEDURE NewModuleInitDecl*(VAR l :Lex.Lexer; body :AST.Stmt);
+VAR
+  d :AST.Decl;
+BEGIN
+  d := AddDecl(l, scope, Lex.Intern(l, "_module_init_"));
+  d.kind := AST.declProcedure;
+  d.typ := NewProcedureType();
+  d.body := body;
+END NewModuleInitDecl;
+
 PROCEDURE AddTypeDecl(VAR l :Lex.Lexer; name :StringId; t :AST.Type);
 VAR
   d :AST.Decl;

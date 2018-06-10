@@ -85,6 +85,7 @@ TYPE
     qname*    :QName;
     typ*      :Type;
     expr*     :Expr;             (* for CONST declarations         *)
+                                 (* PROCEDURE RETURN value         *)
     body*     :Stmt;             (* PROCEDURE or MODULE body       *)
     exported* :BOOLEAN;
     resolver* :BuiltinResolver;  (* Handles native procedure calls *)
