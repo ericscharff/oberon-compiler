@@ -911,7 +911,9 @@ BEGIN
   END;
   ParseDeclarationSequence;
   IF MatchToken(Lex.tBEGIN) THEN
-    Decls.NewModuleInitDecl(l, ParseStatementSequence());
+    Decls.NewModuleInitDecl(ParseStatementSequence());
+  ELSE
+    Decls.NewModuleInitDecl(NIL);
   END;
   ExpectToken(Lex.tEND);
   e := ExpectIdentifier();
@@ -954,6 +956,7 @@ END ImportHelper;
 
 PROCEDURE TestParse;
 BEGIN
+(*
   Lex.LexerInitFromFile(l, "Decls.ob");
   Lex.NextToken(l);
   ParseModule;
@@ -962,10 +965,11 @@ BEGIN
   Lex.NextToken(l);
   ParseModule;
   Decls.TestCleanup(); importCacheEnd := 0;
+*)
   Lex.LexerInitFromFile(l, "Parse.ob");
   Lex.NextToken(l);
   ParseModule;
-  Decls.VisitModule(l, lastModuleDecls);
+  Decls.VisitDecl(l, lastModuleDecls);
   Lex.InfoPrintLn("PASS: Parser test");
 END TestParse;
 

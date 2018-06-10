@@ -21,7 +21,7 @@ VAR
   modInitName :StringId;
   scope, globalScope :AST.Decl;
   fwds  :Forward;
-  VisitDecl :PROCEDURE (l :Lex.Lexer; d :AST.Decl);
+  VisitDecl* :PROCEDURE (l :Lex.Lexer; d :AST.Decl);
   nDent :INTEGER;
 
 PROCEDURE LookupDecl0(name :StringId) :AST.Decl;
@@ -244,14 +244,16 @@ BEGIN
   RETURN t
 END NewRecordType;
 
-PROCEDURE NewModuleInitDecl*(VAR l :Lex.Lexer; body :AST.Stmt);
+PROCEDURE NewModuleInitDecl*(body :AST.Stmt);
 VAR
   d :AST.Decl;
 BEGIN
-  d := AddDecl(l, scope, modInitName);
+  NewDecl(d, modInitName);
   d.kind := AST.declProcedure;
   d.typ := NewProcedureType();
   d.body := body;
+  d.next := scope;
+  scope := d;
 END NewModuleInitDecl;
 
 PROCEDURE AddTypeDecl(VAR l :Lex.Lexer; name :StringId; t :AST.Type);
@@ -506,6 +508,7 @@ END VisitStatement;
 PROCEDURE VisitDecl0(l :Lex.Lexer; d :AST.Decl);
 VAR
   i :INTEGER;
+  p :AST.Decl;
 BEGIN
   IF d.state = stateUnresolved THEN
     d.state := stateResolving;
@@ -516,6 +519,17 @@ BEGIN
     Lex.OutStr(l, d.qname.name);
     Out.Ln;
     INC(nDent);
+    IF d.qname.name = modInitName THEN
+      (* MODULE inits are a bit special, they are followed by any dels *)
+      (* that have been imported by the MODULE. Resolve these first.   *)
+      p := d.next;
+      WHILE p.kind # AST.declEND DO
+        IF p.kind = AST.declImport THEN
+          VisitDecl(l, p.typ.fields);
+        END;
+        p := p.next;
+      END;
+    END;
     VisitStatement(l, d.body);
     DEC(nDent);
     d.state := stateResolved;
@@ -531,19 +545,6 @@ BEGIN
     ASSERT(d.state = stateResolved);
   END;
 END VisitDecl0;
-
-PROCEDURE VisitModule*(l :Lex.Lexer; m :AST.Decl);
-BEGIN
-  WHILE m.kind # AST.declEND DO
-    IF m.kind = AST.declImport THEN
-      VisitModule(l, m.typ.fields);
-    END;
-    IF (m.kind = AST.declProcedure) & (m.qname.name = modInitName) THEN
-      VisitDecl(l, m);
-    END;
-    m := m.next;
-  END;
-END VisitModule;
 
 PROCEDURE TestCleanup*;
 BEGIN
