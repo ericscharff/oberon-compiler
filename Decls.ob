@@ -14,12 +14,18 @@ TYPE
     t    :AST.Type;
     next :Forward;
   END;
+  ReachableDecl = POINTER TO ReachableDesc;
+  ReachableDesc = RECORD
+    d    :AST.Decl;
+    next :ReachableDecl;
+  END;
 
 VAR
   nilType*, integerType*, realType*, booleanType*,
     charType*, setType*, stringType* :AST.Type;
   modInitName :StringId;
   scope, globalScope :AST.Decl;
+  reachableDecls :ReachableDecl;
   fwds  :Forward;
   VisitDecl* :PROCEDURE (d :AST.Decl);
 
@@ -524,8 +530,8 @@ END VisitStatement;
 
 PROCEDURE VisitDecl0(d :AST.Decl);
 VAR
-  i :INTEGER;
-  p :AST.Decl;
+  p         :AST.Decl;
+  reachable :ReachableDecl;
 BEGIN
   IF d.state = stateUnresolved THEN
     d.state := stateResolving;
@@ -543,6 +549,10 @@ BEGIN
     VisitType(d.typ);
     VisitStatement(d.body);
     d.state := stateResolved;
+    NEW(reachable);
+    reachable.d := d;
+    reachable.next := reachableDecls;
+    reachableDecls := reachable;
   ELSIF d.state = stateResolving THEN
     IF d.kind # AST.declProcedure THEN
       (* Circular reference *)
@@ -597,6 +607,8 @@ END TestDecls;
 
 BEGIN
   VisitDecl := VisitDecl0;
+  reachableDecls := NIL;
   globalScope := NIL;
+  reachableDecls := NIL;
   TestDecls
 END Decls.
