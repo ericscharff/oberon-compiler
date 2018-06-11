@@ -25,7 +25,7 @@ VAR
     charType*, setType*, stringType* :AST.Type;
   modInitName :StringId;
   scope, globalScope :AST.Decl;
-  reachableDecls* :ReachableDecl;
+  reachableDecls*, tailReachable :ReachableDecl;
   fwds  :Forward;
   VisitDecl* :PROCEDURE (d :AST.Decl);
 
@@ -551,8 +551,12 @@ BEGIN
     d.state := stateResolved;
     NEW(reachable);
     reachable.d := d;
-    reachable.next := reachableDecls;
-    reachableDecls := reachable;
+    IF reachableDecls = NIL THEN
+      reachableDecls := reachable;
+    ELSE
+      tailReachable.next := reachable;
+    END;
+    tailReachable := reachable;
   ELSIF d.state = stateResolving THEN
     IF d.kind # AST.declProcedure THEN
       (* Circular reference *)
@@ -608,6 +612,7 @@ END TestDecls;
 BEGIN
   VisitDecl := VisitDecl0;
   reachableDecls := NIL;
+  tailReachable := NIL;
   globalScope := NIL;
   reachableDecls := NIL;
   TestDecls
