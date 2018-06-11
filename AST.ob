@@ -40,6 +40,15 @@ CONST
   exprBuiltin*     = 10;
   exprAssign       = 11;
 
+  builtinAbs*    = 1;
+  builtinAssert* = 2;
+  builtinChr*    = 3;
+  builtinDec*    = 4;
+  builtinFlt*    = 5;
+  builtinInc*    = 6;
+  builtinNew*    = 7;
+  builtinOrd*    = 8;
+
   stmtAssign   = 1;
   stmtProcCall = 2;
   stmtIf       = 3;
@@ -54,7 +63,7 @@ CONST
 
 TYPE
   StringId         = Lex.PoolIndex;
-  QName            = RECORD moduleName*, name* :StringId END;
+  QName*           = RECORD moduleName*, name* :StringId END;
   TypeKind*        = INTEGER;
   Type*            = POINTER TO TypeDesc;
   Decl*            = POINTER TO DeclDesc;
@@ -86,11 +95,13 @@ TYPE
     next*     :Decl;
     qname*    :QName;
     typ*      :Type;
-    expr*     :Expr;             (* for CONST declarations         *)
-                                 (* PROCEDURE RETURN value         *)
-    body*     :Stmt;             (* PROCEDURE or MODULE body       *)
+    expr*     :Expr;             (* for CONST declarations           *)
+                                 (* PROCEDURE RETURN value           *)
+    body*     :Stmt;             (* PROCEDURE or MODULE body         *)
     exported* :BOOLEAN;
-    resolver* :BuiltinResolver;  (* Handles native procedure calls *)
+    nesting*  :INTEGER;          (* 0=global, 1=proc, 2=nested...    *)
+    procVars* :Decl;             (* for PROCEDURE decls, local scope *)
+    resolver* :BuiltinResolver;  (* Handles native procedure calls   *)
     state*    :DeclState;
   END;
   ExprKind         = INTEGER;
@@ -236,7 +247,7 @@ BEGIN
   RETURN (a # NIL) & (b # NIL) & (a = b)
 END Extends;
 
-PROCEDURE IsOpenArray(t :Type) :BOOLEAN;
+PROCEDURE IsOpenArray*(t :Type) :BOOLEAN;
 BEGIN
   RETURN (t.kind = typeArray) & (t.length = 0)
 END IsOpenArray;
@@ -445,6 +456,18 @@ BEGIN
     t := t.base;
   END;
 END SetGenTypeInfo;
+
+PROCEDURE NeedsTypeInfo*(t :Type) :BOOLEAN;
+VAR
+  ti :BOOLEAN;
+BEGIN
+  ti := FALSE;
+  REPEAT
+    ti := t.needTypeInfo;
+    t := t.base;
+  UNTIL ti OR (t = NIL);
+  RETURN ti
+END NeedsTypeInfo;
 
 PROCEDURE NewExprTypeGuard*(l :Lex.Lexer; base :Expr; newType :Decl) :Expr;
 VAR

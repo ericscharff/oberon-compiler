@@ -2,12 +2,192 @@ MODULE CCodegen;
 
 IMPORT AST, Lex, Out;
 
-PROCEDURE Generate*(l :Lex.Lexer; d :AST.Decl);
+VAR
+  indent :INTEGER;
+
+PROCEDURE GenStr(s :ARRAY OF CHAR);
 BEGIN
+  Out.Str(s);
+END GenStr;
+
+PROCEDURE GenInt(i :INTEGER);
+BEGIN
+  Out.Int(i);
+END GenInt;
+
+PROCEDURE GenLn;
+BEGIN
+  Out.Ln
+END GenLn;
+
+PROCEDURE GenI;
+VAR
+  i :INTEGER;
+BEGIN
+  FOR i := 1 TO indent DO GenStr("  ") END
+END GenI;
+
+PROCEDURE GenQName(l :Lex.Lexer; name :AST.QName);
+BEGIN
+  IF name.moduleName > 0 THEN
+    Lex.OutStr(l, name.moduleName);
+    GenStr("_");
+  END;
+  IF name.name > 0 THEN
+    Lex.OutStr(l, name.name);
+  END;
+END GenQName;
+
+PROCEDURE GenType(l :Lex.Lexer; t :AST.Type; name :AST.QName; skipDecl :BOOLEAN);
+VAR
+  f :AST.Decl;
+  q :AST.QName;
+  p :AST.Type;
+BEGIN
+  q.moduleName := 0;
+  q.name := 0;
+  IF (t.decl = NIL) OR skipDecl THEN
+    CASE t.kind OF
+      AST.typeInteger:
+        GenStr("int ");
+        GenQName(l, name);
+    | AST.typeReal:
+        GenStr("float ");
+        GenQName(l, name);
+    | AST.typeBoolean:
+        GenStr("bool ");
+        GenQName(l, name);
+    | AST.typeChar:
+        GenStr("char ");
+        GenQName(l, name);
+    | AST.typeSet:
+        GenStr("int ");
+        GenQName(l, name);
+    | AST.typePointer:
+        IF t.base.decl = NIL THEN
+          GenType(l, t.base, q, FALSE);
+        ELSE
+          GenStr("struct ");
+          GenQName(l, t.base.decl.qname);
+        END;
+        GenStr(" *");
+        GenQName(l, name);
+    | AST.typeArray:
+        p := t;
+        WHILE p.kind = AST.typeArray DO
+          p := p.base;
+        END;
+        GenType(l, p, name, FALSE);
+        p := t;
+        WHILE (p.kind = AST.typeArray) DO
+          GenStr("[");
+          GenInt(p.length);
+          GenStr("]");
+          p := p.base;
+        END;
+    | AST.typeRecord:
+        GenStr("struct ");
+        GenQName(l, name);
+        GenStr(" {");
+        GenLn;
+        INC(indent);
+        IF AST.NeedsTypeInfo(t) THEN
+          GenI; GenStr("oberon typid _tid;"); GenLn;
+        END;
+        f := t.fields;
+        WHILE (f # NIL) & (f.kind # AST.declEND) DO
+          (* Drop package from field name *)
+          q.name := f.qname.name;
+          GenI;
+          GenType(l, f.typ, q, FALSE);
+          GenStr(";");
+          GenLn;
+          f := f.next;
+        END;
+        DEC(indent);
+        GenI; GenStr("} "); GenQName(l, name);
+    | AST.typeProcedure:
+        IF t.base.kind = AST.typeNil THEN
+          GenStr("void")
+        ELSE
+          GenType(l, t.base, q, FALSE);
+        END;
+        GenStr(" (*");
+        GenQName(l, name);
+        GenStr(")(");
+        IF t.fields = NIL THEN
+          GenStr("void"); (* For C++, this would be empty *)
+        ELSE
+          f := t.fields;
+          WHILE f.kind # AST.declEND DO
+            t := f.typ;
+            IF (t.kind IN {AST.typeRecord, AST.typeArray}) & (f.kind # AST.declVarParam) THEN
+              GenStr("const ");
+            END;
+            IF AST.IsOpenArray(t) THEN
+              GenType(l, t.base, q, FALSE);
+            ELSE
+              GenType(l, t, q, FALSE);
+            END;
+            IF (t.kind = AST.typeRecord) OR AST.IsOpenArray(t) THEN
+              GenStr(" *");
+            END;
+            IF AST.IsOpenArray(t) THEN
+              GenStr(", size_t");
+            END;
+            IF f.next.kind # AST.declEND THEN
+              GenStr(", ");
+            END;
+            f := f.next;
+          END;
+        END;
+        GenStr(")");
+    END;
+  ELSE
+    GenQName(l, t.decl.qname);
+    GenStr(" ");
+    GenQName(l, name);
+  END;
+END GenType;
+
+PROCEDURE GenTypedef(l :Lex.Lexer; d :AST.Decl);
+BEGIN
+  IF d.typ.kind # AST.typeNil THEN
+    GenI;
+    GenStr("typedef ");
+    GenType(l, d.typ, d.qname, TRUE);
+    GenStr(";");
+    GenLn;
+  END;
+END GenTypedef;
+
+PROCEDURE GenVar(l :Lex.Lexer; d :AST.Decl);
+BEGIN
+  GenType(l, d.typ, d.qname, FALSE);
+  GenStr(";");
+  GenLn;
+END GenVar;
+
+PROCEDURE GenProc(l :Lex.Lexer; d :AST.Decl);
+BEGIN
+  Out.Str("Proc: ");
   Lex.OutStr(l, d.qname.moduleName);
   Out.Str("_");
   Lex.OutStr(l, d.qname.name);
   Out.PrintLn(".");
+END GenProc;
+
+PROCEDURE Generate*(l :Lex.Lexer; d :AST.Decl);
+BEGIN
+  IF d.nesting = 0 THEN
+    CASE d.kind OF
+      AST.declType: GenTypedef(l, d);
+    | AST.declVar: GenVar(l, d);
+    | AST.declProcedure: GenProc(l, d);
+    END;
+  END;
 END Generate;
 
+BEGIN
+  indent := 0
 END CCodegen.

@@ -89,6 +89,8 @@ BEGIN
   d.expr := NIL;
   d.body := NIL;
   d.next := NIL;
+  d.nesting := 0;
+  d.procVars := NIL;
   d.exported := FALSE;
   d.state := stateUnresolved;
 END NewDecl;
@@ -288,6 +290,8 @@ VAR
   e :AST.Expr;
 BEGIN
   AST.NewExpr(e, AST.exprBuiltin, nilType);
+  e.iVal := AST.builtinAbs;
+  e.rhs := args;
   IF (args = NIL) OR (args.next # NIL) THEN
     Lex.ErrorLn(l, "ABS expects 1 argument");
   END;
@@ -304,23 +308,46 @@ VAR
   e :AST.Expr;
 BEGIN
   AST.NewExpr(e, AST.exprBuiltin, nilType);
+  e.iVal := AST.builtinInc;
+  e.rhs := args;
   IF (args = NIL) OR ((args.next # NIL) & (args.next.next # NIL)) THEN
-    Lex.ErrorLn(l, "INC/DEC expects 1 or 2 arguments");
+    Lex.ErrorLn(l, "INC expects 1 or 2 arguments");
   END;
   IF ~args.assignable THEN
-    Lex.ErrorLn(l, "First argument to INC/DEC must be assignable");
+    Lex.ErrorLn(l, "First argument to INC must be assignable");
   END;
   IF (args.next # NIL) & (args.next.typ.kind # AST.typeInteger) THEN
-    Lex.ErrorLn(l, "Second arg to INC/DEC must be an INTEGER");
+    Lex.ErrorLn(l, "Second arg to INC must be an INTEGER");
   END;
   RETURN e
 END builtinInc;
+
+PROCEDURE builtinDec(l :Lex.Lexer; args :AST.Expr) :AST.Expr;
+VAR
+  e :AST.Expr;
+BEGIN
+  AST.NewExpr(e, AST.exprBuiltin, nilType);
+  e.iVal := AST.builtinDec;
+  e.rhs := args;
+  IF (args = NIL) OR ((args.next # NIL) & (args.next.next # NIL)) THEN
+    Lex.ErrorLn(l, "DEC expects 1 or 2 arguments");
+  END;
+  IF ~args.assignable THEN
+    Lex.ErrorLn(l, "First argument to DEC must be assignable");
+  END;
+  IF (args.next # NIL) & (args.next.typ.kind # AST.typeInteger) THEN
+    Lex.ErrorLn(l, "Second arg to DEC must be an INTEGER");
+  END;
+  RETURN e
+END builtinDec;
 
 PROCEDURE builtinAssert(l :Lex.Lexer; args :AST.Expr) :AST.Expr;
 VAR
   e :AST.Expr;
 BEGIN
   AST.NewExpr(e, AST.exprBuiltin, nilType);
+  e.iVal := AST.builtinAssert;
+  e.rhs := args;
   IF (args = NIL) OR (args.next # NIL) THEN
     Lex.ErrorLn(l, "ASSERT expects 1 argument");
   END;
@@ -337,6 +364,8 @@ VAR
   e :AST.Expr;
 BEGIN
   AST.NewExpr(e, AST.exprBuiltin, nilType);
+  e.iVal := AST.builtinOrd;
+  e.rhs := args;
   IF (args = NIL) OR (args.next # NIL) THEN
     Lex.ErrorLn(l, "ORD expects 1 argument");
   END;
@@ -354,6 +383,8 @@ VAR
   e :AST.Expr;
 BEGIN
   AST.NewExpr(e, AST.exprBuiltin, nilType);
+  e.iVal := AST.builtinChr;
+  e.rhs := args;
   IF (args = NIL) OR (args.next # NIL) THEN
     Lex.ErrorLn(l, "CHR expects 1 argument");
   END;
@@ -370,6 +401,8 @@ VAR
   e :AST.Expr;
 BEGIN
   AST.NewExpr(e, AST.exprBuiltin, nilType);
+  e.iVal := AST.builtinFlt;
+  e.rhs := args;
   IF (args = NIL) OR (args.next # NIL) THEN
     Lex.ErrorLn(l, "FLT expects 1 argument");
   END;
@@ -386,6 +419,8 @@ VAR
   e :AST.Expr;
 BEGIN
   AST.NewExpr(e, AST.exprBuiltin, nilType);
+  e.iVal := AST.builtinNew;
+  e.rhs := args;
   IF (args = NIL) OR (args.next # NIL) THEN
     Lex.ErrorLn(l, "NEW expects 1 argument");
   END;
@@ -422,7 +457,7 @@ BEGIN
     (* Builins *)
     AddBuiltin(l, Lex.Intern(l, "ABS"), builtinAbs);
     AddBuiltin(l, Lex.Intern(l, "INC"), builtinInc);
-    AddBuiltin(l, Lex.Intern(l, "DEC"), builtinInc);
+    AddBuiltin(l, Lex.Intern(l, "DEC"), builtinDec);
     AddBuiltin(l, Lex.Intern(l, "ASSERT"), builtinAssert);
     AddBuiltin(l, Lex.Intern(l, "ORD"), builtinOrd);
     AddBuiltin(l, Lex.Intern(l, "CHR"), builtinChr);

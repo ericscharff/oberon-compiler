@@ -12,6 +12,7 @@ VAR
   l :Lex.Lexer;
   importCache :ARRAY 128 OF CachedImport;
   importCacheEnd :INTEGER;
+  nesting :INTEGER;
   lastModuleDecls :AST.Decl;
   ParseExpression :PROCEDURE () :AST.Expr;
   ParseStatementSequence :PROCEDURE () :AST.Stmt;
@@ -320,11 +321,11 @@ BEGIN
   WHILE MatchToken(Lex.tELSIF) DO
     cond := ParseBooleanExpression();
     ExpectToken(Lex.tTHEN);
-    tail.next := AST.NewStmtElsIf(cond, ParseStatementSequence());
-    tail := tail.next;
+    tail.elsifs := AST.NewStmtElsIf(cond, ParseStatementSequence());
+    tail := tail.elsifs;
   END;
   IF MatchToken(Lex.tELSE) THEN
-    tail.next := AST.NewStmtElse(ParseStatementSequence());
+    tail.elsifs := AST.NewStmtElse(ParseStatementSequence());
   END;
   ExpectToken(Lex.tEND);
   RETURN s
@@ -403,9 +404,9 @@ BEGIN
       head := s;
       tail := head;
     ELSE
-      tail.next := s;
+      tail.elsifs := s;
       IF s # NIL THEN
-        tail := tail.next;
+        tail := tail.elsifs;
       END;
     END;
   END;
@@ -427,8 +428,8 @@ BEGIN
   WHILE MatchToken(Lex.tELSIF) DO
     cond := ParseBooleanExpression();
     ExpectToken(Lex.tDO);
-    tail.next := AST.NewStmtElsIf(cond, ParseStatementSequence());
-    tail := tail.next;
+    tail.elsifs := AST.NewStmtElsIf(cond, ParseStatementSequence());
+    tail := tail.elsifs;
   END;
   ExpectToken(Lex.tEND);
   RETURN s
@@ -459,7 +460,7 @@ BEGIN
   startExpr := AST.NewExprAssign(l, startExpr, ParseExpression());
   ExpectToken(Lex.tTO);
   (* We attempt to assign the end and by value to start, To ensure type *)
-  (* compatability, but tHen throw out the assignment bit, so that at   *)
+  (* compatability, but then throw out the assignment bit, so that at   *)
   (* the end, start is an assignment, end is a value (expr), and by is  *)
   (* a value (expr).                                                    *)
   endExpr := AST.NewExprAssign(l, startExpr.lhs, ParseExpression());
@@ -555,6 +556,7 @@ VAR
 BEGIN
   n := ExpectIdentifier();
   d := Decls.AddScopeDecl(l, n);
+  d.nesting := nesting;
   IF MatchToken(Lex.tSTAR) THEN
     d.exported := TRUE;
   END;
@@ -657,7 +659,7 @@ BEGIN
   (* could just as easily be :<TYPE> where TYPE is any type. Oberon-07   *)
   (* requires that the type be an identifier, although the "official"    *)
   (* Oberon-07 compiler (in Project Oberon 2013) actually allows         *)
-  (* procedures here, *)
+  (* procedures here,                                                    *)
   IF MatchToken(Lex.tARRAY) THEN
     (* ARRAY OF ... *)
     ExpectToken(Lex.tOF);
@@ -680,6 +682,7 @@ VAR
   t :AST.Type;
 BEGIN
   t := Decls.NewProcedureType();
+  t.base := Decls.nilType;
   IF MatchToken(Lex.tLPAREN) THEN
     IF IsToken(Lex.tVAR) OR IsToken(Lex.tIDENT) THEN
       ParseFPSection(t);
@@ -690,8 +693,6 @@ BEGIN
     ExpectToken(Lex.tRPAREN);
     IF MatchToken(Lex.tCOLON) THEN
       t.base := ParseQualidentAndGetType();
-    ELSE
-      t.base := Decls.nilType;
     END;
   END;
   Decls.CountProcedureArgs(t);
@@ -780,6 +781,7 @@ VAR
   oldScope :AST.Decl;
 BEGIN
   oldScope := Decls.OpenScope();
+  INC(nesting);
   Decls.AddFormalParamsToScope(l, procDecl);
   ParseDeclarationSequence;
   IF MatchToken(Lex.tBEGIN) THEN
@@ -789,6 +791,8 @@ BEGIN
     procDecl.expr := ParseExpression();
   END;
   ExpectToken(Lex.tEND);
+  procDecl.procVars := Decls.CurrentScope();
+  DEC(nesting);
   Decls.CloseScope(oldScope);
 END ParseProcedureBody;
 
@@ -901,6 +905,7 @@ VAR
   d               :AST.Decl;
 BEGIN
   Decls.InitGlobalScope(l);
+  nesting := 0;
   ExpectToken(Lex.tMODULE);
   s := ExpectIdentifier();
   oldModule := AST.SetModuleName(s);
