@@ -193,9 +193,33 @@ BEGIN
 END GenVar;
 
 PROCEDURE GenProc(l :Lex.Lexer; d :AST.Decl);
+VAR
+  p :AST.Decl;
+  q :AST.QName;
 BEGIN
+  q.moduleName := 0;
   GenType(l, d.typ, d.qname, FALSE, TRUE);
-  GenLn
+  GenStr(" {");
+  GenLn;
+  INC(indent);
+  IF d.procVars # NIL THEN
+    p := d.procVars;
+    WHILE p.kind # AST.declEND DO
+      IF p.kind = AST.declVar THEN
+        q.name := p.qname.name;
+        GenI;
+        GenType(l, p.typ, q, FALSE, FALSE);
+        (* Add initializers IF necessary *)
+        GenStr(";");
+        GenLn;
+      END;
+      p := p.next;
+    END;
+  END;
+  DEC(indent);
+  GenI;
+  GenStr("}");
+  GenLn;
 END GenProc;
 
 PROCEDURE Generate*(l :Lex.Lexer; d :AST.Decl);
