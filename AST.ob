@@ -970,6 +970,17 @@ BEGIN
   RETURN s
 END NewStmtEmpty;
 
+PROCEDURE ValidateReturnStatement*(l :Lex.Lexer; procDecl :Decl; e :Expr) :Expr;
+BEGIN
+  ASSERT(procDecl.kind = declProcedure);
+  ASSERT(procDecl.typ.kind = typeProcedure);
+  IF procDecl.typ.base.kind = typeNil THEN
+    Lex.ErrorLn(l, "RETURN statement unexpected");
+  END;
+  ExpectType(l, e, procDecl.typ.base.kind);
+  RETURN e
+END ValidateReturnStatement;
+
 (*
 PROCEDURE DumpDecl*(l :Lex.Lexer; d :Decl);
 BEGIN

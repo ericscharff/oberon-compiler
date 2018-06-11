@@ -788,7 +788,7 @@ BEGIN
     procDecl.body := ParseStatementSequence();
   END;
   IF MatchToken(Lex.tRETURN) THEN
-    procDecl.expr := ParseExpression();
+    procDecl.expr := AST.ValidateReturnStatement(l, procDecl, ParseExpression());
   END;
   ExpectToken(Lex.tEND);
   procDecl.procVars := Decls.CurrentScope();
