@@ -210,6 +210,7 @@ VAR
   t :AST.Type;
 BEGIN
   NewType(t, AST.typeProcedure);
+  t.base := nilType;
   RETURN t
 END NewProcedureType;
 

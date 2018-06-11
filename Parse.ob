@@ -682,7 +682,6 @@ VAR
   t :AST.Type;
 BEGIN
   t := Decls.NewProcedureType();
-  t.base := Decls.nilType;
   IF MatchToken(Lex.tLPAREN) THEN
     IF IsToken(Lex.tVAR) OR IsToken(Lex.tIDENT) THEN
       ParseFPSection(t);

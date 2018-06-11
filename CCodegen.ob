@@ -38,7 +38,7 @@ BEGIN
   END;
 END GenQName;
 
-PROCEDURE GenType(l :Lex.Lexer; t :AST.Type; name :AST.QName; skipDecl :BOOLEAN);
+PROCEDURE GenType(l :Lex.Lexer; t :AST.Type; name :AST.QName; skipDecl, procDecl :BOOLEAN);
 VAR
   f :AST.Decl;
   q :AST.QName;
@@ -65,7 +65,7 @@ BEGIN
         GenQName(l, name);
     | AST.typePointer:
         IF t.base.decl = NIL THEN
-          GenType(l, t.base, q, FALSE);
+          GenType(l, t.base, q, FALSE, FALSE);
         ELSE
           GenStr("struct ");
           GenQName(l, t.base.decl.qname);
@@ -77,7 +77,7 @@ BEGIN
         WHILE p.kind = AST.typeArray DO
           p := p.base;
         END;
-        GenType(l, p, name, FALSE);
+        GenType(l, p, name, FALSE, FALSE);
         p := t;
         WHILE (p.kind = AST.typeArray) DO
           GenStr("[");
@@ -99,7 +99,7 @@ BEGIN
           (* Drop package from field name *)
           q.name := f.qname.name;
           GenI;
-          GenType(l, f.typ, q, FALSE);
+          GenType(l, f.typ, q, FALSE, FALSE);
           GenStr(";");
           GenLn;
           f := f.next;
@@ -108,32 +108,56 @@ BEGIN
         GenI; GenStr("} "); GenQName(l, name);
     | AST.typeProcedure:
         IF t.base.kind = AST.typeNil THEN
-          GenStr("void")
+          GenStr("void ")
         ELSE
-          GenType(l, t.base, q, FALSE);
+          GenType(l, t.base, q, FALSE, FALSE);
         END;
-        GenStr(" (*");
-        GenQName(l, name);
-        GenStr(")(");
+        IF procDecl THEN
+          GenQName(l, name);
+        ELSE
+          GenStr(" (*");
+          GenQName(l, name);
+          GenStr(")");
+        END;
+        GenStr("(");
         IF t.fields = NIL THEN
           GenStr("void"); (* For C++, this would be empty *)
         ELSE
           f := t.fields;
           WHILE f.kind # AST.declEND DO
             t := f.typ;
+            IF procDecl THEN
+              q.name := f.qname.name;
+            END;
             IF (t.kind IN {AST.typeRecord, AST.typeArray}) & (f.kind # AST.declVarParam) THEN
               GenStr("const ");
             END;
-            IF AST.IsOpenArray(t) THEN
-              GenType(l, t.base, q, FALSE);
-            ELSE
-              GenType(l, t, q, FALSE);
-            END;
-            IF (t.kind = AST.typeRecord) OR AST.IsOpenArray(t) THEN
+            IF t.kind = AST.typeRecord THEN
+              q.name := 0;
+              GenType(l, t, q, FALSE, FALSE);
               GenStr(" *");
+              IF procDecl THEN
+                q.name := f.qname.name;
+                GenQName(l, q);
+              END;
+            ELSIF (t.kind = AST.typeRecord) OR AST.IsOpenArray(t) THEN
+              q.name := 0;
+              GenType(l, t.base, q, FALSE, FALSE);
+              GenStr(" *");
+              IF procDecl THEN
+                q.name := f.qname.name;
+                GenQName(l, q);
+              END;
+            ELSE
+              GenType(l, t, q, FALSE, FALSE);
             END;
             IF AST.IsOpenArray(t) THEN
               GenStr(", size_t");
+              IF procDecl THEN
+                GenStr(" ");
+                GenQName(l, q);
+                GenStr("__len");
+              END;
             END;
             IF f.next.kind # AST.declEND THEN
               GenStr(", ");
@@ -155,7 +179,7 @@ BEGIN
   IF d.typ.kind # AST.typeNil THEN
     GenI;
     GenStr("typedef ");
-    GenType(l, d.typ, d.qname, TRUE);
+    GenType(l, d.typ, d.qname, TRUE, FALSE);
     GenStr(";");
     GenLn;
   END;
@@ -163,18 +187,15 @@ END GenTypedef;
 
 PROCEDURE GenVar(l :Lex.Lexer; d :AST.Decl);
 BEGIN
-  GenType(l, d.typ, d.qname, FALSE);
+  GenType(l, d.typ, d.qname, FALSE, FALSE);
   GenStr(";");
   GenLn;
 END GenVar;
 
 PROCEDURE GenProc(l :Lex.Lexer; d :AST.Decl);
 BEGIN
-  Out.Str("Proc: ");
-  Lex.OutStr(l, d.qname.moduleName);
-  Out.Str("_");
-  Lex.OutStr(l, d.qname.name);
-  Out.PrintLn(".");
+  GenType(l, d.typ, d.qname, FALSE, TRUE);
+  GenLn
 END GenProc;
 
 PROCEDURE Generate*(l :Lex.Lexer; d :AST.Decl);
