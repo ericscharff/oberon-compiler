@@ -962,7 +962,7 @@ PROCEDURE TestParse;
 VAR
   p :Decls.ReachableDecl;
 BEGIN
-  Lex.LexerInitFromFile(l, "Parse.ob");
+  Lex.LexerInitFromFile(l, "FibFact.ob");
   Lex.NextToken(l);
   ParseModule;
   Decls.VisitDecl(lastModuleDecls);

@@ -28,17 +28,17 @@ CONST
   declBuiltin*   = 9;
   declEND* = 1001;
 
-  exprVal*         = 1; (* CONST value *)
-  exprUnary*       = 2;
-  exprBinary*      = 3;
-  exprIdentRef*    = 4;
-  exprProcCall     = 5;
-  exprFieldRef     = 6;
-  exprPointerDeref = 7;
-  exprArrayRef     = 8;
-  exprTypeGuard    = 9;
-  exprBuiltin*     = 10;
-  exprAssign       = 11;
+  exprVal*          = 1; (* CONST value *)
+  exprUnary*        = 2;
+  exprBinary*       = 3;
+  exprIdentRef*     = 4;
+  exprProcCall*     = 5;
+  exprFieldRef*     = 6;
+  exprPointerDeref* = 7;
+  exprArrayRef*     = 8;
+  exprTypeGuard*    = 9;
+  exprBuiltin*      = 10;
+  exprAssign*       = 11;
 
   builtinAbs*    = 1;
   builtinAssert* = 2;
@@ -49,17 +49,17 @@ CONST
   builtinNew*    = 7;
   builtinOrd*    = 8;
 
-  stmtAssign   = 1;
-  stmtProcCall = 2;
-  stmtIf       = 3;
-  stmtWhile    = 4;
-  stmtRepeat   = 5;
-  stmtFor      = 6;
-  stmtCase     = 7;  (* Top level CASE node    *)
-  stmtCaseItem = 8;  (* Individual CASE clause *)
-  stmtElsIf    = 9;  (* ELSIF clauses          *)
-  stmtElse     = 10; (* ELSE for IF statement  *)
-  stmtEmpty    = 11; (* Placeholder            *)
+  stmtAssign*   = 1;
+  stmtProcCall* = 2;
+  stmtIf*       = 3;
+  stmtWhile*    = 4;
+  stmtRepeat*   = 5;
+  stmtFor*      = 6;
+  stmtCase*     = 7;  (* Top level CASE node    *)
+  stmtCaseItem* = 8;  (* Individual CASE clause *)
+  stmtElsIf*    = 9;  (* ELSIF clauses          *)
+  stmtElse*     = 10; (* ELSE for IF statement  *)
+  stmtEmpty*    = 11; (* Placeholder            *)
 
 TYPE
   StringId         = Lex.PoolIndex;
@@ -158,14 +158,14 @@ TYPE
                            (* for fieldref, StringId OF field name         *)
                            (* for PROCEDURE call, number OF actual params  *)
                            (* for builtin procedure, unique identifier     *)
-    rVal   :REAL;
+    rVal*  :REAL;
     setVal :SET;
     assignable* :BOOLEAN;
   END;
 
   StmtKind* = INTEGER;
   StmtDesc  = RECORD
-    kind    :StmtKind;
+    kind*   :StmtKind;
     cond*   :Expr;     (* For assignment, this is an exprAssign        *)
                        (* For WHILE and REPEAT, this is loop condition *)
                        (* For ELSIF, this is a single ELSIF condition  *)

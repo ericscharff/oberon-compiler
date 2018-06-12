@@ -24,6 +24,25 @@ VAR
   b :BYTE;
   pOne :TakeOneReturnOne;
 
+PROCEDURE TT(a :INTEGER; VAR s :CHAR; moo :R; VAR moo2 :R2);
+END TT;
+
+PROCEDURE W2(VAR myr2 :R2);
+VAR
+  aa :INTEGER;
+  bb :ARRAY 2 OF CHAR;
+  myr1 :R;
+BEGIN
+  TT(aa, bb[0], myr1, myr2);
+END W2;
+
+PROCEDURE Wowza;
+VAR
+  myr2 :R2;
+BEGIN
+  W2(myr2)
+END Wowza;
+
 PROCEDURE Trace(s :ARRAY OF CHAR);
 BEGIN
   IF FALSE THEN Out.PrintLn(s) END
@@ -201,6 +220,7 @@ BEGIN
 END TestCase;
 
 BEGIN
+  Wowza;
   TestBinop;
   TestFact;
   TestSet;

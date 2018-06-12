@@ -48,6 +48,12 @@ void Out_Real(float r) {
   }
 }
 
+void Out_Char(char c) {
+  if (!Out_muted) {
+    putchar(c);
+  }
+}
+
 void Out_Str(const char *s, size_t q) {
   (void)q;
   if (!Out_muted) {

@@ -15,6 +15,11 @@ BEGIN
   Out.Int(i);
 END GenInt;
 
+PROCEDURE GenReal(r :REAL);
+BEGIN
+  Out.Real(r);
+END GenReal;
+
 PROCEDURE GenLn;
 BEGIN
   Out.Ln
@@ -132,7 +137,7 @@ BEGIN
             IF (t.kind IN {AST.typeRecord, AST.typeArray}) & (f.kind # AST.declVarParam) THEN
               GenStr("const ");
             END;
-            IF t.kind = AST.typeRecord THEN
+            IF (t.kind = AST.typeRecord) OR (f.kind = AST.declVarParam) THEN
               q.name := 0;
               GenType(l, t, q, FALSE, FALSE);
               GenStr(" *");
@@ -173,6 +178,178 @@ BEGIN
     GenQName(l, name);
   END;
 END GenType;
+
+PROCEDURE GenVal(l :Lex.Lexer; e :AST.Expr);
+BEGIN
+  ASSERT(e.typ # NIL);
+  IF e.typ.kind = AST.typeNil THEN
+    GenStr("0 /*NULL*/");
+  ELSIF e.typ.kind IN {AST.typeInteger, AST.typeBoolean, AST.typeSet} THEN
+    GenInt(e.iVal);
+  ELSIF e.typ.kind = AST.typeReal THEN
+    GenReal(e.rVal);
+  ELSIF e.typ.kind = AST.typeString THEN
+    Lex.OutStrEscaped(l, e.iVal);
+  ELSE
+    ASSERT(FALSE);
+  END;
+END GenVal;
+
+PROCEDURE GenExpr(l :Lex.Lexer; e :AST.Expr);
+VAR
+  q      :AST.QName;
+  formal :AST.Decl;
+BEGIN
+  ASSERT(e # NIL);
+  ASSERT(e.kind >= AST.exprVal);
+  ASSERT(e.kind <= AST.exprAssign);
+  CASE e.kind OF
+    AST.exprVal:
+      GenVal(l, e);
+  | AST.exprUnary:
+      GenStr("TODO UNARY");
+  | AST.exprBinary:
+      GenStr("TODO BINARY");
+  | AST.exprIdentRef:
+      IF (e.decl.kind IN {AST.declVar, AST.declProcedure}) & (e.decl.nesting = 0) THEN
+        q.moduleName := e.decl.qname.moduleName;
+      ELSE
+        (* Local variables don't get a prefix, just for readability *)
+        q.moduleName := 0;
+      END;
+      q.name := e.decl.qname.name;
+      IF (e.decl.kind = AST.declVarParam) OR
+         ((e.decl.kind = AST.declParam) & (e.typ.kind = AST.typeRecord)) THEN
+        GenStr("(*");
+        GenQName(l, q);
+        GenStr(")");
+      ELSE
+        GenQName(l, q);
+      END;
+  | AST.exprProcCall:
+      GenExpr(l, e.lhs);
+      GenStr("(");
+      formal := e.lhs.typ.fields;
+      e := e.rhs;
+      WHILE e # NIL DO
+        IF e.typ.kind = AST.typeArray THEN
+          (* Arrays are always passed by pointer, no special procesing *)
+          GenExpr(l, e);
+        ELSIF e.typ.kind = AST.typeRecord THEN
+          (* Records are always passed by pointer. If the record is *)
+          (* already a parameter, no need to get its address.       *)
+	  IF (e.kind = AST.exprIdentRef) &
+             (e.decl.kind IN {AST.declParam, AST.declVarParam}) THEN
+            (* Source is already a pointer *)
+            GenExpr(l, e);
+          ELSE
+            (* Source is a variable, or the field of something.     *)
+            GenStr("&(");
+            GenExpr(l, e);
+            GenStr(")");
+          END;
+        ELSE
+          (* All other (base) types either passed directly, or by   *)
+          (* pointer if they are var parameters                     *)
+          IF formal.kind = AST.declVarParam THEN
+            GenStr("&(");
+            GenExpr(l, e);
+            GenStr(")");
+          ELSE
+            ASSERT(formal.kind = AST.declParam);
+            GenExpr(l, e);
+          END;
+        END;
+        IF e.next # NIL THEN
+          GenStr(", ");
+        END;
+        e := e.next;
+        formal := formal.next;
+      END;
+      GenStr(")");
+  | AST.exprFieldRef:
+      GenStr("TODO FIELD_REF");
+  | AST.exprPointerDeref:
+      GenStr("TODO POINTER_DEREF");
+  | AST.exprArrayRef:
+      GenStr("TODO ARRAY_REF");
+  | AST.exprTypeGuard:
+      GenStr("TODO TYPE_GUARD");
+  | AST.exprBuiltin:
+      GenStr("TODO BUILTIN");
+  | AST.exprAssign:
+      (* TODO - this isn't right becuase params are special *)
+      GenExpr(l, e.lhs);
+      GenStr(" = ");
+      GenExpr(l, e.rhs);
+  END;
+END GenExpr;
+
+PROCEDURE GenParenExpr(l :Lex.Lexer; e :AST.Expr);
+BEGIN
+  IF e.kind = AST.exprBinary THEN
+    GenExpr(l, e);
+  ELSE
+    GenStr("(");
+    GenExpr(l, e);
+    GenStr(")");
+  END;
+END GenParenExpr;
+
+PROCEDURE GenStatements(l :Lex.Lexer; s :AST.Stmt);
+BEGIN
+  WHILE s # NIL DO
+    ASSERT(s.kind >= AST.stmtAssign);
+    ASSERT(s.kind <= AST.stmtEmpty);
+    GenI;
+    CASE s.kind OF
+      AST.stmtAssign, AST.stmtProcCall:
+        GenExpr(l, s.cond);
+        GenStr(";");
+    | AST.stmtIf:
+        GenStr("if ");
+        GenParenExpr(l, s.cond);
+        GenStr(" {");
+        GenLn;
+        INC(indent);
+        GenStatements(l, s.body);
+        DEC(indent);
+        GenStatements(l, s.elsifs);
+        GenI;
+        GenStr("}");
+    | AST.stmtWhile:
+        GenStr("TODO WHILE");
+    | AST.stmtRepeat:
+        GenStr("TODO REPEAT");
+    | AST.stmtFor:
+        GenStr("TODO FOR");
+    | AST.stmtCase:
+        GenStr("TODO CASE");
+    | AST.stmtCaseItem:
+        GenStr("TODO CASE_ITEM");
+    | AST.stmtElsIf:
+        ASSERT(s.next = NIL);
+        GenStr("} else if ");
+        GenParenExpr(l, s.cond);
+        GenStr(" {");
+        GenLn;
+        INC(indent);
+        GenStatements(l, s.body);
+        DEC(indent);
+        GenStatements(l, s.elsifs);
+    | AST.stmtElse:
+        ASSERT(s.elsifs = NIL);
+        ASSERT(s.next = NIL);
+        GenStr("} else {");
+        GenLn;
+        INC(indent);
+        GenStatements(l, s.body);
+        DEC(indent);
+    END;
+    GenLn;
+    s := s.next;
+  END;
+END GenStatements;
 
 PROCEDURE GenTypedef(l :Lex.Lexer; d :AST.Decl);
 BEGIN
@@ -222,6 +399,14 @@ BEGIN
       END;
       p := p.next;
     END;
+  END;
+  GenStatements(l, d.body);
+  IF d.expr # NIL THEN
+    GenI;
+    GenStr("return (");
+    GenExpr(l, d.expr);
+    GenStr(");");
+    GenLn;
   END;
   DEC(indent);
   GenI;

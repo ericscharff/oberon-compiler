@@ -244,6 +244,30 @@ BEGIN
   Out.StrI(l.sp.buf, s);
 END OutStr;
 
+PROCEDURE OutStrEscaped*(l :Lexer; s :PoolIndex);
+VAR
+  c :CHAR;
+BEGIN
+  Out.Str(22X);
+  WHILE l.sp.buf[s] # 0X DO
+    c := l.sp.buf[s];
+    IF c = "\" THEN
+      Out.Str("\\");
+    ELSIF c = 22X THEN
+      Out.Str("\");
+      Out.Str(22X);
+    ELSIF c = 0AX THEN
+      Out.Str("\n");
+    ELSIF c = 09X THEN
+      Out.Str("\t");
+    ELSE
+      Out.Char(c);
+    END;
+    INC(s);
+  END;
+  Out.Str(22X);
+END OutStrEscaped;
+
 PROCEDURE IsOneChar*(l :Lexer; s :PoolIndex) :BOOLEAN;
 BEGIN
   RETURN (l.sp.buf[s] = 0X) OR (l.sp.buf[s+1] = 0X)
