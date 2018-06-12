@@ -205,12 +205,19 @@ BEGIN
   IF d.procVars # NIL THEN
     p := d.procVars;
     WHILE p.kind # AST.declEND DO
+      q.name := p.qname.name;
       IF p.kind = AST.declVar THEN
-        q.name := p.qname.name;
         GenI;
         GenType(l, p.typ, q, FALSE, FALSE);
-        (* Add initializers IF necessary *)
         GenStr(";");
+        GenLn;
+        (* TODO - Add initializers if necessary *)
+      ELSIF AST.IsOpenArray(p.typ) THEN
+        (* Generate code to avoid unused variable warnings *)
+        GenI;
+        GenStr("(void)");
+        GenQName(l, q);
+        GenStr("__len;");
         GenLn;
       END;
       p := p.next;
