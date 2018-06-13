@@ -331,7 +331,7 @@ END IsConst;
 PROCEDURE CoerceToChar(l :Lex.Lexer; e :Expr; charType :Type);
 BEGIN
   ASSERT(IsConst(e));
-  ASSERT(e.kind = typeString);
+  ASSERT(e.typ.kind = typeString);
   ASSERT(Lex.IsOneChar(l, e.iVal));
   e.typ := charType;
   e.iVal := Lex.FirstChar(l, e.iVal);
@@ -744,6 +744,12 @@ BEGIN
         IF IsConst(lhs) & IsConst(rhs) THEN
           (* evaluate *)
         END;
+        IF IsConst(lhs) & (rhs.typ.kind = typeChar) THEN
+          CoerceToChar(l, lhs, rhs.typ);
+        END;
+        IF IsConst(rhs) & (lhs.typ.kind = typeChar) THEN
+          CoerceToChar(l, rhs, lhs.typ);
+        END;
       ELSE
         Lex.ErrorLn(l, "Expected INTEGER, REAL, SET, STRING, CHAR, POINTER, or PROCEDURE");
       END;
@@ -813,6 +819,9 @@ BEGIN
   IF ExprCompatable(l, Lex.tASSIGN, lValue, rValue) THEN
     e.lhs := lValue;
     e.rhs := rValue;
+  END;
+  IF IsConst(rValue) & (lValue.typ.kind = typeChar) THEN
+    CoerceToChar(l, rValue, lValue.typ);
   END;
   RETURN e
 END NewExprAssign;
