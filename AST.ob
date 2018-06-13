@@ -162,7 +162,7 @@ TYPE
                            (* for PROCEDURE call, number OF actual params  *)
                            (* for builtin procedure, unique identifier     *)
     rVal*  :REAL;
-    setVal :SET;
+    setVal*:SET;
     assignable* :BOOLEAN;
   END;
 

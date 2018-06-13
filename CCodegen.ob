@@ -246,8 +246,10 @@ BEGIN
   ASSERT(e.typ # NIL);
   IF e.typ.kind = AST.typeNil THEN
     GenStr("0 /*NULL*/");
-  ELSIF e.typ.kind IN {AST.typeInteger, AST.typeBoolean, AST.typeChar, AST.typeSet} THEN
+  ELSIF e.typ.kind IN {AST.typeInteger, AST.typeBoolean, AST.typeChar} THEN
     GenInt(e.iVal);
+  ELSIF e.typ.kind = AST.typeSet THEN
+    GenInt(ORD(e.setVal));
   ELSIF e.typ.kind = AST.typeReal THEN
     GenReal(e.rVal);
   ELSIF e.typ.kind = AST.typeString THEN
@@ -296,7 +298,7 @@ BEGIN
       ELSE
         (* Base types *)
         CASE e.op OF
-          Lex.tMINUS: GenStr("-"); GenExpr(l, e.lhs);
+          Lex.tMINUS: GenStr("-("); GenExpr(l, e.lhs); GenStr(")");
         | Lex.tPLUS: GenExpr(l, e.lhs);
         | Lex.tTILDE: GenStr("!("); GenExpr(l, e.lhs); GenStr(")");
         | Lex.tAsSetElt: GenStr("(1 << "); GenExpr(l, e.lhs); GenStr(")");
@@ -612,7 +614,7 @@ BEGIN
         GenStr("TODO REPEAT");
     | AST.stmtFor:
         (* Cond is an assign, so cond.lhs is the LCV, and cond.rhs the init *)
-        GenStr("for(");
+        GenStr("for (");
         GenExpr(l, s.cond);
         GenStr("; ");
         GenExpr(l, s.cond.lhs);
