@@ -156,6 +156,7 @@ TYPE
     decl*  :Decl;          (* for identRef and typeguard                   *)
     iVal*  :INTEGER;       (* for INTEGER, BOOLEAN, STRING (StringId)      *)
                            (* for fieldref, StringId OF field name         *)
+                           (* for CHAR, the character itself               *)
                            (* for PROCEDURE call, number OF actual params  *)
                            (* for builtin procedure, unique identifier     *)
     rVal*  :REAL;
@@ -325,6 +326,17 @@ PROCEDURE IsConst*(e :Expr) :BOOLEAN;
 BEGIN
   RETURN e.kind = exprVal
 END IsConst;
+
+(* Convert a string constant into a character constant *)
+PROCEDURE CoerceToChar(l :Lex.Lexer; e :Expr; charType :Type);
+BEGIN
+  ASSERT(IsConst(e));
+  ASSERT(e.kind = typeString);
+  ASSERT(Lex.IsOneChar(l, e.iVal));
+  e.typ := charType;
+  e.iVal := Lex.FirstChar(l, e.iVal);
+END CoerceToChar;
+
 
 PROCEDURE NewExpr*(VAR e :Expr; kind :ExprKind; typ :Type);
 BEGIN
@@ -714,6 +726,12 @@ BEGIN
           (lhs.typ.kind IN {typeInteger, typeReal, typeSet, typeString, typeChar})) THEN
         IF IsConst(lhs) & IsConst(rhs) THEN
           (* evaluate *)
+        END;
+        IF IsConst(lhs) & (rhs.typ.kind = typeChar) THEN
+          CoerceToChar(l, lhs, rhs.typ);
+        END;
+        IF IsConst(rhs) & (lhs.typ.kind = typeChar) THEN
+          CoerceToChar(l, rhs, lhs.typ);
         END;
       ELSE
         Lex.ErrorLn(l, "Expected INTEGER, REAL, SET, STRING, or CHAR");

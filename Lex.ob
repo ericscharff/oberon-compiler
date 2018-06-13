@@ -248,6 +248,11 @@ BEGIN
   RETURN len
 END StringLenI;
 
+PROCEDURE FirstChar*(l :Lexer; s :PoolIndex) :INTEGER;
+BEGIN
+  RETURN ORD(l.sp.buf[s])
+END FirstChar;
+
 PROCEDURE OutStr*(l :Lexer; s :PoolIndex);
 BEGIN
   Out.StrI(l.sp.buf, s);
