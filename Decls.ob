@@ -95,6 +95,7 @@ BEGIN
   d.nesting := 0;
   d.procVars := NIL;
   d.exported := FALSE;
+  d.isNative := FALSE;
   d.state := stateUnresolved;
 END NewDecl;
 

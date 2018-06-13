@@ -97,13 +97,15 @@ TYPE
     next*     :Decl;
     qname*    :QName;
     typ*      :Type;
-    expr*     :Expr;             (* for CONST declarations           *)
-                                 (* PROCEDURE RETURN value           *)
-    body*     :Stmt;             (* PROCEDURE or MODULE body         *)
+    expr*     :Expr;             (* for CONST declarations            *)
+                                 (* PROCEDURE RETURN value            *)
+    body*     :Stmt;             (* PROCEDURE or MODULE body          *)
     exported* :BOOLEAN;
-    nesting*  :INTEGER;          (* 0=global, 1=proc, 2=nested...    *)
-    procVars* :Decl;             (* for PROCEDURE decls, local scope *)
-    resolver* :BuiltinResolver;  (* Handles native procedure calls   *)
+    nesting*  :INTEGER;          (* 0=global, 1=proc, 2=nested...     *)
+    procVars* :Decl;             (* for PROCEDURE decls, local scope  *)
+    isNative* :BOOLEAN;          (* Native procedures do not generate *)
+                                 (* code                              *)
+    resolver* :BuiltinResolver;  (* Handles native procedure calls    *)
     state*    :DeclState;
   END;
   ExprKind         = INTEGER;

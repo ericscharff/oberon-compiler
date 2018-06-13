@@ -797,13 +797,15 @@ END ParseProcedureBody;
 
 PROCEDURE ParseProcedureHeading() :AST.Decl;
 VAR
-  d :AST.Decl;
+  d        :AST.Decl;
+  isNative :BOOLEAN;
 BEGIN
-  MatchToken(Lex.tNATIVE);
+  isNative := MatchToken(Lex.tNATIVE);
   ExpectToken(Lex.tPROCEDURE);
   d := ParseIdentDef();
   d.kind := AST.declProcedure;
   d.typ := ParseFormalParameters();
+  d.isNative := isNative;
   RETURN d
 END ParseProcedureHeading;
 
@@ -990,7 +992,7 @@ BEGIN
   END;
   p := Decls.reachableDecls;
   WHILE p # NIL DO
-    IF p.d.kind = AST.declProcedure THEN
+    IF (p.d.kind = AST.declProcedure) & ~p.d.isNative THEN
       CCodegen.Generate(l, p.d);
     END;
     p := p.next;
