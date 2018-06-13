@@ -377,11 +377,10 @@ BEGIN
         | Lex.tPOUND:
             GenExpr(l, e.lhs); GenStr(" != "); GenExpr(l, e.rhs);
         | Lex.tIN:
-            GenStr("((1 << ");
+            GenStr("(1 << ");
             GenExpr(l, e.lhs);
             GenStr(") & ");
             GenExpr(l, e.rhs);
-            GenStr(")");
         | Lex.tIS:
             GenStr("does_type_extend(");
             IF e.lhs.typ.kind = AST.typePointer THEN
