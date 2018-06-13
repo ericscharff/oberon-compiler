@@ -144,25 +144,25 @@ TYPE
   the rhs is the first arg, and then follows the next chain OF those args.
   *)
   ExprDesc  = RECORD
-    kind*  :ExprKind;
-    typ*   :Type;
-    op*    :Lex.TokenKind; (* for unary, binary                            *)
-    lhs*   :Expr;          (* for unary, binary, the base expr for         *)
-                           (* arrayRef, pointerDeref, fieldRef, typeGuard, *)
-                           (* PROCEDURE call designator                    *)
-                           (* for assignnemt, lvalue                       *)
-    rhs*   :Expr;          (* for binary, also first arg PROCEDURE call    *)
-                           (* for arrayRef, expr OF ARRAY index            *)
-                           (* for assignment, rvalue                       *)
-    next*  :Expr;          (* for PROCEDURE call,next arg in list          *)
-    decl*  :Decl;          (* for identRef and typeguard                   *)
-    iVal*  :INTEGER;       (* for INTEGER, BOOLEAN, STRING (StringId)      *)
-                           (* for fieldref, StringId OF field name         *)
-                           (* for CHAR, the character itself               *)
-                           (* for PROCEDURE call, number OF actual params  *)
-                           (* for builtin procedure, unique identifier     *)
-    rVal*  :REAL;
-    setVal*:SET;
+    kind*   :ExprKind;
+    typ*    :Type;
+    op*     :Lex.TokenKind; (* for unary, binary                            *)
+    lhs*    :Expr;          (* for unary, binary, the base expr for         *)
+                            (* arrayRef, pointerDeref, fieldRef, typeGuard, *)
+                            (* PROCEDURE call designator                    *)
+                            (* for assignnemt, lvalue                       *)
+    rhs*    :Expr;          (* for binary, also first arg PROCEDURE call    *)
+                            (* for arrayRef, expr OF ARRAY index            *)
+                            (* for assignment, rvalue                       *)
+    next*   :Expr;          (* for PROCEDURE call,next arg in list          *)
+    decl*   :Decl;          (* for identRef and typeguard                   *)
+    iVal*   :INTEGER;       (* for INTEGER, BOOLEAN, STRING (StringId)      *)
+                            (* for fieldref, StringId OF field name         *)
+                            (* for CHAR, the character itself               *)
+                            (* for PROCEDURE call, number OF actual params  *)
+                            (* for builtin procedure, unique identifier     *)
+    rVal*   :REAL;
+    setVal* :SET;
     assignable* :BOOLEAN;
   END;
 
