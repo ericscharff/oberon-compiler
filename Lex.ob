@@ -239,6 +239,15 @@ BEGIN
   RETURN StringIntern(l.sp, s)
 END Intern;
 
+PROCEDURE StringLenI*(l :Lexer; s :PoolIndex) :INTEGER;
+VAR
+  len :INTEGER;
+BEGIN
+  len := 0;
+  WHILE l.sp.buf[s] # 0X DO INC(s); INC(len) END
+  RETURN len
+END StringLenI;
+
 PROCEDURE OutStr*(l :Lexer; s :PoolIndex);
 BEGIN
   Out.StrI(l.sp.buf, s);

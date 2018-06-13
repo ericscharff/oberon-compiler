@@ -195,6 +195,23 @@ BEGIN
   END;
 END GenVal;
 
+PROCEDURE GenLengthof(l :Lex.Lexer; e :AST.Expr);
+VAR
+  q :AST.QName;
+BEGIN
+  q.moduleName := 0;
+  IF e.typ.kind = AST.typeString THEN
+    GenInt(Lex.StringLenI(l, e.iVal) + 1);
+  ELSIF e.typ.length > 0 THEN
+    GenInt(e.typ.length);
+  ELSE
+    ASSERT(e.kind = AST.exprIdentRef);
+    q.name := e.decl.qname.name;
+    GenQName(l, q);
+    GenStr("__len");
+  END;
+END GenLengthof;
+
 PROCEDURE GenExpr(l :Lex.Lexer; e :AST.Expr);
 VAR
   q      :AST.QName;
@@ -233,32 +250,20 @@ BEGIN
       e := e.rhs;
       WHILE e # NIL DO
         IF e.typ.kind = AST.typeArray THEN
-          (* Arrays are always passed by pointer, no special procesing *)
+          (* Arrays are always passed by pointer, no special procesing  *)
           GenExpr(l, e);
-        ELSIF e.typ.kind = AST.typeRecord THEN
-          (* Records are always passed by pointer. If the record is *)
-          (* already a parameter, no need to get its address.       *)
-	  IF (e.kind = AST.exprIdentRef) &
-             (e.decl.kind IN {AST.declParam, AST.declVarParam}) THEN
-            (* Source is already a pointer *)
-            GenExpr(l, e);
-          ELSE
-            (* Source is a variable, or the field of something.     *)
-            GenStr("&(");
-            GenExpr(l, e);
-            GenStr(")");
-          END;
+        ELSIF (e.typ.kind = AST.typeRecord) OR (formal.kind = AST.declVarParam) THEN
+          (* Record (and VAR parameters) are always passed by reference *)
+          GenStr("&(");
+          GenExpr(l, e);
+          GenStr(")");
         ELSE
-          (* All other (base) types either passed directly, or by   *)
-          (* pointer if they are var parameters                     *)
-          IF formal.kind = AST.declVarParam THEN
-            GenStr("&(");
-            GenExpr(l, e);
-            GenStr(")");
-          ELSE
-            ASSERT(formal.kind = AST.declParam);
-            GenExpr(l, e);
-          END;
+          (* Everything else is passed by value.                        *)
+          GenExpr(l, e);
+        END;
+        IF AST.IsOpenArray(formal.typ) THEN
+          GenStr(", ");
+          GenLengthof(l, e);
         END;
         IF e.next # NIL THEN
           GenStr(", ");
