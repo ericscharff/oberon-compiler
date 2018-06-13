@@ -967,6 +967,7 @@ BEGIN
   ParseModule;
   Decls.VisitDecl(lastModuleDecls);
   p := Decls.reachableDecls;
+  CCodegen.GenTypeinfos();
   WHILE p # NIL DO
     IF (p.d.kind = AST.declType) & (p.d.typ.kind = AST.typePointer) THEN
       CCodegen.Generate(l, p.d);

@@ -27,6 +27,7 @@ PROCEDURE BasePtrTypes(a, b, c, d :PR1);
 BEGIN
   Out.PrintLn("R1");
   tf(a IS PR1);
+  d(PR4).d := 3;
   tf(a IS PR2);
   tf(a IS PR3);
   tf(a IS PR4);
@@ -50,6 +51,7 @@ END BasePtrTypes;
 PROCEDURE BaseTypes(VAR a, b, c, d :R1; s :S1);
 BEGIN
   Out.PrintLn("R1");
+  d(R4).d := 3;
   tf(a IS R1);
   tf(a IS R2);
   tf(a IS R3);

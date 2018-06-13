@@ -6,6 +6,7 @@ CONST
   stateUnresolved = 0;
   stateResolving  = 1;
   stateResolved   = 2;
+  maxTypeId       = 1024;
 
 TYPE
   StringId  = Lex.PoolIndex;
@@ -24,6 +25,8 @@ VAR
   nilType*, integerType*, realType*, booleanType*,
     charType*, setType*, stringType* :AST.Type;
   modInitName :StringId;
+  nextTypeId* :INTEGER;
+  recordToParent* :ARRAY maxTypeId OF INTEGER;
   scope, globalScope :AST.Decl;
   reachableDecls*, tailReachable :ReachableDecl;
   fwds  :Forward;
@@ -235,6 +238,13 @@ VAR
 BEGIN
   NewType(t, AST.typeRecord);
   t.base := base;
+  t.typeId := nextTypeId;
+  IF base = NIL THEN
+    recordToParent[nextTypeId] := 0
+  ELSE
+    recordToParent[nextTypeId] := base.typeId
+  END;
+  INC(nextTypeId);
   IF base # NIL THEN
     IF base.kind = AST.typeRecord THEN
       (* Copy fields from base *)
@@ -651,5 +661,6 @@ BEGIN
   tailReachable := NIL;
   globalScope := NIL;
   reachableDecls := NIL;
+  nextTypeId := 1;
   TestDecls
 END Decls.

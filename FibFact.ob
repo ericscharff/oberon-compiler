@@ -109,11 +109,18 @@ PROCEDURE PlusOne(VAR x :R); BEGIN Plus(x.a) END PlusOne;
 PROCEDURE TestFor;
 VAR
   lcv :INTEGER;
+  r :REAL;
 BEGIN
   FOR lcv := 1 TO 25 BY 2*1 DO
     Out.Int(z3.d); Out.Str(" "); Out.Int(lcv); Out.Ln
   END;
+  FOR r := 0.0 TO 1.0 BY 0.1 DO
+    Out.Real(r); Out.Ln
+  END;
   FOR lcv := 1 TO 25 DO
+    Out.Int(z3.d); Out.Str(" "); Out.Int(lcv); Out.Ln
+  END;
+  FOR lcv := 3 TO 1 DO
     Out.Int(z3.d); Out.Str(" "); Out.Int(lcv); Out.Ln
   END
 END TestFor;

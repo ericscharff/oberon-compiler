@@ -1,9 +1,11 @@
 MODULE CCodegen;
 
-IMPORT AST, Lex, Out;
+IMPORT AST, Decls, Lex, Out;
 
 VAR
-  indent :INTEGER;
+  indent          :INTEGER;
+  addBoundsChecks :BOOLEAN;
+  genCPlusPlus    :BOOLEAN;
 
 PROCEDURE GenStr(s :ARRAY OF CHAR);
 BEGIN
@@ -32,6 +34,20 @@ BEGIN
   FOR i := 1 TO indent DO GenStr("  ") END
 END GenI;
 
+PROCEDURE GenTypeinfos*;
+VAR
+  i :INTEGER;
+BEGIN
+  GenStr("typedef int oberon_typeid;"); GenLn;
+  GenStr("oberon_typeid oberon_typeinfos[] = {");
+  FOR i := 0 TO Decls.nextTypeId DO
+    GenInt(Decls.recordToParent[i]);
+    GenStr(", ");
+  END;
+  GenStr("};"); GenLn;
+  GenStr("#include "); GenStr(22X); GenStr("runtime.c"); GenStr(22X); GenLn;
+END GenTypeinfos;
+
 PROCEDURE GenQName(l :Lex.Lexer; name :AST.QName);
 BEGIN
   IF name.moduleName > 0 THEN
@@ -45,9 +61,9 @@ END GenQName;
 
 PROCEDURE GenType(l :Lex.Lexer; t :AST.Type; name :AST.QName; skipDecl, procDecl :BOOLEAN);
 VAR
-  f :AST.Decl;
-  q :AST.QName;
-  p :AST.Type;
+  f, pf :AST.Decl;
+  q     :AST.QName;
+  p     :AST.Type;
 BEGIN
   q.moduleName := 0;
   q.name := 0;
@@ -91,26 +107,72 @@ BEGIN
           p := p.base;
         END;
     | AST.typeRecord:
-        GenStr("struct ");
-        GenQName(l, name);
-        GenStr(" {");
-        GenLn;
-        INC(indent);
-        IF AST.NeedsTypeInfo(t) THEN
-          GenI; GenStr("oberon typid _tid;"); GenLn;
-        END;
-        f := t.fields;
-        WHILE (f # NIL) & (f.kind # AST.declEND) DO
-          (* Drop package from field name *)
-          q.name := f.qname.name;
-          GenI;
-          GenType(l, f.typ, q, FALSE, FALSE);
-          GenStr(";");
+        IF genCPlusPlus THEN
+          GenStr("struct ");
+          GenQName(l, name);
+          IF t.base # NIL THEN
+            ASSERT(t.base.decl # NIL);
+            GenStr(": public ");
+            GenQName(l, t.base.decl.qname);
+          END;
+          GenStr(" {");
           GenLn;
-          f := f.next;
+          INC(indent);
+          IF AST.NeedsTypeInfo(t) THEN
+            (* constructor sets typeid *)
+            GenI; GenQName(l, name); GenStr("() { _tid = "); GenInt(t.typeId); GenStr("; }"); GenLn;
+            (* virtual destructor to get RTTI *)
+            IF t.base = NIL THEN
+              GenI; GenStr("oberon_typeid _tid;"); GenLn;
+              GenI; GenStr("virtual ~"); GenQName(l, name); GenStr("() = default;"); GenLn;
+            END;
+          END;
+          f := t.fields;
+          (* Drop fields common to parent *)
+          IF t.base = NIL THEN
+            pf := NIL;
+          ELSE
+            pf := t.base.decl.typ.fields;
+          END;
+          WHILE (f # NIL) & (f.kind # AST.declEND) &
+                (pf # NIL) & (pf.kind # AST.declEND) &
+                (f.qname.name = pf.qname.name) DO
+            f := f.next;
+            pf := pf.next;
+          END;
+          WHILE (f # NIL) & (f.kind # AST.declEND) DO
+            (* Drop package from field name *)
+            q.name := f.qname.name;
+            GenI;
+            GenType(l, f.typ, q, FALSE, FALSE);
+            GenStr(";");
+            GenLn;
+            f := f.next;
+          END;
+          DEC(indent);
+          GenI; GenStr("} "); GenQName(l, name);
+        ELSE
+          GenStr("struct ");
+          GenQName(l, name);
+          GenStr(" {");
+          GenLn;
+          INC(indent);
+          IF AST.NeedsTypeInfo(t) THEN
+            Lex.ErrorLn(l, "C++ required when using IS or typeguard");
+          END;
+          f := t.fields;
+          WHILE (f # NIL) & (f.kind # AST.declEND) DO
+            (* Drop package from field name *)
+            q.name := f.qname.name;
+            GenI;
+            GenType(l, f.typ, q, FALSE, FALSE);
+            GenStr(";");
+            GenLn;
+            f := f.next;
+          END;
+          DEC(indent);
+          GenI; GenStr("} "); GenQName(l, name);
         END;
-        DEC(indent);
-        GenI; GenStr("} "); GenQName(l, name);
     | AST.typeProcedure:
         IF t.base.kind = AST.typeNil THEN
           GenStr("void ")
@@ -125,8 +187,8 @@ BEGIN
           GenStr(")");
         END;
         GenStr("(");
-        IF t.fields = NIL THEN
-          GenStr("void"); (* For C++, this would be empty *)
+        IF (t.fields = NIL) THEN
+          IF ~genCPlusPlus THEN GenStr("void") END;
         ELSE
           f := t.fields;
           WHILE f.kind # AST.declEND DO
@@ -224,9 +286,122 @@ BEGIN
     AST.exprVal:
       GenVal(l, e);
   | AST.exprUnary:
-      GenStr("TODO UNARY");
+      IF e.lhs.typ.kind = AST.typeSet THEN
+        (* Set ops *)
+        IF e.op = Lex.tMINUS THEN
+          GenStr("~"); GenExpr(l, e.lhs);
+        ELSE
+          ASSERT(FALSE);
+        END;
+      ELSE
+        (* Base types *)
+        CASE e.op OF
+          Lex.tMINUS: GenStr("-"); GenExpr(l, e.lhs);
+        | Lex.tPLUS: GenExpr(l, e.lhs);
+        | Lex.tTILDE: GenStr("!("); GenExpr(l, e.lhs); GenStr(")");
+        | Lex.tAsSetElt: GenStr("(1 << "); GenExpr(l, e.lhs); GenStr(")");
+        END;
+      END;
   | AST.exprBinary:
-      GenStr("TODO BINARY");
+      GenStr("(");
+      IF e.lhs.typ.kind IN {AST.typeArray, AST.typeString} THEN
+        (* String ops *)
+        GenStr("strcmp(");
+        GenExpr(l, e.lhs);
+        GenStr(", ");
+        GenExpr(l, e.rhs);
+        GenStr(")");
+        CASE e.op OF
+          Lex.tLT: GenStr(" < 0");
+        | Lex.tGT: GenStr(" > 0");
+        | Lex.tLTEQ: GenStr(" <= 0");
+        | Lex.tGTEQ: GenStr(" >= 0");
+        | Lex.tEQ: GenStr(" == 0");
+        | Lex.tPOUND: GenStr(" != 0");
+        | Lex.tPLUS, Lex.tMINUS, Lex.tSTAR, Lex.tSLASH, Lex.tDIV, Lex.tMOD,
+          Lex.tXOR, Lex.tAMP, Lex.tOR, Lex.tIN, Lex.tIS, Lex.tDOTDOT:
+        END;
+      ELSIF e.lhs.typ.kind = AST.typeSet THEN
+        (* Set ops *)
+        CASE e.op OF
+          Lex.tPLUS:
+            GenExpr(l, e.lhs); GenStr(" | "); GenExpr(l, e.rhs);
+        | Lex.tMINUS:
+            GenExpr(l, e.lhs); GenStr(" & ~"); GenExpr(l, e.rhs);
+        | Lex.tSTAR:
+            GenExpr(l, e.lhs); GenStr(" & "); GenExpr(l, e.rhs);
+        | Lex.tSLASH, Lex.tDIV:
+            GenExpr(l, e.lhs); GenStr(" ^ "); GenExpr(l, e.rhs);
+        | Lex.tEQ:
+            GenExpr(l, e.lhs); GenStr(" == "); GenExpr(l, e.rhs);
+        | Lex.tPOUND:
+            GenExpr(l, e.lhs); GenStr(" != "); GenExpr(l, e.rhs);
+        | Lex.tMOD, Lex.tXOR, Lex.tAMP, Lex.tOR, Lex.tLT, Lex.tGT, Lex.tLTEQ,
+          Lex.tGTEQ, Lex.tIN, Lex.tIS, Lex.tDOTDOT:
+            ASSERT(FALSE);
+        END;
+      ELSE
+        (* Primitive type (CHAR, INTEGER, REAL, POINTER ops.                    *)
+        (* Of course, some of these don't make sense (e.g., pointer + poitner)  *)
+        (* but this code relies on the fact that the AST has done type checking *)
+        (* and validation beforehand.                                           *)
+        CASE e.op OF
+          Lex.tPLUS:
+            GenExpr(l, e.lhs); GenStr(" + "); GenExpr(l, e.rhs);
+        | Lex.tMINUS:
+            GenExpr(l, e.lhs); GenStr(" - "); GenExpr(l, e.rhs);
+        | Lex.tSTAR:
+            GenExpr(l, e.lhs); GenStr(" * "); GenExpr(l, e.rhs);
+        | Lex.tSLASH, Lex.tDIV:
+            GenExpr(l, e.lhs); GenStr(" / "); GenExpr(l, e.rhs);
+        | Lex.tMOD:
+            GenExpr(l, e.lhs); GenStr(" % "); GenExpr(l, e.rhs);
+        | Lex.tXOR:
+            GenExpr(l, e.lhs); GenStr(" ^ "); GenExpr(l, e.rhs);
+        | Lex.tAMP:
+            GenExpr(l, e.lhs); GenStr(" && "); GenExpr(l, e.rhs);
+        | Lex.tOR:
+            GenExpr(l, e.lhs); GenStr(" || "); GenExpr(l, e.rhs);
+        | Lex.tLT:
+            GenExpr(l, e.lhs); GenStr(" < "); GenExpr(l, e.rhs);
+        | Lex.tGT:
+            GenExpr(l, e.lhs); GenStr(" > "); GenExpr(l, e.rhs);
+        | Lex.tLTEQ:
+            GenExpr(l, e.lhs); GenStr(" <= "); GenExpr(l, e.rhs);
+        | Lex.tGTEQ:
+            GenExpr(l, e.lhs); GenStr(" >= "); GenExpr(l, e.rhs);
+        | Lex.tEQ:
+            GenExpr(l, e.lhs); GenStr(" == "); GenExpr(l, e.rhs);
+        | Lex.tPOUND:
+            GenExpr(l, e.lhs); GenStr(" != "); GenExpr(l, e.rhs);
+        | Lex.tIN:
+            GenStr("((1 << ");
+            GenExpr(l, e.lhs);
+            GenStr(") & ");
+            GenExpr(l, e.rhs);
+            GenStr(")");
+        | Lex.tIS:
+            GenStr("does_type_extend(");
+            IF e.lhs.typ.kind = AST.typePointer THEN
+              ASSERT(e.rhs.typ.kind = AST.typePointer);
+              GenExpr(l, e.lhs);
+              GenStr("->_tid, ");
+              GenInt(e.rhs.typ.base.typeId);
+            ELSE
+              ASSERT(e.lhs.typ.kind = AST.typeRecord);
+              ASSERT(e.rhs.typ.kind = AST.typeRecord);
+              GenExpr(l, e.lhs);
+              GenStr("._tid, ");
+              GenInt(e.rhs.typ.typeId);
+            END;
+            GenStr(")");
+        | Lex.tDOTDOT:
+            GenStr("make_set_range(");
+            GenExpr(l, e.lhs); GenStr(", "); GenExpr(l, e.rhs);
+            GenStr(")");
+        END;
+      END;
+      GenStr(")");
   | AST.exprIdentRef:
       IF (e.decl.kind IN {AST.declVar, AST.declProcedure}) & (e.decl.nesting = 0) THEN
         q.moduleName := e.decl.qname.moduleName;
@@ -273,20 +448,93 @@ BEGIN
       END;
       GenStr(")");
   | AST.exprFieldRef:
-      GenStr("TODO FIELD_REF");
-  | AST.exprPointerDeref:
-      GenStr("TODO POINTER_DEREF");
-  | AST.exprArrayRef:
-      GenStr("TODO ARRAY_REF");
-  | AST.exprTypeGuard:
-      GenStr("TODO TYPE_GUARD");
-  | AST.exprBuiltin:
-      GenStr("TODO BUILTIN");
-  | AST.exprAssign:
-      (* TODO - this isn't right becuase params are special *)
       GenExpr(l, e.lhs);
-      GenStr(" = ");
-      GenExpr(l, e.rhs);
+      GenStr(".");
+      Lex.OutStr(l, e.iVal);
+  | AST.exprPointerDeref:
+      GenStr("(*");
+      GenExpr(l, e.lhs);
+      GenStr(")");
+  | AST.exprArrayRef:
+      GenExpr(l, e.lhs);
+      GenStr("[");
+      IF addBoundsChecks THEN
+        GenStr("checkbounds(");
+        GenExpr(l, e.rhs);
+        GenStr(", ");
+        GenLengthof(l, e.lhs);
+      ELSE
+        GenExpr(l, e.rhs);
+      END;
+      GenStr("]");
+  | AST.exprTypeGuard:
+      IF e.lhs.typ.kind = AST.typePointer THEN
+        GenStr("dynamic_cast<");
+        GenQName(l, e.decl.qname);
+        GenStr(">(");
+        GenExpr(l, e.lhs);
+        GenStr(")");
+      ELSE
+        ASSERT(e.lhs.typ.kind = AST.typeRecord);
+        ASSERT(e.lhs.kind = AST.exprIdentRef);
+        ASSERT(e.lhs.decl.kind = AST.declVarParam);
+        GenStr("(*dynamic_cast<");
+        GenQName(l, e.decl.qname);
+        GenStr("*>(");
+        q.moduleName := 0;
+        q.name := e.lhs.decl.qname.name;
+        GenQName(l, q);
+        GenStr("))");
+      END;
+  | AST.exprBuiltin:
+      ASSERT(e.iVal >= AST.builtinAbs);
+      ASSERT(e.iVal <= AST.builtinOrd);
+      CASE e.iVal OF
+        AST.builtinAbs: GenStr("oberon_abs("); GenExpr(l, e.rhs); GenStr(")");
+      | AST.builtinAssert: GenStr("assert("); GenExpr(l, e.rhs); GenStr(")");
+      | AST.builtinChr, AST.builtinOrd, AST.builtinFlt: GenExpr(l, e.rhs);
+      | AST.builtinDec:
+          GenExpr(l, e.rhs);
+          IF e.rhs.next = NIL THEN
+            GenStr("--");
+          ELSE
+            GenStr(" -= ");
+            GenExpr(l, e.rhs.next);
+          END;
+      | AST.builtinInc:
+          GenExpr(l, e.rhs);
+          IF e.rhs.next = NIL THEN
+            GenStr("++");
+          ELSE
+            GenStr(" += ");
+            GenExpr(l, e.rhs.next);
+          END;
+      | AST.builtinNew:
+          GenExpr(l, e.rhs);
+          IF genCPlusPlus THEN
+            GenStr(" = new ");
+            GenQName(l, e.rhs.typ.base.decl.qname);
+          ELSE
+            GenStr(" = malloc(sizeof(");
+            GenQName(l, e.rhs.typ.base.decl.qname);
+            GenStr("))");
+          END;
+      END;
+  | AST.exprAssign:
+      IF e.lhs.typ.kind = AST.typeArray THEN
+        ASSERT(e.lhs.typ.base.kind = AST.typeChar);
+        GenStr("strncpy(");
+        GenExpr(l, e.lhs);
+        GenStr(", ");
+        GenExpr(l, e.rhs);
+        GenStr(", ");
+        GenLengthof(l, e.lhs);
+        GenStr(")");
+      ELSE
+        GenExpr(l, e.lhs);
+        GenStr(" = ");
+        GenExpr(l, e.rhs);
+      END;
   END;
 END GenExpr;
 
@@ -300,6 +548,13 @@ BEGIN
     GenStr(")");
   END;
 END GenParenExpr;
+
+PROCEDURE ForForwards(e :AST.Expr) :BOOLEAN;
+BEGIN
+  RETURN AST.IsConst(e.rhs) & AST.IsConst(e.next) &
+    (((e.rhs.typ.kind = AST.typeInteger) & (e.next.iVal > e.rhs.iVal)) OR
+     ((e.rhs.typ.kind = AST.typeReal) & (e.next.rVal > e.rhs.rVal)))
+END ForForwards;
 
 PROCEDURE GenStatements(l :Lex.Lexer; s :AST.Stmt);
 BEGIN
@@ -323,11 +578,64 @@ BEGIN
         GenI;
         GenStr("}");
     | AST.stmtWhile:
-        GenStr("TODO WHILE");
+        IF s.elsifs = NIL THEN
+          GenStr("while ");
+          GenParenExpr(l, s.cond);
+          GenStr(" {");
+          GenLn;
+          INC(indent);
+          GenStatements(l, s.body);
+          DEC(indent);
+          GenI;
+          GenStr("}");
+        ELSE
+          GenStr("while (1) {");
+          GenLn;
+          INC(indent);
+          GenI;
+          GenStr("if ");
+          GenParenExpr(l, s.cond);
+          GenStr(" {");
+          GenLn;
+          INC(indent);
+          GenStatements(l, s.body);
+          DEC(indent);
+          GenStatements(l, s.elsifs);
+          GenI;
+          GenStr("} else { break; }");
+          GenLn;
+          DEC(indent);
+          GenI;
+          GenStr("}");
+        END;
     | AST.stmtRepeat:
         GenStr("TODO REPEAT");
     | AST.stmtFor:
-        GenStr("TODO FOR");
+        (* Cond is an assign, so cond.lhs is the LCV, and cond.rhs the init *)
+        GenStr("for(");
+        GenExpr(l, s.cond);
+        GenStr("; ");
+        GenExpr(l, s.cond.lhs);
+        IF ForForwards(s.cond) THEN
+          GenStr(" <= ");
+        ELSE
+          GenStr(" >= ");
+        END;
+        GenExpr(l, s.cond.next);
+        GenStr("; ");
+        GenExpr(l, s.cond.lhs);
+        IF s.cond.next.next = NIL THEN
+          IF ForForwards(s.cond) THEN GenStr("++") ELSE GenStr("--") END;
+        ELSE
+          GenStr(" += "); GenExpr(l, s.cond.next.next);
+        END;
+        GenStr(") {");
+        GenLn;
+        INC(indent);
+        GenStatements(l, s.body);
+        DEC(indent);
+        GenI;
+        GenStr("}");
     | AST.stmtCase:
         GenStr("TODO CASE");
     | AST.stmtCaseItem:
@@ -393,7 +701,6 @@ BEGIN
         GenType(l, p.typ, q, FALSE, FALSE);
         GenStr(";");
         GenLn;
-        (* TODO - Add initializers if necessary *)
       ELSIF AST.IsOpenArray(p.typ) THEN
         (* Generate code to avoid unused variable warnings *)
         GenI;
@@ -431,5 +738,7 @@ BEGIN
 END Generate;
 
 BEGIN
+  addBoundsChecks := FALSE;
+  genCPlusPlus := FALSE;
   indent := 0
 END CCodegen.
