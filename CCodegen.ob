@@ -184,7 +184,7 @@ BEGIN
   ASSERT(e.typ # NIL);
   IF e.typ.kind = AST.typeNil THEN
     GenStr("0 /*NULL*/");
-  ELSIF e.typ.kind IN {AST.typeInteger, AST.typeBoolean, AST.typeSet} THEN
+  ELSIF e.typ.kind IN {AST.typeInteger, AST.typeBoolean, AST.typeChar, AST.typeSet} THEN
     GenInt(e.iVal);
   ELSIF e.typ.kind = AST.typeReal THEN
     GenReal(e.rVal);
