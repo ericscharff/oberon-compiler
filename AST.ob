@@ -332,7 +332,7 @@ BEGIN
 END IsConst;
 
 (* Convert a string constant into a character constant *)
-PROCEDURE CoerceToChar(l :Lex.Lexer; e :Expr; charType :Type);
+PROCEDURE CoerceToChar*(l :Lex.Lexer; e :Expr; charType :Type);
 BEGIN
   ASSERT(IsConst(e));
   ASSERT(e.typ.kind = typeString);

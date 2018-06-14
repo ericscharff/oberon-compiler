@@ -378,6 +378,7 @@ BEGIN
   AST.NewExpr(e, AST.exprBuiltin, nilType);
   e.iVal := AST.builtinOrd;
   e.rhs := args;
+  IF AST.IsConst(e.rhs) THEN AST.CoerceToChar(l, e.rhs, charType) END;
   IF (args = NIL) OR (args.next # NIL) THEN
     Lex.ErrorLn(l, "ORD expects 1 argument");
   END;
