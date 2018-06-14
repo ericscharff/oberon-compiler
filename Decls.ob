@@ -596,6 +596,7 @@ BEGIN
     END;
     VisitType(d.typ);
     VisitStatement(d.body);
+    VisitExpr(d.expr);
     d.state := stateResolved;
     NEW(reachable);
     reachable.d := d;

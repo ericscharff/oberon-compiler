@@ -199,7 +199,7 @@ BEGIN
             IF (t.kind IN {AST.typeRecord, AST.typeArray}) & (f.kind # AST.declVarParam) THEN
               GenStr("const ");
             END;
-            IF (t.kind = AST.typeRecord) OR (f.kind = AST.declVarParam) THEN
+            IF (t.kind = AST.typeRecord) OR ((f.kind = AST.declVarParam) & ~(t.kind = AST.typeArray)) THEN
               q.name := 0;
               GenType(l, t, q, FALSE, FALSE);
               GenStr(" *");
@@ -411,7 +411,7 @@ BEGIN
         q.moduleName := 0;
       END;
       q.name := e.decl.qname.name;
-      IF (e.decl.kind = AST.declVarParam) OR
+      IF ((e.decl.kind = AST.declVarParam) & ~(e.typ.kind = AST.typeArray)) OR
          ((e.decl.kind = AST.declParam) & (e.typ.kind = AST.typeRecord)) THEN
         GenStr("(*");
         GenQName(l, q);
