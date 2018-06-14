@@ -610,7 +610,15 @@ BEGIN
           GenStr("}");
         END;
     | AST.stmtRepeat:
-        GenStr("TODO REPEAT");
+        GenStr("do {");
+        INC(indent);
+        GenStatements(l, s.body);
+        DEC(indent);
+        GenI;
+        GenStr("} while (!");
+        GenExpr(l, s.cond);
+        GenStr(");");
+        GenLn;
     | AST.stmtFor:
         (* Cond is an assign, so cond.lhs is the LCV, and cond.rhs the init *)
         GenStr("for (");
