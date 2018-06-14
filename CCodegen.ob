@@ -611,6 +611,7 @@ BEGIN
         END;
     | AST.stmtRepeat:
         GenStr("do {");
+        GenLn;
         INC(indent);
         GenStatements(l, s.body);
         DEC(indent);
