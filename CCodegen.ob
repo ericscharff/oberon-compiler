@@ -241,9 +241,23 @@ BEGIN
   END;
 END GenType;
 
-PROCEDURE GenVal(l :Lex.Lexer; e :AST.Expr);
+PROCEDURE GenChar(i :INTEGER);
 VAR
   c2 :ARRAY 2 OF CHAR;
+BEGIN
+  (* apostrophe, backslash, or non-printable *)
+  IF (i = 39) OR (i = 92) OR (i < 32) OR (i > 126) THEN
+    GenInt(i);
+  ELSE
+    c2[1] := 0X;
+    c2[0] := CHR(i);
+    GenStr("'");
+    GenStr(c2);
+    GenStr("'");
+  END;
+END GenChar;
+
+PROCEDURE GenVal(l :Lex.Lexer; e :AST.Expr);
 BEGIN
   ASSERT(e.typ # NIL);
   IF e.typ.kind = AST.typeNil THEN
@@ -251,16 +265,7 @@ BEGIN
   ELSIF e.typ.kind IN {AST.typeInteger, AST.typeBoolean} THEN
     GenInt(e.iVal);
   ELSIF e.typ.kind = AST.typeChar THEN
-    (* apostrophe, backslash, or non-printable *)
-    IF (e.iVal = 39) OR (e.iVal = 92) OR (e.iVal < 32) OR (e.iVal > 126) THEN
-      GenInt(e.iVal);
-    ELSE
-      c2[1] := 0X;
-      c2[0] := CHR(e.iVal);
-      GenStr("'");
-      GenStr(c2);
-      GenStr("'");
-    END;
+    GenChar(e.iVal);
   ELSIF e.typ.kind = AST.typeSet THEN
     GenInt(ORD(e.setVal));
   ELSIF e.typ.kind = AST.typeReal THEN
@@ -574,6 +579,7 @@ PROCEDURE GenStatements(l :Lex.Lexer; s :AST.Stmt);
 VAR
   e              :AST.Expr;
   fromVal, toVal :INTEGER;
+  useChar        :BOOLEAN;
 BEGIN
   WHILE s # NIL DO
     ASSERT(s.kind >= AST.stmtAssign);
@@ -685,16 +691,20 @@ BEGIN
           ASSERT((e.op = Lex.tEQ) OR (e.op = Lex.tCaseDotDot));
           IF e.op = Lex.tEQ THEN
             ASSERT(AST.IsConst(e.rhs));
+            useChar := e.rhs.typ.kind = AST.typeChar;
             fromVal := e.rhs.iVal;
             toVal := fromVal;
           ELSE
             ASSERT(AST.IsConst(e.lhs.rhs));
             ASSERT(AST.IsConst(e.rhs.rhs));
+            useChar := e.rhs.rhs.typ.kind = AST.typeChar;
             fromVal := e.lhs.rhs.iVal;
             toVal := e.rhs.rhs.iVal;
           END;
           WHILE fromVal <= toVal DO
-            GenI; GenStr("case "); GenInt(fromVal); GenStr(":"); GenLn;
+            GenI; GenStr("case ");
+            IF useChar THEN GenChar(fromVal) ELSE GenInt(fromVal) END;
+            GenStr(":"); GenLn;
             INC(fromVal);
           END;
           e := e.next;
