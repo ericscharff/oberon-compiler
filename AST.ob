@@ -989,7 +989,7 @@ BEGIN
   END;
   NewStmt(s, stmtCase);
   s.cond := cond;
-  s.body := body;
+  s.elsifs := body;
   RETURN s
 END NewStmtCase;
 

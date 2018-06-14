@@ -558,6 +558,9 @@ BEGIN
 END ForForwards;
 
 PROCEDURE GenStatements(l :Lex.Lexer; s :AST.Stmt);
+VAR
+  e              :AST.Expr;
+  fromVal, toVal :INTEGER;
 BEGIN
   WHILE s # NIL DO
     ASSERT(s.kind >= AST.stmtAssign);
@@ -647,9 +650,47 @@ BEGIN
         GenI;
         GenStr("}");
     | AST.stmtCase:
-        GenStr("TODO CASE");
+        GenStr("switch ");
+        GenParenExpr(l, s.cond);
+        GenStr(" {");
+        INC(indent);
+        GenStatements(l, s.elsifs);
+        DEC(indent);
+        GenI;
+        GenStr("}");
+        GenLn;
     | AST.stmtCaseItem:
-        GenStr("TODO CASE_ITEM");
+        (* Case items have a special cond, which has possibly more than one *)
+        (* expr. The expr is either an equal (where the lhs is the case,    *)
+        (* which can be ignored), or a CaseDotDot operator, which should be *)
+        (* expanded here since the cases must be constant.                  *)
+        GenLn;
+        ASSERT(s.next = NIL);
+        ASSERT(s.cond.kind = AST.exprBinary);
+        e := s.cond;
+        WHILE e # NIL DO
+          ASSERT((e.op = Lex.tEQ) OR (e.op = Lex.tCaseDotDot));
+          IF e.op = Lex.tEQ THEN
+            ASSERT(AST.IsConst(e.rhs));
+            fromVal := e.rhs.iVal;
+            toVal := fromVal;
+          ELSE
+            ASSERT(AST.IsConst(e.lhs.rhs));
+            ASSERT(AST.IsConst(e.rhs.rhs));
+            fromVal := e.lhs.rhs.iVal;
+            toVal := e.rhs.rhs.iVal;
+          END;
+          WHILE fromVal <= toVal DO
+            GenI; GenStr("case "); GenInt(fromVal); GenStr(":"); GenLn;
+            INC(fromVal);
+          END;
+          e := e.next;
+        END;
+        INC(indent);
+        GenStatements(l, s.body);
+        GenI; GenStr("break;"); GenLn;
+        DEC(indent);
+        GenStatements(l, s.elsifs);
     | AST.stmtElsIf:
         ASSERT(s.next = NIL);
         GenStr("} else if ");
@@ -669,7 +710,7 @@ BEGIN
         GenStatements(l, s.body);
         DEC(indent);
     END;
-    GenLn;
+    IF ~(s.kind IN {AST.stmtCase, AST.stmtCaseItem}) THEN GenLn END;
     s := s.next;
   END;
 END GenStatements;
