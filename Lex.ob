@@ -135,8 +135,6 @@ BEGIN
 END StringLen;
 
 PROCEDURE StrEq(a :ARRAY OF CHAR; ai :INTEGER; b :ARRAY OF CHAR; bi :INTEGER; len :INTEGER) :BOOLEAN;
-VAR
-  same :BOOLEAN;
 BEGIN
   WHILE (len > 0) & (a[ai] = b[bi]) DO
     INC(ai);

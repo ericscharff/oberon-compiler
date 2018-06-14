@@ -433,7 +433,6 @@ END NewExprFieldRef;
 PROCEDURE NewExprArrayRef*(l :Lex.Lexer; base, index :Expr) :Expr;
 VAR
   e :Expr;
-  d :Decl;
 BEGIN
   e := base;
   IF base.typ.kind = typeArray THEN

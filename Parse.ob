@@ -438,7 +438,6 @@ END ParseWhileStatement;
 PROCEDURE ParseRepeatStatement() :AST.Stmt;
 VAR
   s    :AST.Stmt;
-  cond :AST.Expr;
 BEGIN
   ExpectToken(Lex.tREPEAT);
   s := ParseStatementSequence();
@@ -729,7 +728,6 @@ PROCEDURE ParseConstDeclaration;
 VAR
   d :AST.Decl;
   e :AST.Expr;
-  t :AST.Type;
 BEGIN
   d := ParseIdentDef();
   ExpectToken(Lex.tEQ);
@@ -745,7 +743,6 @@ END ParseConstDeclaration;
 PROCEDURE ParseTypeDeclaration;
 VAR
   d :AST.Decl;
-  t :AST.Type;
 BEGIN
   d := ParseIdentDef();
   ExpectToken(Lex.tEQ);
