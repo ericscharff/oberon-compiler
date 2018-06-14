@@ -771,6 +771,16 @@ BEGIN
     WHILE p.kind # AST.declEND DO
       q.name := p.qname.name;
       IF p.kind = AST.declVar THEN
+        IF p.state = Decls.stateUnresolved THEN
+          GenStr("#pragma GCC warning ");
+          GenStr(22X);
+          GenStr("variable ");
+          GenQName(l, q);
+          GenStr(" unused in PROCEDURE ");
+          GenQName(l, d.qname);
+          GenStr(22X);
+          GenLn;
+        END;
         GenI;
         GenType(l, p.typ, q, FALSE, FALSE);
         GenStr(";");

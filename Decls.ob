@@ -3,10 +3,10 @@ MODULE Decls;
 IMPORT AST, Lex;
 
 CONST
-  stateUnresolved = 0;
-  stateResolving  = 1;
-  stateResolved   = 2;
-  maxTypeId       = 1024;
+  stateUnresolved* = 0;
+  stateResolving   = 1;
+  stateResolved    = 2;
+  maxTypeId        = 1024;
 
 TYPE
   StringId  = Lex.PoolIndex;
