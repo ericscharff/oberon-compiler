@@ -242,12 +242,25 @@ BEGIN
 END GenType;
 
 PROCEDURE GenVal(l :Lex.Lexer; e :AST.Expr);
+VAR
+  c2 :ARRAY 2 OF CHAR;
 BEGIN
   ASSERT(e.typ # NIL);
   IF e.typ.kind = AST.typeNil THEN
     GenStr("0 /*NULL*/");
-  ELSIF e.typ.kind IN {AST.typeInteger, AST.typeBoolean, AST.typeChar} THEN
+  ELSIF e.typ.kind IN {AST.typeInteger, AST.typeBoolean} THEN
     GenInt(e.iVal);
+  ELSIF e.typ.kind = AST.typeChar THEN
+    (* apostrophe, backslash, or non-printable *)
+    IF (e.iVal = 39) OR (e.iVal = 92) OR (e.iVal < 32) OR (e.iVal > 126) THEN
+      GenInt(e.iVal);
+    ELSE
+      c2[1] := 0X;
+      c2[0] := CHR(e.iVal);
+      GenStr("'");
+      GenStr(c2);
+      GenStr("'");
+    END;
   ELSIF e.typ.kind = AST.typeSet THEN
     GenInt(ORD(e.setVal));
   ELSIF e.typ.kind = AST.typeReal THEN
