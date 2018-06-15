@@ -845,8 +845,18 @@ BEGIN
   GenLn;
 END GenEndMain;
 
+PROCEDURE EnableBoundsChecks*;
+BEGIN
+  addBoundsChecks := TRUE
+END EnableBoundsChecks;
+
+PROCEDURE EnableCPlusPlus*;
+BEGIN
+  genCPlusPlus := TRUE
+END EnableCPlusPlus;
+
 BEGIN
   addBoundsChecks := FALSE;
-  genCPlusPlus := TRUE;
+  genCPlusPlus := FALSE;
   indent := 0
 END CCodegen.
