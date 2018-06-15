@@ -570,9 +570,9 @@ END GenParenExpr;
 
 PROCEDURE ForForwards(e :AST.Expr) :BOOLEAN;
 BEGIN
-  RETURN AST.IsConst(e.rhs) & AST.IsConst(e.next) &
-    (((e.rhs.typ.kind = AST.typeInteger) & (e.next.iVal > e.rhs.iVal)) OR
-     ((e.rhs.typ.kind = AST.typeReal) & (e.next.rVal > e.rhs.rVal)))
+  RETURN (~AST.IsConst(e.rhs) OR ~AST.IsConst(e.next)) OR
+         ((((e.rhs.typ.kind = AST.typeInteger) & (e.next.iVal > e.rhs.iVal)) OR
+           ((e.rhs.typ.kind = AST.typeReal) & (e.next.rVal > e.rhs.rVal))))
 END ForForwards;
 
 PROCEDURE GenStatements(l :Lex.Lexer; s :AST.Stmt);
