@@ -847,6 +847,6 @@ END GenEndMain;
 
 BEGIN
   addBoundsChecks := FALSE;
-  genCPlusPlus := FALSE;
+  genCPlusPlus := TRUE;
   indent := 0
 END CCodegen.
