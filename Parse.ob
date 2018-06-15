@@ -1,6 +1,6 @@
 MODULE Parse;
 
-IMPORT AST, CCodegen, Decls, Lex;
+IMPORT AST, Decls, Lex;
 
 TYPE
   StringId = Lex.PoolIndex;
@@ -9,11 +9,11 @@ TYPE
     decls :AST.Decl;
   END;
 VAR
-  l :Lex.Lexer;
+  l* :Lex.Lexer;
   importCache :ARRAY 128 OF CachedImport;
   importCacheEnd :INTEGER;
   nesting :INTEGER;
-  lastModuleDecls :AST.Decl;
+  lastModuleDecls* :AST.Decl;
   ParseExpression :PROCEDURE () :AST.Expr;
   ParseStatementSequence :PROCEDURE () :AST.Stmt;
   ParseType :PROCEDURE () :AST.Type;
@@ -897,7 +897,7 @@ BEGIN
   ExpectToken(Lex.tSEMI);
 END ParseImportList;
 
-PROCEDURE ParseModule;
+PROCEDURE ParseModule*;
 VAR
   s, e, oldModule :StringId;
   d               :AST.Decl;
@@ -957,45 +957,23 @@ BEGIN
   Decls.CloseScope(savedScope);
 END ImportHelper;
 
-PROCEDURE TestParse;
-VAR
-  p :Decls.ReachableDecl;
+PROCEDURE InitFromFile*(fileName :ARRAY OF CHAR);
 BEGIN
-  Lex.LexerInitFromFile(l, "Parse.ob");
+  Lex.LexerInitFromFile(l, fileName);
   Lex.NextToken(l);
+END InitFromFile;
+
+PROCEDURE TestParse;
+BEGIN
+  InitFromFile("Parse.ob");
   ParseModule;
-  Decls.VisitDecl(lastModuleDecls);
-  p := Decls.reachableDecls;
-  CCodegen.GenTypeinfos();
-  WHILE p # NIL DO
-    IF (p.d.kind = AST.declType) & (p.d.typ.kind = AST.typePointer) THEN
-      CCodegen.Generate(l, p.d);
-    END;
-    p := p.next;
-  END;
-  p := Decls.reachableDecls;
-  WHILE p # NIL DO
-    IF (p.d.kind = AST.declType) & (p.d.typ.kind # AST.typePointer) THEN
-      CCodegen.Generate(l, p.d);
-    END;
-    p := p.next;
-  END;
-  p := Decls.reachableDecls;
-  WHILE p # NIL DO
-    IF p.d.kind = AST.declVar THEN
-      CCodegen.Generate(l, p.d);
-    END;
-    p := p.next;
-  END;
-  p := Decls.reachableDecls;
-  WHILE p # NIL DO
-    IF (p.d.kind = AST.declProcedure) & ~p.d.isNative THEN
-      CCodegen.Generate(l, p.d);
-    END;
-    p := p.next;
-  END;
   Lex.InfoPrintLn("PASS: Parser test");
 END TestParse;
+
+PROCEDURE RunTests*;
+BEGIN
+  TestParse
+END RunTests;
 
 BEGIN
   importCacheEnd := 0;
@@ -1004,5 +982,4 @@ BEGIN
   ParseType := ParseType0;
   ParseDeclarationSequence := ParseDeclarationSequence0;
   importCallback := ImportHelper;
-  TestParse
 END Parse.

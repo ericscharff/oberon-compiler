@@ -1,0 +1,70 @@
+MODULE Compiler;
+
+IMPORT Args, AST, CCodegen, Decls, Lex, Parse;
+
+PROCEDURE RunTests;
+BEGIN
+  Lex.RunTests;
+  Decls.RunTests;
+  Parse.RunTests;
+END RunTests;
+
+PROCEDURE CompileFile;
+VAR
+  fileName :ARRAY 256 OF CHAR;
+  l        :Lex.Lexer;
+  p        :Decls.ReachableDecl;
+BEGIN
+  Args.GetArg(fileName, 1);
+  Parse.InitFromFile(fileName);
+  Parse.ParseModule;
+  l := Parse.l;
+
+  Decls.VisitDecl(Parse.lastModuleDecls);
+  p := Decls.reachableDecls;
+  CCodegen.GenTypeinfos();
+  WHILE p # NIL DO
+    IF (p.d.kind = AST.declType) & (p.d.typ.kind = AST.typePointer) THEN
+      CCodegen.Generate(l, p.d);
+    END;
+    p := p.next;
+  END;
+  p := Decls.reachableDecls;
+  WHILE p # NIL DO
+    IF (p.d.kind = AST.declType) & (p.d.typ.kind # AST.typePointer) THEN
+      CCodegen.Generate(l, p.d);
+    END;
+    p := p.next;
+  END;
+  p := Decls.reachableDecls;
+  WHILE p # NIL DO
+    IF p.d.kind = AST.declVar THEN
+      CCodegen.Generate(l, p.d);
+    END;
+    p := p.next;
+  END;
+  p := Decls.reachableDecls;
+  WHILE p # NIL DO
+    IF (p.d.kind = AST.declProcedure) & ~p.d.isNative THEN
+      CCodegen.Generate(l, p.d);
+    END;
+    p := p.next;
+  END;
+  CCodegen.GenStartMain();
+  p := Decls.reachableDecls;
+  WHILE p # NIL DO
+    IF p.d.qname.name = Decls.modInitName THEN
+      CCodegen.GenCall(l, p.d.qname);
+    END;
+    p := p.next;
+  END;
+  CCodegen.GenEndMain();
+END CompileFile;
+
+BEGIN
+  IF Args.Count() = 1 THEN
+    RunTests
+  ELSE
+    CompileFile
+  END
+END Compiler.

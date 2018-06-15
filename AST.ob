@@ -3,6 +3,8 @@ MODULE AST;
 IMPORT Lex;
 
 CONST
+  maxTypeId      = 1024;
+
   typeNil*       = 1;
   typeInteger*   = 2;
   typeReal*      = 3;
@@ -60,6 +62,10 @@ CONST
   stmtElsIf*    = 9;  (* ELSIF clauses          *)
   stmtElse*     = 10; (* ELSE for IF statement  *)
   stmtEmpty*    = 11; (* Placeholder            *)
+
+  stateUnresolved* = 0;
+  stateResolving*  = 1;
+  stateResolved*   = 2;
 
 TYPE
   StringId         = Lex.PoolIndex;
@@ -188,7 +194,19 @@ TYPE
 VAR
   currentModuleName* :StringId;
   TypeKindNames :ARRAY typeEND, 10 OF CHAR;
-  DumpExpr* :PROCEDURE (l :Lex.Lexer; e :Expr);
+  nextTypeId* :INTEGER;
+  recordToParent* :ARRAY maxTypeId OF INTEGER;
+
+PROCEDURE GetNextTypeId*() :INTEGER;
+BEGIN
+  INC(nextTypeId);
+  RETURN nextTypeId
+END GetNextTypeId;
+
+PROCEDURE SetRecordToParent*(tid, base :INTEGER);
+BEGIN
+  recordToParent[tid] := base;
+END SetRecordToParent;
 
 PROCEDURE SetModuleName*(name :StringId) :StringId;
 VAR
@@ -1011,94 +1029,6 @@ BEGIN
   RETURN e
 END ValidateReturnStatement;
 
-(*
-PROCEDURE DumpDecl*(l :Lex.Lexer; d :Decl);
-BEGIN
-  Lex.Str("(DECL ");
-  Lex.OutStr(l, d.qname.name);
-  Lex.Str(" ");
-  CASE d.kind OF
-  declImport: Out.Str("IMPORT ")
-  | declConst: Out.Str("CONST "); DumpExpr(l, d.expr);
-  | declType: Out.Str("TYPE ");
-  | declVar: Out.Str("VAR ");
-  | declProcedure: Out.Str("PROCEDURE ");
-  | declParam: Out.Str("PARAM ");
-  | declVarParam: Out.Str("VARPARAM ");
-  | declEND: Out.Str("SCOPE END ");
-  END;
-  Out.Str(TypeKindNames[d.typ.kind]);
-  Out.PrintLn(")");
-
-END DumpDecl;
-
-PROCEDURE DumpExpr0*(l :Lex.Lexer; e :Expr);
-VAR
-  p :Expr;
-BEGIN
-  IF e = NIL THEN
-    Out.PrintLn("(NIL EXPR)");
-  ELSE
-    Out.Str("(");
-    CASE e.kind OF
-       exprVal :
-         Out.Str("VAL ");
-         Out.Str(TypeKindNames[e.typ.kind]);
-         CASE e.typ.kind OF
-           typeInteger, typeBoolean: Out.Str(" "); Out.Int(e.iVal);
-           | typeReal: Out.Str(" "); Out.Real(e.rVal);
-           | typeString: Out.Str(" "); Out.Str(22X); Lex.OutStr(l, e.iVal); Out.Str(22X);
-           | typeSet: Out.Str(" "); Out.Int(ORD(e.setVal));
-         END;
-     | exprUnary :
-         Out.Str("UNARY ");
-         Out.Str(Lex.TokenNames[e.op]);
-         Out.Str(" ");
-         Out.Str(TypeKindNames[e.typ.kind]);
-         DumpExpr(l, e.lhs);
-     | exprBinary :
-         Out.Str("BINARY ");
-         Out.Str(Lex.TokenNames[e.op]);
-         Out.Str(" ");
-         Out.Str(TypeKindNames[e.typ.kind]);
-         DumpExpr(l, e.lhs);
-         Out.Str(" ");
-         DumpExpr(l, e.rhs);
-     | exprIdentRef :
-         Out.Str("IDENTREF ");
-         DumpDecl(l, e.decl);
-     | exprProcCall :
-         Out.Str("PROCCALL ");
-         DumpExpr(l, e.lhs);
-         p := e.rhs;
-         WHILE p # NIL DO
-           DumpExpr(l, p);
-           p := p.next;
-         END;
-     | exprFieldRef :
-         Out.Str("FIELDREF ");
-         DumpExpr(l, e.lhs);
-         Out.Str(" ");
-         Lex.OutStr(l, e.iVal);
-     | exprPointerDeref :
-         Out.Str("POINTERDEREF ");
-         DumpExpr(l, e.lhs);
-     | exprArrayRef :
-         Out.Str("ARRAYREF ");
-         DumpExpr(l, e.lhs);
-         Out.Str(" ");
-         DumpExpr(l, e.rhs);
-     | exprTypeGuard :
-         Out.Str("TYPEGUARD ");
-         DumpExpr(l, e.lhs);
-         Out.Str(" ");
-         DumpDecl(l, e.decl);
-    END;
-    Out.PrintLn(")");
-  END;
-END DumpExpr0;
-*)
-
 PROCEDURE InitTypeKindNames;
 BEGIN
   TypeKindNames[typeNil]       := "NIL";
@@ -1117,6 +1047,6 @@ END InitTypeKindNames;
 
 BEGIN
   currentModuleName := 0;
-(*  DumpExpr := DumpExpr0; *)
+  nextTypeId := 0;
   InitTypeKindNames;
 END AST.

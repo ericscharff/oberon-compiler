@@ -496,17 +496,21 @@ void gen_proccall(Expr *proc, Expr **args) {
           gen_str(")(");
         }
       }
-      if (proc->type->procedure_type.params[i].is_var_parameter ||
-          recordFormal) {
-        gen_str("&(");
-      }
-      gen_expr(args[i]);
-      if (proc->type->procedure_type.params[i].is_var_parameter ||
-          recordFormal) {
-        gen_str(")");
-      }
-      if (needCast) {
-        gen_str(")");
+      if (proc->type->procedure_type.params[i].type->kind == TYPE_ARRAY) {
+        gen_expr(args[i]);
+      } else {
+        if (proc->type->procedure_type.params[i].is_var_parameter ||
+            recordFormal) {
+          gen_str("&(");
+        }
+        gen_expr(args[i]);
+        if (proc->type->procedure_type.params[i].is_var_parameter ||
+            recordFormal) {
+          gen_str(")");
+        }
+        if (needCast) {
+          gen_str(")");
+        }
       }
       if (proc->type->procedure_type.params[i].is_open_array) {
         gen_str(", ");
@@ -1034,7 +1038,8 @@ void generate_c_code(Type **types, Decl **decls) {
       gen_decl(decls[i]);
     }
   }
-  gen_str("\nint main(void) {\n");
+  gen_str("\nint main(int argc, const char **argv) {\n");
+  gen_str("  InitArgs(argc, argv);\n");
   codegenIndent++;
   for (size_t i = 0; i < buf_len(decls); i++) {
     if (strstr(decls[i]->name, MODULE_INIT_NAME)) {

@@ -1,6 +1,6 @@
 MODULE CCodegen;
 
-IMPORT AST, Decls, Lex, Out;
+IMPORT AST, Lex, Out;
 
 VAR
   indent          :INTEGER;
@@ -40,8 +40,8 @@ VAR
 BEGIN
   GenStr("typedef int oberon_typeid;"); GenLn;
   GenStr("oberon_typeid oberon_typeinfos[] = {");
-  FOR i := 0 TO Decls.nextTypeId DO
-    GenInt(Decls.recordToParent[i]);
+  FOR i := 0 TO AST.nextTypeId DO
+    GenInt(AST.recordToParent[i]);
     GenStr(", ");
   END;
   GenStr("};"); GenLn;
@@ -771,7 +771,7 @@ BEGIN
     WHILE p.kind # AST.declEND DO
       q.name := p.qname.name;
       IF p.kind = AST.declVar THEN
-        IF p.state = Decls.stateUnresolved THEN
+        IF p.state = AST.stateUnresolved THEN
           GenStr("#pragma GCC warning ");
           GenStr(22X);
           GenStr("variable ");
@@ -820,6 +820,30 @@ BEGIN
     END;
   END;
 END Generate;
+
+PROCEDURE GenStartMain*;
+BEGIN
+  GenStr("int main(int argc, const char **argv) {");
+  GenLn;
+  INC(indent);
+  GenI; GenStr("InitArgs(argc, argv);"); GenLn;
+END GenStartMain;
+
+PROCEDURE GenCall*(l :Lex.Lexer; name :AST.QName);
+BEGIN
+  GenI;
+  GenQName(l, name);
+  GenStr("();");
+  GenLn;
+END GenCall;
+
+PROCEDURE GenEndMain*;
+BEGIN
+  DEC(indent);
+  GenI;
+  GenStr("}");
+  GenLn;
+END GenEndMain;
 
 BEGIN
   addBoundsChecks := FALSE;

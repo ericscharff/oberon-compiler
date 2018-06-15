@@ -226,6 +226,7 @@ BEGIN
   END
 END TestCase;
 
+PROCEDURE RunTests*;
 BEGIN
   Wowza;
   TestBinop;
@@ -233,4 +234,6 @@ BEGIN
   TestSet;
   TestMisc;
   TestCase
+END RunTests;
+
 END FibFact.

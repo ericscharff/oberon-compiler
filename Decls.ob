@@ -2,12 +2,6 @@ MODULE Decls;
 
 IMPORT AST, Lex;
 
-CONST
-  stateUnresolved* = 0;
-  stateResolving   = 1;
-  stateResolved    = 2;
-  maxTypeId        = 1024;
-
 TYPE
   StringId  = Lex.PoolIndex;
   Forward   = POINTER TO FwdDecl;
@@ -24,9 +18,7 @@ TYPE
 VAR
   nilType*, integerType*, realType*, booleanType*,
     charType*, setType*, stringType* :AST.Type;
-  modInitName :StringId;
-  nextTypeId* :INTEGER;
-  recordToParent* :ARRAY maxTypeId OF INTEGER;
+  modInitName* :StringId;
   scope, globalScope :AST.Decl;
   reachableDecls*, tailReachable :ReachableDecl;
   fwds  :Forward;
@@ -96,7 +88,7 @@ BEGIN
   d.procVars := NIL;
   d.exported := FALSE;
   d.isNative := FALSE;
-  d.state := stateUnresolved;
+  d.state := AST.stateUnresolved;
 END NewDecl;
 
 PROCEDURE AddDecl*(l :Lex.Lexer; VAR chain :AST.Decl; name :StringId) :AST.Decl;
@@ -239,13 +231,12 @@ VAR
 BEGIN
   NewType(t, AST.typeRecord);
   t.base := base;
-  t.typeId := nextTypeId;
+  t.typeId := AST.GetNextTypeId();
   IF base = NIL THEN
-    recordToParent[nextTypeId] := 0
+    AST.SetRecordToParent(t.typeId, 0);
   ELSE
-    recordToParent[nextTypeId] := base.typeId
+    AST.SetRecordToParent(t.typeId, base.typeId);
   END;
-  INC(nextTypeId);
   IF base # NIL THEN
     IF base.kind = AST.typeRecord THEN
       (* Copy fields from base *)
@@ -581,8 +572,8 @@ VAR
   p         :AST.Decl;
   reachable :ReachableDecl;
 BEGIN
-  IF d.state = stateUnresolved THEN
-    d.state := stateResolving;
+  IF d.state = AST.stateUnresolved THEN
+    d.state := AST.stateResolving;
     IF d.qname.name = modInitName THEN
       (* MODULE inits are a bit special, they are followed by any dels *)
       (* that have been imported by the MODULE. Resolve these first.   *)
@@ -597,7 +588,7 @@ BEGIN
     VisitType(d.typ);
     VisitStatement(d.body);
     VisitExpr(d.expr);
-    d.state := stateResolved;
+    d.state := AST.stateResolved;
     NEW(reachable);
     reachable.d := d;
     IF reachableDecls = NIL THEN
@@ -606,13 +597,13 @@ BEGIN
       tailReachable.next := reachable;
     END;
     tailReachable := reachable;
-  ELSIF d.state = stateResolving THEN
+  ELSIF d.state = AST.stateResolving THEN
     IF d.kind # AST.declProcedure THEN
       (* Circular reference *)
       ASSERT(FALSE);
     END;
   ELSE
-    ASSERT(d.state = stateResolved);
+    ASSERT(d.state = AST.stateResolved);
   END;
 END VisitDecl0;
 
@@ -658,12 +649,15 @@ BEGIN
   Lex.InfoPrintLn("PASS: Decls test");
 END TestDecls;
 
+PROCEDURE RunTests*;
+BEGIN
+  TestDecls
+END RunTests;
+
 BEGIN
   VisitDecl := VisitDecl0;
   reachableDecls := NIL;
   tailReachable := NIL;
   globalScope := NIL;
   reachableDecls := NIL;
-  nextTypeId := 1;
-  TestDecls
 END Decls.

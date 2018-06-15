@@ -852,8 +852,12 @@ BEGIN
   InfoPrintLn("PASS: Lexer test");
 END TestLexer;
 
+PROCEDURE RunTests*;
 BEGIN
-  InitTokenNames;
   TestPool;
   TestLexer;
+END RunTests;
+
+BEGIN
+  InitTokenNames;
 END Lex.

@@ -97,3 +97,22 @@ void Out_ReadFile(const char *fileName, size_t q, char *buf, size_t r) {
   fclose(file);
   buf[len] = 0;
 }
+
+int saved_argc;
+const char **saved_argv;
+
+void InitArgs(int argc, const char **argv) {
+  saved_argc = argc;
+  saved_argv = argv;
+}
+
+int Args_Count(void) {
+  return saved_argc;
+}
+
+void Args_GetArg(char *s, size_t sLen, int arg) {
+  assert(arg >= 0);
+  assert(arg < saved_argc);
+  assert(strlen(saved_argv[arg]) < sLen);
+  strncpy(s, saved_argv[arg], sLen);
+}
