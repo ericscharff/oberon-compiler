@@ -1,0 +1,174 @@
+MODULE OopTest;
+
+IMPORT Out;
+
+TYPE
+  Message = RECORD END;
+
+  DrawMessage = RECORD (Message) END;
+  TickMessage = RECORD (Message) END;
+
+  Object = POINTER TO ObjectDesc;
+  Handler = PROCEDURE (obj :Object; VAR msg :Message);
+
+  ObjectDesc = RECORD handler :Handler END;
+
+  Shape = POINTER TO ShapeDesc;
+  ShapeDesc = RECORD (ObjectDesc) END;
+  Square = POINTER TO SquareDesc;
+  SquareDesc = RECORD (ShapeDesc) sideLen :INTEGER END;
+  Circle = POINTER TO CircleDesc;
+  CircleDesc = RECORD (ShapeDesc) radius :REAL END;
+  Triangle = POINTER TO TriangleDesc;
+  TriangleDesc = RECORD (ShapeDesc) base, height :INTEGER END;
+
+  Actor = POINTER TO ActorDesc;
+  ActorDesc = RECORD (ObjectDesc) position, velocity :INTEGER END;
+
+  ListPtr = POINTER TO ObjList;
+  ObjList = RECORD o :Object; next :ListPtr END;
+
+PROCEDURE ObjectHandler(obj :Object; VAR msg :Message);
+BEGIN
+  Out.PrintLn("Unhandled Message");
+END ObjectHandler;
+
+PROCEDURE ActorHandler(obj :Object; VAR msg :Message);
+VAR
+  a :Actor;
+BEGIN
+  a := obj(Actor);
+  IF msg IS DrawMessage THEN
+    Out.Str("Drawing actor at position ");
+    Out.Int(a.position);
+    Out.Ln;
+  ELSIF msg IS TickMessage THEN
+    a.position := a.position + a.velocity
+  ELSE
+    ObjectHandler(obj, msg)
+  END
+END ActorHandler;
+
+PROCEDURE NewActor(p, v :INTEGER) :Actor;
+VAR
+  a :Actor;
+BEGIN
+  NEW(a);
+  a.position := p;
+  a.velocity := v;
+  a.handler := ActorHandler;
+  RETURN a
+END NewActor;
+
+PROCEDURE SquareHandler(obj :Object; VAR msg :Message);
+BEGIN
+  IF msg IS DrawMessage THEN
+    Out.Str("Drawing square OF size ");
+    Out.Int(obj(Square).sideLen);
+    Out.Ln;
+  ELSE
+    ObjectHandler(obj, msg);
+  END;
+END SquareHandler;
+
+PROCEDURE NewSquare(sideLen :INTEGER) :Square;
+VAR
+  s :Square;
+BEGIN
+  NEW(s);
+  s.sideLen := sideLen;
+  s.handler := SquareHandler;
+  RETURN s
+END NewSquare;
+
+PROCEDURE CircleHandler(obj :Object; VAR msg :Message);
+BEGIN
+  IF msg IS DrawMessage THEN
+    Out.Str("Drawing circle OF radius ");
+    Out.Real(obj(Circle).radius);
+    Out.Ln;
+  ELSE
+    ObjectHandler(obj, msg);
+  END;
+END CircleHandler;
+
+PROCEDURE NewCircle(r :REAL) :Circle;
+VAR
+  c :Circle;
+BEGIN
+  NEW(c);
+  c.radius := r;
+  c.handler := CircleHandler;
+  RETURN c
+END NewCircle;
+
+PROCEDURE TriangleHandler(obj :Object; VAR msg :Message);
+VAR
+  t :Triangle;
+BEGIN
+  t := obj(Triangle);
+  IF msg IS DrawMessage THEN
+    Out.Str("Drawing triangle WITH base ");
+    Out.Int(t.base);
+    Out.Str(" and height ");
+    Out.Int(t.height);
+    Out.Ln;
+  ELSE
+    ObjectHandler(obj, msg);
+  END;
+END TriangleHandler;
+
+PROCEDURE NewTriangle(b, h :INTEGER) :Triangle;
+VAR
+  t :Triangle;
+BEGIN
+  NEW(t);
+  t.base := b;
+  t.height := h;
+  t.handler := TriangleHandler;
+  RETURN t
+END NewTriangle;
+
+PROCEDURE Broadcast(VAR m :Message; l :ListPtr);
+BEGIN
+  WHILE l # NIL DO
+    l.o.handler(l.o, m);
+    l := l.next
+  END
+END Broadcast;
+
+PROCEDURE Driver;
+VAR
+  head, l :ListPtr;
+  dm :DrawMessage;
+  tm :TickMessage;
+BEGIN
+  head := NIL;
+  NEW(l);
+  l.o := NewSquare(25);
+  l.next := head;
+  head := l;
+  NEW(l);
+  l.o := NewSquare(15);
+  l.next := head;
+  head := l;
+  NEW(l);
+  l.o := NewCircle(2.2);
+  l.next := head;
+  head := l;
+  NEW(l);
+  l.o := NewTriangle(3, 2);
+  l.next := head;
+  head := l;
+  NEW(l);
+  l.o := NewActor(5, 1);
+  l.next := head;
+  head := l;
+  Broadcast(dm, head);
+  Broadcast(tm, head);
+  Broadcast(dm, head);
+END Driver;
+
+BEGIN
+  Driver
+END OopTest.
