@@ -1,5 +1,6 @@
 oberon
 oberon0
+oberon1
 compiler.c
 out.c
 out.prg

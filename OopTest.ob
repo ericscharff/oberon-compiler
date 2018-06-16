@@ -15,15 +15,11 @@ TYPE
 
   Shape = POINTER TO ShapeDesc;
   ShapeDesc = RECORD (ObjectDesc) END;
-  Square = POINTER TO SquareDesc;
-  SquareDesc = RECORD (ShapeDesc) sideLen :INTEGER END;
-  Circle = POINTER TO CircleDesc;
-  CircleDesc = RECORD (ShapeDesc) radius :REAL END;
-  Triangle = POINTER TO TriangleDesc;
-  TriangleDesc = RECORD (ShapeDesc) base, height :INTEGER END;
+  Square = POINTER TO RECORD (ShapeDesc) sideLen :INTEGER END;
+  Circle = POINTER TO RECORD (ShapeDesc) radius :REAL END;
+  Triangle = POINTER TO RECORD (ShapeDesc) base, height :INTEGER END;
 
-  Actor = POINTER TO ActorDesc;
-  ActorDesc = RECORD (ObjectDesc) position, velocity :INTEGER END;
+  Actor = POINTER TO RECORD (ObjectDesc) position, velocity :INTEGER END;
 
   ListPtr = POINTER TO ObjList;
   ObjList = RECORD o :Object; next :ListPtr END;
