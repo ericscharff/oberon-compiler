@@ -22,6 +22,7 @@ VAR
   scope, globalScope :AST.Decl;
   reachableDecls*, tailReachable :ReachableDecl;
   fwds  :Forward;
+  genSymNum :INTEGER;
   VisitDecl* :PROCEDURE (d :AST.Decl);
 
 PROCEDURE LookupDecl0(name :StringId) :AST.Decl;
@@ -160,7 +161,21 @@ BEGIN
   RETURN t
 END NewArrayType;
 
-PROCEDURE NewPointerType*(l :Lex.Lexer; base :AST.Type) :AST.Type;
+PROCEDURE MakeSyntheticDecl(VAR l :Lex.Lexer; base :AST.Type);
+VAR
+  name :ARRAY 10 OF CHAR;
+BEGIN
+  ASSERT(base.kind = AST.typeRecord);
+  IF base.decl = NIL THEN
+    Lex.MakeDummy(genSymNum, name);
+    NewDecl(base.decl, Lex.Intern(l, name));
+    base.decl.kind := AST.declType;
+    base.decl.typ := base;
+    INC(genSymNum);
+  END;
+END MakeSyntheticDecl;
+
+PROCEDURE NewPointerType*(VAR l :Lex.Lexer; base :AST.Type) :AST.Type;
 VAR
   t :AST.Type;
 BEGIN
@@ -168,13 +183,14 @@ BEGIN
   IF (base # NIL) & (base.kind # AST.typeRecord) THEN
     Lex.ErrorLn(l, "Pointer base type must be a RECORD");
   ELSE
+    MakeSyntheticDecl(l, base);
     NewType(t, AST.typePointer);
     t.base := base;
   END;
   RETURN t
 END NewPointerType;
 
-PROCEDURE NewPointerTypeByName*(l :Lex.Lexer; name :StringId) :AST.Type;
+PROCEDURE NewPointerTypeByName*(VAR l :Lex.Lexer; name :StringId) :AST.Type;
 VAR
   d :AST.Decl;
   f :Forward;
@@ -656,6 +672,7 @@ END RunTests;
 
 BEGIN
   VisitDecl := VisitDecl0;
+  genSymNum := 0;
   reachableDecls := NIL;
   tailReachable := NIL;
   globalScope := NIL;

@@ -180,7 +180,7 @@ BEGIN
   RETURN StringInternRange(sp, s, 0, StringLen(s))
 END StringIntern;
 
-PROCEDURE MakeDummy(i :INTEGER; VAR s :ARRAY OF CHAR);
+PROCEDURE MakeDummy*(i :INTEGER; VAR s :ARRAY OF CHAR);
 BEGIN
   s[0] := "i";
   s[4] := CHR((i MOD 10) + 48);
