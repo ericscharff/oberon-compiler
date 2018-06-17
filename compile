@@ -1,6 +1,17 @@
 #!/bin/bash
 
+BUILDDIR=build
 rm -f out.c
+CC=gcc
+EXT=.c
+OCFLAGS=
 
-./oberon -cpp $1 | ./perr.py
-./oberon -cpp $1 > out.cpp && g++ -Wall -Wextra -Wpedantic -o out.prg out.cpp
+if [ $1 = "-cpp" ]; then
+	CC=g++
+	EXT=.cpp
+	OCFLAGS=-cpp
+	shift
+fi
+
+$BUILDDIR/oberon $OCFLAGS $1 | ./perr.py
+$BUILDDIR/oberon $OCFLAGS $1 > build/out$EXT && $CC -Wall -Wextra -Wpedantic -o $BUILDDIR/out.prg $BUILDDIR/out$EXT
