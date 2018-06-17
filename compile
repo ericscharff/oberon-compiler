@@ -1,0 +1,6 @@
+#!/bin/bash
+
+rm -f out.c
+
+./oberon -cpp $1 | ./perr.py
+./oberon -cpp $1 > out.cpp && g++ -Wall -Wextra -Wpedantic -o out.prg out.cpp
