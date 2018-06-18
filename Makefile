@@ -13,12 +13,14 @@ $(BUILDDIR)/oberon: $(BUILDDIR)/oberon1 $(COMPILER_SRCS)
 	mv $(BUILDDIR)/out.prg $(BUILDDIR)/oberon
 
 $(BUILDDIR)/oberon1: $(BUILDDIR)/oberon0 $(COMPILER_SRCS)
-	OBERONPATH=c_bootstrap:compiler $(BUILDDIR)/oberon0
-	mv out.c $(BUILDDIR)
+	cd $(BUILDDIR); ./oberon0
 	$(CC) -g -Wall -Wextra -Wpedantic $(BUILDDIR)/out.c -o $(@)
 
 $(BUILDDIR)/oberon0: $(BOOTSTRAP_SRCS)
 	mkdir -p $(BUILDDIR)
+	cp c_bootstrap/*.ob $(BUILDDIR)
+	cp c_bootstrap/builtin.defs $(BUILDDIR)
+	cp compiler/*.ob $(BUILDDIR)
 	cp compiler/runtime.c compiler/compile $(BUILDDIR)
 	$(CC) $(CFLAGS) -o $(@) -Ic_bootstrap c_bootstrap/main.c $(LIBS)
 

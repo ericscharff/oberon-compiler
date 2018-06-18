@@ -393,29 +393,8 @@ void init_stream(const char *fileName, const char *buf) {
   token.pos.line = 1;
 }
 
-FILE *find_file(const char *fileName) {
-  char *oberonPath = getenv("OBERONPATH");
-  if (!oberonPath) {
-    fprintf(stderr, "OBERONPATH must be set!\n");
-    exit(1);
-  }
-  char path[1024];
-  strncpy(path, oberonPath, 1024);
-  char buf[1024];
-  char *elt = strtok(path, ":");
-  while (elt) {
-    snprintf(buf, sizeof(buf), "%s/%s", elt, fileName);
-    FILE *f = fopen(buf, "rb");
-    if (f) {
-      return f;
-    }
-    elt = strtok(NULL, ":");
-  }
-  return NULL;
-}
-
 char *read_file(const char *path) {
-  FILE *file = find_file(path);
+  FILE *file = fopen(path, "rb");
   if (!file) {
     return NULL;
   }
