@@ -310,7 +310,7 @@ END Int;
 PROCEDURE Ln*;
 BEGIN
   Out.Ln;
-  IF fatal THEN ASSERT(FALSE) END;
+  IF fatal THEN Out.Halt END;
 END Ln;
 
 PROCEDURE PrintLn*(s :ARRAY OF CHAR);
@@ -860,4 +860,5 @@ END RunTests;
 
 BEGIN
   InitTokenNames;
+  fatal := TRUE;
 END Lex.

@@ -1,0 +1,26 @@
+#!/bin/bash
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PARENTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )"
+BUILDDIR=$PARENTDIR/build
+COMPILERDIR=$PARENTDIR/compiler
+PERR=$COMPILERDIR/perr.py
+
+cp $COMPILERDIR/*.ob $BUILDDIR
+cp *.ob $BUILDDIR
+cd $BUILDDIR
+
+CC=gcc
+EXT=.c
+OCFLAGS=
+
+if [ $1 = "-cpp" ]; then
+	CC=g++
+	EXT=.cpp
+	OCFLAGS=-cpp
+	shift
+fi
+
+cd $BUILDDIR
+./oberon $OCFLAGS $1 | $PERR
+./oberon $OCFLAGS $1 > out$EXT && $CC -g -Wall -Wextra -Wpedantic -o out.prg out$EXT

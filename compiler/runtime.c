@@ -98,6 +98,8 @@ void Out_ReadFile(const char *fileName, size_t q, char *buf, size_t r) {
   buf[len] = 0;
 }
 
+void Out_Halt(void) { exit(1); }
+
 int saved_argc;
 const char **saved_argv;
 

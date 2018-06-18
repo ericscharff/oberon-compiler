@@ -1,4 +1,4 @@
-MODULE Simple;
+MODULE TypeExt;
 
 IMPORT Out;
 
@@ -72,7 +72,7 @@ BEGIN
   a.a := s.s;
 END BaseTypes;
 
-PROCEDURE SimpleTest;
+PROCEDURE TypeExtTest;
 VAR
   vr1 :R1;
   vr2 :R2;
@@ -87,8 +87,8 @@ BEGIN
   BaseTypes(vr1, vr2, vr3, vr4, s1);
   NEW(pvr1); NEW(pvr2); NEW(pvr3); NEW(pvr4);
   BasePtrTypes(pvr1, pvr2, pvr3, pvr4);
-END SimpleTest;
+END TypeExtTest;
 
 BEGIN
-  SimpleTest
-END Simple.
+  TypeExtTest
+END TypeExt.
