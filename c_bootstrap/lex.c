@@ -1,8 +1,5 @@
 #include <gmodule.h>
 
-// Avoid dumb problems with const
-#define G_HASH_INSERT(t, k, v) g_hash_table_insert(t, (void *)k, (void *)v)
-
 typedef enum {
   TOKEN_UNKNOWN,
   TOKEN_EOF,
