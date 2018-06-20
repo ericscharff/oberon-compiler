@@ -106,7 +106,7 @@ char *pool_end;
 const char *stream;
 #define NUM_BUCKETS 4096
 Token token;
-int hash_buckets[NUM_BUCKETS];
+ptrdiff_t hash_buckets[NUM_BUCKETS];
 
 // Keywords
 const char *keyword_array;
@@ -187,7 +187,8 @@ const char *string_intern_range(const char *begin, const char *end) {
   // put temp copy in hash table to null terminate
   const char *target = string_pool_insert(begin, end);
   int b = string_hash(target) % NUM_BUCKETS;
-  while ((hash_buckets[b] >= 0) && (strcmp(target, string_pool + hash_buckets[b]) != 0)) {
+  while ((hash_buckets[b] >= 0) &&
+         (strcmp(target, string_pool + hash_buckets[b]) != 0)) {
     b++;
     if (b == NUM_BUCKETS) {
       b = 0;
@@ -253,7 +254,7 @@ void init_keywords(void) {
 void init_string_pool(void) {
   pool_current = string_pool;
   pool_end = pool_current + STRING_POOL_SIZE;
-  for (size_t i=0; i < NUM_BUCKETS; i++) {
+  for (size_t i = 0; i < NUM_BUCKETS; i++) {
     hash_buckets[i] = -1;
   }
   init_keywords();
@@ -261,7 +262,7 @@ void init_string_pool(void) {
 
 void pool_test(void) {
   assert(strcmp("ARRAY", string_pool) == 0);
-  assert(strcmp("BEGIN", string_pool+6) == 0);
+  assert(strcmp("BEGIN", string_pool + 6) == 0);
   const char *one = string_intern("one");
   const char *two = string_intern("two");
   const char *three = string_intern("three");

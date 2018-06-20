@@ -136,7 +136,10 @@ END ParseSet;
 
 PROCEDURE IsTypeGuard(e :AST.Expr) :BOOLEAN;
 BEGIN
-  RETURN (e.typ.kind = AST.typePointer) OR ((e.typ.kind = AST.typeRecord) & (e.kind = AST.exprIdentRef) & (e.decl.kind = AST.declVarParam))
+  RETURN (e.typ.kind = AST.typePointer) OR
+         ((e.typ.kind = AST.typeRecord) &
+          (e.kind = AST.exprIdentRef) &
+          (e.decl.kind = AST.declVarParam))
 END IsTypeGuard;
 
 PROCEDURE ParseDesignator() :AST.Expr;
@@ -337,7 +340,8 @@ VAR
 BEGIN
   cond := NIL;
   IF IsToken(Lex.tINT) OR IsToken(Lex.tSTRING) OR IsToken(Lex.tIDENT) THEN
-    cond := AST.NewExprBinary(l, Lex.tEQ, caseVar, ParseFactor(), Decls.booleanType);
+    cond := AST.NewExprBinary(
+        l, Lex.tEQ, caseVar, ParseFactor(), Decls.booleanType);
     IF ~AST.IsConst(cond.rhs) THEN
       Lex.ErrorLn(l, "CASE label must be constant");
     END;
@@ -353,7 +357,8 @@ VAR
 BEGIN
   cond := ParseCaseLabel(caseVar);
   IF MatchToken(Lex.tDOTDOT) THEN
-    cond := AST.NewExprBinary(l, Lex.tCaseDotDot, cond, ParseCaseLabel(caseVar), Decls.booleanType);
+    cond := AST.NewExprBinary(
+        l, Lex.tCaseDotDot, cond, ParseCaseLabel(caseVar), Decls.booleanType);
   END;
   RETURN cond
 END ParseCaseLabelRange;
@@ -609,7 +614,9 @@ BEGIN
       END;
       ExpectToken(Lex.tCOLON);
       fieldType := ParseType();
-      WHILE (firstField # NIL) & (lastField # NIL) & (firstField # lastField.next) DO
+      WHILE (firstField # NIL) &
+            (lastField # NIL) &
+            (firstField # lastField.next) DO
         firstField.kind := AST.declField;
         firstField.typ := fieldType;
         firstField := firstField.next;
@@ -647,11 +654,19 @@ BEGIN
   name := ExpectIdentifier();
   firstParam := Decls.AddDecl(l, procType.fields, name);
   lastParam := firstParam;
-  IF varParameter THEN firstParam.kind := AST.declVarParam ELSE firstParam.kind := AST.declParam END;
+  IF varParameter THEN
+    firstParam.kind := AST.declVarParam
+  ELSE
+    firstParam.kind := AST.declParam
+  END;
   WHILE MatchToken(Lex.tCOMMA) DO
     name := ExpectIdentifier();
     lastParam := Decls.AddDecl(l, procType.fields, name);
-    IF varParameter THEN lastParam.kind := AST.declVarParam ELSE lastParam.kind := AST.declParam END;
+    IF varParameter THEN
+      lastParam.kind := AST.declVarParam
+    ELSE
+      lastParam.kind := AST.declParam
+    END;
   END;
   ExpectToken(Lex.tCOLON);
   (* The formal descrition of Oberon-07 is rather restrictive here. This *)
@@ -670,7 +685,9 @@ BEGIN
     arrType.base := paramType;
     paramType := arrType;
   END;
-  WHILE (firstParam # NIL) & (lastParam # NIL) & (firstParam # lastParam.next) DO
+  WHILE (firstParam # NIL) &
+        (lastParam # NIL) &
+        (firstParam # lastParam.next) DO
     firstParam.typ := paramType;
     firstParam := firstParam.next;
   END;
@@ -784,7 +801,8 @@ BEGIN
     procDecl.body := ParseStatementSequence();
   END;
   IF MatchToken(Lex.tRETURN) THEN
-    procDecl.expr := AST.ValidateReturnStatement(l, procDecl, ParseExpression());
+    procDecl.expr :=
+        AST.ValidateReturnStatement(l, procDecl, ParseExpression());
   END;
   ExpectToken(Lex.tEND);
   procDecl.procVars := Decls.CurrentScope();

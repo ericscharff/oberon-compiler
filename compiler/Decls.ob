@@ -303,7 +303,8 @@ BEGIN
   d.resolver := callback;
 END AddBuiltin;
 
-(* Native procedure declarations. Lowercase names because they are private callbacks *)
+(* Native procedure declarations. *)
+(* Lowercase names because they are private callbacks *)
 PROCEDURE builtinAbs(l :Lex.Lexer; args :AST.Expr) :AST.Expr;
 VAR
   e :AST.Expr;

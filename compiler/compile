@@ -15,10 +15,15 @@ EXT=.c
 OCFLAGS=
 
 if [ $1 = "-cpp" ]; then
-	CC=g++
-	EXT=.cpp
-	OCFLAGS=-cpp
-	shift
+  CC=g++
+  EXT=.cpp
+  OCFLAGS=-cpp
+  shift
+fi
+
+if [ $1 = "-bounds" ]; then
+  OCFLAGS="$OCFLAGS -bounds"
+  shift
 fi
 
 cd $BUILDDIR

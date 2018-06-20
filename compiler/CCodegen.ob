@@ -120,11 +120,19 @@ BEGIN
           INC(indent);
           IF AST.NeedsTypeInfo(t) THEN
             (* constructor sets typeid *)
-            GenI; GenQName(l, name); GenStr("() { _tid = "); GenInt(t.typeId); GenStr("; }"); GenLn;
+            GenI;
+            GenQName(l, name);
+            GenStr("() { _tid = ");
+            GenInt(t.typeId); GenStr("; }");
+            GenLn;
             (* virtual destructor to get RTTI *)
             IF t.base = NIL THEN
               GenI; GenStr("oberon_typeid _tid;"); GenLn;
-              GenI; GenStr("virtual ~"); GenQName(l, name); GenStr("() = default;"); GenLn;
+              GenI;
+              GenStr("virtual ~");
+              GenQName(l, name);
+              GenStr("() = default;");
+              GenLn;
             END;
           END;
           f := t.fields;
@@ -196,10 +204,12 @@ BEGIN
             IF procDecl THEN
               q.name := f.qname.name;
             END;
-            IF (t.kind IN {AST.typeRecord, AST.typeArray}) & (f.kind # AST.declVarParam) THEN
+            IF (t.kind IN {AST.typeRecord, AST.typeArray}) &
+               (f.kind # AST.declVarParam) THEN
               GenStr("const ");
             END;
-            IF (t.kind = AST.typeRecord) OR ((f.kind = AST.declVarParam) & ~(t.kind = AST.typeArray)) THEN
+            IF (t.kind = AST.typeRecord) OR
+               ((f.kind = AST.declVarParam) & ~(t.kind = AST.typeArray)) THEN
               q.name := 0;
               GenType(l, t, q, FALSE, FALSE);
               GenStr(" *");
@@ -361,10 +371,10 @@ BEGIN
             ASSERT(FALSE);
         END;
       ELSE
-        (* Primitive type (CHAR, INTEGER, REAL, POINTER ops.                    *)
-        (* Of course, some of these don't make sense (e.g., pointer + poitner)  *)
-        (* but this code relies on the fact that the AST has done type checking *)
-        (* and validation beforehand.                                           *)
+        (* Primitive type (CHAR, INTEGER, REAL, POINTER ops.                *)
+        (* Of course, some of these don't make sense (e.g., pointer         *)
+        (* + pointer) but this code relies on the fact that the AST has     *)
+        (* done type checking and validation beforehand.                    *)
         CASE e.op OF
           Lex.tPLUS:
             GenExpr(l, e.lhs); GenStr(" + "); GenExpr(l, e.rhs);
@@ -422,7 +432,8 @@ BEGIN
       END;
       GenStr(")");
   | AST.exprIdentRef:
-      IF (e.decl.kind IN {AST.declVar, AST.declProcedure}) & (e.decl.nesting = 0) THEN
+      IF (e.decl.kind IN {AST.declVar, AST.declProcedure}) &
+         (e.decl.nesting = 0) THEN
         q.moduleName := e.decl.qname.moduleName;
       ELSE
         (* Local variables don't get a prefix, just for readability *)
@@ -446,7 +457,8 @@ BEGIN
         IF e.typ.kind = AST.typeArray THEN
           (* Arrays are always passed by pointer, no special procesing  *)
           GenExpr(l, e);
-        ELSIF (e.typ.kind = AST.typeRecord) OR (formal.kind = AST.declVarParam) THEN
+        ELSIF (e.typ.kind = AST.typeRecord) OR
+              (formal.kind = AST.declVarParam) THEN
           (* Record (and VAR parameters) are always passed by reference *)
           GenStr("&(");
           GenExpr(l, e);
@@ -482,6 +494,7 @@ BEGIN
         GenExpr(l, e.rhs);
         GenStr(", ");
         GenLengthof(l, e.lhs);
+	GenStr(")");
       ELSE
         GenExpr(l, e.rhs);
       END;

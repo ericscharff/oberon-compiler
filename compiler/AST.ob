@@ -233,7 +233,8 @@ BEGIN
   IF t.decl = NIL THEN
     Lex.Str(TypeKindNames[t.kind]);
   ELSE
-    IF (t.decl.qname.moduleName > 0) & (t.decl.qname.moduleName # currentModuleName) THEN
+    IF (t.decl.qname.moduleName > 0) &
+       (t.decl.qname.moduleName # currentModuleName) THEN
       Lex.OutStr(l, t.decl.qname.moduleName);
       Lex.Str(".");
     END;
@@ -256,7 +257,8 @@ END ExpectType;
 
 PROCEDURE IsStringType(t :Type) :BOOLEAN;
 BEGIN
-  RETURN (t.kind = typeString) OR ((t.kind = typeArray) & (t.base.kind = typeChar))
+  RETURN (t.kind = typeString) OR
+      ((t.kind = typeArray) & (t.base.kind = typeChar))
 END IsStringType;
 
 (* does a extend b *)
@@ -295,12 +297,14 @@ BEGIN
       aParam := a.fields;
       bParam := b.fields;
       WHILE (len > 0) & (aParam.kind # declEND) & (bParam.kind # declEND) DO
-        procCompatable := procCompatable & AssignmentCompatable(l, aParam.typ, bParam.typ, 0, 0);
+        procCompatable := procCompatable &
+            AssignmentCompatable(l, aParam.typ, bParam.typ, 0, 0);
         aParam := aParam.next;
         bParam := bParam.next;
         DEC(len);
       END;
-      procCompatable := procCompatable & (len = 0) & (aParam.kind = declEND) & (bParam.kind = declEND);
+      procCompatable := procCompatable &
+          (len = 0) & (aParam.kind = declEND) & (bParam.kind = declEND);
     END;
   END;
   RETURN
@@ -310,10 +314,12 @@ BEGIN
     ((b.kind = typeChar) & (a.kind = typeString) & Lex.IsOneChar(l, aSval)) OR
     ((a.kind = typeNil) & (b.kind = typePointer)) OR
     ((a.kind = typeNil) & (b.kind = typeProcedure)) OR
-    ((a.kind = typePointer) & (b.kind = typePointer) & Extends(a.base, b.base)) OR
+    ((a.kind = typePointer) & (b.kind = typePointer) &
+     Extends(a.base, b.base)) OR
     ((a.kind = typeRecord) & (b.kind = typeRecord) & Extends(a, b)) OR
     ((a.kind = typeProcedure) & (b.kind = typeProcedure) & procCompatable) OR
-    ((a.kind = typeArray) & (a.base.kind = typeChar) & (b.kind = typeArray) & (b.base.kind = typeChar)) OR
+    ((a.kind = typeArray) & (a.base.kind = typeChar) & (b.kind = typeArray) &
+     (b.base.kind = typeChar)) OR
     ((a.kind = typeString) & (b.kind = typeArray) & (b.base.kind = typeChar))
     (* Strictly speaking, that last case is not true in Oberon. You cannot  *)
     (* assign one array to another, except for strings. However, this is    *)
@@ -507,9 +513,14 @@ VAR
   e :Expr;
 BEGIN
   e := base;
-  IF (newType.kind = declType) & (newType.typ.kind IN {typeRecord, typePointer}) THEN
-    IF ((base.typ.kind = typePointer) & (newType.typ.kind = typePointer) & Extends(newType.typ.base, base.typ.base)) OR
-       ((base.typ.kind = typeRecord) & (newType.typ.kind = typeRecord) & Extends(newType.typ, base.typ)) THEN
+  IF (newType.kind = declType) &
+     (newType.typ.kind IN {typeRecord, typePointer}) THEN
+    IF ((base.typ.kind = typePointer) &
+        (newType.typ.kind = typePointer) &
+        Extends(newType.typ.base, base.typ.base)) OR
+       ((base.typ.kind = typeRecord) &
+        (newType.typ.kind = typeRecord) &
+        Extends(newType.typ, base.typ)) THEN
       NewExpr(e, exprTypeGuard, newType.typ);
       e.lhs := base;
       e.decl := newType;
@@ -658,7 +669,7 @@ BEGIN
       IF lhs.typ.kind IN {typeInteger, typeReal, typeSet} THEN
         IF IsConst(lhs) THEN
           e.kind := exprVal;
-          (* we do every operation, even if some are invalid, because one will be right *)
+          (* only one of these will be valid, but the others will be ignored *)
           e.iVal := -lhs.iVal;
           e.rVal := -lhs.rVal;
           e.setVal := -lhs.setVal;
@@ -692,7 +703,7 @@ BEGIN
          (lhs.typ.kind IN {typeInteger, typeReal, typeSet}) THEN
         IF IsConst(lhs) & IsConst(rhs) THEN
           e.kind := exprVal;
-          (* we do every operation, even if some are invalid, because one will be right *)
+          (* only one of these will be valid, but the others will be ignored *)
           IF op = Lex.tPLUS THEN
             e.iVal := lhs.iVal + rhs.iVal;
             e.rVal := lhs.rVal + rhs.rVal;
@@ -707,8 +718,16 @@ BEGIN
             e.setVal := lhs.setVal * rhs.setVal;
           ELSIF op = Lex.tSLASH THEN
             (* avoid division by zero by instead returning a wrong answer *)
-            IF rhs.iVal = 0 THEN e.iVal := 0 ELSE e.iVal := lhs.iVal / rhs.iVal END;
-            IF rhs.rVal = 0.0 THEN e.rVal := 0.0 ELSE e.rVal := lhs.rVal / rhs.rVal END;
+            IF rhs.iVal = 0 THEN
+              e.iVal := 0
+            ELSE
+              e.iVal := lhs.iVal / rhs.iVal
+            END;
+            IF rhs.rVal = 0.0 THEN
+              e.rVal := 0.0
+            ELSE
+              e.rVal := lhs.rVal / rhs.rVal
+            END;
             e.setVal := lhs.setVal / rhs.setVal;
           END;
         END;
@@ -744,7 +763,8 @@ BEGIN
       e.typ := booleanType;
       IF ExprCompatable(l, op, lhs, rhs) &
          (IsStringType(lhs.typ) OR
-          (lhs.typ.kind IN {typeInteger, typeReal, typeSet, typeString, typeChar})) THEN
+          (lhs.typ.kind IN {typeInteger, typeReal, typeSet, typeString,
+                            typeChar})) THEN
         IF IsConst(lhs) & IsConst(rhs) THEN
           (* evaluate *)
         END;
@@ -761,7 +781,8 @@ BEGIN
       e.typ := booleanType;
       IF ExprCompatable(l, op, lhs, rhs) &
          (IsStringType(lhs.typ) OR
-          (lhs.typ.kind IN {typeInteger, typeReal, typeSet, typeString, typeChar, typePointer, typeProcedure})) THEN
+          (lhs.typ.kind IN {typeInteger, typeReal, typeSet, typeString,
+                            typeChar, typePointer, typeProcedure})) THEN
         IF IsConst(lhs) & IsConst(rhs) THEN
           (* evaluate *)
         END;
@@ -772,7 +793,8 @@ BEGIN
           CoerceToChar(l, rhs, lhs.typ);
         END;
       ELSE
-        Lex.ErrorLn(l, "Expected INTEGER, REAL, SET, STRING, CHAR, POINTER, or PROCEDURE");
+        Lex.ErrorLn(l,
+            "Expected INTEGER, REAL, SET, STRING, CHAR, POINTER, or PROCEDURE");
       END;
     | Lex.tIN:
       e.typ := booleanType;
@@ -794,7 +816,8 @@ BEGIN
       IF lhs.typ.kind # rhs.typ.kind THEN
         Lex.ErrorLn(l, "LHS and RHS types must match");
       END;
-      IF (lhs.kind = typeRecord) & ((lhs.kind # exprIdentRef) OR (lhs.decl.kind # declVarParam)) THEN
+      IF (lhs.kind = typeRecord) &
+         ((lhs.kind # exprIdentRef) OR (lhs.decl.kind # declVarParam)) THEN
         Lex.ErrorLn(l, "LHS must be a VAR parameter");
       END;
       IF (rhs.kind # exprIdentRef) OR (rhs.decl.kind # declType) THEN
@@ -818,7 +841,8 @@ BEGIN
     Lex.Error(l, "For argument ");
     Lex.Int(arg);
     Lex.PrintLn(", param is not assignable (expected VAR param)");
-  ELSIF ~AssignmentCompatable(l, actual.typ, formal.typ, actual.iVal, actual.iVal) THEN
+  ELSIF ~AssignmentCompatable(
+      l, actual.typ, formal.typ, actual.iVal, actual.iVal) THEN
     Lex.Error(l, "For argument ");
     Lex.Int(arg);
     Lex.Str(", expected ");

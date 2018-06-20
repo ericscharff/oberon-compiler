@@ -164,7 +164,8 @@ BEGIN
   hash := hash * 85EBCA6BH;
   hash := hash XOR (hash DIV 65536);
   b := hash MOD NumBuckets;
-  WHILE (sp.buckets[b] >= 0) & ~StrEq(sp.buf, sp.buckets[b], s, offset, length) DO
+  WHILE (sp.buckets[b] >= 0) &
+        ~StrEq(sp.buf, sp.buckets[b], s, offset, length) DO
     INC(b);
     IF b = NumBuckets THEN b := 0; END;
   END;
@@ -627,22 +628,52 @@ BEGIN
       | "/": l.t.kind := tSLASH; INC(l.pos)
       | "~": l.t.kind := tTILDE; INC(l.pos)
       | "&": l.t.kind := tAMP; INC(l.pos)
-      | ".": l.t.kind := tDOT; INC(l.pos); IF l.buf[l.pos] = "." THEN INC(l.pos); l.t.kind := tDOTDOT; END
+      | ".":
+          l.t.kind := tDOT;
+          INC(l.pos);
+          IF l.buf[l.pos] = "." THEN
+            INC(l.pos);
+            l.t.kind := tDOTDOT;
+          END
       | ",": l.t.kind := tCOMMA; INC(l.pos)
       | ";": l.t.kind := tSEMI; INC(l.pos)
       | "|": l.t.kind := tVBAR; INC(l.pos)
-      | "(": IF l.buf[l.pos+1] = "*" THEN ScanComment(l) ELSE l.t.kind := tLPAREN; INC(l.pos); END
+      | "(":
+          IF l.buf[l.pos+1] = "*" THEN
+            ScanComment(l)
+          ELSE
+            l.t.kind := tLPAREN;
+            INC(l.pos);
+          END
       | ")": l.t.kind := tRPAREN; INC(l.pos)
       | "[": l.t.kind := tLBRACK; INC(l.pos)
       | "]": l.t.kind := tRBRACK; INC(l.pos)
       | "{": l.t.kind := tLBRACE; INC(l.pos)
       | "}": l.t.kind := tRBRACE; INC(l.pos)
-      | ":": l.t.kind := tCOLON; INC(l.pos); IF l.buf[l.pos] = "=" THEN INC(l.pos); l.t.kind := tASSIGN; END
+      | ":":
+          l.t.kind := tCOLON;
+          INC(l.pos);
+          IF l.buf[l.pos] = "=" THEN
+            INC(l.pos);
+            l.t.kind := tASSIGN;
+          END
       | "^": l.t.kind := tCARET; INC(l.pos)
       | "=": l.t.kind := tEQ; INC(l.pos)
       | "#": l.t.kind := tPOUND; INC(l.pos)
-      | "<": l.t.kind := tLT; INC(l.pos); IF l.buf[l.pos] = "=" THEN INC(l.pos); l.t.kind := tLTEQ; END
-      | ">": l.t.kind := tGT; INC(l.pos); IF l.buf[l.pos] = "=" THEN INC(l.pos); l.t.kind := tGTEQ; END
+      | "<":
+          l.t.kind := tLT;
+          INC(l.pos);
+          IF l.buf[l.pos] = "=" THEN
+            INC(l.pos);
+            l.t.kind := tLTEQ;
+          END
+      | ">":
+          l.t.kind := tGT;
+          INC(l.pos);
+          IF l.buf[l.pos] = "=" THEN
+            INC(l.pos);
+            l.t.kind := tGTEQ;
+          END
     END;
   UNTIL l.t.kind >= 0;
 END NextToken;
