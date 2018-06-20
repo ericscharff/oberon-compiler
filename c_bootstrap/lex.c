@@ -1,5 +1,3 @@
-#include <gmodule.h>
-
 typedef enum {
   TOKEN_UNKNOWN,
   TOKEN_EOF,
@@ -105,10 +103,10 @@ typedef struct Token {
 char string_pool[STRING_POOL_SIZE];
 char *pool_current;
 char *pool_end;
-GHashTable *string_map;
-GHashTable *lower_to_upper_keywords;
 const char *stream;
+#define NUM_BUCKETS 4096
 Token token;
+int hash_buckets[NUM_BUCKETS];
 
 // Keywords
 const char *keyword_array;
@@ -173,15 +171,33 @@ void string_pool_finish(const char *begin, const char *end) {
   pool_current += end - begin + 1;
 }
 
+int string_hash(const char *s) {
+  int hash = 0x811c9dc5;
+  while (*s) {
+    hash ^= *s;
+    hash *= 16777619;
+    s++;
+  }
+  hash *= 0x85ebca6b;
+  hash ^= hash >> 16;
+  return hash;
+}
+
 const char *string_intern_range(const char *begin, const char *end) {
   // put temp copy in hash table to null terminate
   const char *target = string_pool_insert(begin, end);
-  if (g_hash_table_contains(string_map, target)) {
-    return g_hash_table_lookup(string_map, target);
+  int b = string_hash(target) % NUM_BUCKETS;
+  while ((hash_buckets[b] >= 0) && (strcmp(target, string_pool + hash_buckets[b]) != 0)) {
+    b++;
+    if (b == NUM_BUCKETS) {
+      b = 0;
+    }
   }
-  string_pool_finish(begin, end);
-  g_hash_table_add(string_map, (void *)target);
-  return target;
+  if (hash_buckets[b] < 0) {
+    hash_buckets[b] = target - string_pool;
+    string_pool_finish(begin, end);
+  }
+  return string_pool + hash_buckets[b];
 }
 
 const char *string_intern(const char *str) {
@@ -189,8 +205,6 @@ const char *string_intern(const char *str) {
 }
 
 void init_keywords(void) {
-  lower_to_upper_keywords = g_hash_table_new(g_str_hash, g_str_equal);
-
   keyword_array = string_intern("ARRAY");
   keyword_begin = string_intern("BEGIN");
   keyword_by = string_intern("BY");
@@ -239,30 +253,26 @@ void init_keywords(void) {
 void init_string_pool(void) {
   pool_current = string_pool;
   pool_end = pool_current + STRING_POOL_SIZE;
-  string_map = g_hash_table_new(g_str_hash, g_str_equal);
+  for (size_t i=0; i < NUM_BUCKETS; i++) {
+    hash_buckets[i] = -1;
+  }
   init_keywords();
 }
 
 void pool_test(void) {
-  const char *s = "helloworldabcd";
-  string_pool_insert(s, s + 5);
-  string_pool_finish(s, s + 5);
-  string_pool_insert(s + 5, s + 10);
-  string_pool_finish(s + 5, s + 10);
-  string_pool_insert(s + 10, s + 11);
-  string_pool_finish(s + 10, s + 11);
-  assert(!g_hash_table_contains(string_map, "one"));
-  string_intern("one");
-  assert(g_hash_table_contains(string_map, "one"));
-  string_intern("two");
-  assert(g_hash_table_contains(string_map, "two"));
-  string_intern("three");
-  assert(g_hash_table_contains(string_map, "three"));
-  string_intern("four");
-  assert(g_hash_table_contains(string_map, "four"));
-  s = "onetwothreefour";
-  const char *one = string_intern_range(s, s + 3);
-  assert(s != one);
+  assert(strcmp("ARRAY", string_pool) == 0);
+  assert(strcmp("BEGIN", string_pool+6) == 0);
+  const char *one = string_intern("one");
+  const char *two = string_intern("two");
+  const char *three = string_intern("three");
+  const char *four = string_intern("four");
+  assert((one - string_pool) == 207 + 0);
+  assert((two - string_pool) == 207 + 4);
+  assert((three - string_pool) == 207 + 8);
+  assert((four - string_pool) == 207 + 14);
+  const char *s = "onetwothreefour";
+  const char *oneSubset = string_intern_range(s, s + 3);
+  assert(s != oneSubset);
 }
 
 void init_stream(const char *fileName, const char *buf) {
