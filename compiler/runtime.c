@@ -7,6 +7,40 @@
 #define ASSERT assert
 #define oberon_abs(x) ((x) < 0) ? -(x) : (x)
 
+#ifdef __cplusplus
+#define oberon_buf_init(bbuf, bcap, btyp) \
+    (bbuf).buf = new btyp[bcap]; \
+    (bbuf).cap = (bcap); \
+    (bbuf).len = 0;
+#define oberon_buf_push(bbuf, val, btyp) \
+    if ((bbuf).len == (bbuf).cap) { \
+      btyp *newBuf = new btyp[(bbuf).cap*2]; \
+      for (size_t i=0; i < (bbuf).len; i++) { \
+        newBuf[i] = (bbuf).buf[i]; \
+      } \
+      delete (bbuf).buf; \
+      (bbuf).buf = newBuf; \
+      (bbuf).cap *= 2; \
+    } \
+    (bbuf).buf[(bbuf).len++] = val;
+#else
+#define oberon_buf_init(bbuf, bcap, btyp) \
+    (bbuf).buf = malloc(sizeof(btyp)*bcap); \
+    (bbuf).cap = (bcap); \
+    (bbuf).len = 0;
+#define oberon_buf_push(bbuf, val, btyp) \
+    if ((bbuf).len == (bbuf).cap) { \
+      btyp *newBuf = malloc(sizeof(btyp)*(bbuf).cap*2); \
+      for (size_t i=0; i < (bbuf).len; i++) { \
+        newBuf[i] = (bbuf).buf[i]; \
+      } \
+      free((bbuf).buf); \
+      (bbuf).buf = newBuf; \
+      (bbuf).cap *= 2; \
+    } \
+    (bbuf).buf[(bbuf).len++] = val;
+#endif
+
 int checkbounds(int i, int len) {
   assert(i >= 0 && i < len);
   return i;

@@ -6,6 +6,7 @@ VAR
   indent          :INTEGER;
   addBoundsChecks :BOOLEAN;
   genCPlusPlus    :BOOLEAN;
+  GenExpr         :PROCEDURE (l :Lex.Lexer; e :AST.Expr);
 
 PROCEDURE GenStr(s :ARRAY OF CHAR);
 BEGIN
@@ -106,6 +107,16 @@ BEGIN
           GenStr("]");
           p := p.base;
         END;
+    | AST.typeBuffer:
+        GenStr("struct {"); GenLn;
+        INC(indent);
+        GenI;
+        GenType(l, t.base, q, FALSE, FALSE);
+        GenStr(" *buf; size_t cap; size_t len;");
+        GenLn;
+        DEC(indent);
+        GenI; GenStr("} ");
+        GenQName(l, name);
     | AST.typeRecord:
         IF genCPlusPlus THEN
           GenStr("struct ");
@@ -296,6 +307,9 @@ BEGIN
     GenInt(Lex.StringLenI(l, e.iVal) + 1);
   ELSIF e.typ.length > 0 THEN
     GenInt(e.typ.length);
+  ELSIF e.typ.kind = AST.typeBuffer THEN
+    GenExpr(l, e);
+    GenStr(".len");
   ELSE
     ASSERT(e.kind = AST.exprIdentRef);
     q.name := e.decl.qname.name;
@@ -304,7 +318,7 @@ BEGIN
   END;
 END GenLengthof;
 
-PROCEDURE GenExpr(l :Lex.Lexer; e :AST.Expr);
+PROCEDURE GenExpr0(l :Lex.Lexer; e :AST.Expr);
 VAR
   q      :AST.QName;
   formal :AST.Decl;
@@ -463,6 +477,11 @@ BEGIN
           GenStr("&(");
           GenExpr(l, e);
           GenStr(")");
+        ELSIF (e.typ.kind = AST.typeBuffer) &
+              (formal.typ.kind = AST.typeArray) THEN
+          (* Convert buffer to an open array *)
+          GenExpr(l, e);
+          GenStr(".buf");
         ELSE
           (* Everything else is passed by value.                        *)
           GenExpr(l, e);
@@ -486,6 +505,19 @@ BEGIN
       GenStr("(*");
       GenExpr(l, e.lhs);
       GenStr(")");
+  | AST.exprBufferRef:
+      GenExpr(l, e.lhs);
+      GenStr(".buf[");
+      IF addBoundsChecks THEN
+        GenStr("checkbounds(");
+        GenExpr(l, e.rhs);
+        GenStr(", ");
+        GenLengthof(l, e.lhs);
+        GenStr(")");
+      ELSE
+        GenExpr(l, e.rhs);
+      END;
+      GenStr("]");
   | AST.exprArrayRef:
       GenExpr(l, e.lhs);
       GenStr("[");
@@ -494,7 +526,7 @@ BEGIN
         GenExpr(l, e.rhs);
         GenStr(", ");
         GenLengthof(l, e.lhs);
-	GenStr(")");
+        GenStr(")");
       ELSE
         GenExpr(l, e.rhs);
       END;
@@ -520,7 +552,7 @@ BEGIN
       END;
   | AST.exprBuiltin:
       ASSERT(e.iVal >= AST.builtinAbs);
-      ASSERT(e.iVal <= AST.builtinOrd);
+      ASSERT(e.iVal <= AST.builtinPush);
       CASE e.iVal OF
         AST.builtinAbs: GenStr("oberon_abs("); GenExpr(l, e.rhs); GenStr(")");
       | AST.builtinAssert: GenStr("assert("); GenExpr(l, e.rhs); GenStr(")");
@@ -541,6 +573,27 @@ BEGIN
             GenStr(" += ");
             GenExpr(l, e.rhs.next);
           END;
+      | AST.builtinInit:
+          q.moduleName := 0;
+          q.name := 0;
+          GenStr("oberon_buf_init(");
+          GenExpr(l, e.rhs);
+          GenStr(", ");
+          GenExpr(l, e.rhs.next);
+          GenStr(", ");
+          GenType(l, e.rhs.typ.base, q, FALSE, FALSE);
+          GenStr(")");
+      | AST.builtinPush:
+          q.moduleName := 0;
+          q.name := 0;
+          GenStr("oberon_buf_push(");
+          GenExpr(l, e.rhs);
+          GenStr(", ");
+          GenExpr(l, e.rhs.next);
+          GenStr(", ");
+          GenType(l, e.rhs.typ.base, q, FALSE, FALSE);
+          GenStr(")");
+      | AST.builtinLen: GenLengthof(l, e.rhs)
       | AST.builtinNew:
           GenExpr(l, e.rhs);
           IF genCPlusPlus THEN
@@ -568,7 +621,7 @@ BEGIN
         GenExpr(l, e.rhs);
       END;
   END;
-END GenExpr;
+END GenExpr0;
 
 PROCEDURE GenParenExpr(l :Lex.Lexer; e :AST.Expr);
 BEGIN
@@ -869,6 +922,7 @@ BEGIN
 END EnableCPlusPlus;
 
 BEGIN
+  GenExpr := GenExpr0;
   addBoundsChecks := FALSE;
   genCPlusPlus := FALSE;
   indent := 0

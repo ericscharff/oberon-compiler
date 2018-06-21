@@ -19,6 +19,7 @@ VAR
   ParseType :PROCEDURE () :AST.Type;
   ParseDeclarationSequence :PROCEDURE;
   importCallback :Lex.LexCallback;
+  allowLanguageExtensions :BOOLEAN;
 
 PROCEDURE IsToken(kind :Lex.TokenKind) :BOOLEAN;
 BEGIN
@@ -482,6 +483,22 @@ BEGIN
   RETURN s
 END ParseForStatement;
 
+PROCEDURE ParseVarStatement() :AST.Stmt;
+VAR
+  d :AST.Decl;
+  e :AST.Expr;
+BEGIN
+  ExpectToken(Lex.tVAR);
+  d := Decls.AddScopeDecl(l, ExpectIdentifier());
+  d.kind := AST.declVar;
+  d.nesting := nesting;
+  ExpectToken(Lex.tASSIGN);
+  e := ParseExpression();
+  d.typ := e.typ;
+  e := AST.NewExprAssign(l, AST.NewExprIdentRef(d), e);
+  RETURN AST.NewStmtAssign(e)
+END ParseVarStatement;
+
 PROCEDURE ParseAssignOrProcCall() :AST.Stmt;
 VAR
   e, args :AST.Expr;
@@ -518,6 +535,8 @@ BEGIN
     s := ParseRepeatStatement();
   ELSIF IsToken(Lex.tFOR) THEN
     s := ParseForStatement();
+  ELSIF IsToken(Lex.tVAR) & allowLanguageExtensions THEN
+    s := ParseVarStatement();
   ELSIF IsToken(Lex.tIDENT) THEN
     s := ParseAssignOrProcCall();
   ELSE
@@ -573,20 +592,25 @@ VAR
   e                    :AST.Expr;
 BEGIN
   ExpectToken(Lex.tARRAY);
-  e := ParseExpression();
-  outer := Decls.NewArrayType(l, e);
-  ASSERT(e.iVal > 0);
-  last := outer;
-  WHILE MatchToken(Lex.tCOMMA) DO
+  IF allowLanguageExtensions & MatchToken(Lex.tSTAR) THEN
+    ExpectToken(Lex.tOF);
+    outer := Decls.NewBufferType(ParseType());
+  ELSE
     e := ParseExpression();
-    current := Decls.NewArrayType(l, e);
+    outer := Decls.NewArrayType(l, e);
     ASSERT(e.iVal > 0);
+    last := outer;
+    WHILE MatchToken(Lex.tCOMMA) DO
+      e := ParseExpression();
+      current := Decls.NewArrayType(l, e);
+      ASSERT(e.iVal > 0);
+      last.base := current;
+      last := current;
+    END;
+    ExpectToken(Lex.tOF);
+    current := ParseType();
     last.base := current;
-    last := current;
   END;
-  ExpectToken(Lex.tOF);
-  current := ParseType();
-  last.base := current;
   RETURN outer
 END ParseArrayType;
 
@@ -1000,4 +1024,5 @@ BEGIN
   ParseType := ParseType0;
   ParseDeclarationSequence := ParseDeclarationSequence0;
   importCallback := ImportHelper;
+  allowLanguageExtensions := TRUE;
 END Parse.

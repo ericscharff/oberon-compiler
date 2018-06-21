@@ -148,6 +148,16 @@ BEGIN
   d.typ.fields := decls;
 END AddImportDecl;
 
+PROCEDURE NewBufferType*(base :AST.Type) :AST.Type;
+VAR
+  t :AST.Type;
+BEGIN
+  NewType(t, AST.typeBuffer);
+  t.length := -1;
+  t.base := base;
+  RETURN t
+END NewBufferType;
+
 PROCEDURE NewArrayType*(l :Lex.Lexer; length :AST.Expr) :AST.Type;
 VAR
   t :AST.Type;
@@ -435,6 +445,66 @@ BEGIN
   RETURN e
 END builtinFlt;
 
+PROCEDURE builtinLen(l :Lex.Lexer; args :AST.Expr) :AST.Expr;
+VAR
+  e :AST.Expr;
+BEGIN
+  AST.NewExpr(e, AST.exprBuiltin, nilType);
+  e.iVal := AST.builtinLen;
+  e.rhs := args;
+  IF (args = NIL) OR (args.next # NIL) THEN
+    Lex.ErrorLn(l, "LEN expects 1 argument");
+  END;
+  IF args.typ.kind IN {AST.typeArray, AST.typeBuffer} THEN
+    e.typ := integerType;
+  ELSE
+    Lex.ErrorLn(l, "LEN expects an ARRAY");
+  END;
+  RETURN e
+END builtinLen;
+
+PROCEDURE builtinInit(l :Lex.Lexer; args :AST.Expr) :AST.Expr;
+VAR
+  e :AST.Expr;
+BEGIN
+  AST.NewExpr(e, AST.exprBuiltin, nilType);
+  e.iVal := AST.builtinInit;
+  e.rhs := args;
+  IF (args = NIL) OR (args.next = NIL) OR (args.next.next # NIL) THEN
+    Lex.ErrorLn(l, "INIT expects 2 arguments");
+  END;
+  IF args.next.typ.kind # AST.typeInteger THEN
+    Lex.ErrorLn(l, "Second arg to INIT must be an INTEGER");
+  END;
+  IF args.typ.kind = AST.typeBuffer THEN
+    e.typ := nilType;
+  ELSE
+    Lex.ErrorLn(l, "First arg to INIT expects an ARRAY *");
+  END;
+  RETURN e
+END builtinInit;
+
+PROCEDURE builtinPush(l :Lex.Lexer; args :AST.Expr) :AST.Expr;
+VAR
+  e :AST.Expr;
+BEGIN
+  AST.NewExpr(e, AST.exprBuiltin, nilType);
+  e.iVal := AST.builtinPush;
+  e.rhs := args;
+  IF (args = NIL) OR (args.next = NIL) OR (args.next.next # NIL) THEN
+    Lex.ErrorLn(l, "PUSH expects 2 arguments");
+  END;
+  IF args.next.typ # args.typ.base THEN
+    Lex.ErrorLn(l, "Second arg to PUSH must have same type as ARRAY");
+  END;
+  IF args.typ.kind = AST.typeBuffer THEN
+    e.typ := nilType;
+  ELSE
+    Lex.ErrorLn(l, "First arg to PUSH expects an ARRAY *");
+  END;
+  RETURN e
+END builtinPush;
+
 PROCEDURE builtinNew(l :Lex.Lexer; args :AST.Expr) :AST.Expr;
 VAR
   e :AST.Expr;
@@ -483,7 +553,10 @@ BEGIN
     AddBuiltin(l, Lex.Intern(l, "ORD"), builtinOrd);
     AddBuiltin(l, Lex.Intern(l, "CHR"), builtinChr);
     AddBuiltin(l, Lex.Intern(l, "FLT"), builtinFlt);
+    AddBuiltin(l, Lex.Intern(l, "LEN"), builtinLen);
     AddBuiltin(l, Lex.Intern(l, "NEW"), builtinNew);
+    AddBuiltin(l, Lex.Intern(l, "INIT"), builtinInit);
+    AddBuiltin(l, Lex.Intern(l, "PUSH"), builtinPush);
     globalScope := scope;
     (* Special MODULE init function *)
     modInitName := Lex.Intern(l, "_module_init_");

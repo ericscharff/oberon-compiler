@@ -14,10 +14,11 @@ CONST
   typeString*    = 7;
   typePointer*   = 8;
   typeArray*     = 9;
-  typeRecord*    = 10;
-  typeProcedure* = 11;
-  typeImport*    = 12;
-  typeEND        = 13;
+  typeBuffer*    = 10;
+  typeRecord*    = 11;
+  typeProcedure* = 12;
+  typeImport*    = 13;
+  typeEND        = 14;
 
   declImport*    = 1;
   declConst*     = 2;
@@ -38,18 +39,22 @@ CONST
   exprFieldRef*     = 6;
   exprPointerDeref* = 7;
   exprArrayRef*     = 8;
-  exprTypeGuard*    = 9;
-  exprBuiltin*      = 10;
-  exprAssign*       = 11;
+  exprBufferRef*    = 9;
+  exprTypeGuard*    = 10;
+  exprBuiltin*      = 11;
+  exprAssign*       = 12;
 
   builtinAbs*    = 1;
   builtinAssert* = 2;
   builtinChr*    = 3;
   builtinDec*    = 4;
   builtinFlt*    = 5;
-  builtinInc*    = 6;
-  builtinNew*    = 7;
-  builtinOrd*    = 8;
+  builtinInit*   = 6;
+  builtinInc*    = 7;
+  builtinLen*    = 8;
+  builtinNew*    = 9;
+  builtinOrd*    = 10;
+  builtinPush*   = 11;
 
   stmtAssign*   = 1;
   stmtProcCall* = 2;
@@ -459,7 +464,7 @@ VAR
   e :Expr;
 BEGIN
   e := base;
-  IF base.typ.kind = typeArray THEN
+  IF base.typ.kind IN {typeArray, typeBuffer} THEN
     IF index.typ.kind = typeInteger THEN
       IF (index.kind = exprVal) & (base.typ.length > 0) &
          ((index.iVal < 0) OR (index.iVal >= base.typ.length)) THEN
@@ -469,7 +474,11 @@ BEGIN
         Lex.Int(base.typ.length);
         Lex.Ln;
       ELSE
-        NewExpr(e, exprArrayRef, base.typ.base);
+        IF base.typ.kind = typeBuffer THEN
+          NewExpr(e, exprBufferRef, base.typ.base);
+        ELSE
+          NewExpr(e, exprArrayRef, base.typ.base);
+        END;
         e.lhs := base;
         e.rhs := index;
         e.assignable := base.assignable;
@@ -837,6 +846,9 @@ BEGIN
   IF IsOpenArray(formal.typ) & (actual.typ.kind = typeArray) &
      (actual.typ.base = formal.typ.base) THEN
     (* Good - ARRAY OF X - ARRAY n OF X *)
+  ELSIF IsOpenArray(formal.typ) & (actual.typ.kind = typeBuffer) &
+     (actual.typ.base = formal.typ.base) THEN
+    (* Good - ARRAY OF X - ARRAY * OF X *)
   ELSIF (formal.kind = declVarParam) & ~actual.assignable THEN
     Lex.Error(l, "For argument ");
     Lex.Int(arg);
@@ -1064,6 +1076,7 @@ BEGIN
   TypeKindNames[typeString]    := "STRING";
   TypeKindNames[typePointer]   := "POINTER";
   TypeKindNames[typeArray]     := "ARRAY";
+  TypeKindNames[typeBuffer]    := "BUFFER";
   TypeKindNames[typeRecord]    := "RECORD";
   TypeKindNames[typeProcedure] := "PROCEDURE";
   TypeKindNames[typeImport]    := "IMPORT";

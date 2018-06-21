@@ -1,0 +1,78 @@
+MODULE FibFactExt;
+
+(* FibFact using language extensions *)
+
+IMPORT Out;
+
+CONST
+  Seven = 7;
+
+PROCEDURE FactIter*(n :INTEGER) :INTEGER;
+BEGIN
+  VAR i := 1;
+  VAR r := 1;
+  WHILE i <= n DO
+    r := r * i;
+    INC(i)
+  END;
+  RETURN r
+END FactIter;
+
+PROCEDURE FactRec*(n :INTEGER) :INTEGER;
+VAR r :INTEGER;
+BEGIN
+  IF n <= 1 THEN
+    r := 1
+  ELSE
+    r := n * FactRec(n-1)
+  END;
+  RETURN r
+END FactRec;
+
+PROCEDURE FibIter*(n :INTEGER) :INTEGER;
+BEGIN
+  VAR prev := 1;
+  VAR fib := 1;
+  VAR newPrev := -1;
+  WHILE n > 1 DO
+    newPrev := fib;
+    fib := fib + prev;
+    prev := newPrev;
+    DEC(n)
+  END
+  RETURN fib
+END FibIter;
+
+PROCEDURE FibRec*(n :INTEGER) :INTEGER;
+VAR r :INTEGER;
+BEGIN
+  IF n < 2 THEN
+    r := 1
+  ELSE
+    r := FibRec(n-1) + FibRec(n-2)
+  END
+  RETURN r
+END FibRec;
+
+PROCEDURE TestFib;
+VAR
+  n :INTEGER;
+BEGIN
+  n := 7;
+  ASSERT(FactRec(n) = FactIter(n));
+  ASSERT(FactIter(Seven) = FactIter(n));
+  ASSERT(FactIter(7) = 5040);
+  Out.Int(FactRec(n)); Out.Ln;
+  ASSERT(FibIter(20) = FibRec(20));
+  ASSERT(FibRec(20) = 10946);
+  Out.Int(FibIter(20)); Out.Ln;
+END TestFib;
+
+PROCEDURE RunTests*;
+BEGIN
+  TestFib
+END RunTests;
+
+BEGIN
+  RunTests
+END FibFactExt.

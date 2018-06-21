@@ -1,0 +1,54 @@
+Inline variables
+
+Variables may be defined within a statement block, e.g.
+
+  VAR x := 12;
+
+The type of the variable is determined by the right hand side of the
+assignment.
+
+Note that these variables are scoped to the entire function, unlike
+languages like C where they are scoped to the block.
+
+Variable length arrays (a.k.a. buffers)
+
+A new type of array is allowed
+
+ARRAY * OF <Type>
+
+This represents a variable length array, similar to an ArrayList in other
+languages.
+
+A buffer may be passed anywhere an open array is expected, and LEN(buffer)
+works just as it would with an open array. Similarly, buffer elements are
+referenced just like arrays - buf[2] := ...
+
+Before a buffer can be used, the user must call INIT on the buffer. Init
+takes an argument, which is the initial capacity. This is how many elements
+can be added to the buffer before it must be grown (with a new call to
+malloc/new). Note that this sets capacity, not length, which starts at 0.
+
+A buffer initially has 0 items. New elements may be added to the buffer with
+the builtin PUSH.  PUSH takes one or two arguments. The first argument is the
+buffer, which must be assignable. The second (optional) argument is the thing
+that should be put in the new buffer location.
+
+
+Example:
+
+VAR
+  b :ARRAY * OF INTERGER;
+  i :INTEGER:
+BEGIN
+  INIT(b, 5);
+  PUSH(b, 1);
+  PUSH(b, 2);
+  PUSH(b, 3);
+  i := 0;
+  WHILE i < LEN(b) DO
+    Out.Int(b[i]); Out.Ln;
+    INC(i)
+  END
+END
+
+Would print 1, 2, 3
