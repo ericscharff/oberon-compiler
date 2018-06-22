@@ -18,75 +18,77 @@ CONST
   (* punctuation tokens, IN order to keep things consistent.                 *)
   tARRAY*       =  0;
   tBEGIN*       =  1;
-  tBY*          =  2;
-  tCASE*        =  3;
-  tCONST*       =  4;
-  tDIV*         =  5;
-  tDO*          =  6;
-  tELSE*        =  7;
-  tELSIF*       =  8;
-  tEND*         =  9;
-  tFALSE*       = 10;
-  tFOR*         = 11;
-  tIF*          = 12;
-  tIMPORT*      = 13;
-  tIN*          = 14;
-  tIS*          = 15;
-  tMOD*         = 16;
-  tMODULE*      = 17;
-  tNATIVE*      = 18;
-  tNIL*         = 19;
-  tOF*          = 20;
-  tOR*          = 21;
-  tPOINTER*     = 22;
-  tPROCEDURE*   = 23;
-  tRECORD*      = 24;
-  tREPEAT*      = 25;
-  tRETURN*      = 26;
-  tTHEN*        = 27;
-  tTO*          = 28;
-  tTRUE*        = 29;
-  tTYPE*        = 30;
-  tUNTIL*       = 31;
-  tVAR*         = 32;
-  tWHILE*       = 33;
-  tXOR*         = 34;
-  tLastKwd      = tXOR * KwdSize;
+  tBITAND*      =  2;
+  tBITOR*       =  3;
+  tBITXOR*      =  4;
+  tBY*          =  5;
+  tCASE*        =  6;
+  tCONST*       =  7;
+  tDIV*         =  8;
+  tDO*          =  9;
+  tELSE*        = 10;
+  tELSIF*       = 11;
+  tEND*         = 12;
+  tFALSE*       = 13;
+  tFOR*         = 14;
+  tIF*          = 15;
+  tIMPORT*      = 16;
+  tIN*          = 17;
+  tIS*          = 18;
+  tMOD*         = 19;
+  tMODULE*      = 20;
+  tNATIVE*      = 21;
+  tNIL*         = 22;
+  tOF*          = 23;
+  tOR*          = 24;
+  tPOINTER*     = 25;
+  tPROCEDURE*   = 26;
+  tRECORD*      = 27;
+  tREPEAT*      = 28;
+  tRETURN*      = 29;
+  tTHEN*        = 30;
+  tTO*          = 31;
+  tTRUE*        = 32;
+  tTYPE*        = 33;
+  tUNTIL*       = 34;
+  tVAR*         = 35;
+  tWHILE*       = 36;
+  tLastKwd      = tWHILE * KwdSize;
 
-  tIDENT*       = 35;
-  tKEYWORD*     = 36;
-  tSTRING*      = 37;
-  tINT*         = 38;
-  tREAL*        = 39;
-  tPLUS*        = 40;
-  tMINUS*       = 41;
-  tSTAR*        = 42;
-  tSLASH*       = 43;
-  tTILDE*       = 44;
-  tAMP*         = 45;
-  tDOT*         = 46;
-  tCOMMA*       = 47;
-  tSEMI*        = 48;
-  tVBAR*        = 49;
-  tLPAREN*      = 50;
-  tRPAREN*      = 51;
-  tLBRACK*      = 52;
-  tRBRACK*      = 53;
-  tLBRACE*      = 54;
-  tRBRACE*      = 55;
-  tASSIGN*      = 56;
-  tCARET*       = 57;
-  tEQ*          = 58;
-  tPOUND*       = 59;
-  tLT*          = 60;
-  tGT*          = 61;
-  tLTEQ*        = 62;
-  tGTEQ*        = 63;
-  tDOTDOT*      = 64;
-  tCOLON*       = 65;
-  tAsSetElt*    = 66;
-  tCaseDotDot*  = 67;
-  tEOF*         = 68;
+  tIDENT*       = 37;
+  tKEYWORD*     = 38;
+  tSTRING*      = 39;
+  tINT*         = 40;
+  tREAL*        = 41;
+  tPLUS*        = 42;
+  tMINUS*       = 43;
+  tSTAR*        = 44;
+  tSLASH*       = 45;
+  tTILDE*       = 46;
+  tAMP*         = 47;
+  tDOT*         = 48;
+  tCOMMA*       = 49;
+  tSEMI*        = 50;
+  tVBAR*        = 51;
+  tLPAREN*      = 52;
+  tRPAREN*      = 53;
+  tLBRACK*      = 54;
+  tRBRACK*      = 55;
+  tLBRACE*      = 56;
+  tRBRACE*      = 57;
+  tASSIGN*      = 58;
+  tCARET*       = 59;
+  tEQ*          = 60;
+  tPOUND*       = 61;
+  tLT*          = 62;
+  tGT*          = 63;
+  tLTEQ*        = 64;
+  tGTEQ*        = 65;
+  tDOTDOT*      = 66;
+  tCOLON*       = 67;
+  tAsSetElt*    = 68;
+  tCaseDotDot*  = 69;
+  tEOF*         = 70;
 
 TYPE
   PoolIndex*  = INTEGER;
@@ -155,14 +157,14 @@ BEGIN
   hash := 811C9DC5H;
   i := 0;
   WHILE (i < length) & (s[i] # 0X) DO
-    hash := hash XOR ORD(s[offset + i]);
+    hash := hash BITXOR ORD(s[offset + i]);
     hash := hash * 16777619;
     sp.buf[sp.last + i] := s[offset + i];
     INC(i)
   END;
   sp.buf[sp.last + i] := 0X;
   hash := hash * 85EBCA6BH;
-  hash := hash XOR (hash DIV 65536);
+  hash := hash BITXOR (hash DIV 65536);
   b := hash MOD NumBuckets;
   WHILE (sp.buckets[b] >= 0) &
         ~StrEq(sp.buf, sp.buckets[b], s, offset, length) DO
@@ -198,6 +200,9 @@ PROCEDURE AddKeywords(VAR sp :StringPool);
 BEGIN
   StringInternRange(sp, "ARRAY", 0, 9);
   StringInternRange(sp, "BEGIN", 0, 9);
+  StringInternRange(sp, "BITAND", 0, 9);
+  StringInternRange(sp, "BITOR", 0, 9);
+  StringInternRange(sp, "BITXOR", 0, 9);
   StringInternRange(sp, "BY", 0, 9);
   StringInternRange(sp, "CASE", 0, 9);
   StringInternRange(sp, "CONST", 0, 9);
@@ -230,7 +235,6 @@ BEGIN
   StringInternRange(sp, "UNTIL", 0, 9);
   StringInternRange(sp, "VAR", 0, 9);
   StringInternRange(sp, "WHILE", 0, 9);
-  StringInternRange(sp, "XOR", 0, 9);
 END AddKeywords;
 
 PROCEDURE Intern*(VAR l :Lexer; s :ARRAY OF CHAR) :PoolIndex;
@@ -682,6 +686,9 @@ PROCEDURE InitTokenNames;
 BEGIN
   TokenNames[tARRAY]        :=  "ARRAY";
   TokenNames[tBEGIN]        :=  "BEGIN";
+  TokenNames[tBITAND]       :=  "BITAND";
+  TokenNames[tBITOR]        :=  "BITOR";
+  TokenNames[tBITXOR]       :=  "BITXOR";
   TokenNames[tBY]           :=  "BY";
   TokenNames[tCASE]         :=  "CASE";
   TokenNames[tCONST]        :=  "CONST";
@@ -714,7 +721,6 @@ BEGIN
   TokenNames[tUNTIL]        :=  "UNTIL";
   TokenNames[tVAR]          :=  "VAR";
   TokenNames[tWHILE]        :=  "WHILE";
-  TokenNames[tXOR]          :=  "XOR";
   TokenNames[tIDENT]        :=  "IDENT";
   TokenNames[tKEYWORD]      :=  "KEYWORD";
   TokenNames[tSTRING]       :=  "STRING";
@@ -814,20 +820,21 @@ BEGIN
   fatal := TRUE;
   LexerInitFromString(l, "
       Test Hello World Test alpha..beta
-  ARRAY       BEGIN       BY          CASE        CONST
-  DIV         DO          ELSE        ELSIF       END
-  FALSE       FOR         IF          IMPORT      IN
-  IS          MOD         MODULE      NATIVE      NIL
-  OF          OR          POINTER     PROCEDURE   RECORD
-  REPEAT      RETURN      THEN        TO          TRUE
-  TYPE        UNTIL       VAR         WHILE       XOR
+  ARRAY       BEGIN       BITAND      BITOR       BITXOR
+  BY          CASE        CONST       DIV         DO
+  ELSE        ELSIF       END         FALSE       FOR
+  IF          IMPORT      IN          IS          MOD
+  MODULE      NATIVE      NIL         OF          OR
+  POINTER     PROCEDURE   RECORD      REPEAT      RETURN
+  THEN        TO          TRUE        TYPE        UNTIL
+  VAR         WHILE
       0FFD2H 041X
       101 102 (103)Wow 104Whoa
       0.1 0.1E4 0.08E-3 12.83e1
       + - * / ~ & . , ; | ( ) [ ] { } := ^ = # < >
       <= >=  .. 10..20
       (* totally (* skipped *)*)
-      XOR
+      BITXOR
   ");
   (* Put quotes around Hello World *)
   l.buf[11] := 22X;
@@ -838,7 +845,7 @@ BEGIN
   NextToken(l); ASSERT(l.t.kind = tIDENT); ASSERT(l.t.sVal = StringIntern(l.sp, "alpha"));
   NextToken(l); ASSERT(l.t.kind = tDOTDOT);
   NextToken(l); ASSERT(l.t.kind = tIDENT); ASSERT(l.t.sVal = StringIntern(l.sp, "beta"));
-  FOR k := tARRAY TO tXOR DO
+  FOR k := tARRAY TO tWHILE DO
     NextToken(l); ASSERT(l.t.kind = k)
   END;
   NextToken(l); ASSERT(l.t.kind = tINT); ASSERT(l.t.iVal = 65490); ASSERT(l.t.iVal = 0FFD2H);
@@ -861,7 +868,7 @@ BEGIN
   NextToken(l); ASSERT(l.t.kind = tINT); ASSERT(l.t.iVal = 10);
   NextToken(l); ASSERT(l.t.kind = tDOTDOT);
   NextToken(l); ASSERT(l.t.kind = tINT); ASSERT(l.t.iVal = 20);
-  NextToken(l); ASSERT(l.t.kind = tXOR);
+  NextToken(l); ASSERT(l.t.kind = tBITXOR);
   NextToken(l); ASSERT(l.t.kind = tEOF);
   NextToken(l); ASSERT(l.t.kind = tEOF);
 

@@ -1,11 +1,15 @@
-MODULE FibFactExt;
+MODULE LangExtensionsTest;
 
-(* FibFact using language extensions *)
+(* Examples using laguage extensions *)
 
 IMPORT Out;
 
 CONST
   Seven = 7;
+
+TYPE
+  IntBuf = ARRAY * OF INTEGER;
+  RecBuf = RECORD z :INTEGER; b :ARRAY * OF INTEGER END;
 
 PROCEDURE FactIter*(n :INTEGER) :INTEGER;
 BEGIN
@@ -68,11 +72,58 @@ BEGIN
   Out.Int(FibIter(20)); Out.Ln;
 END TestFib;
 
+PROCEDURE DumpBuffer(b :ARRAY OF INTEGER);
+VAR
+  i :INTEGER;
+BEGIN
+  i := 0;
+  WHILE i < LEN(b) DO
+    Out.Int(b[i]); Out.Str(9X);
+    INC(i)
+  END;
+  Out.Ln
+END DumpBuffer;
+
+PROCEDURE AddToBuf(VAR b :IntBuf; val :INTEGER);
+BEGIN
+  PUSH(b, val)
+END AddToBuf;
+
+PROCEDURE TestBuffers;
+VAR
+  b  :ARRAY * OF INTEGER;
+  b2 :IntBuf;
+  i  :INTEGER;
+  r  :RecBuf;
+BEGIN
+  INIT(b, 4);
+  FOR i := 1 TO 20 DO
+    PUSH(b, i*5)
+  END;
+  DumpBuffer(b);
+  INIT(b2, 4);
+  FOR i := 1 TO 20 DO
+    AddToBuf(b2, i*5);
+  END;
+  DumpBuffer(b2);
+  INIT(r.b, 400);
+  FOR i := 1 TO 20 DO
+    PUSH(r.b, i*5)
+  END;
+  DumpBuffer(r.b);
+  FOR i := 0 TO 19 DO
+    ASSERT(b[i] = b2[i]);
+    ASSERT(b2[i] = r.b[i]);
+    ASSERT(r.b[i] = (i+1)*5);
+  END;
+END TestBuffers;
+
 PROCEDURE RunTests*;
 BEGIN
+  TestBuffers;
   TestFib
 END RunTests;
 
 BEGIN
   RunTests
-END FibFactExt.
+END LangExtensionsTest.

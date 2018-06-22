@@ -363,7 +363,8 @@ BEGIN
         | Lex.tEQ: GenStr(" == 0");
         | Lex.tPOUND: GenStr(" != 0");
         | Lex.tPLUS, Lex.tMINUS, Lex.tSTAR, Lex.tSLASH, Lex.tDIV, Lex.tMOD,
-          Lex.tXOR, Lex.tAMP, Lex.tOR, Lex.tIN, Lex.tIS, Lex.tDOTDOT:
+	  Lex.tBITAND, Lex.tBITOR, Lex.tBITXOR, Lex.tAMP, Lex.tOR, Lex.tIN,
+	  Lex.tIS, Lex.tDOTDOT:
         END;
       ELSIF e.lhs.typ.kind = AST.typeSet THEN
         (* Set ops *)
@@ -380,8 +381,8 @@ BEGIN
             GenExpr(l, e.lhs); GenStr(" == "); GenExpr(l, e.rhs);
         | Lex.tPOUND:
             GenExpr(l, e.lhs); GenStr(" != "); GenExpr(l, e.rhs);
-        | Lex.tMOD, Lex.tXOR, Lex.tAMP, Lex.tOR, Lex.tLT, Lex.tGT, Lex.tLTEQ,
-          Lex.tGTEQ, Lex.tIN, Lex.tIS, Lex.tDOTDOT:
+        | Lex.tMOD, Lex.tBITAND, Lex.tBITOR, Lex.tBITXOR, Lex.tAMP, Lex.tOR,
+	  Lex.tLT, Lex.tGT, Lex.tLTEQ, Lex.tGTEQ, Lex.tIN, Lex.tIS, Lex.tDOTDOT:
             ASSERT(FALSE);
         END;
       ELSE
@@ -400,7 +401,11 @@ BEGIN
             GenExpr(l, e.lhs); GenStr(" / "); GenExpr(l, e.rhs);
         | Lex.tMOD:
             GenExpr(l, e.lhs); GenStr(" % "); GenExpr(l, e.rhs);
-        | Lex.tXOR:
+        | Lex.tBITAND:
+            GenExpr(l, e.lhs); GenStr(" & "); GenExpr(l, e.rhs);
+        | Lex.tBITOR:
+            GenExpr(l, e.lhs); GenStr(" | "); GenExpr(l, e.rhs);
+        | Lex.tBITXOR:
             GenExpr(l, e.lhs); GenStr(" ^ "); GenExpr(l, e.rhs);
         | Lex.tAMP:
             GenExpr(l, e.lhs); GenStr(" && "); GenExpr(l, e.rhs);

@@ -494,6 +494,9 @@ BEGIN
   IF (args = NIL) OR (args.next = NIL) OR (args.next.next # NIL) THEN
     Lex.ErrorLn(l, "PUSH expects 2 arguments");
   END;
+  IF ~args.assignable THEN
+    Lex.ErrorLn(l, "First argument to PUSH must be assignable");
+  END;
   IF args.next.typ # args.typ.base THEN
     Lex.ErrorLn(l, "Second arg to PUSH must have same type as ARRAY");
   END;

@@ -392,7 +392,8 @@ BEGIN
   NewExpr(e, exprIdentRef, d.typ);
   e.decl := d;
   IF ((d.kind = declVar) & ~IsImported(d)) OR
-     ((d.kind = declParam) & ~(d.typ.kind IN {typeArray, typeRecord})) OR
+     ((d.kind = declParam) &
+      ~(d.typ.kind IN {typeArray, typeBuffer, typeRecord})) OR
      (d.kind = declVarParam) THEN
     e.assignable := TRUE;
   ELSE
@@ -743,7 +744,7 @@ BEGIN
       ELSE
         Lex.ErrorLn(l, "Expected INTEGER, REAL, or SET");
       END;
-    | Lex.tDIV, Lex.tMOD, Lex.tXOR:
+    | Lex.tDIV, Lex.tMOD, Lex.tBITAND, Lex.tBITOR, Lex.tBITXOR:
       IF ExprCompatable(l, op, lhs, rhs) &
          (lhs.typ.kind = typeInteger) THEN
         IF IsConst(lhs) & IsConst(rhs) THEN
@@ -752,8 +753,12 @@ BEGIN
             e.iVal := lhs.iVal DIV rhs.iVal;
           ELSIF op = Lex.tMOD THEN
             e.iVal := lhs.iVal MOD rhs.iVal;
-          ELSIF op = Lex.tXOR THEN
-            e.iVal := lhs.iVal XOR rhs.iVal;
+          ELSIF op = Lex.tBITAND THEN
+            e.iVal := lhs.iVal BITAND rhs.iVal;
+          ELSIF op = Lex.tBITOR THEN
+            e.iVal := lhs.iVal BITOR rhs.iVal;
+          ELSIF op = Lex.tBITXOR THEN
+            e.iVal := lhs.iVal BITXOR rhs.iVal;
           END;
         END;
       ELSE
@@ -1076,7 +1081,7 @@ BEGIN
   TypeKindNames[typeString]    := "STRING";
   TypeKindNames[typePointer]   := "POINTER";
   TypeKindNames[typeArray]     := "ARRAY";
-  TypeKindNames[typeBuffer]    := "BUFFER";
+  TypeKindNames[typeBuffer]    := "ARRAY *";
   TypeKindNames[typeRecord]    := "RECORD";
   TypeKindNames[typeProcedure] := "PROCEDURE";
   TypeKindNames[typeImport]    := "IMPORT";

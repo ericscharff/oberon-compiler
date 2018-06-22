@@ -295,6 +295,12 @@ void gen_binary_expr(TokenKind op, Expr *lhs, Expr *rhs) {
     case TOKEN_MOD:
       gen_binary_c("%", lhs, rhs, coerceToChar);
       break;
+    case TOKEN_BITAND:
+      gen_binary_c("&", lhs, rhs, coerceToChar);
+      break;
+    case TOKEN_BITOR:
+      gen_binary_c("|", lhs, rhs, coerceToChar);
+      break;
     case TOKEN_XOR:
       gen_binary_c("^", lhs, rhs, coerceToChar);
       break;

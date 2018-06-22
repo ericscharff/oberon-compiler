@@ -232,6 +232,22 @@ void eval_binary_expr(Expr *e, Expr *lhs, Expr *rhs) {
         assert(0);
       }
       break;
+    case TOKEN_BITAND:
+      if (is_integer_type(lhs->type)) {
+        e->val.kind = VAL_INTEGER;
+        e->val.iVal = lhs->val.iVal & rhs->val.iVal;
+      } else {
+        assert(0);
+      }
+      break;
+    case TOKEN_BITOR:
+      if (is_integer_type(lhs->type)) {
+        e->val.kind = VAL_INTEGER;
+        e->val.iVal = lhs->val.iVal | rhs->val.iVal;
+      } else {
+        assert(0);
+      }
+      break;
     case TOKEN_XOR:
       if (is_integer_type(lhs->type)) {
         e->val.kind = VAL_INTEGER;
@@ -385,6 +401,8 @@ void resolve_binary_expr(Expr *e) {
       break;
     case TOKEN_DIV:
     case TOKEN_MOD:
+    case TOKEN_BITAND:
+    case TOKEN_BITOR:
     case TOKEN_XOR:
       if (lhs->type == rhs->type ||
           (is_integer_type(lhs->type) && is_integer_type(rhs->type))) {

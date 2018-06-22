@@ -17,6 +17,8 @@ typedef enum {
   TOKEN_DIV,
   TOKEN_MOD,
   TOKEN_XOR,
+  TOKEN_BITAND,
+  TOKEN_BITOR,
   TOKEN_AMP,
   TOKEN_DOT,
   TOKEN_COMMA,
@@ -60,7 +62,7 @@ const char *token_kind_names[] = {
     [TOKEN_OR] = "OR",
     [TOKEN_DIV] = "DIV",
     [TOKEN_MOD] = "MOD",
-    [TOKEN_XOR] = "XOR",
+    [TOKEN_XOR] = "BITXOR",
     [TOKEN_AMP] = "&",
     [TOKEN_DOT] = ".",
     [TOKEN_COMMA] = ",",
@@ -144,6 +146,8 @@ const char *keyword_until;
 const char *keyword_var;
 const char *keyword_while;
 const char *keyword_xor;
+const char *keyword_bitand;
+const char *keyword_bitor;
 
 // Builtin procedures
 const char *builtin_abs;
@@ -240,7 +244,9 @@ void init_keywords(void) {
   keyword_until = string_intern("UNTIL");
   keyword_var = string_intern("VAR");
   keyword_while = string_intern("WHILE");
-  keyword_xor = string_intern("XOR");
+  keyword_xor = string_intern("BITXOR");
+  keyword_bitand = string_intern("BITAND");
+  keyword_bitor = string_intern("BITOR");
 
   builtin_abs = string_intern("ABS");
   builtin_chr = string_intern("CHR");
@@ -267,10 +273,10 @@ void pool_test(void) {
   const char *two = string_intern("two");
   const char *three = string_intern("three");
   const char *four = string_intern("four");
-  assert((one - string_pool) == 207 + 0);
-  assert((two - string_pool) == 207 + 4);
-  assert((three - string_pool) == 207 + 8);
-  assert((four - string_pool) == 207 + 14);
+  assert((one - string_pool) == 223 + 0);
+  assert((two - string_pool) == 223 + 4);
+  assert((three - string_pool) == 223 + 8);
+  assert((four - string_pool) == 223 + 14);
   const char *s = "onetwothreefour";
   const char *oneSubset = string_intern_range(s, s + 3);
   assert(s != oneSubset);
@@ -338,7 +344,7 @@ void errorloc(Loc loc, const char *fmt, ...) {
 }
 
 bool string_is_keyword(const char *s) {
-  return s >= keyword_array && s <= keyword_xor;
+  return s >= keyword_array && s <= keyword_bitor;
 }
 
 void scan_identifier(void) {
@@ -369,6 +375,12 @@ void scan_identifier(void) {
     }
     if (token.sVal == keyword_xor) {
       token.kind = TOKEN_XOR;
+    }
+    if (token.sVal == keyword_bitand) {
+      token.kind = TOKEN_BITAND;
+    }
+    if (token.sVal == keyword_bitor) {
+      token.kind = TOKEN_BITOR;
     }
   }
 }
@@ -827,10 +839,9 @@ void lex_test(void) {
   assert_token_ident("alpha");
   assert_token_ident("beta");
   assert(token.pos.line == 3);
-  init_stream(
-      "",
-      "+ - * / ~ IN IS OR DIV MOD XOR & . , ; | ( ) [ ] { } := ^ = # < > "
-      "<= >= .. 10..20");
+  init_stream("",
+              "+ - * / ~ IN IS OR DIV MOD BITXOR BITAND BITOR & . , ; | ( ) [ "
+              "] { } := ^ = # < > <= >= .. 10..20");
   for (TokenKind k = TOKEN_PLUS; k <= TOKEN_DOTDOT; k++) {
     next_token();
     assert(token.kind == k);

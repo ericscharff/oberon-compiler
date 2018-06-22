@@ -29,7 +29,7 @@ relation = "=" | "#" | "<" | "<=" | ">" | ">=" | IN | IS.
 SimpleExpression = ["+" | "-"] term {AddOperator term}.
 AddOperator = "+" | "-" | OR.
 term = factor {MulOperator factor}.
-MulOperator = "*" | "/" | DIV | MOD | "&".
+MulOperator = "*" | "/" | DIV | MOD | "&" | BITAND | BITOR | BITXOR.
 factor = number | string | NIL | TRUE | FALSE |
  set | designator [ActualParameters] | "(" expression ")" | "~" factor.
 designator = qualident {selector}.
