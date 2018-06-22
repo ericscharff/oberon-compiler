@@ -118,9 +118,21 @@ BEGIN
   END;
 END TestBuffers;
 
+PROCEDURE TestBitops;
+VAR
+  i, j :INTEGER;
+BEGIN
+  i := 2;
+  j := 3;
+  ASSERT(i BITAND j = 2);
+  ASSERT(i BITOR j = 3);
+  ASSERT(i BITXOR j = 1);
+END TestBitops;
+
 PROCEDURE RunTests*;
 BEGIN
   TestBuffers;
+  TestBitops;
   TestFib
 END RunTests;
 
