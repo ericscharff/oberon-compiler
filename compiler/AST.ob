@@ -1066,7 +1066,9 @@ BEGIN
   IF procDecl.typ.base.kind = typeNil THEN
     Lex.ErrorLn(l, "RETURN statement unexpected");
   END;
-  ExpectType(l, e, procDecl.typ.base.kind);
+  IF e.typ.kind # typeNil THEN
+    ExpectType(l, e, procDecl.typ.base.kind);
+  END;
   RETURN e
 END ValidateReturnStatement;
 
