@@ -912,6 +912,9 @@ BEGIN
       formal := proc.typ.fields;
       WHILE count > 0 DO
         ExpectArgMatch(l, i, arg, formal);
+        IF IsConst(arg) & (formal.typ.kind = typeChar) THEN
+          CoerceToChar(l, arg, formal.typ);
+        END;
         DEC(count);
         INC(i);
         formal := formal.next;

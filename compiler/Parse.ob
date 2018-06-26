@@ -230,7 +230,7 @@ PROCEDURE IsMulOperator() :BOOLEAN;
 BEGIN
   RETURN IsToken(Lex.tSTAR) OR IsToken(Lex.tSLASH) OR IsToken(Lex.tDIV) OR
          IsToken(Lex.tMOD) OR IsToken(Lex.tAMP) OR IsToken(Lex.tBITAND) OR
-	 IsToken(Lex.tBITOR) OR IsToken(Lex.tBITXOR)
+         IsToken(Lex.tBITOR) OR IsToken(Lex.tBITXOR)
 END IsMulOperator;
 
 PROCEDURE ParseTerm() :AST.Expr;

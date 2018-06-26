@@ -701,7 +701,9 @@ BEGIN
   WHILE s # NIL DO
     ASSERT(s.kind >= AST.stmtAssign);
     ASSERT(s.kind <= AST.stmtEmpty);
-    GenI;
+    IF ~(s.kind IN {AST.stmtEmpty, AST.stmtCase, AST.stmtCaseItem}) THEN
+      GenI
+    END;
     CASE s.kind OF
       AST.stmtAssign, AST.stmtProcCall:
         GenExpr(l, s.cond);
@@ -850,7 +852,9 @@ BEGIN
         GenStatements(l, s.body);
         DEC(indent);
     END;
-    IF ~(s.kind IN {AST.stmtCase, AST.stmtCaseItem}) THEN GenLn END;
+    IF ~(s.kind IN {AST.stmtEmpty, AST.stmtCase, AST.stmtCaseItem}) THEN
+      GenLn
+    END;
     s := s.next;
   END;
 END GenStatements;
