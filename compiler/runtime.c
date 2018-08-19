@@ -152,3 +152,14 @@ void Args_GetArg(char *s, size_t sLen, int arg) {
   assert(strlen(saved_argv[arg]) < sLen);
   strncpy(s, saved_argv[arg], sLen);
 }
+
+typedef struct LangExtensionsTest_NatBuf_Native {
+  int nativeQ;
+} LangExtensionsTest_NatBuf_Native;
+
+typedef struct LangExtensionsTest_NatBuf LangExtensionsTest_NatBuf;
+
+void LangExtensionsTest_CallNative(LangExtensionsTest_NatBuf *b) {
+  printf("Native code called, buf was %p.\n", (void*)b);
+}
+

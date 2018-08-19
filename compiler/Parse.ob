@@ -619,6 +619,7 @@ PROCEDURE ParseRecordType() :AST.Type;
 VAR
   r, base, fieldType              :AST.Type;
   baseDecl, firstField, lastField :AST.Decl;
+  isNative                        :BOOLEAN;
 BEGIN
   base := NIL;
   ExpectToken(Lex.tRECORD);
@@ -638,12 +639,14 @@ BEGIN
         lastField := ParseFieldIdentDef(r.fields);
       END;
       ExpectToken(Lex.tCOLON);
+      isNative := MatchToken(Lex.tNATIVE);
       fieldType := ParseType();
       WHILE (firstField # NIL) &
             (lastField # NIL) &
             (firstField # lastField.next) DO
         firstField.kind := AST.declField;
         firstField.typ := fieldType;
+        firstField.isNative := isNative;
         firstField := firstField.next;
       END;
       MatchToken(Lex.tSEMI);

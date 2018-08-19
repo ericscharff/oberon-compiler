@@ -163,7 +163,14 @@ BEGIN
             (* Drop package from field name *)
             q.name := f.qname.name;
             GenI;
-            GenType(l, f.typ, q, FALSE, FALSE);
+            IF f.isNative THEN
+              (* Special opaque native type - RecordName_Native *)
+              GenQName(l, t.decl.qname);
+              GenStr("_Native ");
+              GenQName(l, q);
+            ELSE
+              GenType(l, f.typ, q, FALSE, FALSE);
+            END;
             GenStr(";");
             GenLn;
             f := f.next;
@@ -184,7 +191,14 @@ BEGIN
             (* Drop package from field name *)
             q.name := f.qname.name;
             GenI;
-            GenType(l, f.typ, q, FALSE, FALSE);
+            IF f.isNative THEN
+              (* Special opaque native type - RecordName_Native *)
+              GenQName(l, t.decl.qname);
+              GenStr("_Native ");
+              GenQName(l, q);
+            ELSE
+              GenType(l, f.typ, q, FALSE, FALSE);
+            END;
             GenStr(";");
             GenLn;
             f := f.next;

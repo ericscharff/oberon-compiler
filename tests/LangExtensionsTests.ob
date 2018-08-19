@@ -10,6 +10,7 @@ CONST
 TYPE
   IntBuf = ARRAY * OF INTEGER;
   RecBuf = RECORD z :INTEGER; b :ARRAY * OF INTEGER END;
+  NatBuf = RECORD _nat :NATIVE INTEGER END;
 
 PROCEDURE FactIter*(n :INTEGER) :INTEGER;
 BEGIN
@@ -89,6 +90,15 @@ BEGIN
   PUSH(b, val)
 END AddToBuf;
 
+NATIVE PROCEDURE CallNative(r :NatBuf); END CallNative;
+
+PROCEDURE TestNativeCode;
+VAR
+  r :NatBuf;
+BEGIN
+  CallNative(r)
+END TestNativeCode;
+
 PROCEDURE TestBuffers;
 VAR
   b  :ARRAY * OF INTEGER;
@@ -131,6 +141,7 @@ END TestBitops;
 
 PROCEDURE RunTests*;
 BEGIN
+  TestNativeCode;
   TestBuffers;
   TestBitops;
   TestFib

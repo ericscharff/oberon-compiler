@@ -1,3 +1,30 @@
+Native record fields.
+
+A record field may be marked with the NATIVE keyword, e.g.
+
+  MODULE Net;
+  TYPE CSocket = RECORD _sock :NATIVE INTEGER; END;
+  END Net.
+
+The native keyword has no effect in native code generation, but when
+performing C Code generation, this creates a "native field." The
+generated C code for this record looks like this:
+
+  typedef struct Net_CSocket {
+    Net_CSocket_Native _sock;
+  } Net_CSocket;
+
+It is assumed that the C code (in the preamble) declares the type
+Net_CSocket_Native.
+
+The intention is that if Oberon code needs to communicate with Native
+C code, and that native C code needs access to state that needs to be
+maintained and persisted with the record, this is a way to perform this.
+
+Native fields should not be referenced in code, because when the C
+code is generated, it will ultimately lead to a C compile time error (if
+the C type is incompatible with the field type.)
+
 Inline variables
 
 Variables may be defined within a statement block, e.g.
