@@ -1,0 +1,32 @@
+MODULE Shadow;
+
+IMPORT Out;
+
+CONST
+  VAL = 100;
+
+PROCEDURE OuterConst;
+BEGIN
+  Out.Str("Val is ");
+  Out.Int(VAL);
+  Out.Ln
+END OuterConst;
+
+PROCEDURE InnerConst;
+CONST
+  VAL = 35;
+BEGIN
+  Out.Str("Val is ");
+  Out.Int(VAL);
+  Out.Ln
+END InnerConst;
+
+PROCEDURE Driver;
+BEGIN
+  OuterConst;
+  InnerConst;
+END Driver;
+
+BEGIN
+  Driver
+END Shadow.
