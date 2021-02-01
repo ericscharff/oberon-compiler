@@ -9,6 +9,12 @@ CONST
   KwdSize    = 10;
 
   (* Token definitions *)
+
+  (* Comments are special tokens. When encountered, they are ignored and     *)
+  (* parsing continues at the next token. Whitespace characters are treated  *)
+  (* as comments.                                                            *)
+  tCOMMENT      = -1;
+
   (* Keywords - Keywords are special because they are included in the string *)
   (* pool in a special way. The ARRAY keyword is inserted first into the     *)
   (* table, and it takes up 10 characters. Thus, ARRAY is at position 0,     *)
@@ -89,6 +95,10 @@ CONST
   tAsSetElt*    = 68;
   tCaseDotDot*  = 69;
   tEOF*         = 70;
+
+  (* Invalid char is a character that doesn't actually begin a token.        *)
+  tINVALIDCHAR  = 71;
+
 
 TYPE
   PoolIndex*  = INTEGER;
@@ -617,12 +627,12 @@ END ScanComment;
 
 PROCEDURE NextToken*(VAR l :Lexer);
 BEGIN
-  l.t.kind := -1;
+  l.t.kind := tINVALIDCHAR;
   REPEAT
     CASE l.buf[l.pos] OF
       0X: l.t.kind := tEOF;
       (* space, newline, carriage return, newline, tab, vertical tab *)
-      | 09X, 0AX, 0BX, 0CX, 0DX, 20X: INC(l.pos)
+      | 09X, 0AX, 0BX, 0CX, 0DX, 20X: INC(l.pos); l.t.kind := tCOMMENT
       | "A" .. "Z", "a" .. "z", "_": ScanIdent(l)
       | "0" .. "9": ScanNumber(l)
       | 22X: ScanString(l)
@@ -644,7 +654,8 @@ BEGIN
       | "|": l.t.kind := tVBAR; INC(l.pos)
       | "(":
           IF l.buf[l.pos+1] = "*" THEN
-            ScanComment(l)
+            ScanComment(l);
+            l.t.kind := tCOMMENT
           ELSE
             l.t.kind := tLPAREN;
             INC(l.pos);
@@ -680,6 +691,9 @@ BEGIN
           END
     END;
   UNTIL l.t.kind >= 0;
+  IF l.t.kind = tINVALIDCHAR THEN
+    ErrorLn(l, "Invalid character");
+  END;
 END NextToken;
 
 PROCEDURE InitTokenNames;
@@ -813,6 +827,7 @@ BEGIN
   Mute;
   LexerInitFromString(l, "0C "); NextToken(l);
   LexerInitFromString(l, "100X"); NextToken(l);
+  LexerInitFromString(l, "' "); NextToken(l);
   LexerInitFromString(l, "   "); l.buf[0] := 22X; NextToken(l);
   LexerInitFromString(l, "(* "); NextToken(l);
   Unmute;
