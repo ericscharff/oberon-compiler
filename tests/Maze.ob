@@ -1,0 +1,123 @@
+MODULE Maze;
+
+IMPORT Out;
+
+CONST
+  UP = 0;
+  DOWN = 1;
+  LEFT = 2;
+  RIGHT = 3;
+  WIDTH = 63;
+  HEIGHT = 21;
+
+TYPE
+  Offset = ARRAY 2 OF INTEGER;
+
+VAR
+  offsets :ARRAY 4 OF Offset;
+  maze :ARRAY WIDTH*HEIGHT OF BOOLEAN;
+  randomSeed :INTEGER;
+
+PROCEDURE PrintMaze;
+VAR
+  x, y :INTEGER;
+BEGIN
+  FOR x := 0 TO WIDTH+1 DO
+    Out.Char("#");
+  END;
+  Out.Ln;
+  FOR y := 0 TO HEIGHT-1 DO
+    Out.Char("#");
+    FOR x := 0 TO WIDTH-1 DO
+      IF maze[y*WIDTH + x] THEN
+        Out.Char(" ");
+      ELSE
+        Out.Char("#");
+      END;
+    END;
+    Out.Char("#");
+    Out.Ln;
+  END;
+  FOR x := 0 TO WIDTH+1 DO
+    Out.Char("#");
+  END;
+  Out.Ln;
+END PrintMaze;
+
+PROCEDURE Abs(n :INTEGER) :INTEGER;
+BEGIN
+  IF n < 0 THEN n := n * (-1) END;
+  RETURN n
+END Abs;
+
+(* Return a random numger in the range [0, n) *)
+PROCEDURE Rand(n :INTEGER) :INTEGER;
+BEGIN
+  randomSeed := randomSeed * 1103515245 + 12345;
+  RETURN Abs((randomSeed DIV 65536) MOD n)
+END Rand;
+
+(* Shuffle the elements of an array *)
+PROCEDURE Shuffle(VAR array: ARRAY OF INTEGER);
+VAR
+  i    :INTEGER;
+  swap :INTEGER;
+  t    :INTEGER;
+  len  :INTEGER;
+BEGIN
+  len := LEN(array);
+  FOR i := 0 TO len-1 DO
+    swap := Rand(len);
+     t := array[i];
+     array[i] := array[swap];
+     array[swap] := t;
+  END;
+END Shuffle;
+
+PROCEDURE OutOfBounds(x, y :INTEGER) :BOOLEAN;
+BEGIN
+  RETURN (x < 0) OR (x*2 > WIDTH) OR (y < 0) OR (y*2 > HEIGHT)
+END OutOfBounds;
+
+PROCEDURE Visit(x, y :INTEGER);
+VAR
+  neighbors :ARRAY 4 OF INTEGER;
+  i :INTEGER;
+  newX, newY, hallX, hallY :INTEGER;
+BEGIN
+  neighbors[0] := UP; neighbors[1] := DOWN; neighbors[2] := LEFT; neighbors[3] := RIGHT;
+  maze[2*y*WIDTH + 2*x] := TRUE;
+  Shuffle(neighbors);
+  FOR i := 0 TO 3 DO
+    newX := x + offsets[neighbors[i]][0];
+    newY := y + offsets[neighbors[i]][1];
+    IF ~OutOfBounds(newX, newY) & ~maze[2*newY*WIDTH + 2*newX] THEN
+      hallX := 2*x + offsets[neighbors[i]][0];
+      hallY := 2*y + offsets[neighbors[i]][1];
+      maze[hallY*WIDTH + hallX] := TRUE;
+      Visit(newX, newY);
+    END;
+  END;
+END Visit;
+
+PROCEDURE MakeMaze;
+VAR
+  i :INTEGER;
+BEGIN
+  i := 0;
+  WHILE i < WIDTH*HEIGHT DO
+    maze[i] := FALSE;
+    INC(i)
+  END;
+  Visit(5, 3)
+END MakeMaze;
+
+BEGIN
+  randomSeed := 1;
+  offsets[UP][0]    :=  0; offsets[UP][1]    := -1;
+  offsets[DOWN][0]  :=  0; offsets[DOWN][1]  :=  1;
+  offsets[LEFT][0]  := -1; offsets[LEFT][1]  :=  0;
+  offsets[RIGHT][0] :=  1; offsets[RIGHT][1] :=  0;
+  MakeMaze;
+  PrintMaze
+END Maze.
