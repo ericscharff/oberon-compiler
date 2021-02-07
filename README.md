@@ -22,7 +22,7 @@ ensure that the compiler is still generating correct code.
 Once bootstrapped, the `build` directory contains a shell script called
 `compile`. This shell script can be used to compile examples. For example:
 
-```
+```bash
 # Build the compiler
 $ make
 # Build an example
