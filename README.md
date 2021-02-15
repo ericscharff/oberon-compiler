@@ -38,7 +38,16 @@ $ ../build/out.prg
 The compiler will read and compile all modules upon which the main class
 depends. It then performs tree-shaking, so that the resulting C file will
 contain only functions used, and necessary pieces of imported modules. The
-resulting C code should be relatively clean and portable.
+resulting C code should be relatively clean and portable. If the code uses the
+type inclusion feature (e.g. `p IS Circle`), then the compiler generates C++
+code because it uses RTTI to do the type inclusion test. If type tests are
+never used in the code, straight C may be used. C++ code may be desirable
+in some contexts anyway, in case you want to interface with other C++ code
+(the type extenstions in Oberon correspond directly to C++ subclasses).
+
+The compile shell script accepts two flags, `-cpp` to generate C++ code (see
+above), and `-bounds` to generate bounds checks (to assert that any array
+references are within the bounds of the array.)
 
 # Known issues
 
