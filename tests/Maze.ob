@@ -1,14 +1,18 @@
 MODULE Maze;
 
+(*
+  Draw a simple maze. The maze is constructed using a very simple random DFS.
+  The maze is stored as a global array, each cell being a room/hallway.
+*)
 IMPORT Out;
 
 CONST
-  UP = 0;
-  DOWN = 1;
-  LEFT = 2;
-  RIGHT = 3;
-  WIDTH = 63;
-  HEIGHT = 21;
+  UP     =  0;
+  DOWN   =  1;
+  LEFT   =  2;
+  RIGHT  =  3;
+  WIDTH  = 63; (* Must be odd *)
+  HEIGHT = 21; (* Must be odd *)
 
 TYPE
   Offset = ARRAY 2 OF INTEGER;
