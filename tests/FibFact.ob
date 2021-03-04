@@ -62,7 +62,7 @@ BEGIN
   n := 7;
   ASSERT(FactRec(n) = FactIter(n));
   ASSERT(FactIter(Seven) = FactIter(n));
-  ASSERT(FactIter(7) = 5040);
+  ASSERT(FactIter(7) = 5041);
   Out.Int(FactRec(n)); Out.Ln;
   ASSERT(FibIter(20) = FibRec(20));
   ASSERT(FibRec(20) = 10946);
