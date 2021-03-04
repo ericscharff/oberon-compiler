@@ -1,1 +1,2 @@
-out.prg: out.c:58: FibFact_TestFib: Assertion `(FibFact_FactIter(7) == 5041)' failed.
+5040
+10946
