@@ -1,0 +1,26 @@
+MODULE ShortCircuit;
+
+IMPORT Out;
+
+PROCEDURE TestShortCircuit;
+VAR
+  a :INTEGER;
+BEGIN
+  a := 5;
+  IF (a > 10) OR (a > 20) OR (a > 30) OR (a > 40) THEN
+    Out.Str("Yes")
+  ELSE
+    Out.Str("No");
+  END;
+  Out.Ln;
+  IF (a > 10) & (a > 20) & (a > 30) & (a > 40) THEN
+    Out.Str("Yes")
+  ELSE
+    Out.Str("No");
+  END;
+  Out.Ln
+END TestShortCircuit;
+
+BEGIN
+  TestShortCircuit
+END ShortCircuit.
