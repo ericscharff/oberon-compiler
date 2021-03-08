@@ -18,6 +18,12 @@ BEGIN
   ELSE
     Out.Str("No");
   END;
+  Out.Ln;
+  IF ((a > 10) & (a > 20)) OR ((a > 30) & (a > 40)) THEN
+    Out.Str("Yes")
+  ELSE
+    Out.Str("No");
+  END;
   Out.Ln
 END TestShortCircuit;
 
