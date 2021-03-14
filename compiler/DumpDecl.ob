@@ -175,9 +175,13 @@ BEGIN
     END;
     INC(i)
   END;
-  IF i = lastDecl THEN
+  IF ~found THEN
     ASSERT(i < DECL_SIZE);
     decls[i] := d;
+    GenStr("Declaration #");
+    GenInt(i);
+    GenLn;
+    GenI;
     INC(lastDecl);
     (* New decl, so diplay it *)
     GenStr("kind: ");
