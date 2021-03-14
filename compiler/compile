@@ -26,6 +26,11 @@ if [ $1 = "-bounds" ]; then
   shift
 fi
 
+if [ $1 = "-dumpdecl" ]; then
+  OCFLAGS="$OCFLAGS -dumpdecl"
+  shift
+fi
+
 cd $BUILDDIR
 ./oberon $OCFLAGS $1 | $PERR
 ./oberon $OCFLAGS $1 > out$EXT && $CC -g -Wall -Wextra -Wpedantic -o out.prg out$EXT

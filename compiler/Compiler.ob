@@ -46,6 +46,8 @@ BEGIN
       CCodegen.EnableBoundsChecks;
     ELSIF fileName = "-cpp" THEN
       CCodegen.EnableCPlusPlus;
+    ELSIF fileName = "-dumpdecl" THEN
+      CCodegen.EnableDumpDecls;
     ELSE
       gotFile := TRUE;
     END;
