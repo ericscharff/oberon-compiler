@@ -1,0 +1,211 @@
+MODULE DumpDecl;
+
+IMPORT AST, Lex, Out;
+
+CONST
+  DECL_SIZE = 5000;
+
+VAR
+  indent          :INTEGER;
+  decls           :ARRAY DECL_SIZE OF AST.Decl;
+  lastDecl        :INTEGER;
+  GenDecl         :PROCEDURE (l :Lex.Lexer; e :AST.Decl);
+
+PROCEDURE GenStr(s :ARRAY OF CHAR);
+BEGIN
+  Out.Str(s);
+END GenStr;
+
+PROCEDURE GenInt(i :INTEGER);
+BEGIN
+  Out.Int(i);
+END GenInt;
+
+PROCEDURE GenLn;
+BEGIN
+  Out.Ln
+END GenLn;
+
+PROCEDURE GenI;
+VAR
+  i :INTEGER;
+BEGIN
+  FOR i := 1 TO indent DO GenStr("  ") END
+END GenI;
+
+PROCEDURE GenDeclKind(kind :INTEGER);
+BEGIN
+  IF kind = AST.declEND THEN
+    GenStr("declEND");
+  ELSIF (kind < 1) OR (kind > 9) THEN
+    GenStr("INVALID_DECL");
+  ELSE
+    CASE kind OF
+      AST.declImport: GenStr("declImport")
+    | AST.declConst: GenStr("declConst")
+    | AST.declType: GenStr("declType")
+    | AST.declVar: GenStr("declVar")
+    | AST.declProcedure: GenStr("declProcedure")
+    | AST.declParam: GenStr("declParam")
+    | AST.declVarParam: GenStr("declVarParam")
+    | AST.declField: GenStr("declField")
+    | AST.declBuiltin: GenStr("declBuiltin")
+    END
+  END;
+  GenLn;
+END GenDeclKind;
+
+PROCEDURE GenQName(l :Lex.Lexer; name :AST.QName);
+BEGIN
+  IF name.moduleName > 0 THEN
+    Lex.OutStr(l, name.moduleName);
+    GenStr(".");
+  END;
+  IF name.name > 0 THEN
+    Lex.OutStr(l, name.name);
+  END;
+END GenQName;
+
+PROCEDURE GenExpr(l :Lex.Lexer; e :AST.Expr);
+BEGIN
+  GenI; GenStr("kind: ");
+  IF (e.kind < AST.exprVal) OR (e.kind > AST.exprAssign) THEN
+    GenStr("INVALID_EXPR");
+  ELSE
+    CASE e.kind OF
+      AST.exprVal: GenStr("exprVal")
+      | AST.exprUnary: GenStr("exprUnary")
+      | AST.exprBinary: GenStr("exprBinary")
+      | AST.exprIdentRef: GenStr("exprIdentRef")
+      | AST.exprProcCall: GenStr("exprProcCall")
+      | AST.exprFieldRef: GenStr("exprFieldRef")
+      | AST.exprPointerDeref: GenStr("exprPointerDeref")
+      | AST.exprArrayRef: GenStr("exprArrayRef")
+      | AST.exprBufferRef: GenStr("exprBufferRef")
+      | AST.exprTypeGuard: GenStr("exprTypeGuard")
+      | AST.exprBuiltin: GenStr("exprBuiltin")
+      | AST.exprAssign: GenStr("exprAssign")
+    END
+  END;
+  GenLn;
+  IF (e.op > 0) & (e.op < 71) THEN
+    GenI; GenStr("op: "); GenInt(e.op); GenStr(" (");
+    GenStr(Lex.TokenNames[e.op]); GenStr(")"); GenLn;
+  END;
+  IF e.lhs # NIL THEN
+    GenI; GenStr("lhs:"); GenLn;
+    INC(indent);
+    GenExpr(l, e.lhs);
+    DEC(indent);
+  END;
+  IF e.rhs # NIL THEN
+    GenI; GenStr("rhs:"); GenLn;
+    INC(indent);
+    GenExpr(l, e.rhs);
+    DEC(indent);
+  END;
+  IF e.next # NIL THEN
+    GenI; GenStr("next:"); GenLn;
+    INC(indent);
+    GenExpr(l, e.next);
+    DEC(indent);
+  END;
+  IF e.decl # NIL THEN
+    GenI; GenStr("decl: "); GenLn;
+    INC(indent);
+    GenDecl(l, e.decl);
+    DEC(indent)
+  END;
+  IF e.iVal > 0 THEN GenI; GenStr("iVal: "); GenInt(e.iVal); GenLn END
+END GenExpr;
+
+PROCEDURE GenStmt(l :Lex.Lexer; s :AST.Stmt);
+VAR
+  i :INTEGER;
+  c :AST.Stmt;
+BEGIN
+  i := 0; c := s;
+  WHILE c # NIL DO
+    GenI; GenStr("Statement "); GenInt(i); GenLn;
+    GenI; GenStr("kind: ");
+    IF (c.kind < AST.stmtAssign) OR (c.kind > AST.stmtEmpty) THEN
+      GenStr("INVALID_STMT");
+    ELSE
+      CASE c.kind OF
+        AST.stmtAssign: GenStr("stmtAssign")
+        | AST.stmtProcCall: GenStr("stmtProcCall")
+        | AST.stmtIf: GenStr("stmtIf")
+        | AST.stmtWhile: GenStr("stmtWhile")
+        | AST.stmtRepeat: GenStr("stmtRepeat")
+        | AST.stmtFor: GenStr("stmtFor")
+        | AST.stmtCase: GenStr("stmtCase")
+        | AST.stmtCaseItem: GenStr("stmtCaseItem")
+        | AST.stmtElsIf: GenStr("stmtElsIf")
+        | AST.stmtElse: GenStr("stmtElse")
+        | AST.stmtEmpty: GenStr("stmtEmpty")
+      END
+    END;
+    GenLn;
+    IF c.cond # NIL THEN
+      GenI; GenStr("cond:"); GenLn; INC(indent);
+      GenExpr(l, c.cond);
+      DEC(indent);
+    END;
+    IF c.elsifs # NIL THEN
+      GenI; GenStr("elsifs:"); GenLn; INC(indent);
+      GenStmt(l, c.elsifs);
+      DEC(indent);
+    END;
+    INC(i);
+    c := c.next
+  END
+END GenStmt;
+
+PROCEDURE Generate*(l :Lex.Lexer; d :AST.Decl);
+VAR
+  i :INTEGER;
+  found :BOOLEAN;
+BEGIN
+  i := 0; found := FALSE;
+  GenI;
+  WHILE (i < lastDecl) & ~found DO
+    IF decls[i] = d THEN
+      found := TRUE;
+      GenStr("Already generated decl: "); GenInt(i); GenLn;
+    END;
+    INC(i)
+  END;
+  IF i = lastDecl THEN
+    ASSERT(i < DECL_SIZE);
+    decls[i] := d;
+    INC(lastDecl);
+    (* New decl, so diplay it *)
+    GenStr("kind: ");
+    GenDeclKind(d.kind);
+    GenLn;
+    GenI;
+    GenStr("name: ");
+    GenQName(l, d.qname);
+    GenLn;
+    GenI;
+    GenStr("nesting: ");
+    GenInt(d.nesting);
+    GenLn;
+    IF d.body # NIL THEN
+      GenI; GenStr("body:"); GenLn; INC(indent);
+      GenStmt(l, d.body);
+      DEC(indent)
+    END;
+    IF d.expr # NIL THEN
+      GenI; GenStr("expr:"); GenLn; INC(indent);
+      GenExpr(l, d.expr);
+      DEC(indent)
+    END;
+  END;
+END Generate;
+
+BEGIN
+  indent := 0;
+  lastDecl := 0;
+  GenDecl := Generate;
+END DumpDecl.
