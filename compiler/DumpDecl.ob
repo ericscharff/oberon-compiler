@@ -4,11 +4,14 @@ IMPORT AST, Lex, Out;
 
 CONST
   DECL_SIZE = 5000;
+  TYPE_SIZE = 5000;
 
 VAR
   indent          :INTEGER;
   decls           :ARRAY DECL_SIZE OF AST.Decl;
+  types           :ARRAY TYPE_SIZE OF AST.Type;
   lastDecl        :INTEGER;
+  lastType        :INTEGER;
   GenDecl         :PROCEDURE (l :Lex.Lexer; e :AST.Decl);
 
 PROCEDURE GenStr(s :ARRAY OF CHAR);
@@ -66,6 +69,81 @@ BEGIN
   END;
 END GenQName;
 
+PROCEDURE GenType(l :Lex.Lexer; t :AST.Type);
+VAR
+  i :INTEGER;
+  found :BOOLEAN;
+  f :AST.Decl;
+BEGIN
+  i := 0; found := FALSE;
+  GenI;
+  WHILE (i < lastType) & ~found DO
+    IF types[i] = t THEN
+      found := TRUE;
+      GenStr("Already generated type: "); GenInt(i); GenLn;
+    END;
+    INC(i)
+  END;
+  IF ~found THEN
+    ASSERT(i < TYPE_SIZE);
+    types[i] := t;
+    GenStr("Type #");
+    GenInt(i);
+    GenLn;
+    INC(lastType);
+    GenI; GenStr("kind: ");
+    IF (t.kind < AST.typeNil) OR (t.kind > 14) THEN
+      GenStr("INVALID_EXPR");
+    ELSE
+      CASE t.kind OF
+        AST.typeNil: GenStr("typeNil")
+        | AST.typeInteger: GenStr("typeInteger")
+        | AST.typeReal: GenStr("typeReal")
+        | AST.typeBoolean: GenStr("typeBoolean")
+        | AST.typeChar: GenStr("typeChar")
+        | AST.typeSet: GenStr("typeSet")
+        | AST.typeString: GenStr("typeString")
+        | AST.typePointer: GenStr("typePointer")
+        | AST.typeArray: GenStr("typeArray")
+        | AST.typeBuffer: GenStr("typeBuffer")
+        | AST.typeRecord: GenStr("typeRecord")
+        | AST.typeProcedure: GenStr("typeProcedure")
+        | AST.typeImport: GenStr("typeImport")
+        | 14: GenStr("typeEND")
+      END;
+    END;
+    GenLn;
+    IF t.base # NIL THEN
+      GenI; GenStr("base:"); GenLn;
+      INC(indent);
+      GenType(l, t.base);
+      DEC(indent);
+    END;
+    i := 0;
+    f := t.fields;
+    WHILE f # NIL DO
+      GenI; GenStr("Field #"); GenInt(i); GenLn;
+      GenDecl(l, f);
+      INC(i);
+      f := f.next;
+    END;
+    GenI; GenStr("length: "); GenInt(t.length); GenLn;
+    GenI; GenStr("needTypeInfo: ");
+    IF t.needTypeInfo THEN GenStr("TRUE") ELSE GenStr("FALSE") END;
+    GenLn;
+    IF t.decl # NIL THEN
+      GenI; GenStr("decl:"); GenLn;
+      INC(indent);
+      GenDecl(l, t.decl);
+      DEC(indent)
+    END;
+    GenI; GenStr("typeId: "); GenInt(t.typeId); GenLn;
+    GenI; GenStr("reachable: ");
+    IF t.reachable THEN GenStr("TRUE") ELSE GenStr("FALSE") END;
+    GenLn
+  END
+END GenType;
+
 PROCEDURE GenExpr(l :Lex.Lexer; e :AST.Expr);
 BEGIN
   GenI; GenStr("kind: ");
@@ -91,6 +169,14 @@ BEGIN
   IF (e.op > 0) & (e.op < 71) THEN
     GenI; GenStr("op: "); GenInt(e.op); GenStr(" (");
     GenStr(Lex.TokenNames[e.op]); GenStr(")"); GenLn;
+  END;
+  IF e.typ # NIL THEN
+    GenI;
+    GenStr("type:");
+    GenLn;
+    INC(indent);
+    GenType(l, e.typ);
+    DEC(indent)
   END;
   IF e.lhs # NIL THEN
     GenI; GenStr("lhs:"); GenLn;
@@ -186,11 +272,18 @@ BEGIN
     (* New decl, so diplay it *)
     GenStr("kind: ");
     GenDeclKind(d.kind);
-    GenLn;
     GenI;
     GenStr("name: ");
     GenQName(l, d.qname);
     GenLn;
+    IF d.typ # NIL THEN
+      GenI;
+      GenStr("type:");
+      GenLn;
+      INC(indent);
+      GenType(l, d.typ);
+      DEC(indent)
+    END;
     GenI;
     GenStr("nesting: ");
     GenInt(d.nesting);
@@ -211,5 +304,6 @@ END Generate;
 BEGIN
   indent := 0;
   lastDecl := 0;
+  lastType := 0;
   GenDecl := Generate;
 END DumpDecl.
