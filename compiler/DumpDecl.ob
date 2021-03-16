@@ -119,14 +119,6 @@ BEGIN
       GenType(l, t.base);
       DEC(indent);
     END;
-    i := 0;
-    f := t.fields;
-    WHILE f # NIL DO
-      GenI; GenStr("Field #"); GenInt(i); GenLn;
-      GenDecl(l, f);
-      INC(i);
-      f := f.next;
-    END;
     GenI; GenStr("length: "); GenInt(t.length); GenLn;
     GenI; GenStr("needTypeInfo: ");
     IF t.needTypeInfo THEN GenStr("TRUE") ELSE GenStr("FALSE") END;
@@ -140,7 +132,18 @@ BEGIN
     GenI; GenStr("typeId: "); GenInt(t.typeId); GenLn;
     GenI; GenStr("reachable: ");
     IF t.reachable THEN GenStr("TRUE") ELSE GenStr("FALSE") END;
-    GenLn
+    GenLn;
+    i := 0;
+    f := t.fields;
+    WHILE f # NIL DO
+      IF f.kind = AST.declEND THEN
+        ASSERT(f.next = NIL)
+      END;
+      GenI; GenStr("Field #"); GenInt(i); GenLn;
+      GenDecl(l, f);
+      INC(i);
+      f := f.next;
+    END
   END
 END GenType;
 
