@@ -301,7 +301,20 @@ BEGIN
       GenExpr(l, d.expr);
       DEC(indent)
     END;
-  END;
+(* not quite working yet
+    IF d.procVars # NIL THEN
+      ASSERT(d.kind = AST.declProcedure);
+      GenI; GenStr("procVars:"); GenLn; INC(indent);
+      i := 0; d := d.procVars;
+      WHILE (d # NIL) OR (d.kind # AST.declEND) DO
+        GenI; GenStr("procVar #"); GenInt(i); GenLn;
+        GenDecl(l, d);
+        d := d.next; INC(i)
+      END;
+      DEC(indent)
+    END
+*)
+  END
 END Generate;
 
 BEGIN
