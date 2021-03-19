@@ -956,14 +956,14 @@ END GenProc;
 
 PROCEDURE Generate*(l :Lex.Lexer; d :AST.Decl);
 BEGIN
-  IF dumpDecls THEN
-    GenStr("/*");
-    GenLn;
-    DumpDecl.Generate(l, d);
-    GenStr("*/");
-    GenLn;
-  END;
   IF d.nesting = 0 THEN
+    IF dumpDecls THEN
+      GenStr("/*");
+      GenLn;
+      DumpDecl.Generate(l, d);
+      GenStr("*/");
+      GenLn;
+    END;
     CASE d.kind OF
       AST.declType: GenTypedef(l, d);
     | AST.declVar: GenVar(l, d);
