@@ -1,5 +1,6 @@
 MODULE Out;
 
+(* Send textual output to stdout *)
 NATIVE PROCEDURE Int*(i :INTEGER); END Int;
 NATIVE PROCEDURE Real*(r :REAL); END Real;
 NATIVE PROCEDURE Char*(c :CHAR); END Char;
@@ -7,6 +8,14 @@ NATIVE PROCEDURE Str*(s :ARRAY OF CHAR); END Str;
 NATIVE PROCEDURE StrI*(s :ARRAY OF CHAR; offset :INTEGER); END StrI;
 NATIVE PROCEDURE Ln*; END Ln;
 NATIVE PROCEDURE Halt*; END Halt;
+
+(* Same as above, but sends textual output to stderr *)
+NATIVE PROCEDURE ErrInt*(i :INTEGER); END ErrInt;
+NATIVE PROCEDURE ErrReal*(r :REAL); END ErrReal;
+NATIVE PROCEDURE ErrChar*(c :CHAR); END ErrChar;
+NATIVE PROCEDURE ErrStr*(s :ARRAY OF CHAR); END ErrStr;
+NATIVE PROCEDURE ErrStrI*(s :ARRAY OF CHAR; offset :INTEGER); END ErrStrI;
+NATIVE PROCEDURE ErrLn*; END ErrLn;
 
 PROCEDURE PrintLn*(s :ARRAY OF CHAR);
 BEGIN

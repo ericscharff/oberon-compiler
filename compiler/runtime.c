@@ -108,6 +108,44 @@ void Out_Ln(void) {
   }
 }
 
+void Out_ErrInt(int i) {
+  if (!Out_muted) {
+    fprintf(stderr, "%d", i);
+  }
+}
+
+void Out_ErrReal(float r) {
+  if (!Out_muted) {
+    fprintf(stderr, "%g", r);
+  }
+}
+
+void Out_ErrChar(char c) {
+  if (!Out_muted) {
+    fputc(c, stderr);
+  }
+}
+
+void Out_ErrStr(const char *s, size_t q) {
+  (void)q;
+  if (!Out_muted) {
+    fputs(s, stderr);
+  }
+}
+
+void Out_ErrStrI(const char *s, size_t q, int offset) {
+  (void)q;
+  if (!Out_muted) {
+    fputs(s + offset, stderr);
+  }
+}
+
+void Out_ErrLn(void) {
+  if (!Out_muted) {
+    fputs("", stderr);
+  }
+}
+
 void Out_Mute(void) { Out_muted = true; }
 
 void Out_Unmute(void) { Out_muted = false; }
