@@ -1,0 +1,190 @@
+MODULE R5Codegen;
+
+IMPORT AST, Lex, Out, DumpDecl;
+
+CONST
+  CACHE_SIZE = 100;
+VAR
+  typeCache    :ARRAY CACHE_SIZE OF AST.Type; (* Already reached types          *)
+  typeSizes    :ARRAY CACHE_SIZE OF INTEGER;  (* Maps RECORD and ARRAY to sizes *)
+  globalOffset :INTEGER; (* Offset of variable to global pointer *)
+  lastType     :INTEGER;
+  pc           :INTEGER; (* Program counter. This is measured in instructions, *)
+                         (* not bytes, so it isn't a multiple of 4.            *)
+
+PROCEDURE GenStr(s :ARRAY OF CHAR);
+BEGIN
+  Out.Str(s);
+END GenStr;
+
+PROCEDURE Tab;
+BEGIN
+  GenStr(9X)
+END Tab;
+
+PROCEDURE GenLn;
+BEGIN
+  Out.Ln
+END GenLn;
+
+PROCEDURE GenQName(l :Lex.Lexer; name :AST.QName);
+BEGIN
+  IF name.moduleName > 0 THEN
+    Lex.OutStr(l, name.moduleName);
+    GenStr("_");
+  END;
+  IF name.name > 0 THEN
+    Lex.OutStr(l, name.name);
+  END;
+END GenQName;
+
+PROCEDURE FindOrAddType(t :AST.Type) :INTEGER;
+VAR
+  index :INTEGER;
+  found :BOOLEAN;
+BEGIN
+  index := 0; found := FALSE;
+  WHILE (index < lastType) & ~found DO
+    IF typeCache[index] = t THEN
+      found := TRUE
+    ELSE
+      INC(index)
+    END
+  END;
+  IF ~found THEN
+    ASSERT(index < CACHE_SIZE);
+    typeCache[index] := t;
+    typeSizes[index] := -1;
+    INC(lastType)
+  END
+  RETURN index
+END FindOrAddType;
+
+PROCEDURE CalculateSize(t :AST.Type) :INTEGER;
+VAR
+  i, s :INTEGER;
+  f :AST.Decl;
+BEGIN
+  IF t.kind IN {AST.typeInteger, AST.typeReal, AST.typeBoolean, AST.typeChar,
+                AST.typeSet, AST.typePointer, AST.typeProcedure} THEN
+    s := 4
+  ELSIF t.kind = AST.typeRecord THEN
+    i := FindOrAddType(t);
+    s := typeSizes[i];
+    IF typeSizes[i] < 0 THEN
+      (* Not found yet. Record size is size of fields *)
+      s := 0;
+      IF t.needTypeInfo THEN s := 4 END;
+      f := t.fields;
+      WHILE (f # NIL) & (f.kind # AST.declEND) DO
+        f.offset := s;
+        s := s + CalculateSize(f.typ);
+        f := f.next
+      END;
+      typeSizes[i] := s
+    END;
+  ELSIF t.kind = AST.typeArray THEN
+    i := FindOrAddType(t);
+    s := typeSizes[i];
+    IF typeSizes[i] < 0 THEN
+      (* Not found yet. Array size is length * element size *)
+      ASSERT(t.length > 0);
+      IF t.base.kind = AST.typeChar THEN
+        (* Strings are packed up to a multiple of 4 bytes *)
+        s := t.length;
+        IF (s MOD 4) # 0 THEN
+          s := t.length + 4 - (t.length MOD 4)
+        END
+      ELSE
+        s := t.length * CalculateSize(t.base)
+      END;
+      typeSizes[i] := s
+    END
+  ELSE
+    ASSERT(FALSE)
+  END;
+  RETURN s
+END CalculateSize;
+
+PROCEDURE AllocateGlobals*(l :Lex.Lexer; d :AST.Decl);
+BEGIN
+  ASSERT(d.kind = AST.declVar);
+  ASSERT(d.nesting = 0);
+  ASSERT(d.offset = -1);
+  d.offset := globalOffset;
+  GenStr("; "); GenQName(l, d.qname); GenStr(" offset "); Out.Int(d.offset); GenLn;
+  globalOffset := globalOffset + CalculateSize(d.typ)
+END AllocateGlobals;
+
+PROCEDURE GenerateProcs*(l :Lex.Lexer; d :AST.Decl);
+VAR
+  fp :INTEGER;
+  vars :AST.Decl;
+BEGIN
+  ASSERT(d.kind = AST.declProcedure);
+  d.offset := pc;
+  GenQName(l, d.qname); GenStr(":"); GenLn;
+  fp := 4; (* Leave 4 bytes for return address. Params right below. *)
+  vars := d.procVars;
+  WHILE (vars # NIL) &
+        ((vars.kind = AST.declParam) OR (vars.kind = AST.declVarParam)) DO
+    ASSERT(vars.offset < 0);
+    vars.offset := fp;
+    Tab; GenStr("; "); Lex.OutStr(l, vars.qname.name);
+    GenStr(" offset "); Out.Int(fp); GenLn;
+    (*
+     * All parameters except arrays are 4 bytes, because they are either
+     * primitives, records (passed by reference), var parameters (also
+     * passed by reference) or pointers.
+     *)
+    fp := fp + 4;
+    IF AST.IsOpenArray(vars.typ) THEN
+      Tab; GenStr("; "); Lex.OutStr(l, vars.qname.name); GenStr("__len");
+      GenStr(" offset "); Out.Int(fp); GenLn;
+      fp := fp + 4
+    END;
+    vars := vars.next
+  END;
+  fp := 0;
+  WHILE (vars # NIL) & (vars.kind # AST.declEND) DO
+    IF vars.kind = AST.declVar THEN
+      fp := fp - CalculateSize(vars.typ);
+      ASSERT(vars.offset < 0);
+      vars.offset := fp;
+      Tab; GenStr("; "); Lex.OutStr(l, vars.qname.name);
+      GenStr(" offset "); Out.Int(fp); GenLn
+    END;
+    vars := vars.next
+  END;
+  (* Preamble *)
+  IF fp < 0 THEN
+    INC(pc); Tab; GenStr("ADD SP, SP, "); Out.Int(fp); GenLn
+  END;
+  (* Epilog *)
+  IF fp < 0 THEN
+    INC(pc); Tab; GenStr("ADD SP, SP, "); Out.Int(-fp); GenLn
+  END;
+  DumpDecl.Generate(l, d);
+  INC(pc); Tab; GenStr("RTS"); GenLn
+END GenerateProcs;
+
+PROCEDURE GenCall*(l :Lex.Lexer; name :AST.QName);
+BEGIN
+  INC(pc); Tab; GenStr("JSR "); GenQName(l, name); GenLn
+END GenCall;
+
+PROCEDURE GenStartMain*;
+BEGIN
+  GenStr("__start__:"); GenLn
+END GenStartMain;
+
+PROCEDURE GenEndMain*;
+BEGIN
+  INC(pc); Tab; GenStr("HALT"); GenLn
+END GenEndMain;
+
+BEGIN
+  globalOffset := 0;
+  lastType := 0;
+  pc := 0
+END R5Codegen.

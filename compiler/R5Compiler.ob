@@ -1,0 +1,45 @@
+MODULE R5Compiler;
+
+IMPORT Args, AST, R5Codegen, Decls, Lex, Parse;
+
+PROCEDURE CompileFile;
+VAR
+  fileName :ARRAY 256 OF CHAR;
+  l        :Lex.Lexer;
+  p        :Decls.ReachableDecl;
+BEGIN
+  (* Parse command line args *)
+  Args.GetArg(fileName, 1);
+  Parse.InitFromFile(fileName);
+  Parse.ParseModule;
+  l := Parse.l;
+
+  Decls.VisitDecl(Parse.lastModuleDecls);
+  p := Decls.reachableDecls;
+  WHILE p # NIL DO
+    IF (p.d.kind = AST.declVar) & (p.d.nesting = 0) THEN
+      R5Codegen.AllocateGlobals(l, p.d);
+    END;
+    p := p.next;
+  END;
+  p := Decls.reachableDecls;
+  WHILE p # NIL DO
+    IF (p.d.kind = AST.declProcedure) & ~p.d.isNative THEN
+      R5Codegen.GenerateProcs(l, p.d);
+    END;
+    p := p.next;
+  END;
+  R5Codegen.GenStartMain();
+  p := Decls.reachableDecls;
+  WHILE p # NIL DO
+    IF p.d.qname.name = Decls.modInitName THEN
+      R5Codegen.GenCall(l, p.d.qname);
+    END;
+    p := p.next;
+  END;
+  R5Codegen.GenEndMain()
+END CompileFile;
+
+BEGIN
+  CompileFile
+END R5Compiler.

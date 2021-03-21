@@ -140,7 +140,6 @@ BEGIN
         ASSERT(f.next = NIL)
       END;
       GenI; GenStr("Field #"); GenInt(i); GenLn;
-      GenI; GenStr("offset: "); GenInt(f.offset); GenLn;
       GenDecl(l, f);
       INC(i);
       f := f.next;
@@ -277,6 +276,9 @@ BEGIN
     (* New decl, so diplay it *)
     GenStr("kind: ");
     GenDeclKind(d.kind);
+    IF d.offset >= 0 THEN
+      GenI; GenStr("offset: "); GenInt(d.offset); GenLn
+    END;
     GenI;
     GenStr("name: ");
     GenQName(l, d.qname);
