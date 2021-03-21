@@ -118,6 +118,14 @@ TYPE
                                  (* code                              *)
     resolver* :BuiltinResolver;  (* Handles native procedure calls    *)
     state*    :DeclState;
+    offset*   :INTEGER;          (* Only used by codegen - offset of  *)
+                                 (* this decl from something.         *)
+                                 (* Global var - offset from GP       *)
+                                 (* Local var - offset from FP        *)
+                                 (* Param - offset from FP            *)
+                                 (* Field - offset from start of rec  *)
+                                 (* Procedure - program counter of    *)
+                                 (* code entry point                  *)
   END;
   ExprKind         = INTEGER;
   (*

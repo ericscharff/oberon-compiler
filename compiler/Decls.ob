@@ -90,6 +90,7 @@ BEGIN
   d.exported := FALSE;
   d.isNative := FALSE;
   d.state := AST.stateUnresolved;
+  d.offset := -1;
 END NewDecl;
 
 PROCEDURE AddDecl*(l :Lex.Lexer; VAR chain :AST.Decl; name :StringId) :AST.Decl;
