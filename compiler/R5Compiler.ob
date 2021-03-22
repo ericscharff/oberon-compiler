@@ -25,19 +25,19 @@ BEGIN
   p := Decls.reachableDecls;
   WHILE p # NIL DO
     IF (p.d.kind = AST.declProcedure) & ~p.d.isNative THEN
-      R5Codegen.GenerateProcs(l, p.d);
+      R5Codegen.GenerateProc(l, p.d);
     END;
     p := p.next;
   END;
-  R5Codegen.GenStartMain();
+  R5Codegen.GenStartMain;
   p := Decls.reachableDecls;
   WHILE p # NIL DO
     IF p.d.qname.name = Decls.modInitName THEN
-      R5Codegen.GenCall(l, p.d.qname);
+      R5Codegen.GenCall(p.d);
     END;
     p := p.next;
   END;
-  R5Codegen.GenEndMain()
+  R5Codegen.GenEndMain(l)
 END CompileFile;
 
 BEGIN

@@ -1,16 +1,68 @@
 MODULE R5Codegen;
 
-IMPORT AST, Lex, Out, DumpDecl;
+IMPORT AST, Lex, Out;
 
 CONST
   CACHE_SIZE = 100;
+  CODE_BUFFER = 2000; (* Code for the procedure being generated, for fixups.  *)
+
+  (* Opcodes *)
+  opMOV = 0;  (* ra := rb *)
+  opADD = 1;  (* ra := rb + rc *)
+  opSUB = 2;  (* ra := rb - rc *)
+  opMUL = 3;  (* ra := rb * rc *)
+  opDIV = 4;  (* ra := rb * rc *)
+  opJSR = 50; (* Jump to Subr  *)
+  opRTS = 51; (* Subr return   *)
+
+  opMOVI = 100; (* ra := immediate *)
+  opADDI = 101; (* ra := rb + immediate *)
+  opSUBI = 101; (* ra := rb - immediate *)
+  opMULI = 101; (* ra := rb * immediate *)
+  opDIVI = 101; (* ra := rb / immediate *)
+
+  opHALT = 1000;
+
+  (* Registers *)
+  rGB = 13; (* r13 = Global base   *)
+  rSP = 14; (* r14 = Stack pointer *)
+  rLR = 15; (* r15 = Link register *)
+
+TYPE
+  OpCode = INTEGER;
+  Register = INTEGER;
+  Instruction = RECORD
+    op         :OpCode;
+    ra, rb, rc :Register;
+    value      :INTEGER;  (* If op is an immediate, e.g., ra := rb + value    *)
+                          (* if op is a branch, this is the branch offset     *)
+    q          :AST.QName;
+  END;
 VAR
-  typeCache    :ARRAY CACHE_SIZE OF AST.Type; (* Already reached types          *)
-  typeSizes    :ARRAY CACHE_SIZE OF INTEGER;  (* Maps RECORD and ARRAY to sizes *)
-  globalOffset :INTEGER; (* Offset of variable to global pointer *)
+  typeCache    :ARRAY CACHE_SIZE OF AST.Type; (* Already reached types        *)
+  typeSizes    :ARRAY CACHE_SIZE OF INTEGER;  (* Map RECORD and ARRAY to size *)
+  codeBuffer   :ARRAY CODE_BUFFER OF Instruction;
+  globalOffset :INTEGER;                 (* Offset of variable to global base *)
   lastType     :INTEGER;
-  pc           :INTEGER; (* Program counter. This is measured in instructions, *)
-                         (* not bytes, so it isn't a multiple of 4.            *)
+  pc           :INTEGER; (* (Global) program counter. This is the offset from *)
+                         (* the start of code generated. This is measured in  *)
+                         (* instructions, not bytes, so it is not a multiple  *)
+                         (* of 4.                                             *)
+  cp           :INTEGER; (* Code pointer. This is an offset into the code     *)
+                         (* buffer, so 0 represents the start of a procedure. *)
+                         (* It is measured in instructions, not bytes.        *)
+
+PROCEDURE Emit(op :OpCode; ra, rb, rc :Register; value :INTEGER);
+BEGIN
+  codeBuffer[cp].op := op;
+  codeBuffer[cp].ra := ra;
+  codeBuffer[cp].rb := rb;
+  codeBuffer[cp].rc := rc;
+  codeBuffer[cp].value := value;
+  INC(pc);
+  INC(cp);
+  ASSERT(cp < CODE_BUFFER)
+END Emit;
 
 PROCEDURE GenStr(s :ARRAY OF CHAR);
 BEGIN
@@ -27,6 +79,43 @@ BEGIN
   Out.Ln
 END GenLn;
 
+PROCEDURE GenReg(r :Register);
+BEGIN
+  IF r < rGB THEN
+    Out.Str("R"); Out.Int(r)
+  ELSIF r = rGB THEN
+    Out.Str("GB")
+  ELSIF r = rSP THEN
+    Out.Str("SP")
+  ELSIF r = rLR THEN
+    Out.Str("LR")
+  ELSE
+    ASSERT(FALSE)
+  END
+END GenReg;
+
+PROCEDURE Gen2(op :ARRAY OF CHAR; i, j, k :Register);
+BEGIN
+  Out.Str(op);
+  Out.Str(" ");
+  GenReg(i);
+  Out.Str(", ");
+  GenReg(j);
+  Out.Str(", #");
+  Out.Int(k)
+END Gen2;
+
+PROCEDURE Gen3(op :ARRAY OF CHAR; i, j, k :Register);
+BEGIN
+  Out.Str(op);
+  Out.Str(" ");
+  GenReg(i);
+  Out.Str(", ");
+  GenReg(j);
+  Out.Str(", ");
+  GenReg(k)
+END Gen3;
+
 PROCEDURE GenQName(l :Lex.Lexer; name :AST.QName);
 BEGIN
   IF name.moduleName > 0 THEN
@@ -37,6 +126,47 @@ BEGIN
     Lex.OutStr(l, name.name);
   END;
 END GenQName;
+
+PROCEDURE DumpCode(l :Lex.Lexer; delta :INTEGER);
+VAR
+  i :INTEGER;
+BEGIN
+  i := 0;
+  WHILE i < cp DO
+    Out.Int(i + delta); Tab;
+    IF codeBuffer[i].op = opMOV THEN
+      Out.Str("MOV "); GenReg(codeBuffer[i].ra); GenStr(", "); GenReg(codeBuffer[i].rb);
+    ELSIF codeBuffer[i].op = opADD THEN
+      Gen3("ADD", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].rc)
+    ELSIF codeBuffer[i].op = opSUB THEN
+      Gen3("SUB", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].rc)
+    ELSIF codeBuffer[i].op = opMUL THEN
+      Gen3("MUL", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].rc)
+    ELSIF codeBuffer[i].op = opDIV THEN
+      Gen3("DIV", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].rc)
+    ELSIF codeBuffer[i].op = opADDI THEN
+      Gen2("ADD", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].value)
+    ELSIF codeBuffer[i].op = opSUBI THEN
+      Gen2("SUB", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].value)
+    ELSIF codeBuffer[i].op = opMULI THEN
+      Gen2("MUL", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].value)
+    ELSIF codeBuffer[i].op = opDIVI THEN
+      Gen2("DIV", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].value)
+    ELSIF codeBuffer[i].op = opJSR THEN
+      GenStr("JSR "); Out.Int(codeBuffer[i].value);
+      GenStr(" ("); GenQName(l, codeBuffer[i].q);
+      GenStr(")")
+    ELSIF codeBuffer[i].op = opRTS THEN
+      GenStr("RTS")
+    ELSIF codeBuffer[i].op = opHALT THEN
+      GenStr("HALT")
+    ELSE
+      ASSERT(FALSE)
+    END;
+    GenLn;
+    INC(i)
+  END
+END DumpCode;
 
 PROCEDURE FindOrAddType(t :AST.Type) :INTEGER;
 VAR
@@ -116,14 +246,15 @@ BEGIN
   globalOffset := globalOffset + CalculateSize(d.typ)
 END AllocateGlobals;
 
-PROCEDURE GenerateProcs*(l :Lex.Lexer; d :AST.Decl);
+PROCEDURE GenerateProc*(l :Lex.Lexer; d :AST.Decl);
 VAR
   fp :INTEGER;
   vars :AST.Decl;
 BEGIN
   ASSERT(d.kind = AST.declProcedure);
+  cp := 0;
   d.offset := pc;
-  GenQName(l, d.qname); GenStr(":"); GenLn;
+  GenQName(l, d.qname); GenStr(": code offset: "); Out.Int(d.offset); GenLn;
   fp := 4; (* Leave 4 bytes for return address. Params right below. *)
   vars := d.procVars;
   WHILE (vars # NIL) &
@@ -151,36 +282,38 @@ BEGIN
       fp := fp - CalculateSize(vars.typ);
       ASSERT(vars.offset < 0);
       vars.offset := fp;
-      Tab; GenStr("; "); Lex.OutStr(l, vars.qname.name);
-      GenStr(" offset "); Out.Int(fp); GenLn
+      Tab; GenStr("; "); Lex.OutStr(l, vars.qname.name); GenStr(" offset "); Out.Int(fp); GenLn
     END;
     vars := vars.next
   END;
   (* Preamble *)
   IF fp < 0 THEN
-    INC(pc); Tab; GenStr("ADD SP, SP, "); Out.Int(fp); GenLn
+    Emit(opADDI, rSP, rSP, 0, fp)
   END;
   (* Epilog *)
   IF fp < 0 THEN
-    INC(pc); Tab; GenStr("ADD SP, SP, "); Out.Int(-fp); GenLn
+    Emit(opADDI, rSP, rSP, 0, -fp);
   END;
-  DumpDecl.Generate(l, d);
-  INC(pc); Tab; GenStr("RTS"); GenLn
-END GenerateProcs;
+  Emit(opRTS, 0, 0, 0, 0);
+  DumpCode(l, d.offset)
+END GenerateProc;
 
-PROCEDURE GenCall*(l :Lex.Lexer; name :AST.QName);
+PROCEDURE GenCall*(proc :AST.Decl);
 BEGIN
-  INC(pc); Tab; GenStr("JSR "); GenQName(l, name); GenLn
+  Emit(opJSR, 0, 0, 0, proc.offset);
+  codeBuffer[cp - 1].q := proc.qname
 END GenCall;
 
 PROCEDURE GenStartMain*;
 BEGIN
+  cp := 0;
   GenStr("__start__:"); GenLn
 END GenStartMain;
 
-PROCEDURE GenEndMain*;
+PROCEDURE GenEndMain*(l :Lex.Lexer);
 BEGIN
-  INC(pc); Tab; GenStr("HALT"); GenLn
+  Emit(opHALT, 0, 0, 0, 0);
+  DumpCode(l, 10000)
 END GenEndMain;
 
 BEGIN
