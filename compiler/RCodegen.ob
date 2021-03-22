@@ -1,4 +1,4 @@
-MODULE R5Codegen;
+MODULE RCodegen;
 
 IMPORT AST, Lex, Out;
 
@@ -320,4 +320,4 @@ BEGIN
   globalOffset := 0;
   lastType := 0;
   pc := 0
-END R5Codegen.
+END RCodegen.

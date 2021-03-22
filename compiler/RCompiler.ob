@@ -1,6 +1,6 @@
-MODULE R5Compiler;
+MODULE RCompiler;
 
-IMPORT Args, AST, R5Codegen, Decls, Lex, Parse;
+IMPORT Args, AST, RCodegen, Decls, Lex, Parse;
 
 PROCEDURE CompileFile;
 VAR
@@ -18,28 +18,28 @@ BEGIN
   p := Decls.reachableDecls;
   WHILE p # NIL DO
     IF (p.d.kind = AST.declVar) & (p.d.nesting = 0) THEN
-      R5Codegen.AllocateGlobals(l, p.d);
+      RCodegen.AllocateGlobals(l, p.d);
     END;
     p := p.next;
   END;
   p := Decls.reachableDecls;
   WHILE p # NIL DO
     IF (p.d.kind = AST.declProcedure) & ~p.d.isNative THEN
-      R5Codegen.GenerateProc(l, p.d);
+      RCodegen.GenerateProc(l, p.d);
     END;
     p := p.next;
   END;
-  R5Codegen.GenStartMain;
+  RCodegen.GenStartMain;
   p := Decls.reachableDecls;
   WHILE p # NIL DO
     IF p.d.qname.name = Decls.modInitName THEN
-      R5Codegen.GenCall(p.d);
+      RCodegen.GenCall(p.d);
     END;
     p := p.next;
   END;
-  R5Codegen.GenEndMain(l)
+  RCodegen.GenEndMain(l)
 END CompileFile;
 
 BEGIN
   CompileFile
-END R5Compiler.
+END RCompiler.
