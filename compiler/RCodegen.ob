@@ -12,6 +12,10 @@ CONST
   opSUB = 2;  (* ra := rb - rc *)
   opMUL = 3;  (* ra := rb * rc *)
   opDIV = 4;  (* ra := rb * rc *)
+  opLDW = 5;  (* ra := Mem[rb + offset] (word) *)
+  opLDB = 6;  (* ra := Mem[rb + offset] (byte) *)
+  opSTW = 7;  (* Mem[rb + offset] := ra (word) *)
+  opSTB = 8;  (* Mem[rb + offset] := ra (byte) *)
   opJSR = 50; (* Jump to Subr  *)
   opRTS = 51; (* Subr return   *)
 
@@ -28,9 +32,15 @@ CONST
   rSP = 14; (* r14 = Stack pointer *)
   rLR = 15; (* r15 = Link register *)
 
+  (* Item kinds *)
+  itemReg   = 1; (* Item is in register r *)
+  itemVar   = 2; (* Item's address is r+offset *)
+  itemConst = 3; (* Item value is a constant, stored in offset *)
+
 TYPE
   OpCode = INTEGER;
   Register = INTEGER;
+  ItemKind = INTEGER;
   Instruction = RECORD
     op         :OpCode;
     ra, rb, rc :Register;
@@ -38,6 +48,12 @@ TYPE
                           (* if op is a branch, this is the branch offset     *)
     q          :AST.QName;
   END;
+  Item = RECORD
+    kind   :ItemKind;
+    r      :Register;
+    offset :INTEGER;
+  END;
+
 VAR
   typeCache    :ARRAY CACHE_SIZE OF AST.Type; (* Already reached types        *)
   typeSizes    :ARRAY CACHE_SIZE OF INTEGER;  (* Map RECORD and ARRAY to size *)
@@ -51,6 +67,7 @@ VAR
   cp           :INTEGER; (* Code pointer. This is an offset into the code     *)
                          (* buffer, so 0 represents the start of a procedure. *)
                          (* It is measured in instructions, not bytes.        *)
+  curReg       :INTEGER; (* Number [0..13] of the next available register     *)
 
 PROCEDURE Emit(op :OpCode; ra, rb, rc :Register; value :INTEGER);
 BEGIN
@@ -94,26 +111,26 @@ BEGIN
   END
 END GenReg;
 
-PROCEDURE Gen2(op :ARRAY OF CHAR; i, j, k :Register);
+PROCEDURE Gen2(op :ARRAY OF CHAR; ra, rb :Register; value :INTEGER);
 BEGIN
   Out.Str(op);
   Out.Str(" ");
-  GenReg(i);
+  GenReg(ra);
   Out.Str(", ");
-  GenReg(j);
+  GenReg(rb);
   Out.Str(", #");
-  Out.Int(k)
+  Out.Int(value)
 END Gen2;
 
-PROCEDURE Gen3(op :ARRAY OF CHAR; i, j, k :Register);
+PROCEDURE Gen3(op :ARRAY OF CHAR; ra, rb, rc :Register);
 BEGIN
   Out.Str(op);
   Out.Str(" ");
-  GenReg(i);
+  GenReg(ra);
   Out.Str(", ");
-  GenReg(j);
+  GenReg(rb);
   Out.Str(", ");
-  GenReg(k)
+  GenReg(rc)
 END Gen3;
 
 PROCEDURE GenQName(l :Lex.Lexer; name :AST.QName);
@@ -136,6 +153,8 @@ BEGIN
     Out.Int(i + delta); Tab;
     IF codeBuffer[i].op = opMOV THEN
       Out.Str("MOV "); GenReg(codeBuffer[i].ra); GenStr(", "); GenReg(codeBuffer[i].rb);
+    ELSIF codeBuffer[i].op = opMOVI THEN
+      Out.Str("MOV "); GenReg(codeBuffer[i].ra); GenStr(", #"); Out.Int(codeBuffer[i].value);
     ELSIF codeBuffer[i].op = opADD THEN
       Gen3("ADD", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].rc)
     ELSIF codeBuffer[i].op = opSUB THEN
@@ -152,6 +171,14 @@ BEGIN
       Gen2("MUL", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].value)
     ELSIF codeBuffer[i].op = opDIVI THEN
       Gen2("DIV", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].value)
+    ELSIF codeBuffer[i].op = opLDW THEN
+      Gen2("LDW", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].value)
+    ELSIF codeBuffer[i].op = opLDB THEN
+      Gen2("LDB", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].value)
+    ELSIF codeBuffer[i].op = opSTW THEN
+      Gen2("STW", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].value)
+    ELSIF codeBuffer[i].op = opSTB THEN
+      Gen2("STB", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].value)
     ELSIF codeBuffer[i].op = opJSR THEN
       GenStr("JSR "); Out.Int(codeBuffer[i].value);
       GenStr(" ("); GenQName(l, codeBuffer[i].q);
@@ -236,6 +263,40 @@ BEGIN
   RETURN s
 END CalculateSize;
 
+PROCEDURE IncCurReg;
+BEGIN
+  INC(curReg);
+  IF curReg = rGB THEN
+    Out.ErrStr("Out of registers"); Out.ErrLn;
+    ASSERT(FALSE)
+  END
+END IncCurReg;
+
+PROCEDURE DecCurReg;
+BEGIN
+  DEC(curReg);
+  ASSERT(curReg >= 0)
+END DecCurReg;
+
+(* Loads a value from an item into a register. *)
+PROCEDURE Load(VAR item :Item);
+BEGIN
+  IF item.kind = itemVar THEN
+    Emit(opLDW, curReg, item.r, 0, item.offset);
+    item.r := curReg;
+    IncCurReg
+  ELSIF item.kind = itemConst THEN
+    Emit(opMOVI, curReg, 0, 0, item.offset);
+    item.r := curReg;
+    IncCurReg
+  ELSIF item.kind = itemReg THEN
+    (* Already in a register, do nothing *)
+  ELSE
+    ASSERT(FALSE)
+  END;
+  item.kind := itemReg
+END Load;
+
 PROCEDURE AllocateGlobals*(l :Lex.Lexer; d :AST.Decl);
 BEGIN
   ASSERT(d.kind = AST.declVar);
@@ -245,6 +306,95 @@ BEGIN
   GenStr("; "); GenQName(l, d.qname); GenStr(" offset "); Out.Int(d.offset); GenLn;
   globalOffset := globalOffset + CalculateSize(d.typ)
 END AllocateGlobals;
+
+PROCEDURE GenBinaryOp(op :Lex.TokenKind; VAR lhs, rhs :Item);
+BEGIN
+  IF op = Lex.tPLUS THEN
+    IF lhs.kind = itemConst THEN
+      Load(rhs);
+      lhs.kind := rhs.kind; lhs.r := rhs.r;
+      Emit(opADDI, lhs.r, lhs.r, 0, lhs.offset)
+    ELSIF rhs.kind = itemConst THEN
+      Load(lhs);
+      Emit(opADDI, lhs.r, lhs.r, 0, rhs.offset)
+    ELSE
+      Load(lhs);
+      Load(rhs);
+      Emit(opADD, lhs.r, lhs.r, rhs.r, 0);
+      DecCurReg
+    END
+  ELSIF op = Lex.tSTAR THEN
+    IF lhs.kind = itemConst THEN
+      Load(rhs);
+      lhs.kind := rhs.kind; lhs.r := rhs.r;
+      Emit(opMULI, lhs.r, lhs.r, 0, lhs.offset)
+    ELSIF rhs.kind = itemConst THEN
+      Load(lhs);
+      Emit(opMULI, lhs.r, lhs.r, 0, rhs.offset)
+    ELSE
+      Load(lhs);
+      Load(rhs);
+      Emit(opMUL, lhs.r, lhs.r, rhs.r, 0);
+      DecCurReg
+    END
+  ELSE
+    ASSERT(FALSE)
+  END
+END GenBinaryOp;
+
+PROCEDURE GenExpr(e :AST.Expr; VAR item :Item);
+VAR
+  rhs :Item;
+BEGIN
+  IF e.kind = AST.exprVal THEN
+    item.kind := itemConst;
+    IF e.typ.kind = AST.typeInteger THEN
+      item.offset := e.iVal
+    ELSE
+      ASSERT(FALSE)
+    END
+  ELSIF e.kind = AST.exprIdentRef THEN
+    ASSERT(e.decl.kind = AST.declVar);
+    ASSERT(e.typ.kind # AST.typeRecord);
+    item.kind := itemVar;
+    ASSERT(e.decl.offset # -1);
+    item.offset := e.decl.offset;
+    IF e.decl.nesting = 0 THEN
+      item.r := rGB
+    ELSE
+      item.r := rSP
+    END
+  ELSIF e.kind = AST.exprBinary THEN
+    GenExpr(e.lhs, item);
+    GenExpr(e.rhs, rhs);
+    GenBinaryOp(e.op, item, rhs)
+  ELSE
+    ASSERT(FALSE)
+  END
+END GenExpr;
+
+PROCEDURE GenStatements(s :AST.Stmt);
+VAR
+  e :AST.Expr;
+  lhs, rhs :Item;
+BEGIN
+  WHILE s # NIL DO
+    IF s.kind = AST.stmtAssign THEN
+      e := s.cond;
+      ASSERT(e.kind = AST.exprAssign);
+      GenExpr(e.rhs, rhs);
+      Load(rhs);
+      GenExpr(e.lhs, lhs);
+      ASSERT(lhs.kind = itemVar);
+      Emit(opSTW, rhs.r, lhs.r, 0, lhs.offset);
+      DecCurReg
+    ELSIF s.kind = AST.stmtEmpty THEN
+    ELSE
+      ASSERT(FALSE)
+    END;
+    s := s.next
+  END
+END GenStatements;
 
 PROCEDURE GenerateProc*(l :Lex.Lexer; d :AST.Decl);
 VAR
@@ -290,6 +440,7 @@ BEGIN
   IF fp < 0 THEN
     Emit(opADDI, rSP, rSP, 0, fp)
   END;
+  GenStatements(d.body);
   (* Epilog *)
   IF fp < 0 THEN
     Emit(opADDI, rSP, rSP, 0, -fp);
