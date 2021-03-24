@@ -26,11 +26,11 @@ Simple__module_init_: code offset: 0
 20	STW R0, GB, #8
 21	LDW R0, GB, #76		; k := s[1].v[2].y;
 22	STW R0, GB, #8
-23	LDW R0, GB, #8		; s[0].v[i].y := k
-24	LDW R1, GB, #0
-25	MUL R1, R1, #8
-26	ADD R1, GB, R1
-27	STW R0, R1, #20
+23	LDW R0, GB, #0		; s[0].v[i].y := k
+24	MUL R0, R0, #8
+25	ADD R0, GB, R0
+26	LDW R1, GB, #8
+27	STW R1, R0, #20
 28	RTS
 __start__:
 10000	JSR 0 (Simple__module_init_)
