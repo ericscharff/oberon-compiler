@@ -1,0 +1,20 @@
+MODULE Simple;
+
+TYPE
+  R0 = RECORD x, y: INTEGER END;
+  R1 = RECORD u: INTEGER;
+         v: ARRAY 4 OF R0;
+         w: INTEGER
+       END;
+
+VAR i, j, k: INTEGER;
+  s: ARRAY 2 OF R1;
+
+BEGIN
+  i := 1000; j := 2000; k := 3000;
+  k := s[i].u;
+  k := s[1].w;
+  k := s[i].v[j].x;
+  k := s[1].v[2].y;
+  s[0].v[i].y := k
+END Simple.
