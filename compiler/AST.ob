@@ -177,6 +177,7 @@ TYPE
                             (* for assignment, rvalue                       *)
     next*   :Expr;          (* for PROCEDURE call,next arg in list          *)
     decl*   :Decl;          (* for identRef and typeguard                   *)
+                            (* for fieldRef, refernce to the field's decl   *)
     iVal*   :INTEGER;       (* for INTEGER, BOOLEAN, STRING (StringId)      *)
                             (* for fieldref, StringId OF field name         *)
                             (* for CHAR, the character itself               *)
@@ -456,6 +457,7 @@ BEGIN
       NewExpr(e, exprFieldRef, d.typ);
       e.lhs := base;
       e.iVal := name;
+      e.decl := d;
       e.assignable := base.assignable;
     ELSE
       Lex.Error(l, "Field ");

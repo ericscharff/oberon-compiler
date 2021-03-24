@@ -320,6 +320,8 @@ BEGIN
     ELSE
       Load(lhs);
       Load(rhs);
+      ASSERT(lhs.kind = itemReg);
+      ASSERT(rhs.kind = itemReg);
       Emit(opADD, lhs.r, lhs.r, rhs.r, 0);
       DecCurReg
     END
@@ -334,6 +336,8 @@ BEGIN
     ELSE
       Load(lhs);
       Load(rhs);
+      ASSERT(lhs.kind = itemReg);
+      ASSERT(rhs.kind = itemReg);
       Emit(opMUL, lhs.r, lhs.r, rhs.r, 0);
       DecCurReg
     END
@@ -355,7 +359,6 @@ BEGIN
     END
   ELSIF e.kind = AST.exprIdentRef THEN
     ASSERT(e.decl.kind = AST.declVar);
-    ASSERT(e.typ.kind # AST.typeRecord);
     item.kind := itemVar;
     ASSERT(e.decl.offset # -1);
     item.offset := e.decl.offset;
@@ -364,6 +367,11 @@ BEGIN
     ELSE
       item.r := rSP
     END
+  ELSIF e.kind = AST.exprFieldRef THEN
+    GenExpr(e.lhs, item);
+    ASSERT(item.kind = itemVar);
+    ASSERT(e.decl.offset >= 0);
+    item.offset := item.offset + e.decl.offset
   ELSIF e.kind = AST.exprBinary THEN
     GenExpr(e.lhs, item);
     GenExpr(e.rhs, rhs);
@@ -382,6 +390,7 @@ BEGIN
     IF s.kind = AST.stmtAssign THEN
       e := s.cond;
       ASSERT(e.kind = AST.exprAssign);
+      ASSERT(e.lhs.typ.kind = AST.typeInteger);
       GenExpr(e.rhs, rhs);
       Load(rhs);
       GenExpr(e.lhs, lhs);
