@@ -20,14 +20,14 @@ BEGIN
     IF (p.d.kind = AST.declVar) & (p.d.nesting = 0) THEN
       RCodegen.AllocateGlobals(l, p.d);
     END;
-    p := p.next;
+    p := p.next
   END;
   p := Decls.reachableDecls;
   WHILE p # NIL DO
     IF (p.d.kind = AST.declProcedure) & ~p.d.isNative THEN
       RCodegen.GenerateProc(l, p.d);
     END;
-    p := p.next;
+    p := p.next
   END;
   RCodegen.GenStartMain;
   p := Decls.reachableDecls;
@@ -35,7 +35,7 @@ BEGIN
     IF p.d.qname.name = Decls.modInitName THEN
       RCodegen.GenCall(p.d);
     END;
-    p := p.next;
+    p := p.next
   END;
   RCodegen.GenEndMain(l)
 END CompileFile;

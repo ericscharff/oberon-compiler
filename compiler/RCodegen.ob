@@ -4,26 +4,26 @@ IMPORT AST, Lex, Out;
 
 CONST
   CACHE_SIZE = 100;
-  CODE_BUFFER = 2000; (* Code for the procedure being generated, for fixups.  *)
+  CODE_BUFFER = 2000; (* Code for the procedure being generated, for fixups. *)
 
   (* Opcodes *)
-  opMOV = 0;  (* ra := rb *)
-  opADD = 1;  (* ra := rb + rc *)
-  opSUB = 2;  (* ra := rb - rc *)
-  opMUL = 3;  (* ra := rb * rc *)
-  opDIV = 4;  (* ra := rb * rc *)
+  opMOV = 0;  (* ra := rb                      *)
+  opADD = 1;  (* ra := rb + rc                 *)
+  opSUB = 2;  (* ra := rb - rc                 *)
+  opMUL = 3;  (* ra := rb * rc                 *)
+  opDIV = 4;  (* ra := rb * rc                 *)
   opLDW = 5;  (* ra := Mem[rb + offset] (word) *)
   opLDB = 6;  (* ra := Mem[rb + offset] (byte) *)
   opSTW = 7;  (* Mem[rb + offset] := ra (word) *)
   opSTB = 8;  (* Mem[rb + offset] := ra (byte) *)
-  opJSR = 50; (* Jump to Subr  *)
-  opRTS = 51; (* Subr return   *)
+  opJSR = 50; (* Jump to Subr                  *)
+  opRTS = 51; (* Subr return                   *)
 
-  opMOVI = 100; (* ra := immediate *)
+  opMOVI = 100; (* ra := immediate      *)
   opADDI = 101; (* ra := rb + immediate *)
-  opSUBI = 101; (* ra := rb - immediate *)
-  opMULI = 101; (* ra := rb * immediate *)
-  opDIVI = 101; (* ra := rb / immediate *)
+  opSUBI = 102; (* ra := rb - immediate *)
+  opMULI = 103; (* ra := rb * immediate *)
+  opDIVI = 104; (* ra := rb / immediate *)
 
   opHALT = 1000;
 
@@ -33,9 +33,15 @@ CONST
   rLR = 15; (* r15 = Link register *)
 
   (* Item kinds *)
-  itemReg   = 1; (* Item is in register r *)
-  itemVar   = 2; (* Item's address is r+offset *)
-  itemConst = 3; (* Item value is a constant, stored in offset *)
+  itemReg   = 1; (* Item is in register r                         *)
+  itemVar   = 2; (* Item is a variable whose address is r+offset. *)
+                 (* r is always SP or GP.                         *)
+  itemConst = 3; (* Item value is a constant, stored in offset    *)
+  itemRegI  = 4; (* Register indirect address.                    *)
+                 (* Item's address is r+offset, this is similar   *)
+                 (* to Var, except with Var, r is always SP or    *)
+                 (* GB. with RegI, this is an allocated register, *)
+                 (* which eventually needs to be released.        *)
 
 TYPE
   OpCode = INTEGER;
@@ -285,6 +291,9 @@ BEGIN
     Emit(opLDW, curReg, item.r, 0, item.offset);
     item.r := curReg;
     IncCurReg
+  ELSIF item.kind = itemRegI THEN
+    Emit(opLDW, item.r, item.r, 0, item.offset)
+    (* item.r already allocated *)
   ELSIF item.kind = itemConst THEN
     Emit(opMOVI, curReg, 0, 0, item.offset);
     item.r := curReg;
@@ -348,7 +357,8 @@ END GenBinaryOp;
 
 PROCEDURE GenExpr(e :AST.Expr; VAR item :Item);
 VAR
-  rhs :Item;
+  size :INTEGER;
+  rhs  :Item;
 BEGIN
   IF e.kind = AST.exprVal THEN
     item.kind := itemConst;
@@ -369,9 +379,37 @@ BEGIN
     END
   ELSIF e.kind = AST.exprFieldRef THEN
     GenExpr(e.lhs, item);
-    ASSERT(item.kind = itemVar);
+    ASSERT(item.kind IN {itemVar, itemRegI});
     ASSERT(e.decl.offset >= 0);
     item.offset := item.offset + e.decl.offset
+  ELSIF e.kind = AST.exprArrayRef THEN
+    (* rhs is array index *)
+    GenExpr(e.rhs, rhs);
+    (* Check bounds here! *)
+    (* lhs is the array *)
+    GenExpr(e.lhs, item);
+    ASSERT(item.kind IN {itemVar, itemRegI});
+    ASSERT(e.lhs.typ.kind = AST.typeArray);
+    size := CalculateSize(e.lhs.typ.base);
+    ASSERT(size > 0);
+    IF rhs.kind = itemConst THEN
+      item.offset := item.offset + size*rhs.offset
+    ELSE
+      Load(rhs);
+      ASSERT(rhs.kind = itemReg);
+      Emit(opMULI, rhs.r, rhs.r, 0, size);
+      IF item.kind = itemVar THEN
+        Emit(opADD, rhs.r, item.r, rhs.r, 0);
+        item.kind := itemRegI;
+        item.r := rhs.r
+      ELSIF item.kind = itemRegI THEN
+        Emit(opADD, item.r, item.r, rhs.r, 0);
+        (* rhs.r no longer needed *)
+        DecCurReg
+      ELSE
+        ASSERT(FALSE)
+      END
+    END
   ELSIF e.kind = AST.exprBinary THEN
     GenExpr(e.lhs, item);
     GenExpr(e.rhs, rhs);
