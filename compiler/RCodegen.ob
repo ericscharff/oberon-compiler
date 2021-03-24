@@ -432,8 +432,9 @@ BEGIN
       GenExpr(e.rhs, rhs);
       Load(rhs);
       GenExpr(e.lhs, lhs);
-      ASSERT(lhs.kind = itemVar);
+      ASSERT(lhs.kind IN {itemVar, itemRegI});
       Emit(opSTW, rhs.r, lhs.r, 0, lhs.offset);
+      IF lhs.kind = itemRegI THEN DecCurReg END;
       DecCurReg
     ELSIF s.kind = AST.stmtEmpty THEN
     ELSE
