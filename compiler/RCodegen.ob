@@ -428,7 +428,7 @@ BEGIN
     IF s.kind = AST.stmtAssign THEN
       e := s.cond;
       ASSERT(e.kind = AST.exprAssign);
-      ASSERT(e.lhs.typ.kind = AST.typeInteger);
+      ASSERT(e.lhs.typ.kind # AST.typeRecord);
       GenExpr(e.lhs, lhs);
       GenExpr(e.rhs, rhs);
       Load(rhs);
