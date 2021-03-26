@@ -382,6 +382,16 @@ BEGIN
     ASSERT(item.kind IN {itemVar, itemRegI});
     ASSERT(e.decl.offset >= 0);
     item.offset := item.offset + e.decl.offset
+  ELSIF e.kind = AST.exprPointerDeref THEN
+    GenExpr(e.lhs, item);
+    ASSERT(e.lhs.typ.kind = AST.typePointer);
+    (* While the pointer has been visited, the type pointed to *)
+    (* may not have been yet.                                  *)
+    CalculateSize(e.lhs.typ.base);
+    Load(item);
+    (* The value in a register is now a pointer *)
+    item.kind := itemRegI;
+    item.offset := 0
   ELSIF e.kind = AST.exprArrayRef THEN
     (* rhs is array index *)
     GenExpr(e.rhs, rhs);
