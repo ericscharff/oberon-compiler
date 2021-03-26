@@ -435,6 +435,7 @@ VAR
   lhs, rhs :Item;
 BEGIN
   WHILE s # NIL DO
+    ASSERT(curReg = 0);
     IF s.kind = AST.stmtAssign THEN
       e := s.cond;
       ASSERT(e.kind = AST.exprAssign);
@@ -450,6 +451,7 @@ BEGIN
     ELSE
       ASSERT(FALSE)
     END;
+    ASSERT(curReg = 0);
     s := s.next
   END
 END GenStatements;
