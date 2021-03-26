@@ -1,0 +1,37 @@
+MODULE Recurse2;
+
+IMPORT Out;
+
+PROCEDURE A(i :INTEGER);
+
+PROCEDURE B(i :INTEGER);
+
+PROCEDURE C(i :INTEGER);
+
+BEGIN
+  IF i > 0 THEN
+    Out.Str("C "); Out.Int(i); Out.Ln;
+    B(i-1)
+  END;
+  Out.Str("C "); Out.Int(i); Out.Str(" complete"); Out.Ln
+END C;
+
+BEGIN
+  IF i > 0 THEN
+    Out.Str("B "); Out.Int(i); Out.Ln;
+    C(i-1)
+  END;
+  Out.Str("B "); Out.Int(i); Out.Str(" complete"); Out.Ln
+END B;
+
+BEGIN
+  IF i > 0 THEN
+    Out.Str("A "); Out.Int(i); Out.Ln;
+    B(i-1)
+  END;
+  Out.Str("A "); Out.Int(i); Out.Str(" complete"); Out.Ln
+END A;
+
+BEGIN
+  A(10)
+END Recurse2.

@@ -1,0 +1,44 @@
+MODULE Recurse;
+
+IMPORT Out;
+
+VAR
+  i :INTEGER;
+
+PROCEDURE A;
+
+PROCEDURE B;
+
+PROCEDURE C;
+
+BEGIN
+  IF i > 0 THEN
+    Out.Str("C "); Out.Int(i); Out.Ln;
+    DEC(i);
+    B
+  END;
+  Out.Str("C complete"); Out.Ln
+END C;
+
+BEGIN
+  IF i > 0 THEN
+    Out.Str("B "); Out.Int(i); Out.Ln;
+    DEC(i);
+    C
+  END;
+  Out.Str("B complete"); Out.Ln
+END B;
+
+BEGIN
+  IF i > 0 THEN
+    Out.Str("A "); Out.Int(i); Out.Ln;
+    DEC(i);
+    B
+  END;
+  Out.Str("A complete"); Out.Ln
+END A;
+
+BEGIN
+  i := 10;
+  A
+END Recurse.

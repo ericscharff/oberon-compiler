@@ -464,8 +464,8 @@ PROCEDURE GenIdentRefExpr(l :Lex.Lexer; e :AST.Expr);
 VAR
   q :AST.QName;
 BEGIN
-  IF (e.decl.kind IN {AST.declVar, AST.declProcedure}) &
-     (e.decl.nesting = 0) THEN
+  IF (e.decl.kind = AST.declProcedure) OR
+     ((e.decl.kind = AST.declVar) & (e.decl.nesting = 0)) THEN
     q.moduleName := e.decl.qname.moduleName;
   ELSE
     (* Local variables don't get a prefix, just for readability *)
@@ -906,6 +906,18 @@ VAR
   q :AST.QName;
 BEGIN
   q.moduleName := 0;
+  GenType(l, d.typ, d.qname, FALSE, TRUE);
+  GenStr(";");
+  GenLn;
+  IF d.procVars # NIL THEN
+    p := d.procVars;
+    WHILE p.kind # AST.declEND DO
+      IF p.kind = AST.declProcedure THEN
+        GenProc(l, p);
+      END;
+      p := p.next;
+    END;
+  END;
   GenType(l, d.typ, d.qname, FALSE, TRUE);
   GenStr(" {");
   GenLn;
