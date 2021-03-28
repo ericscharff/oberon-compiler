@@ -16,8 +16,11 @@ CONST
   opLDB = 6;  (* ra := Mem[rb + offset] (byte) *)
   opSTW = 7;  (* Mem[rb + offset] := ra (word) *)
   opSTB = 8;  (* Mem[rb + offset] := ra (byte) *)
+  opB   = 9;  (* PC := value (jump always)     *)
   opJSR = 50; (* Jump to Subr                  *)
   opRTS = 51; (* Subr return                   *)
+  opCONDt = 52; (* Condition placeholder       *)
+  opCONDf = 53; (* Condition placeholder       *)
 
   opMOVI = 100; (* ra := immediate      *)
   opADDI = 101; (* ra := rb + immediate *)
@@ -105,13 +108,13 @@ END GenLn;
 PROCEDURE GenReg(r :Register);
 BEGIN
   IF r < rGB THEN
-    Out.Str("R"); Out.Int(r)
+    GenStr("R"); Out.Int(r)
   ELSIF r = rGB THEN
-    Out.Str("GB")
+    GenStr("GB")
   ELSIF r = rSP THEN
-    Out.Str("SP")
+    GenStr("SP")
   ELSIF r = rLR THEN
-    Out.Str("LR")
+    GenStr("LR")
   ELSE
     ASSERT(FALSE)
   END
@@ -119,23 +122,23 @@ END GenReg;
 
 PROCEDURE Gen2(op :ARRAY OF CHAR; ra, rb :Register; value :INTEGER);
 BEGIN
-  Out.Str(op);
-  Out.Str(" ");
+  GenStr(op);
+  GenStr(" ");
   GenReg(ra);
-  Out.Str(", ");
+  GenStr(", ");
   GenReg(rb);
-  Out.Str(", #");
+  GenStr(", #");
   Out.Int(value)
 END Gen2;
 
 PROCEDURE Gen3(op :ARRAY OF CHAR; ra, rb, rc :Register);
 BEGIN
-  Out.Str(op);
-  Out.Str(" ");
+  GenStr(op);
+  GenStr(" ");
   GenReg(ra);
-  Out.Str(", ");
+  GenStr(", ");
   GenReg(rb);
-  Out.Str(", ");
+  GenStr(", ");
   GenReg(rc)
 END Gen3;
 
@@ -158,9 +161,9 @@ BEGIN
   WHILE i < cp DO
     Out.Int(i + delta); Tab;
     IF codeBuffer[i].op = opMOV THEN
-      Out.Str("MOV "); GenReg(codeBuffer[i].ra); GenStr(", "); GenReg(codeBuffer[i].rb);
+      GenStr("MOV "); GenReg(codeBuffer[i].ra); GenStr(", "); GenReg(codeBuffer[i].rb);
     ELSIF codeBuffer[i].op = opMOVI THEN
-      Out.Str("MOV "); GenReg(codeBuffer[i].ra); GenStr(", #"); Out.Int(codeBuffer[i].value);
+      GenStr("MOV "); GenReg(codeBuffer[i].ra); GenStr(", #"); Out.Int(codeBuffer[i].value);
     ELSIF codeBuffer[i].op = opADD THEN
       Gen3("ADD", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].rc)
     ELSIF codeBuffer[i].op = opSUB THEN
@@ -185,6 +188,12 @@ BEGIN
       Gen2("STW", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].value)
     ELSIF codeBuffer[i].op = opSTB THEN
       Gen2("STB", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].value)
+    ELSIF codeBuffer[i].op = opB THEN
+      GenStr("B "); Out.Int(codeBuffer[i].value)
+    ELSIF codeBuffer[i].op = opCONDt THEN
+      GenStr("COND True branch: "); Out.Int(codeBuffer[i].value)
+    ELSIF codeBuffer[i].op = opCONDf THEN
+      GenStr("COND False branch: "); Out.Int(codeBuffer[i].value)
     ELSIF codeBuffer[i].op = opJSR THEN
       GenStr("JSR "); Out.Int(codeBuffer[i].value);
       GenStr(" ("); GenQName(l, codeBuffer[i].q);
@@ -429,10 +438,44 @@ BEGIN
   END
 END GenExpr;
 
+PROCEDURE AddToChain(VAR chain :INTEGER);
+(* This is called after a branch has been emitted. It updates the previous  *)
+(* instruction in the buffer to add it to the "chain" and chain points to   *)
+(* this updated instruction. The end result is a linked list of instruction *)
+(* addresses, starting at "chain", and ending at 0. This is later fixed up  *)
+(* using the FixupChain procedure.                                          *)
+BEGIN
+  codeBuffer[cp-1].value := chain;
+  chain := cp - 1
+END AddToChain;
+
+PROCEDURE FixChain(chain :INTEGER);
+VAR
+  next :INTEGER;
+BEGIN
+  WHILE chain # 0 DO
+    next := codeBuffer[chain].value;
+    codeBuffer[chain].value:= cp;
+    chain := next
+  END
+END FixChain;
+
+PROCEDURE GenCond(VAR trueChain, falseChain :INTEGER);
+BEGIN
+  Emit(opCONDt, 0, 0, 0, 0);
+  AddToChain(trueChain);
+  Emit(opCONDf, 0, 0, 0, 0);
+  AddToChain(falseChain);
+END GenCond;
+
 PROCEDURE GenStatements(s :AST.Stmt);
 VAR
   e :AST.Expr;
   lhs, rhs :Item;
+  elses :AST.Stmt;
+  (* code pointers *)
+  after :INTEGER;
+  trueChain, falseChain :INTEGER;
 BEGIN
   WHILE s # NIL DO
     ASSERT(curReg = 0);
@@ -447,6 +490,26 @@ BEGIN
       Emit(opSTW, rhs.r, lhs.r, 0, lhs.offset);
       IF lhs.kind = itemRegI THEN DecCurReg END;
       DecCurReg
+    ELSIF s.kind = AST.stmtIf THEN
+      after := 0;
+      trueChain := 0; falseChain := 0;
+      GenCond(trueChain, falseChain);
+      FixChain(trueChain);
+      GenStatements(s.body);
+      elses := s.elsifs;
+      WHILE elses # NIL DO
+        Emit(opB, 0, 0, 0, 0);
+        AddToChain(after);
+        FixChain(falseChain);
+        trueChain := 0; falseChain := 0;
+        ASSERT(elses.kind IN {AST.stmtElsIf, AST.stmtElse});
+        GenCond(trueChain, falseChain);
+        FixChain(trueChain);
+        GenStatements(elses.body);
+        elses := elses.elsifs
+      END;
+      FixChain(falseChain);
+      FixChain(after)
     ELSIF s.kind = AST.stmtEmpty THEN
     ELSE
       ASSERT(FALSE)
