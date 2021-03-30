@@ -16,11 +16,18 @@ CONST
   opLDB = 6;  (* ra := Mem[rb + offset] (byte) *)
   opSTW = 7;  (* Mem[rb + offset] := ra (word) *)
   opSTB = 8;  (* Mem[rb + offset] := ra (byte) *)
-  opB   = 9;  (* PC := value (jump always)     *)
+  opBRA = 9;  (* PC := value (see below)       *)
   opJSR = 50; (* Jump to Subr                  *)
   opRTS = 51; (* Subr return                   *)
   opCONDt = 52; (* Condition placeholder       *)
   opCONDf = 53; (* Condition placeholder       *)
+
+  (* Branches have opcode opBRA, and r.c is    *)
+  (* the conndition code, given below:         *)
+  opBEQ = 1; opBNE = 9;
+  opBLT = 5; opBGE = 13;
+  opBLE = 6; opBGT = 14;
+  opB = 7;
 
   opMOVI = 100; (* ra := immediate      *)
   opADDI = 101; (* ra := rb + immediate *)
@@ -45,6 +52,9 @@ CONST
                  (* to Var, except with Var, r is always SP or    *)
                  (* GB. with RegI, this is an allocated register, *)
                  (* which eventually needs to be released.        *)
+  itemCond  = 5; (* Item is a condition. The CMP instruction was  *)
+                 (* already generated, and this represents the    *)
+                 (* condition associated with the relation.       *)
 
 TYPE
   OpCode = INTEGER;
@@ -61,6 +71,7 @@ TYPE
     kind   :ItemKind;
     r      :Register;
     offset :INTEGER;
+    opCond :OpCode;  (* If kind is itemCond, this is the branch type. *)
   END;
 
 VAR
@@ -188,8 +199,17 @@ BEGIN
       Gen2("STW", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].value)
     ELSIF codeBuffer[i].op = opSTB THEN
       Gen2("STB", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].value)
-    ELSIF codeBuffer[i].op = opB THEN
-      GenStr("B "); Out.Int(codeBuffer[i].value)
+    ELSIF codeBuffer[i].op = opBRA THEN
+      CASE codeBuffer[i].rc OF
+        opBEQ: GenStr("BEQ ")
+        | opBNE: GenStr("BNE ")
+        | opBLT: GenStr("BLT ")
+        | opBGT: GenStr("BGT ")
+        | opBGE: GenStr("BGE ")
+        | opBLE: GenStr("BGT ")
+        | opB: GenStr("B ");
+      END;
+      Out.Int(codeBuffer[i].value)
     ELSIF codeBuffer[i].op = opCONDt THEN
       GenStr("COND True branch: "); Out.Int(codeBuffer[i].value)
     ELSIF codeBuffer[i].op = opCONDf THEN
@@ -325,6 +345,22 @@ BEGIN
   globalOffset := globalOffset + CalculateSize(d.typ)
 END AllocateGlobals;
 
+PROCEDURE GenCompare(VAR item :Item; op :OpCode);
+BEGIN
+  (* Assume the last instruction was a subtraction *)
+  ASSERT(item.kind = itemReg);
+  item.kind := itemCond;
+  item.opCond := op;
+  (* We don't need or want the result of the subtraciton *)
+  DecCurReg
+END GenCompare;
+
+PROCEDURE NegateCond(cond :OpCode) :OpCode;
+BEGIN
+  IF cond < 8 THEN cond := cond + 8 ELSE cond := cond - 8 END
+  RETURN cond
+END NegateCond;
+
 PROCEDURE GenBinaryOp(op :Lex.TokenKind; VAR lhs, rhs :Item);
 BEGIN
   IF op = Lex.tPLUS THEN
@@ -343,6 +379,18 @@ BEGIN
       Emit(opADD, lhs.r, lhs.r, rhs.r, 0);
       DecCurReg
     END
+  ELSIF op = Lex.tMINUS THEN
+    IF rhs.kind = itemConst THEN
+      Load(lhs);
+      Emit(opSUBI, lhs.r, lhs.r, 0, rhs.offset)
+    ELSE
+      Load(lhs);
+      Load(rhs);
+      ASSERT(lhs.kind = itemReg);
+      ASSERT(rhs.kind = itemReg);
+      Emit(opSUB, lhs.r, lhs.r, rhs.r, 0);
+      DecCurReg
+    END
   ELSIF op = Lex.tSTAR THEN
     IF lhs.kind = itemConst THEN
       Load(rhs);
@@ -359,6 +407,24 @@ BEGIN
       Emit(opMUL, lhs.r, lhs.r, rhs.r, 0);
       DecCurReg
     END
+  ELSIF op = Lex.tEQ THEN
+    GenBinaryOp(Lex.tMINUS, lhs, rhs);
+    GenCompare(lhs, opBEQ)
+  ELSIF op = Lex.tPOUND THEN
+    GenBinaryOp(Lex.tMINUS, lhs, rhs);
+    GenCompare(lhs, opBNE)
+  ELSIF op = Lex.tLT THEN
+    GenBinaryOp(Lex.tMINUS, lhs, rhs);
+    GenCompare(lhs, opBLT)
+  ELSIF op = Lex.tGT THEN
+    GenBinaryOp(Lex.tMINUS, lhs, rhs);
+    GenCompare(lhs, opBGT)
+  ELSIF op = Lex.tLTEQ THEN
+    GenBinaryOp(Lex.tMINUS, lhs, rhs);
+    GenCompare(lhs, opBLE)
+  ELSIF op = Lex.tGTEQ THEN
+    GenBinaryOp(Lex.tMINUS, lhs, rhs);
+    GenCompare(lhs, opBGE)
   ELSE
     ASSERT(FALSE)
   END
@@ -453,20 +519,12 @@ PROCEDURE FixChain(chain :INTEGER);
 VAR
   next :INTEGER;
 BEGIN
-  WHILE chain >= 0 DO
+  WHILE chain # 0 DO
     next := codeBuffer[chain].value;
     codeBuffer[chain].value:= cp;
     chain := next
   END
 END FixChain;
-
-PROCEDURE GenCond(VAR trueChain, falseChain :INTEGER);
-BEGIN
-  Emit(opCONDt, 0, 0, 0, 0);
-  AddToChain(trueChain);
-  Emit(opCONDf, 0, 0, 0, 0);
-  AddToChain(falseChain);
-END GenCond;
 
 PROCEDURE GenStatements(s :AST.Stmt);
 VAR
@@ -491,19 +549,28 @@ BEGIN
       IF lhs.kind = itemRegI THEN DecCurReg END;
       DecCurReg
     ELSIF s.kind = AST.stmtIf THEN
-      after := -1;
-      trueChain := -1; falseChain := -1;
-      GenCond(trueChain, falseChain);
+      after := 0;
+      trueChain := 0; falseChain := 0;
+      GenExpr(s.cond, lhs);
+      ASSERT(lhs.kind = itemCond);
+      Emit(opBRA, 0, 0, NegateCond(lhs.opCond), 0);
+      AddToChain(falseChain);
       FixChain(trueChain);
       GenStatements(s.body);
       elses := s.elsifs;
       WHILE elses # NIL DO
-        Emit(opB, 0, 0, 0, 0);
+        Emit(opBRA, 0, 0, opB, 0);
         AddToChain(after);
         FixChain(falseChain);
-        trueChain := -1; falseChain := -1;
-        ASSERT(elses.kind IN {AST.stmtElsIf, AST.stmtElse});
-        GenCond(trueChain, falseChain);
+        trueChain := 0; falseChain := 0;
+        IF elses.kind = AST.stmtElsIf THEN
+          GenExpr(elses.cond, lhs);
+          Emit(opBRA, 0, 0, NegateCond(lhs.opCond), 0);
+          AddToChain(falseChain);
+          ASSERT(lhs.kind = itemCond);
+        ELSE
+          ASSERT(elses.kind = AST.stmtElse)
+        END;
         FixChain(trueChain);
         GenStatements(elses.body);
         elses := elses.elsifs
