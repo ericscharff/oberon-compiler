@@ -12,11 +12,12 @@ CONST
   opSUB = 2;  (* ra := rb - rc                 *)
   opMUL = 3;  (* ra := rb * rc                 *)
   opDIV = 4;  (* ra := rb * rc                 *)
-  opLDW = 5;  (* ra := Mem[rb + offset] (word) *)
-  opLDB = 6;  (* ra := Mem[rb + offset] (byte) *)
-  opSTW = 7;  (* Mem[rb + offset] := ra (word) *)
-  opSTB = 8;  (* Mem[rb + offset] := ra (byte) *)
-  opBRA = 9;  (* PC := value (see below)       *)
+  opCMP = 5;  (* rb - rc, affects conditions   *)
+  opLDW = 6;  (* ra := Mem[rb + offset] (word) *)
+  opLDB = 7;  (* ra := Mem[rb + offset] (byte) *)
+  opSTW = 8;  (* Mem[rb + offset] := ra (word) *)
+  opSTB = 9;  (* Mem[rb + offset] := ra (byte) *)
+  opBRA = 10; (* PC := value (see below)       *)
   opJSR = 50; (* Jump to Subr                  *)
   opRTS = 51; (* Subr return                   *)
   opCONDt = 52; (* Condition placeholder       *)
@@ -24,16 +25,17 @@ CONST
 
   (* Branches have opcode opBRA, and r.c is    *)
   (* the conndition code, given below:         *)
-  opBEQ = 1; opBNE = 9;
-  opBLT = 5; opBGE = 13;
-  opBLE = 6; opBGT = 14;
-  opB = 7;
+  opBEQ = 1;  (* =  *) opBNE = 9;   (* #  *)
+  opBLT = 5;  (* <  *) opBGE = 13;  (* >= *)
+  opBLE = 6;  (* <= *) opBGT = 14;  (* >  *)
+  opB = 7; (* branch always *)
 
   opMOVI = 100; (* ra := immediate      *)
   opADDI = 101; (* ra := rb + immediate *)
   opSUBI = 102; (* ra := rb - immediate *)
   opMULI = 103; (* ra := rb * immediate *)
   opDIVI = 104; (* ra := rb / immediate *)
+  opCMPI = 105; (* rb - immediate       *)
 
   opHALT = 1000;
 
@@ -135,8 +137,10 @@ PROCEDURE Gen2(op :ARRAY OF CHAR; ra, rb :Register; value :INTEGER);
 BEGIN
   GenStr(op);
   GenStr(" ");
-  GenReg(ra);
-  GenStr(", ");
+  IF op # "CMP" THEN
+    GenReg(ra);
+    GenStr(", ");
+  END;
   GenReg(rb);
   GenStr(", #");
   Out.Int(value)
@@ -146,8 +150,10 @@ PROCEDURE Gen3(op :ARRAY OF CHAR; ra, rb, rc :Register);
 BEGIN
   GenStr(op);
   GenStr(" ");
-  GenReg(ra);
-  GenStr(", ");
+  IF op # "CMP" THEN
+    GenReg(ra);
+    GenStr(", ");
+  END;
   GenReg(rb);
   GenStr(", ");
   GenReg(rc)
@@ -183,6 +189,8 @@ BEGIN
       Gen3("MUL", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].rc)
     ELSIF codeBuffer[i].op = opDIV THEN
       Gen3("DIV", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].rc)
+    ELSIF codeBuffer[i].op = opCMP THEN
+      Gen3("CMP", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].rc)
     ELSIF codeBuffer[i].op = opADDI THEN
       Gen2("ADD", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].value)
     ELSIF codeBuffer[i].op = opSUBI THEN
@@ -191,6 +199,8 @@ BEGIN
       Gen2("MUL", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].value)
     ELSIF codeBuffer[i].op = opDIVI THEN
       Gen2("DIV", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].value)
+    ELSIF codeBuffer[i].op = opCMPI THEN
+      Gen2("CMP", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].value)
     ELSIF codeBuffer[i].op = opLDW THEN
       Gen2("LDW", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].value)
     ELSIF codeBuffer[i].op = opLDB THEN
@@ -345,13 +355,22 @@ BEGIN
   globalOffset := globalOffset + CalculateSize(d.typ)
 END AllocateGlobals;
 
-PROCEDURE GenCompare(VAR item :Item; op :OpCode);
+PROCEDURE GenCompare(VAR lhs, rhs:Item; op :OpCode);
 BEGIN
-  (* Assume the last instruction was a subtraction *)
-  ASSERT(item.kind = itemReg);
-  item.kind := itemCond;
-  item.opCond := op;
-  (* We don't need or want the result of the subtraciton *)
+  IF rhs.kind = itemConst THEN
+    Load(lhs);
+    Emit(opCMPI, lhs.r, lhs.r, 0, rhs.offset)
+  ELSE
+    Load(lhs);
+    Load(rhs);
+    ASSERT(lhs.kind = itemReg);
+    ASSERT(rhs.kind = itemReg);
+    Emit(opCMP, lhs.r, lhs.r, rhs.r, 0);
+    DecCurReg
+  END;
+  lhs.kind := itemCond;
+  lhs.opCond := op;
+  (* We don't need or want the result of the lhs, which is always loaded *)
   DecCurReg
 END GenCompare;
 
@@ -408,23 +427,17 @@ BEGIN
       DecCurReg
     END
   ELSIF op = Lex.tEQ THEN
-    GenBinaryOp(Lex.tMINUS, lhs, rhs);
-    GenCompare(lhs, opBEQ)
+    GenCompare(lhs, rhs, opBEQ)
   ELSIF op = Lex.tPOUND THEN
-    GenBinaryOp(Lex.tMINUS, lhs, rhs);
-    GenCompare(lhs, opBNE)
+    GenCompare(lhs, rhs, opBNE)
   ELSIF op = Lex.tLT THEN
-    GenBinaryOp(Lex.tMINUS, lhs, rhs);
-    GenCompare(lhs, opBLT)
+    GenCompare(lhs, rhs, opBLT)
   ELSIF op = Lex.tGT THEN
-    GenBinaryOp(Lex.tMINUS, lhs, rhs);
-    GenCompare(lhs, opBGT)
+    GenCompare(lhs, rhs, opBGT)
   ELSIF op = Lex.tLTEQ THEN
-    GenBinaryOp(Lex.tMINUS, lhs, rhs);
-    GenCompare(lhs, opBLE)
+    GenCompare(lhs, rhs, opBLE)
   ELSIF op = Lex.tGTEQ THEN
-    GenBinaryOp(Lex.tMINUS, lhs, rhs);
-    GenCompare(lhs, opBGE)
+    GenCompare(lhs, rhs, opBGE)
   ELSE
     ASSERT(FALSE)
   END
