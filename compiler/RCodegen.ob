@@ -380,6 +380,28 @@ BEGIN
   RETURN cond
 END NegateCond;
 
+PROCEDURE AddToChain(VAR chain :INTEGER);
+(* This is called after a branch has been emitted. It updates the previous  *)
+(* instruction in the buffer to add it to the "chain" and chain points to   *)
+(* this updated instruction. The end result is a linked list of instruction *)
+(* addresses, starting at "chain", and ending at 0. This is later fixed up  *)
+(* using the FixupChain procedure.                                          *)
+BEGIN
+  codeBuffer[cp-1].value := chain;
+  chain := cp - 1
+END AddToChain;
+
+PROCEDURE FixChain(chain :INTEGER);
+VAR
+  next :INTEGER;
+BEGIN
+  WHILE chain # 0 DO
+    next := codeBuffer[chain].value;
+    codeBuffer[chain].value:= cp;
+    chain := next
+  END
+END FixChain;
+
 PROCEDURE GenBinaryOp(op :Lex.TokenKind; VAR lhs, rhs :Item);
 BEGIN
   IF op = Lex.tPLUS THEN
@@ -443,10 +465,12 @@ BEGIN
   END
 END GenBinaryOp;
 
-PROCEDURE GenExpr(e :AST.Expr; VAR item :Item);
+PROCEDURE GenExpr(e :AST.Expr; VAR item :Item;
+                  VAR parentTrueChain, parentFalseChain :INTEGER);
 VAR
   size :INTEGER;
   rhs  :Item;
+  localTrueChain, localFalseChain :INTEGER;
 BEGIN
   IF e.kind = AST.exprVal THEN
     item.kind := itemConst;
@@ -466,12 +490,12 @@ BEGIN
       item.r := rSP
     END
   ELSIF e.kind = AST.exprFieldRef THEN
-    GenExpr(e.lhs, item);
+    GenExpr(e.lhs, item, parentTrueChain, parentFalseChain);
     ASSERT(item.kind IN {itemVar, itemRegI});
     ASSERT(e.decl.offset >= 0);
     item.offset := item.offset + e.decl.offset
   ELSIF e.kind = AST.exprPointerDeref THEN
-    GenExpr(e.lhs, item);
+    GenExpr(e.lhs, item, parentTrueChain, parentFalseChain);
     ASSERT(e.lhs.typ.kind = AST.typePointer);
     (* While the pointer has been visited, the type pointed to *)
     (* may not have been yet.                                  *)
@@ -482,10 +506,10 @@ BEGIN
     item.offset := 0
   ELSIF e.kind = AST.exprArrayRef THEN
     (* rhs is array index *)
-    GenExpr(e.rhs, rhs);
+    GenExpr(e.rhs, rhs, parentTrueChain, parentFalseChain);
     (* Check bounds here! *)
     (* lhs is the array *)
-    GenExpr(e.lhs, item);
+    GenExpr(e.lhs, item, parentTrueChain, parentFalseChain);
     ASSERT(item.kind IN {itemVar, itemRegI});
     ASSERT(e.lhs.typ.kind = AST.typeArray);
     size := CalculateSize(e.lhs.typ.base);
@@ -509,35 +533,37 @@ BEGIN
       END
     END
   ELSIF e.kind = AST.exprBinary THEN
-    GenExpr(e.lhs, item);
-    GenExpr(e.rhs, rhs);
-    GenBinaryOp(e.op, item, rhs)
+    IF e.op = Lex.tAMP THEN
+      (* op is short circuit boolean AND. If lhs is false, don't execute rhs. *)
+      (* also, if lhs short circuits to true, run rhs.                        *) 
+      localTrueChain := 0;
+      GenExpr(e.lhs, item, localTrueChain, parentFalseChain);
+      ASSERT(item.kind = itemCond);
+      Emit(opBRA, 0, 0, NegateCond(item.opCond), 0);
+      AddToChain(parentFalseChain);
+      (* lhs was true, so run rhs *)
+      FixChain(localTrueChain);
+      GenExpr(e.rhs, item, parentTrueChain, parentFalseChain);
+    ELSIF e.op = Lex.tOR THEN
+      (* op is short circuit boolean OR. If lhs is true, don't execute rhs. *)
+      (* also, if lhs short circuits to false, run rhs.                     *) 
+      localFalseChain := 0;
+      GenExpr(e.lhs, item, parentTrueChain, localFalseChain);
+      ASSERT(item.kind = itemCond);
+      Emit(opBRA, 0, 0, item.opCond, 0);
+      AddToChain(parentTrueChain);
+      (* lhs was false, so run rhs *)
+      FixChain(localFalseChain);
+      GenExpr(e.rhs, item, parentTrueChain, parentFalseChain);
+    ELSE
+      GenExpr(e.lhs, item, parentTrueChain, parentFalseChain);
+      GenExpr(e.rhs, rhs, parentTrueChain, parentFalseChain);
+      GenBinaryOp(e.op, item, rhs)
+    END
   ELSE
     ASSERT(FALSE)
   END
 END GenExpr;
-
-PROCEDURE AddToChain(VAR chain :INTEGER);
-(* This is called after a branch has been emitted. It updates the previous  *)
-(* instruction in the buffer to add it to the "chain" and chain points to   *)
-(* this updated instruction. The end result is a linked list of instruction *)
-(* addresses, starting at "chain", and ending at 0. This is later fixed up  *)
-(* using the FixupChain procedure.                                          *)
-BEGIN
-  codeBuffer[cp-1].value := chain;
-  chain := cp - 1
-END AddToChain;
-
-PROCEDURE FixChain(chain :INTEGER);
-VAR
-  next :INTEGER;
-BEGIN
-  WHILE chain # 0 DO
-    next := codeBuffer[chain].value;
-    codeBuffer[chain].value:= cp;
-    chain := next
-  END
-END FixChain;
 
 PROCEDURE GenStatements(s :AST.Stmt);
 VAR
@@ -554,8 +580,8 @@ BEGIN
       e := s.cond;
       ASSERT(e.kind = AST.exprAssign);
       ASSERT(e.lhs.typ.kind # AST.typeRecord);
-      GenExpr(e.lhs, lhs);
-      GenExpr(e.rhs, rhs);
+      GenExpr(e.lhs, lhs, trueChain, falseChain);
+      GenExpr(e.rhs, rhs, trueChain, falseChain);
       Load(rhs);
       ASSERT(lhs.kind IN {itemVar, itemRegI});
       Emit(opSTW, rhs.r, lhs.r, 0, lhs.offset);
@@ -564,7 +590,7 @@ BEGIN
     ELSIF s.kind = AST.stmtIf THEN
       after := 0;
       trueChain := 0; falseChain := 0;
-      GenExpr(s.cond, lhs);
+      GenExpr(s.cond, lhs, trueChain, falseChain);
       ASSERT(lhs.kind = itemCond);
       Emit(opBRA, 0, 0, NegateCond(lhs.opCond), 0);
       AddToChain(falseChain);
@@ -577,7 +603,7 @@ BEGIN
         FixChain(falseChain);
         trueChain := 0; falseChain := 0;
         IF elses.kind = AST.stmtElsIf THEN
-          GenExpr(elses.cond, lhs);
+          GenExpr(elses.cond, lhs, trueChain, falseChain);
           Emit(opBRA, 0, 0, NegateCond(lhs.opCond), 0);
           AddToChain(falseChain);
           ASSERT(lhs.kind = itemCond);

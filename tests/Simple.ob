@@ -1,20 +1,26 @@
 MODULE Simple;
 
-TYPE
-  R0 = RECORD x, y: INTEGER END;
-  R1 = RECORD u: INTEGER;
-         v: ARRAY 4 OF R0;
-         w: INTEGER
-       END;
-
-VAR i, j, k: INTEGER;
-  s: ARRAY 2 OF R1;
-
+VAR
+  a, b, c, d, e, f, g :INTEGER;
 BEGIN
-  i := 1000; j := 2000; k := 3000;
-  k := s[i].u;
-  k := s[1].w;
-  k := s[i].v[j].x;
-  k := s[1].v[2].y;
-  s[0].v[i].y := k
+  IF a > b THEN
+    c := 100;
+  END;
+  IF (c > d) OR (e > f) THEN
+    g := 200;
+  END;
+  IF (f > g) & (g > a) THEN
+    b := 300;
+  END;
+  IF ((a > b) OR (c > d) OR (e > f)) &
+     ((a < 10) OR (b < 20) OR (c < 30)) THEN
+    c := 400;
+  ELSIF ((a > b) & (c > d) & (e > f)) OR
+     ((a < 10) & (b < 20) & (c < 30)) THEN
+    c := 500;
+  ELSE
+    c := 600;
+  END;
+  a := 999;
+  a := 1000 
 END Simple.
