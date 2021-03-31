@@ -1,0 +1,37 @@
+; FieldTest_i offset 0
+; FieldTest_j offset 4
+; FieldTest_k offset 8
+; FieldTest_s offset 12
+FieldTest__module_init_: code offset: 0
+0	MOV R0, #1000
+1	STW R0, GB, #0
+2	MOV R0, #2000
+3	STW R0, GB, #4
+4	MOV R0, #3000
+5	STW R0, GB, #8
+6	LDW R0, GB, #0		; k := s[i].u;
+7	MUL R0, R0, #40
+8	ADD R0, GB, R0
+9	LDW R0, R0, #12
+10	STW R0, GB, #8
+11	LDW R0, GB, #88		; k := s[1].w;
+12	STW R0, GB, #8
+13	LDW R0, GB, #0		; k := s[i].v[j].x;
+14	MUL R0, R0, #40
+15	ADD R0, GB, R0
+16	LDW R1, GB, #4
+17	MUL R1, R1, #8
+18	ADD R0, R0, R1
+19	LDW R0, R0, #16
+20	STW R0, GB, #8
+21	LDW R0, GB, #76		; k := s[1].v[2].y;
+22	STW R0, GB, #8
+23	LDW R0, GB, #0		; s[0].v[i].y := k
+24	MUL R0, R0, #8
+25	ADD R0, GB, R0
+26	LDW R1, GB, #8
+27	STW R1, R0, #20
+28	RTS
+__start__:
+10000	JSR 0 (FieldTest__module_init_)
+10001	HALT

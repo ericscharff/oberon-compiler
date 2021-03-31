@@ -1,11 +1,11 @@
-; Simple_a offset 0
-; Simple_b offset 4
-; Simple_c offset 8
-; Simple_d offset 12
-; Simple_e offset 16
-; Simple_f offset 20
-; Simple_g offset 24
-Simple__module_init_: code offset: 0
+; CondTest_a offset 0
+; CondTest_b offset 4
+; CondTest_c offset 8
+; CondTest_d offset 12
+; CondTest_e offset 16
+; CondTest_f offset 20
+; CondTest_g offset 24
+CondTest__module_init_: code offset: 0
 0	LDW R0, GB, #0    ; IF a > b THEN
 1	LDW R1, GB, #4
 2	CMP R0, R1
@@ -90,5 +90,5 @@ Simple__module_init_: code offset: 0
 79	STW R0, GB, #0
 80	RTS
 __start__:
-10000	JSR 0 (Simple__module_init_)
+10000	JSR 0 (CondTest__module_init_)
 10001	HALT

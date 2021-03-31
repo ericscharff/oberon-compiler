@@ -1,4 +1,4 @@
-MODULE Simple;
+MODULE CondTest;
 
 VAR
   a, b, c, d, e, f, g :INTEGER;
@@ -23,4 +23,4 @@ BEGIN
   END;
   a := 999;
   a := 1000 
-END Simple.
+END CondTest.
