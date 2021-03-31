@@ -216,7 +216,7 @@ BEGIN
         | opBLT: GenStr("BLT ")
         | opBGT: GenStr("BGT ")
         | opBGE: GenStr("BGE ")
-        | opBLE: GenStr("BGT ")
+        | opBLE: GenStr("BLE ")
         | opB: GenStr("B ");
       END;
       Out.Int(codeBuffer[i].value)
