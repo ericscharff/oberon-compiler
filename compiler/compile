@@ -13,23 +13,24 @@ cd $BUILDDIR
 CC=gcc
 EXT=.c
 OCFLAGS=
+inSwitches=1
 
-if [ $1 = "-cpp" ]; then
-  CC=g++
-  EXT=.cpp
-  OCFLAGS=-cpp
-  shift
-fi
-
-if [ $1 = "-bounds" ]; then
-  OCFLAGS="$OCFLAGS -bounds"
-  shift
-fi
-
-if [ $1 = "-dumpdecl" ]; then
-  OCFLAGS="$OCFLAGS -dumpdecl"
-  shift
-fi
+while [ $inSwitches -eq 1 ]; do
+  if [ $1 = "-cpp" ]; then
+    CC=g++
+    EXT=.cpp
+    OCFLAGS=-cpp
+    shift
+  elif [ $1 = "-bounds" ]; then
+    OCFLAGS="$OCFLAGS -bounds"
+    shift
+  elif [ $1 = "-dumpdecl" ]; then
+    OCFLAGS="$OCFLAGS -dumpdecl"
+    shift
+  else
+    inSwitches=0
+  fi
+done
 
 cd $BUILDDIR
 ./oberon $OCFLAGS $1 | $PERR
