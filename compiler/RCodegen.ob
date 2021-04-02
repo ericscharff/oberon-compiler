@@ -391,13 +391,13 @@ BEGIN
   chain := cp - 1
 END AddToChain;
 
-PROCEDURE FixChain(chain :INTEGER);
+PROCEDURE FixChain(chain, fix :INTEGER);
 VAR
   next :INTEGER;
 BEGIN
   WHILE chain # 0 DO
     next := codeBuffer[chain].value;
-    codeBuffer[chain].value:= cp;
+    codeBuffer[chain].value:= fix;
     chain := next
   END
 END FixChain;
@@ -542,7 +542,7 @@ BEGIN
       Emit(opBRA, 0, 0, NegateCond(item.opCond), 0);
       AddToChain(parentFalseChain);
       (* lhs was true, so run rhs *)
-      FixChain(localTrueChain);
+      FixChain(localTrueChain, cp);
       GenExpr(e.rhs, item, parentTrueChain, parentFalseChain);
     ELSIF e.op = Lex.tOR THEN
       (* op is short circuit boolean OR. If lhs is true, don't execute rhs. *)
@@ -553,7 +553,7 @@ BEGIN
       Emit(opBRA, 0, 0, item.opCond, 0);
       AddToChain(parentTrueChain);
       (* lhs was false, so run rhs *)
-      FixChain(localFalseChain);
+      FixChain(localFalseChain, cp);
       GenExpr(e.rhs, item, parentTrueChain, parentFalseChain);
     ELSE
       GenExpr(e.lhs, item, parentTrueChain, parentFalseChain);
@@ -571,6 +571,7 @@ VAR
   lhs, rhs :Item;
   elses :AST.Stmt;
   (* code pointers *)
+  loopStart :INTEGER;
   after :INTEGER;
   trueChain, falseChain :INTEGER;
 BEGIN
@@ -594,13 +595,13 @@ BEGIN
       ASSERT(lhs.kind = itemCond);
       Emit(opBRA, 0, 0, NegateCond(lhs.opCond), 0);
       AddToChain(falseChain);
-      FixChain(trueChain);
+      FixChain(trueChain, cp);
       GenStatements(s.body);
       elses := s.elsifs;
       WHILE elses # NIL DO
         Emit(opBRA, 0, 0, opB, 0);
         AddToChain(after);
-        FixChain(falseChain);
+        FixChain(falseChain, cp);
         trueChain := 0; falseChain := 0;
         IF elses.kind = AST.stmtElsIf THEN
           GenExpr(elses.cond, lhs, trueChain, falseChain);
@@ -610,12 +611,23 @@ BEGIN
         ELSE
           ASSERT(elses.kind = AST.stmtElse)
         END;
-        FixChain(trueChain);
+        FixChain(trueChain, cp);
         GenStatements(elses.body);
         elses := elses.elsifs
       END;
-      FixChain(falseChain);
-      FixChain(after)
+      FixChain(falseChain, cp);
+      FixChain(after, cp)
+    ELSIF s.kind = AST.stmtRepeat THEN
+      loopStart := cp;
+      trueChain := 0; falseChain := 0;
+      GenStatements(s.body);
+      GenExpr(s.cond, lhs, trueChain, falseChain);
+      (* False chain immediatly returns to loopStart *)
+      FixChain(falseChain, loopStart);
+      ASSERT(lhs.kind = itemCond);
+      Emit(opBRA, 0, 0, NegateCond(lhs.opCond), loopStart);
+      (* Loop done, so the true chain links here *)
+      FixChain(trueChain, cp)
     ELSIF s.kind = AST.stmtEmpty THEN
     ELSE
       ASSERT(FALSE)
