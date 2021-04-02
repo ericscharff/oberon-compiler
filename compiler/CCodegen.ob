@@ -645,14 +645,6 @@ BEGIN
       ELSE
         GenStr(" = malloc(sizeof(");
         GenQName(l, e.rhs.typ.base.decl.qname);
-(* Original code:
-        GenStr("))");
- * Temporary code to zero out NEW'd memory:
- *)
-        GenStr(")); memset(");
-        GenExpr(l, e.rhs);
-        GenStr(", 0, sizeof(");
-        GenQName(l, e.rhs.typ.base.decl.qname);
         GenStr("))");
       END;
   END;
