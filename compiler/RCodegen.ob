@@ -630,17 +630,16 @@ BEGIN
       FixChain(trueChain, cp)
     ELSIF s.kind = AST.stmtWhile THEN
       ASSERT(s.elsifs = NIL);
-      after := 0;
-      Emit(opBRA, 0, 0, opB, after);
-      AddToChain(after);
+      after := cp;
+      Emit(opBRA, 0, 0, opB, 0);
       loopStart := cp;
       GenStatements(s.body);
-      FixChain(after, cp);
+      codeBuffer[after].value := cp; (* fix first branch to point to compare *)
       trueChain := 0; falseChain := 0;
       GenExpr(s.cond, lhs, trueChain, falseChain);
       (* True chain immediatly returns to loopStart *)
-      FixChain(trueChain, loopStart);
       ASSERT(lhs.kind = itemCond);
+      FixChain(trueChain, loopStart);
       Emit(opBRA, 0, 0, lhs.opCond, loopStart);
       (* Loop done, so the false chain links here *)
       FixChain(falseChain, cp)
