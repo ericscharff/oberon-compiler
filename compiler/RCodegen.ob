@@ -28,7 +28,8 @@ CONST
   opBEQ = 1;  (* =  *) opBNE = 9;   (* #  *)
   opBLT = 5;  (* <  *) opBGE = 13;  (* >= *)
   opBLE = 6;  (* <= *) opBGT = 14;  (* >  *)
-  opB = 7; (* branch always *)
+  opB = 7;   (* branch always *)
+  opBF = 15; (* branch never, basically NOP *)
 
   opMOVI = 100; (* ra := immediate      *)
   opADDI = 101; (* ra := rb + immediate *)
@@ -218,6 +219,7 @@ BEGIN
         | opBGE: GenStr("BGE ")
         | opBLE: GenStr("BLE ")
         | opB: GenStr("B ");
+        | opBF: GenStr("BF ");
       END;
       Out.Int(codeBuffer[i].value)
     ELSIF codeBuffer[i].op = opCONDt THEN
@@ -344,6 +346,28 @@ BEGIN
   END;
   item.kind := itemReg
 END Load;
+
+(* If a value isn't a condition code, load and transform into a condition. *)
+PROCEDURE LoadCond(VAR item :Item);
+BEGIN
+  IF item.kind # itemCond THEN
+    IF item.kind = itemConst THEN
+      IF item.offset = 1 THEN
+        item.opCond := opB
+      ELSE
+        item.opCond := opBF
+      END
+    ELSE
+      Load(item);
+      Emit(opCMPI, item.r, item.r, 0, 0);
+      (* Anything nonzero is true, although item.r really should be 0 or 1 *)
+      item.opCond := opBNE;
+      (* Boolean value no longer needed *)
+      DecCurReg
+    END;
+    item.kind := itemCond
+  END
+END LoadCond;
 
 PROCEDURE AllocateGlobals*(l :Lex.Lexer; d :AST.Decl);
 BEGIN
@@ -474,7 +498,7 @@ VAR
 BEGIN
   IF e.kind = AST.exprVal THEN
     item.kind := itemConst;
-    IF e.typ.kind = AST.typeInteger THEN
+    IF e.typ.kind IN {AST.typeInteger, AST.typeBoolean} THEN
       item.offset := e.iVal
     ELSE
       ASSERT(FALSE)
@@ -535,9 +559,10 @@ BEGIN
   ELSIF e.kind = AST.exprBinary THEN
     IF e.op = Lex.tAMP THEN
       (* op is short circuit boolean AND. If lhs is false, don't execute rhs. *)
-      (* also, if lhs short circuits to true, run rhs.                        *) 
+      (* also, if lhs short circuits to true, run rhs.                        *)
       localTrueChain := 0;
       GenExpr(e.lhs, item, localTrueChain, parentFalseChain);
+      LoadCond(item);
       ASSERT(item.kind = itemCond);
       Emit(opBRA, 0, 0, NegateCond(item.opCond), 0);
       AddToChain(parentFalseChain);
@@ -546,9 +571,10 @@ BEGIN
       GenExpr(e.rhs, item, parentTrueChain, parentFalseChain);
     ELSIF e.op = Lex.tOR THEN
       (* op is short circuit boolean OR. If lhs is true, don't execute rhs. *)
-      (* also, if lhs short circuits to false, run rhs.                     *) 
+      (* also, if lhs short circuits to false, run rhs.                     *)
       localFalseChain := 0;
       GenExpr(e.lhs, item, parentTrueChain, localFalseChain);
+      LoadCond(item);
       ASSERT(item.kind = itemCond);
       Emit(opBRA, 0, 0, item.opCond, 0);
       AddToChain(parentTrueChain);
@@ -592,6 +618,7 @@ BEGIN
       after := 0;
       trueChain := 0; falseChain := 0;
       GenExpr(s.cond, lhs, trueChain, falseChain);
+      LoadCond(lhs);
       ASSERT(lhs.kind = itemCond);
       Emit(opBRA, 0, 0, NegateCond(lhs.opCond), 0);
       AddToChain(falseChain);
@@ -605,6 +632,8 @@ BEGIN
         trueChain := 0; falseChain := 0;
         IF elses.kind = AST.stmtElsIf THEN
           GenExpr(elses.cond, lhs, trueChain, falseChain);
+          LoadCond(lhs);
+          ASSERT(lhs.kind = itemCond);
           Emit(opBRA, 0, 0, NegateCond(lhs.opCond), 0);
           AddToChain(falseChain);
           ASSERT(lhs.kind = itemCond);
@@ -624,6 +653,7 @@ BEGIN
       GenExpr(s.cond, lhs, trueChain, falseChain);
       (* False chain immediatly returns to loopStart *)
       FixChain(falseChain, loopStart);
+      LoadCond(lhs);
       ASSERT(lhs.kind = itemCond);
       Emit(opBRA, 0, 0, NegateCond(lhs.opCond), loopStart);
       (* Loop done, so the true chain links here *)
@@ -640,6 +670,7 @@ BEGIN
       (* True chain immediatly returns to loopStart *)
       ASSERT(lhs.kind = itemCond);
       FixChain(trueChain, loopStart);
+      LoadCond(lhs);
       Emit(opBRA, 0, 0, lhs.opCond, loopStart);
       (* Loop done, so the false chain links here *)
       FixChain(falseChain, cp)
