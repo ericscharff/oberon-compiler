@@ -28,8 +28,8 @@ CONST
   opBEQ = 1;  (* =  *) opBNE = 9;   (* #  *)
   opBLT = 5;  (* <  *) opBGE = 13;  (* >= *)
   opBLE = 6;  (* <= *) opBGT = 14;  (* >  *)
-  opB = 7;   (* branch always *)
-  opBF = 15; (* branch never, basically NOP *)
+  opB   = 7;  (* branch always *)
+  opBF  = 15; (* branch never, basically NOP *)
 
   opMOVI = 100; (* ra := immediate      *)
   opADDI = 101; (* ra := rb + immediate *)
@@ -325,6 +325,28 @@ BEGIN
   ASSERT(curReg >= 0)
 END DecCurReg;
 
+PROCEDURE AddToChain(VAR chain :INTEGER);
+(* This is called after a branch has been emitted. It updates the previous  *)
+(* instruction in the buffer to add it to the "chain" and chain points to   *)
+(* this updated instruction. The end result is a linked list of instruction *)
+(* addresses, starting at "chain", and ending at 0. This is later fixed up  *)
+(* using the FixupChain procedure.                                          *)
+BEGIN
+  codeBuffer[cp-1].value := chain;
+  chain := cp - 1
+END AddToChain;
+
+PROCEDURE FixChain(chain, fix :INTEGER);
+VAR
+  next :INTEGER;
+BEGIN
+  WHILE chain # 0 DO
+    next := codeBuffer[chain].value;
+    codeBuffer[chain].value:= fix;
+    chain := next
+  END
+END FixChain;
+
 (* Loads a value from an item into a register. *)
 PROCEDURE Load(VAR item :Item);
 BEGIN
@@ -369,6 +391,26 @@ BEGIN
   END
 END LoadCond;
 
+(* Loads any value, including conditions, into a register. *)
+PROCEDURE LoadValue(VAR item :Item; trueChain, falseChain :INTEGER);
+BEGIN
+  IF item.kind = itemCond THEN
+    Emit(opBRA, 0, 0, item.opCond, cp+3);
+    (* This is the false for cond, so falseChain ends here *)
+    FixChain(falseChain, cp);
+    Emit(opMOVI, curReg, 0, 0, 0);
+    Emit(opBRA, 0, 0, opB, cp+2);
+    (* This is the true for cond, so trueChain ends here *)
+    FixChain(trueChain, cp);
+    Emit(opMOVI, curReg, 0, 0, 1);
+    item.r := curReg;
+    item.kind := itemReg;
+    IncCurReg
+  ELSE
+    Load(item)
+  END
+END LoadValue;
+
 PROCEDURE AllocateGlobals*(l :Lex.Lexer; d :AST.Decl);
 BEGIN
   ASSERT(d.kind = AST.declVar);
@@ -387,8 +429,6 @@ BEGIN
   ELSE
     Load(lhs);
     Load(rhs);
-    ASSERT(lhs.kind = itemReg);
-    ASSERT(rhs.kind = itemReg);
     Emit(opCMP, lhs.r, lhs.r, rhs.r, 0);
     DecCurReg
   END;
@@ -404,28 +444,6 @@ BEGIN
   RETURN cond
 END NegateCond;
 
-PROCEDURE AddToChain(VAR chain :INTEGER);
-(* This is called after a branch has been emitted. It updates the previous  *)
-(* instruction in the buffer to add it to the "chain" and chain points to   *)
-(* this updated instruction. The end result is a linked list of instruction *)
-(* addresses, starting at "chain", and ending at 0. This is later fixed up  *)
-(* using the FixupChain procedure.                                          *)
-BEGIN
-  codeBuffer[cp-1].value := chain;
-  chain := cp - 1
-END AddToChain;
-
-PROCEDURE FixChain(chain, fix :INTEGER);
-VAR
-  next :INTEGER;
-BEGIN
-  WHILE chain # 0 DO
-    next := codeBuffer[chain].value;
-    codeBuffer[chain].value:= fix;
-    chain := next
-  END
-END FixChain;
-
 PROCEDURE GenBinaryOp(op :Lex.TokenKind; VAR lhs, rhs :Item);
 BEGIN
   IF op = Lex.tPLUS THEN
@@ -439,8 +457,6 @@ BEGIN
     ELSE
       Load(lhs);
       Load(rhs);
-      ASSERT(lhs.kind = itemReg);
-      ASSERT(rhs.kind = itemReg);
       Emit(opADD, lhs.r, lhs.r, rhs.r, 0);
       DecCurReg
     END
@@ -451,8 +467,6 @@ BEGIN
     ELSE
       Load(lhs);
       Load(rhs);
-      ASSERT(lhs.kind = itemReg);
-      ASSERT(rhs.kind = itemReg);
       Emit(opSUB, lhs.r, lhs.r, rhs.r, 0);
       DecCurReg
     END
@@ -467,8 +481,6 @@ BEGIN
     ELSE
       Load(lhs);
       Load(rhs);
-      ASSERT(lhs.kind = itemReg);
-      ASSERT(rhs.kind = itemReg);
       Emit(opMUL, lhs.r, lhs.r, rhs.r, 0);
       DecCurReg
     END
@@ -542,7 +554,6 @@ BEGIN
       item.offset := item.offset + size*rhs.offset
     ELSE
       Load(rhs);
-      ASSERT(rhs.kind = itemReg);
       Emit(opMULI, rhs.r, rhs.r, 0, size);
       IF item.kind = itemVar THEN
         Emit(opADD, rhs.r, item.r, rhs.r, 0);
@@ -608,8 +619,9 @@ BEGIN
       ASSERT(e.kind = AST.exprAssign);
       ASSERT(e.lhs.typ.kind # AST.typeRecord);
       GenExpr(e.lhs, lhs, trueChain, falseChain);
+      trueChain := 0; falseChain := 0;
       GenExpr(e.rhs, rhs, trueChain, falseChain);
-      Load(rhs);
+      LoadValue(rhs, trueChain, falseChain);
       ASSERT(lhs.kind IN {itemVar, itemRegI});
       Emit(opSTW, rhs.r, lhs.r, 0, lhs.offset);
       IF lhs.kind = itemRegI THEN DecCurReg END;
@@ -668,9 +680,9 @@ BEGIN
       trueChain := 0; falseChain := 0;
       GenExpr(s.cond, lhs, trueChain, falseChain);
       (* True chain immediatly returns to loopStart *)
-      ASSERT(lhs.kind = itemCond);
       FixChain(trueChain, loopStart);
       LoadCond(lhs);
+      ASSERT(lhs.kind = itemCond);
       Emit(opBRA, 0, 0, lhs.opCond, loopStart);
       (* Loop done, so the false chain links here *)
       FixChain(falseChain, cp)
