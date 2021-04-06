@@ -960,7 +960,7 @@ END GenProc;
 
 PROCEDURE Generate*(l :Lex.Lexer; d :AST.Decl);
 BEGIN
-  IF d.nesting = 0 THEN
+  IF (d.nesting = 0) OR (d.kind = AST.declType) THEN
     IF dumpDecls THEN
       GenStr("/*");
       GenLn;
