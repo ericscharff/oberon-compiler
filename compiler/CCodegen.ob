@@ -933,6 +933,9 @@ BEGIN
         GenType(l, p.typ, q, FALSE, FALSE);
         GenStr(";");
         GenLn;
+      ELSIF p.kind = AST.declType THEN
+        GenTypedef(l, p);
+        GenLn
       ELSIF AST.IsOpenArray(p.typ) THEN
         (* Generate code to avoid unused variable warnings *)
         GenI;
@@ -960,7 +963,7 @@ END GenProc;
 
 PROCEDURE Generate*(l :Lex.Lexer; d :AST.Decl);
 BEGIN
-  IF (d.nesting = 0) OR (d.kind = AST.declType) THEN
+  IF d.nesting = 0 THEN
     IF dumpDecls THEN
       GenStr("/*");
       GenLn;
