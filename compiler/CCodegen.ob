@@ -4,6 +4,7 @@ IMPORT AST, Lex, Out, DumpDecl;
 
 VAR
   indent          :INTEGER;
+  innerProcCount  :INTEGER;
   addBoundsChecks :BOOLEAN;
   genCPlusPlus    :BOOLEAN;
   dumpDecls       :BOOLEAN;
@@ -892,6 +893,12 @@ BEGIN
   GenLn;
 END GenVar;
 
+PROCEDURE RenameInnerProc(d :AST.Decl);
+BEGIN
+  d.qname.name := d.qname.name + innerProcCount;
+  INC(innerProcCount)
+END RenameInnerProc;
+
 PROCEDURE GenProc(l :Lex.Lexer; d :AST.Decl);
 VAR
   p :AST.Decl;
@@ -905,6 +912,9 @@ BEGIN
     p := d.procVars;
     WHILE p.kind # AST.declEND DO
       IF p.kind = AST.declProcedure THEN
+        (* Give nested procedures a unique name, because they need to be *)
+        (* defined at top level. Ensure they are distinct.               *)
+        RenameInnerProc(p);
         GenProc(l, p);
       END;
       p := p.next;
@@ -1023,5 +1033,6 @@ BEGIN
   addBoundsChecks := FALSE;
   genCPlusPlus := FALSE;
   dumpDecls := FALSE;
-  indent := 0
+  indent := 0;
+  innerProcCount := 0
 END CCodegen.
