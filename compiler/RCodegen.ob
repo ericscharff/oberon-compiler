@@ -686,6 +686,13 @@ BEGIN
       Emit(opBRA, 0, 0, lhs.opCond, loopStart);
       (* Loop done, so the false chain links here *)
       FixChain(falseChain, cp)
+    ELSIF s.kind = AST.stmtProcCall THEN
+      (* Temporary code that only generates procedure calls with 0 args *)
+      ASSERT(s.cond.rhs = NIL);
+      ASSERT(s.cond.lhs # NIL);
+      ASSERT(s.cond.lhs.decl # NIL);
+      Emit(opJSR, 0, 0, 0, s.cond.lhs.decl.offset);
+      codeBuffer[cp - 1].q := s.cond.lhs.decl.qname;
     ELSIF s.kind = AST.stmtEmpty THEN
     ELSE
       ASSERT(FALSE)
@@ -725,25 +732,19 @@ BEGIN
     END;
     vars := vars.next
   END;
-  fp := 0;
   WHILE (vars # NIL) & (vars.kind # AST.declEND) DO
     IF vars.kind = AST.declVar THEN
-      fp := fp - CalculateSize(vars.typ);
-      ASSERT(vars.offset < 0);
       vars.offset := fp;
-      Tab; GenStr("; "); Lex.OutStr(l, vars.qname.name); GenStr(" offset "); Out.Int(fp); GenLn
+      Tab; GenStr("; "); Lex.OutStr(l, vars.qname.name); GenStr(" offset "); Out.Int(fp); GenLn;
+      fp := fp + CalculateSize(vars.typ);
     END;
     vars := vars.next
   END;
   (* Preamble *)
-  IF fp < 0 THEN
-    Emit(opADDI, rSP, rSP, 0, fp)
-  END;
+  Emit(opSUBI, rSP, rSP, 0, fp);
   GenStatements(d.body);
   (* Epilog *)
-  IF fp < 0 THEN
-    Emit(opADDI, rSP, rSP, 0, -fp);
-  END;
+  Emit(opADDI, rSP, rSP, 0, fp);
   Emit(opRTS, 0, 0, 0, 0);
   DumpCode(l, d.offset)
 END GenerateProc;
