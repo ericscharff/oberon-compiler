@@ -221,7 +221,7 @@ BEGIN
         | opB: GenStr("B ");
         | opBF: GenStr("BF ");
       END;
-      Out.Int(codeBuffer[i].value)
+      Out.Int(codeBuffer[i].value + delta)
     ELSIF codeBuffer[i].op = opCONDt THEN
       GenStr("COND True branch: "); Out.Int(codeBuffer[i].value)
     ELSIF codeBuffer[i].op = opCONDf THEN
