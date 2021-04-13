@@ -3,35 +3,39 @@
 ; FieldTest_k offset 8
 ; FieldTest_s offset 12
 FieldTest__module_init_: code offset: 0
-0	MOV R0, #1000
-1	STW R0, GB, #0
-2	MOV R0, #2000
-3	STW R0, GB, #4
-4	MOV R0, #3000
-5	STW R0, GB, #8
-6	LDW R0, GB, #0		; k := s[i].u;
-7	MUL R0, R0, #40
-8	ADD R0, GB, R0
-9	LDW R0, R0, #12
-10	STW R0, GB, #8
-11	LDW R0, GB, #88		; k := s[1].w;
+0	SUB SP, SP, #4
+1	STW LR, SP, #0
+2	MOV R0, #1000
+3	STW R0, GB, #0
+4	MOV R0, #2000
+5	STW R0, GB, #4
+6	MOV R0, #3000
+7	STW R0, GB, #8
+8	LDW R0, GB, #0
+9	MUL R0, R0, #40
+10	ADD R0, GB, R0
+11	LDW R0, R0, #12
 12	STW R0, GB, #8
-13	LDW R0, GB, #0		; k := s[i].v[j].x;
-14	MUL R0, R0, #40
-15	ADD R0, GB, R0
-16	LDW R1, GB, #4
-17	MUL R1, R1, #8
-18	ADD R0, R0, R1
-19	LDW R0, R0, #16
-20	STW R0, GB, #8
-21	LDW R0, GB, #76		; k := s[1].v[2].y;
+13	LDW R0, GB, #88
+14	STW R0, GB, #8
+15	LDW R0, GB, #0
+16	MUL R0, R0, #40
+17	ADD R0, GB, R0
+18	LDW R1, GB, #4
+19	MUL R1, R1, #8
+20	ADD R0, R0, R1
+21	LDW R0, R0, #16
 22	STW R0, GB, #8
-23	LDW R0, GB, #0		; s[0].v[i].y := k
-24	MUL R0, R0, #8
-25	ADD R0, GB, R0
-26	LDW R1, GB, #8
-27	STW R1, R0, #20
-28	RTS
+23	LDW R0, GB, #76
+24	STW R0, GB, #8
+25	LDW R0, GB, #0
+26	MUL R0, R0, #8
+27	ADD R0, GB, R0
+28	LDW R1, GB, #8
+29	STW R1, R0, #20
+30	LDW LR, SP, #0
+31	ADD SP, SP, #4
+32	B LR
 __start__:
-10000	JSR 0 (FieldTest__module_init_)
+10000	BL 0 (FieldTest__module_init_)
 10001	HALT

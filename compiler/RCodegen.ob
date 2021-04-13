@@ -18,8 +18,8 @@ CONST
   opSTW = 8;  (* Mem[rb + offset] := ra (word) *)
   opSTB = 9;  (* Mem[rb + offset] := ra (byte) *)
   opBRA = 10; (* PC := value (see below)       *)
-  opJSR = 50; (* Jump to Subr                  *)
-  opRTS = 51; (* Subr return                   *)
+  opBL  = 50; (* LR := PC + 1, PC := value     *)
+  opBrg = 51; (* PC := ra                      *)
   opCONDt = 52; (* Condition placeholder       *)
   opCONDf = 53; (* Condition placeholder       *)
 
@@ -91,6 +91,15 @@ VAR
                          (* buffer, so 0 represents the start of a procedure. *)
                          (* It is measured in instructions, not bytes.        *)
   curReg       :INTEGER; (* Number [0..13] of the next available register     *)
+  stackOffset  :INTEGER; (* When there are nested function calls, the         *)
+                         (* compiler must save earlier expressions on the     *)
+                         (* stack. For example, when compiling f(0, 1, g(x))  *)
+                         (* r0 contains 0 and r1 contains 1. Both are saved   *)
+                         (* on the stack so that g can be called. This means  *)
+                         (* SP+4 doesn't point to the first parameter or the  *)
+                         (* local stack frame, temporarily. During lookup of  *)
+                         (* x for g, the SP needs to be offset, restored when *)
+                         (* the registers are restored.                       *)
 
 PROCEDURE Emit(op :OpCode; ra, rb, rc :Register; value :INTEGER);
 BEGIN
@@ -226,12 +235,12 @@ BEGIN
       GenStr("COND True branch: "); Out.Int(codeBuffer[i].value)
     ELSIF codeBuffer[i].op = opCONDf THEN
       GenStr("COND False branch: "); Out.Int(codeBuffer[i].value)
-    ELSIF codeBuffer[i].op = opJSR THEN
-      GenStr("JSR "); Out.Int(codeBuffer[i].value);
+    ELSIF codeBuffer[i].op = opBL THEN
+      GenStr("BL "); Out.Int(codeBuffer[i].value);
       GenStr(" ("); GenQName(l, codeBuffer[i].q);
       GenStr(")")
-    ELSIF codeBuffer[i].op = opRTS THEN
-      GenStr("RTS")
+    ELSIF codeBuffer[i].op = opBrg THEN
+      GenStr("B "); GenReg(codeBuffer[i].ra)
     ELSIF codeBuffer[i].op = opHALT THEN
       GenStr("HALT")
     ELSE
@@ -421,6 +430,40 @@ BEGIN
   globalOffset := globalOffset + CalculateSize(d.typ)
 END AllocateGlobals;
 
+PROCEDURE SaveRegisters;
+VAR
+  i, r :INTEGER;
+BEGIN
+  IF curReg > 0 THEN
+    Emit(opSUBI, rSP, rSP, 0, curReg * 4)
+  END;
+  stackOffset := stackOffset + curReg * 4;
+  i := 0;
+  r := 0;
+  WHILE r < curReg DO
+    Emit(opSTW, r, rSP, 0, i);
+    i := i + 4;
+    INC(r)
+  END
+END SaveRegisters;
+
+PROCEDURE RestoreRegisters;
+VAR
+  i, r :INTEGER;
+BEGIN
+  i := 0;
+  r := 0;
+  WHILE r < curReg DO
+    Emit(opLDW, r, rSP, 0, i);
+    i := i + 4;
+    INC(r)
+  END;
+  stackOffset := stackOffset - curReg * 4;
+  IF curReg > 0 THEN
+    Emit(opADDI, rSP, rSP, 0, curReg * 4)
+  END;
+END RestoreRegisters;
+
 PROCEDURE GenCompare(VAR lhs, rhs:Item; op :OpCode);
 BEGIN
   IF rhs.kind = itemConst THEN
@@ -506,6 +549,9 @@ PROCEDURE GenExpr(e :AST.Expr; VAR item :Item;
 VAR
   size :INTEGER;
   rhs  :Item;
+  actualParam :AST.Expr;
+  formalParam :AST.Decl;
+  savedRegister :Register;
   localTrueChain, localFalseChain :INTEGER;
 BEGIN
   IF e.kind = AST.exprVal THEN
@@ -516,14 +562,15 @@ BEGIN
       ASSERT(FALSE)
     END
   ELSIF e.kind = AST.exprIdentRef THEN
-    ASSERT(e.decl.kind = AST.declVar);
+    ASSERT(e.decl.kind IN {AST.declVar, AST.declParam});
     item.kind := itemVar;
     ASSERT(e.decl.offset # -1);
     item.offset := e.decl.offset;
-    IF e.decl.nesting = 0 THEN
+    IF (e.decl.kind = AST.declVar) & (e.decl.nesting = 0) THEN
       item.r := rGB
     ELSE
-      item.r := rSP
+      item.r := rSP;
+      item.offset := item.offset + stackOffset
     END
   ELSIF e.kind = AST.exprFieldRef THEN
     GenExpr(e.lhs, item, parentTrueChain, parentFalseChain);
@@ -597,10 +644,60 @@ BEGIN
       GenExpr(e.rhs, rhs, parentTrueChain, parentFalseChain);
       GenBinaryOp(e.op, item, rhs)
     END
+  ELSIF e.kind = AST.exprProcCall THEN
+    ASSERT(e.lhs.decl # NIL);
+    ASSERT(e.lhs.decl.offset >= 0);
+    ASSERT(e.lhs.typ.kind = AST.typeProcedure);
+    savedRegister := curReg;
+    SaveRegisters;
+    curReg := 0;
+    actualParam := e.rhs;
+    formalParam := e.lhs.typ.fields;
+    size := e.lhs.typ.length;
+    WHILE size > 0 DO
+      ASSERT(formalParam # NIL);
+      ASSERT(actualParam # NIL);
+      ASSERT(formalParam.kind = AST.declParam); (* no VAR param yet *)
+      ASSERT(formalParam.typ.kind = AST.typeInteger);
+      localTrueChain := 0; localFalseChain := 0;
+      GenExpr(actualParam, item, localTrueChain, localFalseChain);
+      LoadValue(item, localTrueChain, localFalseChain);
+      DEC(size);
+      actualParam := actualParam.next;
+      formalParam := formalParam.next
+    END;
+    Emit(opBL, 0, 0, 0, e.lhs.decl.offset);
+    codeBuffer[cp - 1].q := e.lhs.decl.qname;
+    item.kind := itemReg; item.r := 0;
+    IF (savedRegister > 0) & (e.lhs.typ.base.kind # AST.typeNil) THEN
+      (* Procedure has a return value in r0 *)
+      Emit(opMOV, 0, savedRegister, 0, 0);
+      item.r := savedRegister
+    END;
+    curReg := savedRegister;
+    RestoreRegisters;
+    IF e.lhs.typ.base.kind # AST.typeNil THEN
+      INC(curReg)
+    END
   ELSE
     ASSERT(FALSE)
   END
 END GenExpr;
+
+PROCEDURE GenReturn(e :AST.Expr);
+VAR
+  trueChain, falseChain :INTEGER;
+  item :Item;
+BEGIN
+  ASSERT(curReg = 0);
+  trueChain := 0; falseChain := 0;
+  GenExpr(e, item, trueChain, falseChain);
+  LoadValue(item, trueChain, falseChain);
+  ASSERT(curReg = 1);
+  ASSERT(item.kind = itemReg);
+  ASSERT(item.r = 0);
+  DecCurReg
+END GenReturn;
 
 PROCEDURE GenStatements(s :AST.Stmt);
 VAR
@@ -687,12 +784,7 @@ BEGIN
       (* Loop done, so the false chain links here *)
       FixChain(falseChain, cp)
     ELSIF s.kind = AST.stmtProcCall THEN
-      (* Temporary code that only generates procedure calls with 0 args *)
-      ASSERT(s.cond.rhs = NIL);
-      ASSERT(s.cond.lhs # NIL);
-      ASSERT(s.cond.lhs.decl # NIL);
-      Emit(opJSR, 0, 0, 0, s.cond.lhs.decl.offset);
-      codeBuffer[cp - 1].q := s.cond.lhs.decl.qname;
+      GenExpr(s.cond, lhs, trueChain, falseChain);
     ELSIF s.kind = AST.stmtEmpty THEN
     ELSE
       ASSERT(FALSE)
@@ -706,9 +798,11 @@ PROCEDURE GenerateProc*(l :Lex.Lexer; d :AST.Decl);
 VAR
   fp :INTEGER;
   vars :AST.Decl;
+  i, registersInUse :INTEGER;
 BEGIN
   ASSERT(d.kind = AST.declProcedure);
   cp := 0;
+  registersInUse := 0;
   d.offset := pc;
   GenQName(l, d.qname); GenStr(": code offset: "); Out.Int(d.offset); GenLn;
   fp := 4; (* Leave 4 bytes for return address. Params right below. *)
@@ -724,10 +818,12 @@ BEGIN
      * primitives, records (passed by reference), var parameters (also
      * passed by reference) or pointers.
      *)
+    INC(registersInUse);
     fp := fp + 4;
     IF AST.IsOpenArray(vars.typ) THEN
       Tab; GenStr("; "); Lex.OutStr(l, vars.qname.name); GenStr("__len");
       GenStr(" offset "); Out.Int(fp); GenLn;
+      INC(registersInUse);
       fp := fp + 4
     END;
     vars := vars.next
@@ -742,16 +838,25 @@ BEGIN
   END;
   (* Preamble *)
   Emit(opSUBI, rSP, rSP, 0, fp);
+  Emit(opSTW, rLR, rSP, 0, 0);
+  i := 4;
+  WHILE registersInUse > 0 DO
+    Emit(opSTW, (i DIV 4)-1, rSP, 0, i);
+    INC(i, 4);
+    DEC(registersInUse)
+  END;
   GenStatements(d.body);
+  IF d.expr # NIL THEN GenReturn(d.expr) END;
   (* Epilog *)
+  Emit(opLDW, rLR, rSP, 0, 0);
   Emit(opADDI, rSP, rSP, 0, fp);
-  Emit(opRTS, 0, 0, 0, 0);
+  Emit(opBrg, rLR, 0, 0, 0);
   DumpCode(l, d.offset)
 END GenerateProc;
 
 PROCEDURE GenCall*(proc :AST.Decl);
 BEGIN
-  Emit(opJSR, 0, 0, 0, proc.offset);
+  Emit(opBL, 0, 0, 0, proc.offset);
   codeBuffer[cp - 1].q := proc.qname
 END GenCall;
 
@@ -769,6 +874,7 @@ END GenEndMain;
 
 BEGIN
   globalOffset := 0;
+  stackOffset := 0;
   lastType := 0;
   pc := 0
 END RCodegen.

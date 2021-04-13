@@ -6,89 +6,91 @@
 ; CondTest_f offset 20
 ; CondTest_g offset 24
 CondTest__module_init_: code offset: 0
-0	LDW R0, GB, #0    ; IF a > b THEN
-1	LDW R1, GB, #4
-2	CMP R0, R1
-3	BLE 6
-4	MOV R0, #100      ; c := 100;
-5	STW R0, GB, #8
-6	LDW R0, GB, #8    ; IF (c > d) OR (e > f) THEN
-7	LDW R1, GB, #12
-8	CMP R0, R1
-9	BGT 14
-10	LDW R0, GB, #16
-11	LDW R1, GB, #20
-12	CMP R0, R1
-13	BLE 16
-14	MOV R0, #200     ;  g := 200;
-15	STW R0, GB, #24
-16	LDW R0, GB, #20  ;  IF (f > g) & (g > a) THEN
-17	LDW R1, GB, #24
-18	CMP R0, R1
-19	BLE 26
-20	LDW R0, GB, #24
-21	LDW R1, GB, #0
-22	CMP R0, R1
-23	BLE 26
-24	MOV R0, #300     ; b := 300;
-25	STW R0, GB, #4
-26	LDW R0, GB, #0   ; IF ((a > b) OR (c > d) OR (e > f)) &
-	                 ;    ((a < 10) OR (b < 20) OR (c < 30)) THEN
-27	LDW R1, GB, #4
-28	CMP R0, R1
-29	BGT 38
-30	LDW R0, GB, #8
-31	LDW R1, GB, #12
-32	CMP R0, R1
-33	BGT 38
-34	LDW R0, GB, #16
-35	LDW R1, GB, #20
-36	CMP R0, R1
-37	BLE 50
-38	LDW R0, GB, #0
-39	CMP R0, #10
-40	BLT 47
-41	LDW R0, GB, #4
-42	CMP R0, #20
-43	BLT 47
-44	LDW R0, GB, #8
-45	CMP R0, #30
-46	BGE 50
-47	MOV R0, #400     ; c := 400;
-48	STW R0, GB, #8
-49	B 76
-50	LDW R0, GB, #0   ; ELSIF ((a > b) & (c > d) & (e > f)) OR
-	                 ; ((a < 10) & (b < 20) & (c < 30)) THEN
-51	LDW R1, GB, #4
-52	CMP R0, R1
-53	BLE 62
-54	LDW R0, GB, #8
-55	LDW R1, GB, #12
-56	CMP R0, R1
-57	BLE 62
-58	LDW R0, GB, #16
-59	LDW R1, GB, #20
-60	CMP R0, R1
-61	BGT 71
-62	LDW R0, GB, #0
-63	CMP R0, #10
-64	BGE 74
-65	LDW R0, GB, #4
-66	CMP R0, #20
-67	BGE 74
-68	LDW R0, GB, #8
-69	CMP R0, #30
-70	BGE 74
-71	MOV R0, #500     ; c := 500;
-72	STW R0, GB, #8
-73	B 76
-74	MOV R0, #600     ; c := 600;
-75	STW R0, GB, #8
-76	MOV R0, #999     ; a := 999;
-77	STW R0, GB, #0
-78	MOV R0, #1000    ; a := 1000 
+0	SUB SP, SP, #4
+1	STW LR, SP, #0
+2	LDW R0, GB, #0
+3	LDW R1, GB, #4
+4	CMP R0, R1
+5	BLE 8
+6	MOV R0, #100
+7	STW R0, GB, #8
+8	LDW R0, GB, #8
+9	LDW R1, GB, #12
+10	CMP R0, R1
+11	BGT 16
+12	LDW R0, GB, #16
+13	LDW R1, GB, #20
+14	CMP R0, R1
+15	BLE 18
+16	MOV R0, #200
+17	STW R0, GB, #24
+18	LDW R0, GB, #20
+19	LDW R1, GB, #24
+20	CMP R0, R1
+21	BLE 28
+22	LDW R0, GB, #24
+23	LDW R1, GB, #0
+24	CMP R0, R1
+25	BLE 28
+26	MOV R0, #300
+27	STW R0, GB, #4
+28	LDW R0, GB, #0
+29	LDW R1, GB, #4
+30	CMP R0, R1
+31	BGT 40
+32	LDW R0, GB, #8
+33	LDW R1, GB, #12
+34	CMP R0, R1
+35	BGT 40
+36	LDW R0, GB, #16
+37	LDW R1, GB, #20
+38	CMP R0, R1
+39	BLE 52
+40	LDW R0, GB, #0
+41	CMP R0, #10
+42	BLT 49
+43	LDW R0, GB, #4
+44	CMP R0, #20
+45	BLT 49
+46	LDW R0, GB, #8
+47	CMP R0, #30
+48	BGE 52
+49	MOV R0, #400
+50	STW R0, GB, #8
+51	B 78
+52	LDW R0, GB, #0
+53	LDW R1, GB, #4
+54	CMP R0, R1
+55	BLE 64
+56	LDW R0, GB, #8
+57	LDW R1, GB, #12
+58	CMP R0, R1
+59	BLE 64
+60	LDW R0, GB, #16
+61	LDW R1, GB, #20
+62	CMP R0, R1
+63	BGT 73
+64	LDW R0, GB, #0
+65	CMP R0, #10
+66	BGE 76
+67	LDW R0, GB, #4
+68	CMP R0, #20
+69	BGE 76
+70	LDW R0, GB, #8
+71	CMP R0, #30
+72	BGE 76
+73	MOV R0, #500
+74	STW R0, GB, #8
+75	B 78
+76	MOV R0, #600
+77	STW R0, GB, #8
+78	MOV R0, #999
 79	STW R0, GB, #0
-80	RTS
+80	MOV R0, #1000
+81	STW R0, GB, #0
+82	LDW LR, SP, #0
+83	ADD SP, SP, #4
+84	B LR
 __start__:
-10000	JSR 0 (CondTest__module_init_)
+10000	BL 0 (CondTest__module_init_)
 10001	HALT

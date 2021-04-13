@@ -13,7 +13,7 @@ BEGIN
   r := 1;
   WHILE i <= n DO
     r := r * i;
-    INC(i)
+    i := i + 1
   END;
   RETURN r
 END FactIter;
@@ -39,7 +39,7 @@ BEGIN
     newPrev := fib;
     fib := fib + prev;
     prev := newPrev;
-    DEC(n)
+    n := n - 1
   END
   RETURN fib
 END FibIter;
