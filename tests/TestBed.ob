@@ -48,7 +48,29 @@ BEGIN
   a := 1000
 END CondTest;
 
+PROCEDURE FuncTest;
+VAR
+  i :INTEGER;
+
+  PROCEDURE g(x :INTEGER) :INTEGER;
+  BEGIN
+    RETURN x*7
+  END g;
+  
+  PROCEDURE f(a, b, c :INTEGER) :INTEGER;
+  VAR
+    r :INTEGER;
+  BEGIN
+    r := g(a) + g(b) * g(c)
+    RETURN r
+  END f;
+
+BEGIN
+  i := f(1, 2, 3)
+END FuncTest;
+
 BEGIN
   FieldTest;
   CondTest;
+  FuncTest
 END TestBed.
