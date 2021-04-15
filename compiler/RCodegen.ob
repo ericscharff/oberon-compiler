@@ -20,8 +20,6 @@ CONST
   opBRA = 10; (* PC := value (see below)       *)
   opBL  = 50; (* LR := PC + 1, PC := value     *)
   opBrg = 51; (* PC := ra                      *)
-  opCONDt = 52; (* Condition placeholder       *)
-  opCONDf = 53; (* Condition placeholder       *)
 
   (* Branches have opcode opBRA, and r.c is    *)
   (* the conndition code, given below:         *)
@@ -231,10 +229,6 @@ BEGIN
         | opBF: GenStr("BF ");
       END;
       Out.Int(codeBuffer[i].value + delta)
-    ELSIF codeBuffer[i].op = opCONDt THEN
-      GenStr("COND True branch: "); Out.Int(codeBuffer[i].value)
-    ELSIF codeBuffer[i].op = opCONDf THEN
-      GenStr("COND False branch: "); Out.Int(codeBuffer[i].value)
     ELSIF codeBuffer[i].op = opBL THEN
       GenStr("BL "); Out.Int(codeBuffer[i].value);
       GenStr(" ("); GenQName(l, codeBuffer[i].q);
