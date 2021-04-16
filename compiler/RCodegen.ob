@@ -779,6 +779,11 @@ BEGIN
       FixChain(falseChain, cp)
     ELSIF s.kind = AST.stmtProcCall THEN
       GenExpr(s.cond, lhs, trueChain, falseChain);
+      ASSERT(curReg <= 1);
+      IF curReg = 1 THEN
+        (* ProcCall was a function that returned a value that can be ignored *)
+        DecCurReg
+      END
     ELSIF s.kind = AST.stmtEmpty THEN
     ELSE
       ASSERT(FALSE)
