@@ -183,8 +183,8 @@ TestBed_h: code offset: 156
 158	STW R0, SP, #4
 159	STW R1, SP, #8
 160	STW R2, SP, #12
-161	LDW R0, SP, #0
-162	LDW R1, SP, #-1226779128
+161	LDW R0, SP, #8
+162	LDW R1, SP, #8
 163	LDW R1, R1, #0
 164	LDW R2, SP, #12
 165	MUL R1, R1, R2
@@ -235,7 +235,7 @@ TestBed_FuncTest: code offset: 173
 208	BL 126 (TestBed_f)
 209	STW R0, SP, #4
 210	MOV R0, #9
-211	STW R1, SP, #4
+211	ADD R1, SP, #4
 212	MOV R2, #10
 213	BL 156 (TestBed_h)
 214	LDW LR, SP, #0

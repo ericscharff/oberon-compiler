@@ -568,7 +568,7 @@ BEGIN
       END
     ELSIF e.decl.kind = AST.declVarParam THEN
       ASSERT(e.decl.offset # -1);
-      Emit(opLDW, curReg, rSP, 0, item.offset + stackOffset);
+      Emit(opLDW, curReg, rSP, 0, e.decl.offset + stackOffset);
       item.kind := itemRegI;
       item.r := curReg;
       item.offset := 0;
@@ -670,7 +670,7 @@ BEGIN
         localTrueChain := 0; localFalseChain := 0;
         GenExpr(actualParam, item, localTrueChain, localFalseChain);
         ASSERT(item.kind IN {itemVar, itemRegI});
-        Emit(opSTW, curReg, item.r, 0, item.offset);
+        Emit(opADDI, curReg, item.r, 0, item.offset);
         IncCurReg;
       ELSE
         ASSERT(FALSE)
