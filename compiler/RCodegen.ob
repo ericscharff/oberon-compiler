@@ -675,7 +675,9 @@ BEGIN
           IncCurReg
         ELSIF item.kind = itemRegI THEN
           ASSERT(item.r = curReg - 1);
-          Emit(opADDI, item.r, item.r, 0, item.offset)
+          IF item.offset > 0 THEN
+            Emit(opADDI, item.r, item.r, 0, item.offset)
+          END
         ELSE
           ASSERT(FALSE)
         END;

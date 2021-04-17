@@ -210,73 +210,72 @@ TestBed_p: code offset: 173
 182	STW R1, R0, #0
 183	LDW R0, SP, #4
 184	LDW R1, SP, #8
-185	ADD R1, R1, #0
-186	BL 173 (TestBed_p)
-187	LDW R0, SP, #8
-188	LDW R0, R0, #0
-189	ADD R1, SP, #4
-190	BL 173 (TestBed_p)
-191	LDW LR, SP, #0
-192	ADD SP, SP, #12
-193	B LR
-TestBed_FuncTest: code offset: 194
+185	BL 173 (TestBed_p)
+186	LDW R0, SP, #8
+187	LDW R0, R0, #0
+188	ADD R1, SP, #4
+189	BL 173 (TestBed_p)
+190	LDW LR, SP, #0
+191	ADD SP, SP, #12
+192	B LR
+TestBed_FuncTest: code offset: 193
 	; i offset 4
-194	SUB SP, SP, #8
-195	STW LR, SP, #0
-196	MOV R0, #0
-197	MOV R1, #0
-198	MOV R2, #0
-199	BL 126 (TestBed_f)
-200	MOV R0, #1
-201	MOV R1, #2
-202	MOV R2, #3
-203	BL 126 (TestBed_f)
-204	STW R0, SP, #4
-205	MOV R0, #1
-206	BL 118 (TestBed_g)
-207	SUB SP, SP, #4
-208	STW R0, SP, #0
-209	MOV R0, #2
-210	BL 118 (TestBed_g)
-211	MOV R0, R1
-212	LDW R0, SP, #0
-213	ADD SP, SP, #4
-214	SUB SP, SP, #8
-215	STW R0, SP, #0
-216	STW R1, SP, #4
-217	MOV R0, #3
+193	SUB SP, SP, #8
+194	STW LR, SP, #0
+195	MOV R0, #0
+196	MOV R1, #0
+197	MOV R2, #0
+198	BL 126 (TestBed_f)
+199	MOV R0, #1
+200	MOV R1, #2
+201	MOV R2, #3
+202	BL 126 (TestBed_f)
+203	STW R0, SP, #4
+204	MOV R0, #1
+205	BL 118 (TestBed_g)
+206	SUB SP, SP, #4
+207	STW R0, SP, #0
+208	MOV R0, #2
+209	BL 118 (TestBed_g)
+210	MOV R0, R1
+211	LDW R0, SP, #0
+212	ADD SP, SP, #4
+213	SUB SP, SP, #8
+214	STW R0, SP, #0
+215	STW R1, SP, #4
+216	MOV R0, #3
+217	BL 118 (TestBed_g)
 218	BL 118 (TestBed_g)
-219	BL 118 (TestBed_g)
-220	MOV R0, R2
-221	LDW R0, SP, #0
-222	LDW R1, SP, #4
-223	ADD SP, SP, #8
-224	BL 126 (TestBed_f)
-225	STW R0, SP, #4
-226	MOV R0, #4
-227	MOV R1, #5
-228	MOV R2, #6
-229	BL 126 (TestBed_f)
-230	STW R0, SP, #4
-231	MOV R0, #9
-232	ADD R1, SP, #4
-233	MOV R2, #10
-234	BL 156 (TestBed_h)
-235	LDW R0, SP, #4
-236	ADD R1, SP, #4
-237	BL 173 (TestBed_p)
-238	LDW LR, SP, #0
-239	ADD SP, SP, #8
-240	B LR
-TestBed__module_init_: code offset: 241
-241	SUB SP, SP, #4
-242	STW LR, SP, #0
-243	BL 0 (TestBed_FieldTest)
-244	BL 33 (TestBed_CondTest)
-245	BL 194 (TestBed_FuncTest)
-246	LDW LR, SP, #0
-247	ADD SP, SP, #4
-248	B LR
+219	MOV R0, R2
+220	LDW R0, SP, #0
+221	LDW R1, SP, #4
+222	ADD SP, SP, #8
+223	BL 126 (TestBed_f)
+224	STW R0, SP, #4
+225	MOV R0, #4
+226	MOV R1, #5
+227	MOV R2, #6
+228	BL 126 (TestBed_f)
+229	STW R0, SP, #4
+230	MOV R0, #9
+231	ADD R1, SP, #4
+232	MOV R2, #10
+233	BL 156 (TestBed_h)
+234	LDW R0, SP, #4
+235	ADD R1, SP, #4
+236	BL 173 (TestBed_p)
+237	LDW LR, SP, #0
+238	ADD SP, SP, #8
+239	B LR
+TestBed__module_init_: code offset: 240
+240	SUB SP, SP, #4
+241	STW LR, SP, #0
+242	BL 0 (TestBed_FieldTest)
+243	BL 33 (TestBed_CondTest)
+244	BL 193 (TestBed_FuncTest)
+245	LDW LR, SP, #0
+246	ADD SP, SP, #4
+247	B LR
 __start__:
-10000	BL 241 (TestBed__module_init_)
+10000	BL 240 (TestBed__module_init_)
 10001	HALT
