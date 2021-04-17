@@ -669,9 +669,16 @@ BEGIN
       ELSIF formalParam.kind = AST.declVarParam THEN
         localTrueChain := 0; localFalseChain := 0;
         GenExpr(actualParam, item, localTrueChain, localFalseChain);
-        ASSERT(item.kind IN {itemVar, itemRegI});
-        Emit(opADDI, curReg, item.r, 0, item.offset);
-        IncCurReg;
+        IF item.kind = itemVar THEN
+          (* Reg is SP, so reserve a new register *)
+          Emit(opADDI, curReg, item.r, 0, item.offset);
+          IncCurReg
+        ELSIF item.kind = itemRegI THEN
+          ASSERT(item.r = curReg - 1);
+          Emit(opADDI, item.r, item.r, 0, item.offset)
+        ELSE
+          ASSERT(FALSE)
+        END;
       ELSE
         ASSERT(FALSE)
       END;

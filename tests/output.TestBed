@@ -210,7 +210,7 @@ TestBed_p: code offset: 173
 182	STW R1, R0, #0
 183	LDW R0, SP, #4
 184	LDW R1, SP, #8
-185	ADD R2, R1, #0
+185	ADD R1, R1, #0
 186	BL 173 (TestBed_p)
 187	LDW R0, SP, #8
 188	LDW R0, R0, #0
