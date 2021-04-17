@@ -556,15 +556,25 @@ BEGIN
       ASSERT(FALSE)
     END
   ELSIF e.kind = AST.exprIdentRef THEN
-    ASSERT(e.decl.kind IN {AST.declVar, AST.declParam});
-    item.kind := itemVar;
-    ASSERT(e.decl.offset # -1);
-    item.offset := e.decl.offset;
-    IF (e.decl.kind = AST.declVar) & (e.decl.nesting = 0) THEN
-      item.r := rGB
+    IF e.decl.kind IN {AST.declVar, AST.declParam} THEN
+      item.kind := itemVar;
+      ASSERT(e.decl.offset # -1);
+      item.offset := e.decl.offset;
+      IF (e.decl.kind = AST.declVar) & (e.decl.nesting = 0) THEN
+        item.r := rGB
+      ELSE
+        item.r := rSP;
+        item.offset := item.offset + stackOffset
+      END
+    ELSIF e.decl.kind = AST.declVarParam THEN
+      ASSERT(e.decl.offset # -1);
+      Emit(opLDW, curReg, rSP, 0, item.offset + stackOffset);
+      item.kind := itemRegI;
+      item.r := curReg;
+      item.offset := 0;
+      IncCurReg
     ELSE
-      item.r := rSP;
-      item.offset := item.offset + stackOffset
+      ASSERT(FALSE)
     END
   ELSIF e.kind = AST.exprFieldRef THEN
     GenExpr(e.lhs, item, parentTrueChain, parentFalseChain);
@@ -651,11 +661,20 @@ BEGIN
     WHILE size > 0 DO
       ASSERT(formalParam # NIL);
       ASSERT(actualParam # NIL);
-      ASSERT(formalParam.kind = AST.declParam); (* no VAR param yet *)
       ASSERT(formalParam.typ.kind = AST.typeInteger);
-      localTrueChain := 0; localFalseChain := 0;
-      GenExpr(actualParam, item, localTrueChain, localFalseChain);
-      LoadValue(item, localTrueChain, localFalseChain);
+      IF formalParam.kind = AST.declParam THEN
+        localTrueChain := 0; localFalseChain := 0;
+        GenExpr(actualParam, item, localTrueChain, localFalseChain);
+        LoadValue(item, localTrueChain, localFalseChain);
+      ELSIF formalParam.kind = AST.declVarParam THEN
+        localTrueChain := 0; localFalseChain := 0;
+        GenExpr(actualParam, item, localTrueChain, localFalseChain);
+        ASSERT(item.kind IN {itemVar, itemRegI});
+        Emit(opSTW, curReg, item.r, 0, item.offset);
+        IncCurReg;
+      ELSE
+        ASSERT(FALSE)
+      END;
       DEC(size);
       actualParam := actualParam.next;
       formalParam := formalParam.next
