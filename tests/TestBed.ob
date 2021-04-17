@@ -70,12 +70,21 @@ VAR
     RETURN r
   END f;
 
+  PROCEDURE p(x :INTEGER; VAR y :INTEGER);
+  BEGIN
+    x := y;
+    y := x;
+    p(x, y);
+    p(y, x);
+  END p;
+
 BEGIN
   f(0, 0, 0);
   i := f(1, 2, 3);
   i := f(g(1), g(2), g(g(3)));
   i := f(4, 5, 6);
-  h(9, i, 10)
+  h(9, i, 10);
+  p(i, i)
 END FuncTest;
 
 BEGIN
