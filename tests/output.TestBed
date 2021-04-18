@@ -218,12 +218,31 @@ TestBed_p: code offset: 173
 17	LDW LR, SP, #0
 18	ADD SP, SP, #12
 19	B LR
-TestBed_FuncTest: code offset: 193
+TestBed_z: code offset: 193
+	; a offset 4
+	; b offset 8
+	; c offset 12
+0	SUB SP, SP, #16
+1	STW LR, SP, #0
+2	STW R0, SP, #4
+3	STW R1, SP, #8
+4	STW R2, SP, #12
+5	LDW R0, SP, #12
+6	LDW R1, SP, #8
+7	LDW R1, R1, #0
+8	LDW R2, SP, #4
+9	ADD R1, R1, R2
+10	STW R1, R0, #0
+11	LDW LR, SP, #0
+12	ADD SP, SP, #16
+13	B LR
+TestBed_FuncTest: code offset: 207
 	; i offset 4
 	; j offset 8
 	; k offset 12
 	; a offset 16
-0	SUB SP, SP, #56
+	; b offset 56
+0	SUB SP, SP, #496
 1	STW LR, SP, #0
 2	MOV R0, #0
 3	MOV R1, #0
@@ -267,18 +286,39 @@ TestBed_FuncTest: code offset: 193
 41	LDW R0, SP, #4
 42	ADD R1, SP, #4
 43	BL 173 (TestBed_p)
-44	LDW LR, SP, #0
-45	ADD SP, SP, #56
-46	B LR
-TestBed__module_init_: code offset: 240
+44	LDW R0, SP, #4
+45	ADD R1, SP, #28
+46	ADD R2, SP, #12
+47	BL 193 (TestBed_z)
+48	LDW R0, SP, #4
+49	LDW R1, SP, #8
+50	MUL R1, R1, #4		; index of j
+51	ADD R1, SP, R1		; offset to SP
+52	ADD R1, R1, #16		; offset of a
+53	ADD R2, SP, #12
+54	BL 193 (TestBed_z)
+55	LDW R0, SP, #4
+56	LDW R1, SP, #8		; index of j
+57	MUL R1, R1, #44		; size of record is 44
+58	ADD R1, SP, R1		; offset to SP (b is +56)
+59	LDW R2, SP, #8		; j
+60	MUL R2, R2, #4		; each int is 4, so j*4 (offset of m)
+61	ADD R1, R1, R2		; r1 = (j*44)+SP + (j*4)
+62	ADD R1, R1, #60		; b=56 + 4 (offset of m inside record)
+63	ADD R2, SP, #12
+64	BL 193 (TestBed_z)
+65	LDW LR, SP, #0
+66	ADD SP, SP, #496
+67	B LR
+TestBed__module_init_: code offset: 275
 0	SUB SP, SP, #4
 1	STW LR, SP, #0
 2	BL 0 (TestBed_FieldTest)
 3	BL 33 (TestBed_CondTest)
-4	BL 193 (TestBed_FuncTest)
+4	BL 207 (TestBed_FuncTest)
 5	LDW LR, SP, #0
 6	ADD SP, SP, #4
 7	B LR
 __start__:
-0	BL 240 (TestBed__module_init_)
+0	BL 275 (TestBed__module_init_)
 1	HALT
