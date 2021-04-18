@@ -1,5 +1,6 @@
 MODULE TestBed;
 
+(*
 PROCEDURE FieldTest;
 
 TYPE
@@ -87,8 +88,25 @@ BEGIN
   p(i, i)
 END FuncTest;
 
+*)
+
+PROCEDURE Z(a :INTEGER; VAR b, c :INTEGER);
 BEGIN
+  c := b + a
+END Z;
+
+PROCEDURE FuncTest;
+VAR
+  i, j, k :INTEGER;
+  a :ARRAY 10 OF INTEGER;
+BEGIN
+  Z(i, a[3], k)
+END FuncTest;
+
+BEGIN
+(*
   FieldTest;
   CondTest;
+*)
   FuncTest
 END TestBed.

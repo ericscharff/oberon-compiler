@@ -685,6 +685,7 @@ BEGIN
     d.state := AST.stateResolved;
     NEW(reachable);
     reachable.d := d;
+    reachable.next := NIL;
     IF reachableDecls = NIL THEN
       reachableDecls := reachable;
     ELSE
@@ -754,5 +755,4 @@ BEGIN
   reachableDecls := NIL;
   tailReachable := NIL;
   globalScope := NIL;
-  reachableDecls := NIL;
 END Decls.
