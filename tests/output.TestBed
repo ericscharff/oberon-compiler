@@ -220,7 +220,10 @@ TestBed_p: code offset: 173
 192	B LR
 TestBed_FuncTest: code offset: 193
 	; i offset 4
-193	SUB SP, SP, #8
+	; j offset 8
+	; k offset 12
+	; a offset 16
+193	SUB SP, SP, #56
 194	STW LR, SP, #0
 195	MOV R0, #0
 196	MOV R1, #0
@@ -265,7 +268,7 @@ TestBed_FuncTest: code offset: 193
 235	ADD R1, SP, #4
 236	BL 173 (TestBed_p)
 237	LDW LR, SP, #0
-238	ADD SP, SP, #8
+238	ADD SP, SP, #56
 239	B LR
 TestBed__module_init_: code offset: 240
 240	SUB SP, SP, #4

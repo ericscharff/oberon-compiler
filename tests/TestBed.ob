@@ -1,6 +1,5 @@
 MODULE TestBed;
 
-(*
 PROCEDURE FieldTest;
 
 TYPE
@@ -51,7 +50,8 @@ END CondTest;
 
 PROCEDURE FuncTest;
 VAR
-  i :INTEGER;
+  i, j, k :INTEGER;
+  a :ARRAY 10 OF INTEGER;
 
   PROCEDURE h(a :INTEGER; VAR x :INTEGER; b :INTEGER);
   BEGIN
@@ -79,34 +79,23 @@ VAR
     p(y, x);
   END p;
 
+  PROCEDURE z(a :INTEGER; VAR b, c :INTEGER);
+  BEGIN
+    c := b + a
+  END z;
+
 BEGIN
   f(0, 0, 0);
   i := f(1, 2, 3);
   i := f(g(1), g(2), g(g(3)));
   i := f(4, 5, 6);
   h(9, i, 10);
-  p(i, i)
-END FuncTest;
-
-*)
-
-PROCEDURE Z(a :INTEGER; VAR b, c :INTEGER);
-BEGIN
-  c := b + a
-END Z;
-
-PROCEDURE FuncTest;
-VAR
-  i, j, k :INTEGER;
-  a :ARRAY 10 OF INTEGER;
-BEGIN
-  Z(i, a[3], k)
+  p(i, i);
+  (* z(i, a[3], k) *)
 END FuncTest;
 
 BEGIN
-(*
   FieldTest;
   CondTest;
-*)
   FuncTest
 END TestBed.
