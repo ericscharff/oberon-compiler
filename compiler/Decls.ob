@@ -530,6 +530,62 @@ BEGIN
   RETURN e
 END builtinNew;
 
+PROCEDURE builtinReadInt(l :Lex.Lexer; args :AST.Expr) :AST.Expr;
+VAR
+  e :AST.Expr;
+BEGIN
+  AST.NewExpr(e, AST.exprBuiltin, nilType);
+  e.iVal := AST.builtinReadInt;
+  e.rhs := args;
+  IF (args = NIL) OR (args.next # NIL) THEN
+    Lex.ErrorLn(l, "ReadInt expects 1 argument");
+  END;
+  IF ~args.assignable THEN
+    Lex.ErrorLn(l, "Argument to ReadInt must be assignable");
+  END;
+  RETURN e
+END builtinReadInt;
+
+PROCEDURE builtinWriteInt(l :Lex.Lexer; args :AST.Expr) :AST.Expr;
+VAR
+  e :AST.Expr;
+BEGIN
+  AST.NewExpr(e, AST.exprBuiltin, nilType);
+  e.iVal := AST.builtinWriteInt;
+  e.rhs := args;
+  IF (args = NIL) OR (args.next # NIL) THEN
+    Lex.ErrorLn(l, "WriteInt expects 1 argument");
+  END;
+  RETURN e
+END builtinWriteInt;
+
+PROCEDURE builtinWriteChar(l :Lex.Lexer; args :AST.Expr) :AST.Expr;
+VAR
+  e :AST.Expr;
+BEGIN
+  AST.NewExpr(e, AST.exprBuiltin, nilType);
+  e.iVal := AST.builtinWriteChar;
+  e.rhs := args;
+  IF (args = NIL) OR (args.next # NIL) THEN
+    Lex.ErrorLn(l, "WriteChar expects 1 argument");
+  END;
+  IF e.rhs.typ.kind = AST.typeString THEN AST.CoerceToChar(l, e.rhs, charType) END;
+  RETURN e
+END builtinWriteChar;
+
+PROCEDURE builtinWriteLn(l :Lex.Lexer; args :AST.Expr) :AST.Expr;
+VAR
+  e :AST.Expr;
+BEGIN
+  AST.NewExpr(e, AST.exprBuiltin, nilType);
+  e.iVal := AST.builtinWriteLn;
+  e.rhs := args;
+  IF args # NIL THEN
+    Lex.ErrorLn(l, "WriteLn expects 0 argumens");
+  END;
+  RETURN e
+END builtinWriteLn;
+
 PROCEDURE InitGlobalScope*(VAR l :Lex.Lexer);
 BEGIN
   fwds := NIL;
@@ -549,7 +605,7 @@ BEGIN
     NewType(setType, AST.typeSet);
     AddTypeDecl(l, Lex.Intern(l, "SET"), setType);
     NewType(stringType, AST.typeString);
-    (* Builins *)
+    (* Builtins *)
     AddBuiltin(l, Lex.Intern(l, "ABS"), builtinAbs);
     AddBuiltin(l, Lex.Intern(l, "INC"), builtinInc);
     AddBuiltin(l, Lex.Intern(l, "DEC"), builtinDec);
@@ -561,6 +617,11 @@ BEGIN
     AddBuiltin(l, Lex.Intern(l, "NEW"), builtinNew);
     AddBuiltin(l, Lex.Intern(l, "INIT"), builtinInit);
     AddBuiltin(l, Lex.Intern(l, "PUSH"), builtinPush);
+    (* Oberon-0 Builtins *)
+    AddBuiltin(l, Lex.Intern(l, "ReadInt"), builtinReadInt);
+    AddBuiltin(l, Lex.Intern(l, "WriteInt"), builtinWriteInt);
+    AddBuiltin(l, Lex.Intern(l, "WriteChar"), builtinWriteChar);
+    AddBuiltin(l, Lex.Intern(l, "WriteLn"), builtinWriteLn);
     globalScope := scope;
     (* Special MODULE init function *)
     modInitName := Lex.Intern(l, "_module_init_");

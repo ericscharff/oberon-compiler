@@ -1,0 +1,12 @@
+MODULE IOTest;
+
+VAR
+  a :INTEGER;
+BEGIN
+  WriteChar(65);
+  WriteLn;
+  ReadInt(a);
+  a := a + 1;
+  WriteInt(a);
+  WriteLn
+END IOTest.

@@ -600,7 +600,7 @@ BEGIN
   q.moduleName := 0;
   q.name := 0;
   ASSERT(e.iVal >= AST.builtinAbs);
-  ASSERT(e.iVal <= AST.builtinPush);
+  ASSERT(e.iVal <= AST.builtinWriteLn);
   CASE e.iVal OF
     AST.builtinAbs: GenStr("oberon_abs("); GenExpr(l, e.rhs); GenStr(")");
   | AST.builtinAssert: GenStr("assert("); GenExpr(l, e.rhs); GenStr(")");
@@ -648,6 +648,20 @@ BEGIN
         GenQName(l, e.rhs.typ.base.decl.qname);
         GenStr("))");
       END;
+  | AST.builtinReadInt:
+    GenStr("scanf("); GenStr(22X); GenStr("%d"); GenStr(22X); GenStr(", &(");
+    GenExpr(l, e.rhs);
+    GenStr("))");
+  | AST.builtinWriteInt:
+    GenStr("printf("); GenStr(22X); GenStr("%4d"); GenStr(22X); GenStr(", ");
+    GenExpr(l, e.rhs);
+    GenStr(")");
+  | AST.builtinWriteChar:
+    GenStr("putchar(");
+    GenExpr(l, e.rhs);
+    GenStr(")");
+  | AST.builtinWriteLn:
+    GenStr("putchar('\n')");
   END;
 END GenBuiltinExpr;
 

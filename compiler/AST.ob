@@ -56,6 +56,11 @@ CONST
   builtinOrd*    = 10;
   builtinPush*   = 11;
 
+  builtinReadInt* = 12;
+  builtinWriteInt* = 13;
+  builtinWriteChar* = 14;
+  builtinWriteLn* = 15;
+
   stmtAssign*   = 1;
   stmtProcCall* = 2;
   stmtIf*       = 3;
