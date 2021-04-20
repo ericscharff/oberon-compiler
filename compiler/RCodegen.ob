@@ -387,6 +387,7 @@ BEGIN
       END
     ELSE
       Load(item);
+      ASSERT(item.r = 0);
       Emit(opCMPI, item.r, item.r, 0, 0);
       (* Anything nonzero is true, although item.r really should be 0 or 1 *)
       item.opCond := opBNE;
@@ -465,10 +466,12 @@ PROCEDURE GenCompare(VAR lhs, rhs:Item; op :OpCode);
 BEGIN
   IF rhs.kind = itemConst THEN
     Load(lhs);
+    ASSERT(lhs.r = 0);
     Emit(opCMPI, lhs.r, lhs.r, 0, rhs.offset)
   ELSE
     Load(lhs);
     Load(rhs);
+    ASSERT(lhs.r = 0);
     Emit(opCMP, lhs.r, lhs.r, rhs.r, 0);
     DecCurReg
   END;
