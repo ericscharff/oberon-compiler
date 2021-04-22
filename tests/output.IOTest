@@ -1,0 +1,26 @@
+; IOTest_a offset 0
+IOTest__module_init_: code offset: 0
+0	SUB SP, SP, #4
+1	STW LR, SP, #0
+2	MOV R0, #65
+3	MOV R1, #0
+4	STW R0, R1, #-2
+5	MOV R0, #0
+6	STW R0, R0, #-3
+7	MOV R0, #0
+8	LDW R0, R0, #-1
+9	STW R0, GB, #0
+10	LDW R0, GB, #0
+11	ADD R0, R0, #1
+12	STW R0, GB, #0
+13	LDW R0, GB, #0
+14	MOV R1, #0
+15	STW R0, R1, #-1
+16	MOV R0, #0
+17	STW R0, R0, #-3
+18	LDW LR, SP, #0
+19	ADD SP, SP, #4
+20	B LR
+__start__:
+0	BL 0 (IOTest__module_init_)
+1	HALT

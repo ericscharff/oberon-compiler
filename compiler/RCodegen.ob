@@ -707,6 +707,36 @@ BEGIN
     IF e.lhs.typ.base.kind # AST.typeNil THEN
       INC(curReg)
     END
+  ELSIF e.kind = AST.exprBuiltin THEN
+    IF e.iVal = AST.builtinReadInt THEN
+      localTrueChain := 0; localFalseChain := 0;
+      GenExpr(e.rhs, item, localTrueChain, localFalseChain);
+      Emit(opMOVI, curReg, 0, 0, 0);
+      Emit(opLDW, curReg, curReg, 0, -1);
+      Emit(opSTW, curReg, item.r, 0, item.offset);
+    ELSIF e.iVal = AST.builtinWriteInt THEN
+      localTrueChain := 0; localFalseChain := 0;
+      GenExpr(e.rhs, item, localTrueChain, localFalseChain);
+      LoadValue(item, localTrueChain, localFalseChain);
+      ASSERT(curReg = 1);
+      Emit(opMOVI, curReg, 0, 0, 0);
+      Emit(opSTW, item.r, curReg, 0, -1);
+      DecCurReg;
+    ELSIF e.iVal = AST.builtinWriteChar THEN
+      localTrueChain := 0; localFalseChain := 0;
+      GenExpr(e.rhs, item, localTrueChain, localFalseChain);
+      LoadValue(item, localTrueChain, localFalseChain);
+      ASSERT(curReg = 1);
+      Emit(opMOVI, curReg, 0, 0, 0);
+      Emit(opSTW, item.r, curReg, 0, -2);
+      DecCurReg;
+    ELSIF e.iVal = AST.builtinWriteLn THEN
+      ASSERT(curReg = 0);
+      Emit(opMOVI, curReg, 0, 0, 0);
+      Emit(opSTW, item.r, curReg, 0, -3);
+    ELSE
+      ASSERT(FALSE);
+    END
   ELSE
     ASSERT(FALSE)
   END
