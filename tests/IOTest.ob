@@ -1,9 +1,20 @@
 MODULE IOTest;
 
 VAR
-  a :INTEGER;
+  a, i :INTEGER;
+
+PROCEDURE Neat(x :INTEGER);
+BEGIN
+  WriteChar(x)
+END Neat;
+
 BEGIN
   WriteChar(65);
+  i := 65;
+  WHILE i < 91 DO
+    Neat(i);
+    i := i + 1
+  END;
   WriteLn;
   ReadInt(a);
   a := a + 1;
