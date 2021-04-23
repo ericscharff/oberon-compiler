@@ -178,7 +178,7 @@ BEGIN
   END;
 END GenQName;
 
-PROCEDURE DumpCode(l :Lex.Lexer; delta :INTEGER);
+PROCEDURE DumpAssembly(l :Lex.Lexer; delta :INTEGER);
 VAR
   i :INTEGER;
 BEGIN
@@ -240,6 +240,84 @@ BEGIN
     ELSE
       ASSERT(FALSE)
     END;
+    GenLn;
+    INC(i)
+  END
+END DumpAssembly;
+
+PROCEDURE DumpCode(delta :INTEGER);
+VAR
+  i, offset :INTEGER;
+  op :OpCode;
+BEGIN
+  GenLn; Out.Int(delta); GenLn;
+  i := 0;
+  WHILE i < cp DO
+    offset := codeBuffer[i].value;
+    op := codeBuffer[i].op;
+    GenStr("{");
+    IF op = opMOV THEN
+      GenStr("MOV");
+    ELSIF op = opADD THEN
+      GenStr("ADD");
+    ELSIF op = opSUB THEN
+      GenStr("SUB");
+    ELSIF op = opMUL THEN
+      GenStr("MUL");
+    ELSIF op = opDIV THEN
+      GenStr("DIV");
+    ELSIF op = opCMP THEN
+      GenStr("CMP");
+    ELSIF op = opMOVI THEN
+      GenStr("MOVI");
+    ELSIF op = opADDI THEN
+      GenStr("ADDI");
+    ELSIF op = opSUBI THEN
+      GenStr("SUBI");
+    ELSIF op = opMULI THEN
+      GenStr("MULI");
+    ELSIF op = opDIVI THEN
+      GenStr("DIVI");
+    ELSIF op = opCMPI THEN
+      GenStr("CMPI");
+    ELSIF op = opLDW THEN
+      GenStr("LDW");
+    ELSIF op = opLDB THEN
+      GenStr("LDB");
+    ELSIF op = opSTW THEN
+      GenStr("STW");
+    ELSIF op = opSTB THEN
+      GenStr("STB");
+    ELSIF op = opBRA THEN
+      INC(offset, delta);
+      CASE codeBuffer[i].rc OF
+        opBEQ: GenStr("BEQ ")
+        | opBNE: GenStr("BNE ")
+        | opBLT: GenStr("BLT ")
+        | opBGT: GenStr("BGT ")
+        | opBGE: GenStr("BGE ")
+        | opBLE: GenStr("BLE ")
+        | opB: GenStr("B ");
+        | opBF: GenStr("BF ");
+      END;
+    ELSIF op = opBL THEN
+      GenStr("BL");
+    ELSIF op = opBrg THEN
+      GenStr("Br");
+    ELSIF op = opHALT THEN
+      GenStr("HALT");
+    ELSE
+      ASSERT(FALSE);
+    END;
+    GenStr(", ");
+    GenReg(codeBuffer[i].ra);
+    GenStr(", ");
+    GenReg(codeBuffer[i].rb);
+    GenStr(", ");
+    GenReg(codeBuffer[i].rc);
+    GenStr(", ");
+    Out.Int(offset);
+    GenStr("},");
     GenLn;
     INC(i)
   END
@@ -911,7 +989,8 @@ BEGIN
   Emit(opLDW, rLR, rSP, 0, 0);
   Emit(opADDI, rSP, rSP, 0, fp);
   Emit(opBrg, rLR, 0, 0, 0);
-  DumpCode(l, d.offset)
+  DumpAssembly(l, d.offset)
+  (*DumpCode(d.offset)*)
 END GenerateProc;
 
 PROCEDURE GenCall*(proc :AST.Decl);
@@ -923,13 +1002,14 @@ END GenCall;
 PROCEDURE GenStartMain*;
 BEGIN
   cp := 0;
-  GenStr("__start__:"); GenLn
+  GenStr("__start__: "); Out.Int(pc); GenLn
 END GenStartMain;
 
 PROCEDURE GenEndMain*(l :Lex.Lexer);
 BEGIN
   Emit(opHALT, 0, 0, 0, 0);
-  DumpCode(l, 10000)
+  DumpAssembly(l, 10000)
+  (*DumpCode(10000)*)
 END GenEndMain;
 
 BEGIN
