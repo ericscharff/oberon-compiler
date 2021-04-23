@@ -184,10 +184,7 @@ VAR
 BEGIN
   i := 0;
   WHILE i < cp DO
-(* Change this back to absolute offsets:
     Out.Int(i + delta); Tab;
-*)
-    Out.Int(i); Tab;
     IF codeBuffer[i].op = opMOV THEN
       GenStr("MOV "); GenReg(codeBuffer[i].ra); GenStr(", "); GenReg(codeBuffer[i].rb);
     ELSIF codeBuffer[i].op = opMOVI THEN
