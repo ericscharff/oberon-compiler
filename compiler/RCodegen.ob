@@ -98,6 +98,8 @@ VAR
                          (* local stack frame, temporarily. During lookup of  *)
                          (* x for g, the SP needs to be offset, restored when *)
                          (* the registers are restored.                       *)
+  genCode      :BOOLEAN;
+  mainStartPc  :INTEGER;
 
 PROCEDURE Emit(op :OpCode; ra, rb, rc :Register; value :INTEGER);
 BEGIN
@@ -250,7 +252,6 @@ VAR
   i, offset :INTEGER;
   op :OpCode;
 BEGIN
-  GenLn; Out.Int(delta); GenLn;
   i := 0;
   WHILE i < cp DO
     offset := codeBuffer[i].value;
@@ -499,7 +500,9 @@ BEGIN
   ASSERT(d.nesting = 0);
   ASSERT(d.offset = -1);
   d.offset := globalOffset;
-  GenStr("; "); GenQName(l, d.qname); GenStr(" offset "); Out.Int(d.offset); GenLn;
+  IF ~genCode THEN
+    GenStr("; "); GenQName(l, d.qname); GenStr(" offset "); Out.Int(d.offset); GenLn;
+  END;
   globalOffset := globalOffset + CalculateSize(d.typ)
 END AllocateGlobals;
 
@@ -942,15 +945,19 @@ BEGIN
   cp := 0;
   registersInUse := 0;
   d.offset := pc;
-  GenQName(l, d.qname); GenStr(": code offset: "); Out.Int(d.offset); GenLn;
+  IF ~genCode THEN
+    GenQName(l, d.qname); GenStr(": code offset: "); Out.Int(d.offset); GenLn;
+  END;
   fp := 4; (* Leave 4 bytes for return address. Params right below. *)
   vars := d.procVars;
   WHILE (vars # NIL) &
         ((vars.kind = AST.declParam) OR (vars.kind = AST.declVarParam)) DO
     ASSERT(vars.offset < 0);
     vars.offset := fp;
-    Tab; GenStr("; "); Lex.OutStr(l, vars.qname.name);
-    GenStr(" offset "); Out.Int(fp); GenLn;
+    IF ~genCode THEN
+      Tab; GenStr("; "); Lex.OutStr(l, vars.qname.name);
+      GenStr(" offset "); Out.Int(fp); GenLn;
+    END;
     (*
      * All parameters except arrays are 4 bytes, because they are either
      * primitives, records (passed by reference), var parameters (also
@@ -959,8 +966,10 @@ BEGIN
     INC(registersInUse);
     fp := fp + 4;
     IF AST.IsOpenArray(vars.typ) THEN
-      Tab; GenStr("; "); Lex.OutStr(l, vars.qname.name); GenStr("__len");
-      GenStr(" offset "); Out.Int(fp); GenLn;
+      IF ~genCode THEN
+        Tab; GenStr("; "); Lex.OutStr(l, vars.qname.name); GenStr("__len");
+        GenStr(" offset "); Out.Int(fp); GenLn;
+      END;
       INC(registersInUse);
       fp := fp + 4
     END;
@@ -969,7 +978,9 @@ BEGIN
   WHILE (vars # NIL) & (vars.kind # AST.declEND) DO
     IF vars.kind = AST.declVar THEN
       vars.offset := fp;
-      Tab; GenStr("; "); Lex.OutStr(l, vars.qname.name); GenStr(" offset "); Out.Int(fp); GenLn;
+      IF ~genCode THEN
+        Tab; GenStr("; "); Lex.OutStr(l, vars.qname.name); GenStr(" offset "); Out.Int(fp); GenLn;
+      END;
       fp := fp + CalculateSize(vars.typ);
     END;
     vars := vars.next
@@ -989,8 +1000,11 @@ BEGIN
   Emit(opLDW, rLR, rSP, 0, 0);
   Emit(opADDI, rSP, rSP, 0, fp);
   Emit(opBrg, rLR, 0, 0, 0);
-  DumpAssembly(l, d.offset)
-  (*DumpCode(d.offset)*)
+  IF genCode THEN
+    DumpCode(d.offset)
+  ELSE
+    DumpAssembly(l, d.offset)
+  END
 END GenerateProc;
 
 PROCEDURE GenCall*(proc :AST.Decl);
@@ -1002,19 +1016,36 @@ END GenCall;
 PROCEDURE GenStartMain*;
 BEGIN
   cp := 0;
-  GenStr("__start__: "); Out.Int(pc); GenLn
+  mainStartPc := pc;
+  IF ~genCode THEN
+    GenStr("__start__: "); Out.Int(pc); GenLn
+  END
 END GenStartMain;
 
 PROCEDURE GenEndMain*(l :Lex.Lexer);
 BEGIN
   Emit(opHALT, 0, 0, 0, 0);
-  DumpAssembly(l, 10000)
-  (*DumpCode(10000)*)
+  IF genCode THEN
+    DumpCode(mainStartPc);
+    GenStr("};"); GenLn;
+    GenStr("#define START_PC ");
+    Out.Int(mainStartPc); GenLn
+  ELSE
+    DumpAssembly(l, mainStartPc)
+  END
 END GenEndMain;
+
+PROCEDURE EnableDumpCode*;
+BEGIN
+  GenStr("const Instruction PROGRAM[] = {"); GenLn;
+  genCode := TRUE
+END EnableDumpCode;
 
 BEGIN
   globalOffset := 0;
   stackOffset := 0;
   lastType := 0;
+  mainStartPc := 0;
+  genCode := FALSE;
   pc := 0
 END RCodegen.

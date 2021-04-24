@@ -60,15 +60,10 @@ typedef struct Instruction {
   int offset;
 } Instruction;
 
-const Instruction PROGRAM[] = {
-    {MOVI, R0, 0, 0, 100}, {MOVI, R1, 0, 0, 200}, {ADD, R2, R0, R1, 0},
-    {MOVI, R0, 0, 0, 0},   {STW, R2, R0, 0, -1},  {STW, R2, R0, 0, -3},
-    {SUBI, R2, R2, 0, 1},  {CMPI, 0, R2, 0, 0},   {BGT, 0, 0, 0, 4},
-    {HALT, 0, 0, 0, 0},
-};
+#include "risc_code.txt"
 
 void interpret(void) {
-  int pc = 0;
+  int pc = START_PC;
   int32_t r[16];
   int32_t mem[8192];
 

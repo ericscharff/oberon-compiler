@@ -7,9 +7,21 @@ VAR
   fileName :ARRAY 256 OF CHAR;
   l        :Lex.Lexer;
   p        :Decls.ReachableDecl;
+  i        :INTEGER;
+  gotFile  :BOOLEAN;
 BEGIN
   (* Parse command line args *)
-  Args.GetArg(fileName, 1);
+  i := 1;
+  gotFile := FALSE;
+  REPEAT
+    Args.GetArg(fileName, i);
+    IF fileName = "-dumpcode" THEN
+      RCodegen.EnableDumpCode;
+    ELSE
+      gotFile := TRUE;
+    END;
+    INC(i);
+  UNTIL gotFile;
   Parse.InitFromFile(fileName);
   Parse.ParseModule;
   l := Parse.l;
