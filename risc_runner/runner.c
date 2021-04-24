@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stdlib.h>
 #include <stdio.h>
 
 typedef enum Opcode {
@@ -61,6 +62,23 @@ typedef struct Instruction {
 } Instruction;
 
 #include "risc_code.txt"
+
+void do_trap(int pc, int32_t *regs, int32_t *mem) {
+  if (pc == -10) {
+    /* Out.Int */
+    printf("%d", regs[0]);
+  } else if (pc == -12) {
+    /* Out.Char */
+    putchar(regs[0] & 0xff);
+  } else if (pc == -15) {
+    /* Out.Ln */
+    putchar('\n');
+  } else {
+    fprintf(stderr, "Bad trap %d, %d", pc, mem[0]);
+    exit(1);
+  }
+  pc = regs[LR];
+}
 
 void interpret(void) {
   int pc = START_PC;
@@ -158,6 +176,9 @@ void interpret(void) {
       case BL:
         r[LR] = pc;
         pc = offset;
+        if (pc <= -10) {
+          do_trap(pc, r, mem);
+        }
         break;
       case Br:
         pc = r[a];

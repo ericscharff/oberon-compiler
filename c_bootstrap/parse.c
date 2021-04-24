@@ -655,6 +655,8 @@ Decl *parse_procedure_heading(void) {
   bool native = false;
   if (match_keyword(keyword_native)) {
     native = true;
+    /* The C code generator can ignore the native expr */
+    parse_expression();
   }
   expect_keyword(keyword_procedure);
   const char *name;

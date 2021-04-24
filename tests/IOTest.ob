@@ -1,23 +1,25 @@
 MODULE IOTest;
 
+IMPORT Out;
+
 VAR
   a, i :INTEGER;
 
 PROCEDURE Neat(x :INTEGER);
 BEGIN
-  WriteChar(x)
+  Out.Char(CHR(x))
 END Neat;
 
 BEGIN
-  WriteChar(65);
+  Out.Char(65X);
   i := 65;
   WHILE i < 91 DO
     Neat(i);
     i := i + 1
   END;
-  WriteLn;
+  Out.Ln;
   ReadInt(a);
   a := a + 1;
-  WriteInt(a);
-  WriteLn
+  Out.Int(a);
+  Out.Ln
 END IOTest.

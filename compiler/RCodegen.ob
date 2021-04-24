@@ -634,7 +634,7 @@ VAR
 BEGIN
   IF e.kind = AST.exprVal THEN
     item.kind := itemConst;
-    IF e.typ.kind IN {AST.typeInteger, AST.typeBoolean} THEN
+    IF e.typ.kind IN {AST.typeInteger, AST.typeBoolean, AST.typeChar} THEN
       item.offset := e.iVal
     ELSE
       ASSERT(FALSE)
@@ -734,7 +734,7 @@ BEGIN
     END
   ELSIF e.kind = AST.exprProcCall THEN
     ASSERT(e.lhs.decl # NIL);
-    ASSERT(e.lhs.decl.offset >= 0);
+    ASSERT((e.lhs.decl.offset >= 0) OR (e.lhs.decl.offset <= -10));
     ASSERT(e.lhs.typ.kind = AST.typeProcedure);
     savedRegister := curReg;
     SaveRegisters;
@@ -745,7 +745,7 @@ BEGIN
     WHILE size > 0 DO
       ASSERT(formalParam # NIL);
       ASSERT(actualParam # NIL);
-      ASSERT(formalParam.typ.kind = AST.typeInteger);
+      ASSERT(formalParam.typ.kind IN {AST.typeInteger, AST.typeChar});
       IF formalParam.kind = AST.declParam THEN
         localTrueChain := 0; localFalseChain := 0;
         GenExpr(actualParam, item, localTrueChain, localFalseChain);
@@ -812,6 +812,11 @@ BEGIN
       ASSERT(curReg = 0);
       Emit(opMOVI, curReg, 0, 0, 0);
       Emit(opSTW, item.r, curReg, 0, -3);
+    ELSIF e.iVal = AST.builtinChr THEN
+      localTrueChain := 0; localFalseChain := 0;
+      GenExpr(e.rhs, item, localTrueChain, localFalseChain);
+      LoadValue(item, localTrueChain, localFalseChain);
+      ASSERT(curReg = 1);
     ELSE
       ASSERT(FALSE);
     END

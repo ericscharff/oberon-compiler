@@ -842,13 +842,21 @@ PROCEDURE ParseProcedureHeading() :AST.Decl;
 VAR
   d        :AST.Decl;
   isNative :BOOLEAN;
+  e        :AST.Expr;
 BEGIN
   isNative := MatchToken(Lex.tNATIVE);
+  IF isNative THEN
+    e := ParseExpression();
+    ASSERT(e.iVal < 0);
+  END;
   ExpectToken(Lex.tPROCEDURE);
   d := ParseIdentDef();
   d.kind := AST.declProcedure;
   d.typ := ParseFormalParameters();
   d.isNative := isNative;
+  IF isNative THEN
+    d.offset := e.iVal
+  END;
   RETURN d
 END ParseProcedureHeading;
 

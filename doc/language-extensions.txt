@@ -25,6 +25,26 @@ Native fields should not be referenced in code, because when the C
 code is generated, it will ultimately lead to a C compile time error (if
 the C type is incompatible with the field type.)
 
+NATIVE procedures have a similar syntax:
+
+NATIVE (-101) DrawLine(x1, y1, x2, y2 :INTEGER);
+
+The number in parenthesis is required, but is ignored by the C code generator.
+It is important for the RISC code generator, because it allows generation of
+"trap" instructions. Effectively, it allows the RISC code generator to emit
+calls as if they were real procedures, e.g.,
+  <push args on stack>
+  BL -101
+
+Then, the RISC interpreter can treat jumps to negative PC values as functions
+that are implemented by the interpreter. This makes it easy for both C and
+RISC code to use the standard modules like Out.
+
+Note that the compiler does no checking of the value, but it is implied that
+the trap numbers are negative, and that they are essentially globally unique
+(this makes sense in the RISC implementation, but is not enforced by the
+compiler.)
+
 Inline variables
 
 Variables may be defined within a statement block, e.g.
