@@ -5,6 +5,10 @@ CFLAGS=-g -Wall -Wextra -Wpedantic
 BOOTSTRAP_SRCS=$(wildcard c_bootstrap/*.c)
 COMPILER_SRCS=$(wildcard compiler/*.ob) compiler/runtime.c
 
+$(BUILDDIR)/oberonr: $(BUILDDIR)/oberon $(COMPILER_SRCS)
+	cd compiler; ../$(BUILDDIR)/oberon RCompiler.ob > ../$(BUILDDIR)/rcompiler.c
+	$(CC) $(CFLAGS) -o $(@) $(BUILDDIR)/rcompiler.c
+
 $(BUILDDIR)/oberon: $(BUILDDIR)/oberon1 $(COMPILER_SRCS)
 	cd compiler; ../$(BUILDDIR)/oberon1 Compiler.ob > ../$(BUILDDIR)/compiler.c
 	$(CC) $(CFLAGS) -o $(@) $(BUILDDIR)/compiler.c
@@ -20,7 +24,7 @@ $(BUILDDIR)/oberon0: $(BOOTSTRAP_SRCS) $(COMPILER_SRCS)
 	cp c_bootstrap/*.ob $(BUILDDIR)
 	cp c_bootstrap/builtin.defs $(BUILDDIR)
 	cp compiler/*.ob $(BUILDDIR)
-	cp compiler/runtime.c compiler/compile $(BUILDDIR)
+	cp compiler/runtime.c compiler/compile compiler/rcompile $(BUILDDIR)
 	$(CC) $(CFLAGS) -o $(@) c_bootstrap/main.c
 
 clean:

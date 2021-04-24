@@ -1,0 +1,19 @@
+#!/bin/bash
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PARENTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )"
+BUILDDIR=$PARENTDIR/build
+COMPILERDIR=$PARENTDIR/compiler
+RUNNERDIR=$PARENTDIR/risc_runner
+PERR=$COMPILERDIR/perr.py
+
+cp $COMPILERDIR/*.ob $BUILDDIR
+cp $RUNNERDIR/* $BUILDDIR
+cp *.ob $BUILDDIR
+cd $BUILDDIR
+
+CC=gcc
+
+cd $BUILDDIR
+./oberonr $1 | $PERR
+./oberonr $1 > risc_asm.txt && ./oberonr -dumpcode $1 > risc_code.txt && $CC -g -Wall -Wextra -Wpedantic -o out.prg runner.c
