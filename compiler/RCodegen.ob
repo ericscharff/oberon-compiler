@@ -777,7 +777,7 @@ BEGIN
     item.kind := itemReg; item.r := 0;
     IF (savedRegister > 0) & (e.lhs.typ.base.kind # AST.typeNil) THEN
       (* Procedure has a return value in r0 *)
-      Emit(opMOV, 0, savedRegister, 0, 0);
+      Emit(opMOV, savedRegister, 0, 0, 0);
       item.r := savedRegister
     END;
     curReg := savedRegister;
