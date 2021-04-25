@@ -8,13 +8,15 @@ typedef enum Opcode {
   ADD,  /* ra := rb + rc                 */
   SUB,  /* ra := rb - rc                 */
   MUL,  /* ra := rb * rc                 */
-  DIV,  /* ra := rb * rc                 */
+  DIV,  /* ra := rb / rc                 */
+  MOD,  /* ra := rb % rc                 */
   CMP,  /* rb - rc, affects conditions   */
   MOVI, /* ra := offset                  */
   ADDI, /* ra := rb + offset             */
   SUBI, /* ra := rb - offset             */
   MULI, /* ra := rb * offset             */
   DIVI, /* ra := rb / offset             */
+  MODI, /* ra := rb % offset             */
   CMPI, /* rb - offset                   */
   LDW,  /* ra := Mem[rb + offset] (word) */
   LDB,  /* ra := Mem[rb + offset] (byte) */
@@ -122,6 +124,9 @@ void interpret(void) {
       case DIV:
         r[a] = r[b] / r[c];
         break;
+      case MOD:
+        r[a] = r[b] % r[c];
+        break;
       case CMP:
         left = r[b];
         right = r[c];
@@ -140,6 +145,9 @@ void interpret(void) {
         break;
       case DIVI:
         r[a] = r[b] / offset;
+        break;
+      case MODI:
+        r[a] = r[b] % offset;
         break;
       case CMPI:
         left = r[b];
@@ -162,7 +170,7 @@ void interpret(void) {
         if (address >= 0) {
           mem[address] = r[a];
         } else if (address == -1) {
-          printf("%d", r[a]);
+          printf("%4d", r[a]);
         } else if (address == -2) {
           putchar(r[a] & 0xff);
         } else if (address == -3) {

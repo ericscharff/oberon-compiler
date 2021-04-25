@@ -11,13 +11,14 @@ CONST
   opADD = 1;  (* ra := rb + rc                 *)
   opSUB = 2;  (* ra := rb - rc                 *)
   opMUL = 3;  (* ra := rb * rc                 *)
-  opDIV = 4;  (* ra := rb * rc                 *)
-  opCMP = 5;  (* rb - rc, affects conditions   *)
-  opLDW = 6;  (* ra := Mem[rb + offset] (word) *)
-  opLDB = 7;  (* ra := Mem[rb + offset] (byte) *)
-  opSTW = 8;  (* Mem[rb + offset] := ra (word) *)
-  opSTB = 9;  (* Mem[rb + offset] := ra (byte) *)
-  opBRA = 10; (* PC := value (see below)       *)
+  opDIV = 4;  (* ra := rb / rc                 *)
+  opMOD = 5;  (* ra := rb % rc                 *)
+  opCMP = 6;  (* rb - rc, affects conditions   *)
+  opLDW = 7;  (* ra := Mem[rb + offset] (word) *)
+  opLDB = 8;  (* ra := Mem[rb + offset] (byte) *)
+  opSTW = 9;  (* Mem[rb + offset] := ra (word) *)
+  opSTB = 10; (* Mem[rb + offset] := ra (byte) *)
+  opBRA = 12; (* PC := value (see below)       *)
   opBL  = 50; (* LR := PC + 1, PC := value     *)
   opBrg = 51; (* PC := ra                      *)
 
@@ -34,7 +35,8 @@ CONST
   opSUBI = 102; (* ra := rb - immediate *)
   opMULI = 103; (* ra := rb * immediate *)
   opDIVI = 104; (* ra := rb / immediate *)
-  opCMPI = 105; (* rb - immediate       *)
+  opMODI = 105; (* ra := rb % immediate *)
+  opCMPI = 106; (* rb - immediate       *)
 
   opHALT = 1000;
 
@@ -199,6 +201,8 @@ BEGIN
       Gen3("MUL", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].rc)
     ELSIF codeBuffer[i].op = opDIV THEN
       Gen3("DIV", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].rc)
+    ELSIF codeBuffer[i].op = opMOD THEN
+      Gen3("MOD", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].rc)
     ELSIF codeBuffer[i].op = opCMP THEN
       Gen3("CMP", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].rc)
     ELSIF codeBuffer[i].op = opADDI THEN
@@ -209,6 +213,8 @@ BEGIN
       Gen2("MUL", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].value)
     ELSIF codeBuffer[i].op = opDIVI THEN
       Gen2("DIV", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].value)
+    ELSIF codeBuffer[i].op = opMODI THEN
+      Gen2("MOD", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].value)
     ELSIF codeBuffer[i].op = opCMPI THEN
       Gen2("CMP", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].value)
     ELSIF codeBuffer[i].op = opLDW THEN
@@ -267,6 +273,8 @@ BEGIN
       GenStr("MUL");
     ELSIF op = opDIV THEN
       GenStr("DIV");
+    ELSIF op = opMOD THEN
+      GenStr("MOD");
     ELSIF op = opCMP THEN
       GenStr("CMP");
     ELSIF op = opMOVI THEN
@@ -279,6 +287,8 @@ BEGIN
       GenStr("MULI");
     ELSIF op = opDIVI THEN
       GenStr("DIVI");
+    ELSIF op = opMODI THEN
+      GenStr("MODI");
     ELSIF op = opCMPI THEN
       GenStr("CMPI");
     ELSIF op = opLDW THEN
@@ -605,6 +615,26 @@ BEGIN
       Emit(opMUL, lhs.r, lhs.r, rhs.r, 0);
       DecCurReg
     END
+  ELSIF op = Lex.tDIV THEN
+    IF rhs.kind = itemConst THEN
+      Load(lhs);
+      Emit(opDIVI, lhs.r, lhs.r, 0, rhs.offset)
+    ELSE
+      Load(lhs);
+      Load(rhs);
+      Emit(opDIV, lhs.r, lhs.r, rhs.r, 0);
+      DecCurReg
+    END
+  ELSIF op = Lex.tMOD THEN
+    IF rhs.kind = itemConst THEN
+      Load(lhs);
+      Emit(opMODI, lhs.r, lhs.r, 0, rhs.offset)
+    ELSE
+      Load(lhs);
+      Load(rhs);
+      Emit(opMOD, lhs.r, lhs.r, rhs.r, 0);
+      DecCurReg
+    END
   ELSIF op = Lex.tEQ THEN
     GenCompare(lhs, rhs, opBEQ)
   ELSIF op = Lex.tPOUND THEN
@@ -649,7 +679,13 @@ BEGIN
       ELSE
         item.r := rSP;
         item.offset := item.offset + stackOffset
-      END
+      END;
+      IF (e.decl.kind = AST.declParam) & (e.typ.kind = AST.typeArray) THEN
+        ASSERT(FALSE)
+      END;
+      IF (e.decl.kind = AST.declParam) & (e.typ.kind = AST.typeRecord) THEN
+        ASSERT(FALSE)
+      END;
     ELSIF e.decl.kind = AST.declVarParam THEN
       ASSERT(e.decl.offset # -1);
       Emit(opLDW, curReg, rSP, 0, e.decl.offset + stackOffset);
