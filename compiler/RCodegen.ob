@@ -681,7 +681,13 @@ BEGIN
         item.offset := item.offset + stackOffset
       END;
       IF (e.decl.kind = AST.declParam) & (e.typ.kind = AST.typeArray) THEN
-        ASSERT(FALSE)
+        (* Arrays are always passed by reference *)
+        ASSERT(e.decl.offset # -1);
+        Emit(opLDW, curReg, rSP, 0, e.decl.offset + stackOffset);
+        item.kind := itemRegI;
+        item.r := curReg;
+        item.offset := 0;
+        IncCurReg
       END;
       IF (e.decl.kind = AST.declParam) & (e.typ.kind = AST.typeRecord) THEN
         ASSERT(FALSE)
@@ -781,12 +787,32 @@ BEGIN
     WHILE size > 0 DO
       ASSERT(formalParam # NIL);
       ASSERT(actualParam # NIL);
-      ASSERT(formalParam.typ.kind IN {AST.typeInteger, AST.typeChar});
-      IF formalParam.kind = AST.declParam THEN
-        localTrueChain := 0; localFalseChain := 0;
-        GenExpr(actualParam, item, localTrueChain, localFalseChain);
-        LoadValue(item, localTrueChain, localFalseChain);
-      ELSIF formalParam.kind = AST.declVarParam THEN
+      IF formalParam.typ.kind IN {AST.typeInteger, AST.typeChar} THEN
+        (* Normal params passed by value or reference *)
+        IF formalParam.kind = AST.declParam THEN
+          localTrueChain := 0; localFalseChain := 0;
+          GenExpr(actualParam, item, localTrueChain, localFalseChain);
+          LoadValue(item, localTrueChain, localFalseChain);
+        ELSIF formalParam.kind = AST.declVarParam THEN
+          localTrueChain := 0; localFalseChain := 0;
+          GenExpr(actualParam, item, localTrueChain, localFalseChain);
+          IF item.kind = itemVar THEN
+            (* Reg is SP, so reserve a new register *)
+            Emit(opADDI, curReg, item.r, 0, item.offset);
+            IncCurReg
+          ELSIF item.kind = itemRegI THEN
+            ASSERT(item.r = curReg - 1);
+            IF item.offset > 0 THEN
+              Emit(opADDI, item.r, item.r, 0, item.offset)
+            END
+          ELSE
+            ASSERT(FALSE)
+          END;
+        ELSE
+          ASSERT(FALSE)
+        END;
+      ELSIF formalParam.typ.kind = AST.typeArray THEN
+        (* Array params always passed by reference *)
         localTrueChain := 0; localFalseChain := 0;
         GenExpr(actualParam, item, localTrueChain, localFalseChain);
         IF item.kind = itemVar THEN
