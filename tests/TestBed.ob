@@ -1,5 +1,8 @@
 MODULE TestBed;
 
+TYPE
+  A = ARRAY 4 OF INTEGER;
+
 PROCEDURE FieldTest;
 
 TYPE
@@ -8,6 +11,7 @@ TYPE
          v: ARRAY 4 OF R0;
          w: INTEGER
        END;
+
 
 VAR i, j, k: INTEGER;
   s: ARRAY 2 OF R1;
@@ -97,8 +101,32 @@ BEGIN
   z(i, b[j].m[j], k);
 END FuncTest;
 
+PROCEDURE Sum(a :A; b :INTEGER; c :A);
+VAR
+  i, s :INTEGER;
 BEGIN
-  FieldTest;
-  CondTest;
-  FuncTest
+  i := 0; s := 0;
+  WHILE i < 4 DO
+    (*s := s + a[i] + b + c[i]; *)
+    s := s + a[i];
+    i := i + 1
+  END;
+  WriteInt(s); WriteLn
+END Sum;
+
+PROCEDURE SumTest;
+VAR
+  a :A;
+BEGIN
+  a[0] := 1; a[1] := 2; a[2] := 3; a[3] := 4;
+  Sum(a, 0, a)
+END SumTest;
+
+BEGIN
+  IF FALSE THEN
+    FieldTest;
+    CondTest;
+    FuncTest
+  END;
+  SumTest
 END TestBed.

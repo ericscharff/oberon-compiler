@@ -310,15 +310,74 @@ TestBed_FuncTest: code offset: 207
 272	LDW LR, SP, #0
 273	ADD SP, SP, #496
 274	B LR
-TestBed__module_init_: code offset: 275
-275	SUB SP, SP, #4
+TestBed_Sum: code offset: 275
+	; a offset 4
+	; b offset 8
+	; c offset 12
+	; i offset 16
+	; s offset 20
+275	SUB SP, SP, #24
 276	STW LR, SP, #0
-277	BL 0 (TestBed_FieldTest)
-278	BL 33 (TestBed_CondTest)
-279	BL 207 (TestBed_FuncTest)
-280	LDW LR, SP, #0
-281	ADD SP, SP, #4
-282	B LR
-__start__: 283
-283	BL 275 (TestBed__module_init_)
-284	HALT
+277	STW R0, SP, #4
+278	STW R1, SP, #8
+279	STW R2, SP, #12
+280	MOV R0, #0
+281	STW R0, SP, #16
+282	MOV R0, #0
+283	STW R0, SP, #20
+284	B 296
+285	LDW R0, SP, #4
+286	LDW R1, SP, #16
+287	MUL R1, R1, #4
+288	ADD R0, R0, R1
+289	LDW R1, SP, #20
+290	LDW R0, R0, #0
+291	ADD R1, R1, R0
+292	STW R1, SP, #20
+293	LDW R0, SP, #16
+294	ADD R0, R0, #1
+295	STW R0, SP, #16
+296	LDW R0, SP, #16
+297	CMP R0, #4
+298	BLT 285
+299	LDW R0, SP, #20
+300	MOV R1, #0
+301	STW R0, R1, #-1
+302	MOV R0, #0
+303	STW R0, R0, #-3
+304	LDW LR, SP, #0
+305	ADD SP, SP, #24
+306	B LR
+TestBed_SumTest: code offset: 307
+	; a offset 4
+307	SUB SP, SP, #20
+308	STW LR, SP, #0
+309	MOV R0, #1
+310	STW R0, SP, #4
+311	MOV R0, #2
+312	STW R0, SP, #8
+313	MOV R0, #3
+314	STW R0, SP, #12
+315	MOV R0, #4
+316	STW R0, SP, #16
+317	ADD R0, SP, #4
+318	MOV R1, #0
+319	ADD R2, SP, #4
+320	BL 275 (TestBed_Sum)
+321	LDW LR, SP, #0
+322	ADD SP, SP, #20
+323	B LR
+TestBed__module_init_: code offset: 324
+324	SUB SP, SP, #4
+325	STW LR, SP, #0
+326	B 330
+327	BL 0 (TestBed_FieldTest)
+328	BL 33 (TestBed_CondTest)
+329	BL 207 (TestBed_FuncTest)
+330	BL 307 (TestBed_SumTest)
+331	LDW LR, SP, #0
+332	ADD SP, SP, #4
+333	B LR
+__start__: 334
+334	BL 324 (TestBed__module_init_)
+335	HALT
