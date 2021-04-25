@@ -765,6 +765,7 @@ BEGIN
       GenExpr(e.rhs, item, parentTrueChain, parentFalseChain);
     ELSE
       GenExpr(e.lhs, item, parentTrueChain, parentFalseChain);
+      IF item.kind # itemConst THEN Load(item) END;
       GenExpr(e.rhs, rhs, parentTrueChain, parentFalseChain);
       GenBinaryOp(e.op, item, rhs)
     END
