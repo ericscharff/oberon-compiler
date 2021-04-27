@@ -2,6 +2,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/* Maxiumum memory (in int32_t */
+#define MAX_MEM 8192
+#define MAX_MEM_BYTES (MAX_MEM * 4)
+
 typedef enum Opcode {
   Invalid,
   MOV,  /* ra := rb                      */
@@ -36,6 +40,15 @@ typedef enum Opcode {
   HALT,
 } Opcode;
 
+const char *INSTR_NAMES[] = {
+    "Invalid", "MOV",  "ADD",  "SUB",  "MUL",  "DIV",  "MOD",  "CMP",
+    "MOVI",    "ADDI", "SUBI", "MULI", "DIVI", "MODI", "CMPI", "LDW",
+    "LDB",     "STW",  "STB",  "BL",   "Br",   "B",    "BF",   "BEQ",
+    "BNE",     "BLT",  "BGE",  "BLE",  "BGT",
+
+    "HALT",
+};
+
 typedef enum Register {
   R0,
   R1,
@@ -55,6 +68,11 @@ typedef enum Register {
   LR,
 } Register;
 
+const char *REG_NAMES[] = {
+    "R0", "R1", "R2",  "R3",  "R4",  "R5", "R6", "R7",
+    "R8", "R9", "R10", "R11", "R12", "GB", "SP", "LR",
+};
+
 typedef struct Instruction {
   Opcode opcode;
   Register ra;
@@ -64,6 +82,43 @@ typedef struct Instruction {
 } Instruction;
 
 #include "risc_code.txt"
+
+void line(const char *reg0, int32_t r0, const char *reg1, int32_t r1,
+          int32_t mem, uint8_t *contents) {
+  printf(
+      "%s %08x  %s %08x    %04x: %02x %02x %02x %02x  %02x %02x %02x %02x  "
+      "%02x %02x %02x %02x  %02x %02x %02x %02x\n",
+      reg0, r0, reg1, r1, mem, contents[0], contents[1], contents[2],
+      contents[3], contents[4], contents[5], contents[6], contents[7],
+      contents[8], contents[9], contents[10], contents[11], contents[12],
+      contents[13], contents[14], contents[15]);
+}
+
+void dumpstate(int pc, int32_t *regs, uint8_t *mem) {
+  line("R0", regs[0], " R8", regs[8], 0 * 16, mem);
+  line("R1", regs[1], " R9", regs[9], 1 * 16, mem + 1 * 16);
+  line("R2", regs[2], "R10", regs[10], 2 * 16, mem + 2 * 16);
+  line("R3", regs[3], "R11", regs[11], 3 * 16, mem + 3 * 16);
+  line("R4", regs[4], "R12", regs[12], MAX_MEM_BYTES - 4 * 16,
+       mem + MAX_MEM_BYTES - 4 * 16);
+  line("R5", regs[5], " GB", regs[GB], MAX_MEM_BYTES - 3 * 16,
+       mem + MAX_MEM_BYTES - 3 * 16);
+  line("R6", regs[6], " SP", regs[SP], MAX_MEM_BYTES - 2 * 16,
+       mem + MAX_MEM_BYTES - 2 * 16);
+  line("R7", regs[8], " LR", regs[LR], MAX_MEM_BYTES - 1 * 16,
+       mem + MAX_MEM_BYTES - 1 * 16);
+  Opcode op = PROGRAM[pc].opcode;
+  Register a = PROGRAM[pc].ra;
+  Register b = PROGRAM[pc].rb;
+  Register c = PROGRAM[pc].rc;
+  int offset = PROGRAM[pc].offset;
+  if (pc < 0) {
+    printf("TRAP %d\n", pc);
+  } else {
+    printf("%5d: %s %s, %s, %s, #%d\n", pc, INSTR_NAMES[op], REG_NAMES[a],
+           REG_NAMES[b], REG_NAMES[c], offset);
+  }
+}
 
 void do_trap(int pc, int32_t *regs, int32_t *mem) {
   if (pc == -10) {
@@ -84,11 +139,11 @@ void do_trap(int pc, int32_t *regs, int32_t *mem) {
 void interpret(void) {
   int pc = START_PC;
   int32_t r[16];
-  int32_t mem[8192];
+  int32_t mem[MAX_MEM];
 
   r[GB] = 0;
-  r[SP] = 8191;
-  for (int i = 0; i < 8192; i++) {
+  r[SP] = MAX_MEM_BYTES - 4;
+  for (int i = 0; i < MAX_MEM; i++) {
     mem[i] = 0;
   }
   int left = 0; /* previous compare */
@@ -99,12 +154,8 @@ void interpret(void) {
     Register b = PROGRAM[pc].rb;
     Register c = PROGRAM[pc].rc;
     int offset = PROGRAM[pc].offset;
-#if 0
-    printf("pc: %d op: %d a: %d b: %d c: %d offset: %d\n", pc, op, a, b, c, offset);
-    for (int i=0; i < 16; i++) {
-      printf("%04x ", r[i]);
-    }
-    putchar('\n');
+#if 1
+    dumpstate(pc, r, (uint8_t *)mem);
 #endif
     pc++;
     switch (op) {
