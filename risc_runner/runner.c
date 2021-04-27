@@ -79,7 +79,6 @@ void do_trap(int pc, int32_t *regs, int32_t *mem) {
     fprintf(stderr, "Bad trap %d, %d", pc, mem[0]);
     exit(1);
   }
-  pc = regs[LR];
 }
 
 void interpret(void) {
@@ -186,6 +185,7 @@ void interpret(void) {
         pc = offset;
         if (pc <= -10) {
           do_trap(pc, r, mem);
+          pc = r[LR];
         }
         break;
       case Br:
