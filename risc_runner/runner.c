@@ -1,6 +1,6 @@
 #include <stdint.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 typedef enum Opcode {
   Invalid,
@@ -156,7 +156,7 @@ void interpret(void) {
       case LDW: {
         int address = r[b] + offset;
         if (address >= 0) {
-          r[a] = mem[address];
+          r[a] = mem[address / 4];
         } else if (address == -1) {
           scanf("%d", &r[a]);
         }
@@ -168,7 +168,7 @@ void interpret(void) {
       case STW: {
         int address = r[b] + offset;
         if (address >= 0) {
-          mem[address] = r[a];
+          mem[address / 4] = r[a];
         } else if (address == -1) {
           printf("%4d", r[a]);
         } else if (address == -2) {
