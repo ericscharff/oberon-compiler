@@ -688,6 +688,7 @@ BEGIN
     ELSIF (e.decl.kind = AST.declVarParam) OR
        ((e.decl.kind = AST.declParam) &
         (e.typ.kind IN {AST.typeArray, AST.typeRecord})) THEN
+      CalculateSize(e.typ);
       (* Var params, arrays, and records are passed by reference *)
       ASSERT(e.decl.offset # -1);
       Emit(opLDW, curReg, rSP, 0, e.decl.offset + stackOffset);
