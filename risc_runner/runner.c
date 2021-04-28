@@ -154,7 +154,7 @@ void interpret(void) {
     Register b = PROGRAM[pc].rb;
     Register c = PROGRAM[pc].rc;
     int offset = PROGRAM[pc].offset;
-#if 1
+#if 0
     dumpstate(pc, r, (uint8_t *)mem);
 #endif
     pc++;
