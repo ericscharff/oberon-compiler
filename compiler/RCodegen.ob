@@ -556,12 +556,10 @@ PROCEDURE GenCompare(VAR lhs, rhs:Item; op :OpCode);
 BEGIN
   IF rhs.kind = itemConst THEN
     Load(lhs);
-    ASSERT(lhs.r = 0);
     Emit(opCMPI, lhs.r, lhs.r, 0, rhs.offset)
   ELSE
     Load(lhs);
     Load(rhs);
-    ASSERT(lhs.r = 0);
     Emit(opCMP, lhs.r, lhs.r, rhs.r, 0);
     DecCurReg
   END;
