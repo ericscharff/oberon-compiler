@@ -382,6 +382,8 @@ BEGIN
       END;
       typeSizes[i] := s
     END;
+  ELSIF AST.IsOpenArray(t) THEN
+    s := 4;
   ELSIF t.kind = AST.typeArray THEN
     i := FindOrAddType(t);
     s := typeSizes[i];
@@ -661,6 +663,38 @@ BEGIN
   END
 END GenBinaryOp;
 
+PROCEDURE GenLengthof(VAR item :Item; e :AST.Expr);
+BEGIN
+  IF e.typ.kind = AST.typeString THEN
+    (* TODO: e.iVal is the string pool index, get length from lexer:
+    GenInt(Lex.StringLenI(l, e.iVal) + 1);
+    *)
+    ASSERT(FALSE)
+  ELSIF e.typ.length > 0 THEN
+    item.kind := itemConst;
+    item.offset := e.typ.length;
+    Load(item);
+  ELSIF e.typ.kind = AST.typeBuffer THEN
+    (* TODO: buffer support
+    GenExpr(l, e);
+    GenStr(".len");
+    *)
+    ASSERT(FALSE)
+  ELSE
+    ASSERT(e.kind = AST.exprIdentRef);
+    ASSERT(item.kind = itemRegI);
+    (* This is subtle. e must be a VAR param, which means loading the
+       expression (which already happened) just emitted "LDW Rn, SP, #x" which
+       loaded the pointer to the array into Rn.  Instead, this should have
+       been LDW Rn, SP, #(x+4), because the immediate next thing on the stack
+       should be the open array length. Rewrite to fetch the length. *)
+    ASSERT(codeBuffer[cp-1].op = opLDW);
+    ASSERT(codeBuffer[cp-1].rb = rSP);
+    codeBuffer[cp-1].value := codeBuffer[cp-1].value + 4;
+    item.kind := itemReg;
+  END;
+END GenLengthof;
+
 PROCEDURE GenExpr(e :AST.Expr; VAR item :Item;
                   VAR parentTrueChain, parentFalseChain :INTEGER);
 VAR
@@ -825,6 +859,11 @@ BEGIN
         ELSE
           ASSERT(FALSE)
         END;
+        IF AST.IsOpenArray(formalParam.typ) THEN
+          (* Open arrays must also pass their length *)
+          GenExpr(actualParam, item, localTrueChain, localFalseChain);
+          GenLengthof(item, actualParam);
+        END;
       ELSE
         ASSERT(FALSE)
       END;
@@ -876,6 +915,10 @@ BEGIN
       localTrueChain := 0; localFalseChain := 0;
       GenExpr(e.rhs, item, localTrueChain, localFalseChain);
       LoadValue(item, localTrueChain, localFalseChain);
+    ELSIF e.iVal = AST.builtinLen THEN
+      localTrueChain := 0; localFalseChain := 0;
+      GenExpr(e.rhs, item, localTrueChain, localFalseChain);
+      GenLengthof(item, e.rhs);
     ELSE
       ASSERT(FALSE);
     END
