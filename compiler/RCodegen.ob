@@ -75,6 +75,7 @@ TYPE
     r      :Register;
     offset :INTEGER;
     opCond :OpCode;  (* If kind is itemCond, this is the branch type. *)
+    isByte :BOOLEAN; (* True for accessing a single byte              *)
   END;
 
 VAR
@@ -445,11 +446,19 @@ END FixChain;
 PROCEDURE Load(VAR item :Item);
 BEGIN
   IF item.kind = itemVar THEN
-    Emit(opLDW, curReg, item.r, 0, item.offset);
+    IF item.isByte THEN
+      Emit(opLDB, curReg, item.r, 0, item.offset)
+    ELSE
+      Emit(opLDW, curReg, item.r, 0, item.offset)
+    END;
     item.r := curReg;
     IncCurReg
   ELSIF item.kind = itemRegI THEN
-    Emit(opLDW, item.r, item.r, 0, item.offset)
+    IF item.isByte THEN
+      Emit(opLDB, item.r, item.r, 0, item.offset)
+    ELSE
+      Emit(opLDB, item.r, item.r, 0, item.offset)
+    END
     (* item.r already allocated *)
   ELSIF item.kind = itemConst THEN
     Emit(opMOVI, curReg, 0, 0, item.offset);
@@ -662,6 +671,7 @@ VAR
   savedRegister :Register;
   localTrueChain, localFalseChain :INTEGER;
 BEGIN
+  item.isByte := (e.typ # NIL) & (e.typ.kind = AST.typeChar);
   IF e.kind = AST.exprVal THEN
     item.kind := itemConst;
     IF e.typ.kind IN {AST.typeInteger, AST.typeBoolean, AST.typeChar} THEN
@@ -722,11 +732,19 @@ BEGIN
     ASSERT(e.lhs.typ.kind = AST.typeArray);
     size := CalculateSize(e.lhs.typ.base);
     ASSERT(size > 0);
+    IF e.lhs.typ.base.kind = AST.typeChar THEN
+      size := 1;
+      item.isByte := TRUE;
+    ELSE
+      item.isByte := FALSE;
+    END;
     IF rhs.kind = itemConst THEN
       item.offset := item.offset + size*rhs.offset
     ELSE
       Load(rhs);
-      Emit(opMULI, rhs.r, rhs.r, 0, size);
+      IF size > 1 THEN
+        Emit(opMULI, rhs.r, rhs.r, 0, size)
+      END;
       IF item.kind = itemVar THEN
         Emit(opADD, rhs.r, item.r, rhs.r, 0);
         item.kind := itemRegI;
@@ -903,7 +921,11 @@ BEGIN
       GenExpr(e.rhs, rhs, trueChain, falseChain);
       LoadValue(rhs, trueChain, falseChain);
       ASSERT(lhs.kind IN {itemVar, itemRegI});
-      Emit(opSTW, rhs.r, lhs.r, 0, lhs.offset);
+      IF lhs.isByte THEN
+        Emit(opSTB, rhs.r, lhs.r, 0, lhs.offset);
+      ELSE
+        Emit(opSTW, rhs.r, lhs.r, 0, lhs.offset)
+      END;
       IF lhs.kind = itemRegI THEN DecCurReg END;
       DecCurReg
     ELSIF s.kind = AST.stmtIf THEN

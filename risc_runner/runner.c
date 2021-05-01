@@ -212,9 +212,12 @@ void interpret(void) {
         }
         break;
       }
-      case LDB:
-        r[a] = mem[r[b] + offset];
+      case LDB: {
+        int address = r[b] + offset;
+        r[a] = mem[address / 4];
+        r[a] = (r[a] >> ((address % 4) * 8)) & 0xff;
         break;
+      }
       case STW: {
         int address = r[b] + offset;
         if (address >= 0) {
@@ -228,9 +231,15 @@ void interpret(void) {
         }
         break;
       }
-      case STB:
-        mem[r[b] + offset] = r[a];
+      case STB: {
+        int address = r[b] + offset;
+        int current = mem[address / 4];
+        int mask = 0xff << ((address % 4) * 8);
+        current = current & (~mask);
+        current = current | ((r[a] & 0xff) << ((address % 4) * 8));
+        mem[address / 4] = current;
         break;
+      }
       case BL:
         r[LR] = pc;
         pc = offset;
