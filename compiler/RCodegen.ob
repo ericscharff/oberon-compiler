@@ -103,6 +103,7 @@ VAR
                          (* the registers are restored.                       *)
   genCode      :BOOLEAN;
   mainStartPc  :INTEGER;
+  strings      :Lex.StringPool;
 
 PROCEDURE Emit(op :OpCode; ra, rb, rc :Register; value :INTEGER);
 BEGIN
@@ -663,13 +664,12 @@ BEGIN
   END
 END GenBinaryOp;
 
-PROCEDURE GenLengthof(VAR item :Item; e :AST.Expr);
+PROCEDURE GenLengthof(l: Lex.Lexer; VAR item :Item; e :AST.Expr);
 BEGIN
   IF e.typ.kind = AST.typeString THEN
-    (* TODO: e.iVal is the string pool index, get length from lexer:
-    GenInt(Lex.StringLenI(l, e.iVal) + 1);
-    *)
-    ASSERT(FALSE)
+    item.kind := itemConst;
+    item.offset := Lex.StringLenI(l, e.iVal) + 1;
+    Load(item);
   ELSIF e.typ.length > 0 THEN
     item.kind := itemConst;
     item.offset := e.typ.length;
@@ -695,7 +695,7 @@ BEGIN
   END;
 END GenLengthof;
 
-PROCEDURE GenExpr(e :AST.Expr; VAR item :Item;
+PROCEDURE GenExpr(l :Lex.Lexer; e :AST.Expr; VAR item :Item;
                   VAR parentTrueChain, parentFalseChain :INTEGER);
 VAR
   size :INTEGER;
@@ -710,6 +710,10 @@ BEGIN
     item.kind := itemConst;
     IF e.typ.kind IN {AST.typeInteger, AST.typeBoolean, AST.typeChar} THEN
       item.offset := e.iVal
+    ELSIF e.typ.kind = AST.typeString THEN
+      item.kind := itemVar;
+      item.offset := Lex.CopyLexToPool(l, e.iVal, strings) + globalOffset;
+      item.r := rGB;
     ELSE
       ASSERT(FALSE)
     END
@@ -742,12 +746,12 @@ BEGIN
       ASSERT(FALSE)
     END
   ELSIF e.kind = AST.exprFieldRef THEN
-    GenExpr(e.lhs, item, parentTrueChain, parentFalseChain);
+    GenExpr(l, e.lhs, item, parentTrueChain, parentFalseChain);
     ASSERT(item.kind IN {itemVar, itemRegI});
     ASSERT(e.decl.offset >= 0);
     item.offset := item.offset + e.decl.offset
   ELSIF e.kind = AST.exprPointerDeref THEN
-    GenExpr(e.lhs, item, parentTrueChain, parentFalseChain);
+    GenExpr(l, e.lhs, item, parentTrueChain, parentFalseChain);
     ASSERT(e.lhs.typ.kind = AST.typePointer);
     (* While the pointer has been visited, the type pointed to *)
     (* may not have been yet.                                  *)
@@ -758,10 +762,10 @@ BEGIN
     item.offset := 0
   ELSIF e.kind = AST.exprArrayRef THEN
     (* rhs is array index *)
-    GenExpr(e.rhs, rhs, parentTrueChain, parentFalseChain);
+    GenExpr(l, e.rhs, rhs, parentTrueChain, parentFalseChain);
     (* Check bounds here! *)
     (* lhs is the array *)
-    GenExpr(e.lhs, item, parentTrueChain, parentFalseChain);
+    GenExpr(l, e.lhs, item, parentTrueChain, parentFalseChain);
     ASSERT(item.kind IN {itemVar, itemRegI});
     ASSERT(e.lhs.typ.kind = AST.typeArray);
     size := CalculateSize(e.lhs.typ.base);
@@ -796,30 +800,30 @@ BEGIN
       (* op is short circuit boolean AND. If lhs is false, don't execute rhs. *)
       (* also, if lhs short circuits to true, run rhs.                        *)
       localTrueChain := 0;
-      GenExpr(e.lhs, item, localTrueChain, parentFalseChain);
+      GenExpr(l, e.lhs, item, localTrueChain, parentFalseChain);
       LoadCond(item);
       ASSERT(item.kind = itemCond);
       Emit(opBRA, 0, 0, NegateCond(item.opCond), 0);
       AddToChain(parentFalseChain);
       (* lhs was true, so run rhs *)
       FixChain(localTrueChain, cp);
-      GenExpr(e.rhs, item, parentTrueChain, parentFalseChain);
+      GenExpr(l, e.rhs, item, parentTrueChain, parentFalseChain);
     ELSIF e.op = Lex.tOR THEN
       (* op is short circuit boolean OR. If lhs is true, don't execute rhs. *)
       (* also, if lhs short circuits to false, run rhs.                     *)
       localFalseChain := 0;
-      GenExpr(e.lhs, item, parentTrueChain, localFalseChain);
+      GenExpr(l, e.lhs, item, parentTrueChain, localFalseChain);
       LoadCond(item);
       ASSERT(item.kind = itemCond);
       Emit(opBRA, 0, 0, item.opCond, 0);
       AddToChain(parentTrueChain);
       (* lhs was false, so run rhs *)
       FixChain(localFalseChain, cp);
-      GenExpr(e.rhs, item, parentTrueChain, parentFalseChain);
+      GenExpr(l, e.rhs, item, parentTrueChain, parentFalseChain);
     ELSE
-      GenExpr(e.lhs, item, parentTrueChain, parentFalseChain);
+      GenExpr(l, e.lhs, item, parentTrueChain, parentFalseChain);
       IF item.kind # itemConst THEN Load(item) END;
-      GenExpr(e.rhs, rhs, parentTrueChain, parentFalseChain);
+      GenExpr(l, e.rhs, rhs, parentTrueChain, parentFalseChain);
       GenBinaryOp(e.op, item, rhs)
     END
   ELSIF e.kind = AST.exprProcCall THEN
@@ -839,14 +843,14 @@ BEGIN
          ~(formalParam.typ.kind IN {AST.typeArray, AST.typeRecord}) THEN
         (* Normal params passed by value *)
         localTrueChain := 0; localFalseChain := 0;
-        GenExpr(actualParam, item, localTrueChain, localFalseChain);
+        GenExpr(l, actualParam, item, localTrueChain, localFalseChain);
         LoadValue(item, localTrueChain, localFalseChain);
       ELSIF (formalParam.kind = AST.declVarParam) OR
              ((formalParam.kind = AST.declParam) &
               (formalParam.typ.kind IN {AST.typeArray, AST.typeRecord})) THEN
         (* VAR params, arrays, and records passed by reference *)
         localTrueChain := 0; localFalseChain := 0;
-        GenExpr(actualParam, item, localTrueChain, localFalseChain);
+        GenExpr(l, actualParam, item, localTrueChain, localFalseChain);
         IF item.kind = itemVar THEN
           (* Reg is SP, so reserve a new register *)
           Emit(opADDI, curReg, item.r, 0, item.offset);
@@ -861,8 +865,8 @@ BEGIN
         END;
         IF AST.IsOpenArray(formalParam.typ) THEN
           (* Open arrays must also pass their length *)
-          GenExpr(actualParam, item, localTrueChain, localFalseChain);
-          GenLengthof(item, actualParam);
+          GenExpr(l, actualParam, item, localTrueChain, localFalseChain);
+          GenLengthof(l, item, actualParam);
         END;
       ELSE
         ASSERT(FALSE)
@@ -887,13 +891,13 @@ BEGIN
   ELSIF e.kind = AST.exprBuiltin THEN
     IF e.iVal = AST.builtinReadInt THEN
       localTrueChain := 0; localFalseChain := 0;
-      GenExpr(e.rhs, item, localTrueChain, localFalseChain);
+      GenExpr(l, e.rhs, item, localTrueChain, localFalseChain);
       Emit(opMOVI, curReg, 0, 0, 0);
       Emit(opLDW, curReg, curReg, 0, -1);
       Emit(opSTW, curReg, item.r, 0, item.offset);
     ELSIF e.iVal = AST.builtinWriteInt THEN
       localTrueChain := 0; localFalseChain := 0;
-      GenExpr(e.rhs, item, localTrueChain, localFalseChain);
+      GenExpr(l, e.rhs, item, localTrueChain, localFalseChain);
       LoadValue(item, localTrueChain, localFalseChain);
       ASSERT(curReg = 1);
       Emit(opMOVI, curReg, 0, 0, 0);
@@ -901,7 +905,7 @@ BEGIN
       DecCurReg;
     ELSIF e.iVal = AST.builtinWriteChar THEN
       localTrueChain := 0; localFalseChain := 0;
-      GenExpr(e.rhs, item, localTrueChain, localFalseChain);
+      GenExpr(l, e.rhs, item, localTrueChain, localFalseChain);
       LoadValue(item, localTrueChain, localFalseChain);
       ASSERT(curReg = 1);
       Emit(opMOVI, curReg, 0, 0, 0);
@@ -913,12 +917,12 @@ BEGIN
       Emit(opSTW, item.r, curReg, 0, -3);
     ELSIF (e.iVal = AST.builtinChr) OR (e.iVal = AST.builtinOrd) THEN
       localTrueChain := 0; localFalseChain := 0;
-      GenExpr(e.rhs, item, localTrueChain, localFalseChain);
+      GenExpr(l, e.rhs, item, localTrueChain, localFalseChain);
       LoadValue(item, localTrueChain, localFalseChain);
     ELSIF e.iVal = AST.builtinLen THEN
       localTrueChain := 0; localFalseChain := 0;
-      GenExpr(e.rhs, item, localTrueChain, localFalseChain);
-      GenLengthof(item, e.rhs);
+      GenExpr(l, e.rhs, item, localTrueChain, localFalseChain);
+      GenLengthof(l, item, e.rhs);
     ELSE
       ASSERT(FALSE);
     END
@@ -927,14 +931,14 @@ BEGIN
   END
 END GenExpr;
 
-PROCEDURE GenReturn(e :AST.Expr);
+PROCEDURE GenReturn(l :Lex.Lexer; e :AST.Expr);
 VAR
   trueChain, falseChain :INTEGER;
   item :Item;
 BEGIN
   ASSERT(curReg = 0);
   trueChain := 0; falseChain := 0;
-  GenExpr(e, item, trueChain, falseChain);
+  GenExpr(l, e, item, trueChain, falseChain);
   LoadValue(item, trueChain, falseChain);
   ASSERT(curReg = 1);
   ASSERT(item.kind = itemReg);
@@ -942,7 +946,7 @@ BEGIN
   DecCurReg
 END GenReturn;
 
-PROCEDURE GenStatements(s :AST.Stmt);
+PROCEDURE GenStatements(l :Lex.Lexer; s :AST.Stmt);
 VAR
   e :AST.Expr;
   lhs, rhs :Item;
@@ -958,9 +962,9 @@ BEGIN
       e := s.cond;
       ASSERT(e.kind = AST.exprAssign);
       ASSERT(e.lhs.typ.kind # AST.typeRecord);
-      GenExpr(e.lhs, lhs, trueChain, falseChain);
+      GenExpr(l, e.lhs, lhs, trueChain, falseChain);
       trueChain := 0; falseChain := 0;
-      GenExpr(e.rhs, rhs, trueChain, falseChain);
+      GenExpr(l, e.rhs, rhs, trueChain, falseChain);
       LoadValue(rhs, trueChain, falseChain);
       ASSERT(lhs.kind IN {itemVar, itemRegI});
       IF lhs.isByte THEN
@@ -973,13 +977,13 @@ BEGIN
     ELSIF s.kind = AST.stmtIf THEN
       after := 0;
       trueChain := 0; falseChain := 0;
-      GenExpr(s.cond, lhs, trueChain, falseChain);
+      GenExpr(l, s.cond, lhs, trueChain, falseChain);
       LoadCond(lhs);
       ASSERT(lhs.kind = itemCond);
       Emit(opBRA, 0, 0, NegateCond(lhs.opCond), 0);
       AddToChain(falseChain);
       FixChain(trueChain, cp);
-      GenStatements(s.body);
+      GenStatements(l, s.body);
       elses := s.elsifs;
       WHILE elses # NIL DO
         Emit(opBRA, 0, 0, opB, 0);
@@ -987,7 +991,7 @@ BEGIN
         FixChain(falseChain, cp);
         trueChain := 0; falseChain := 0;
         IF elses.kind = AST.stmtElsIf THEN
-          GenExpr(elses.cond, lhs, trueChain, falseChain);
+          GenExpr(l, elses.cond, lhs, trueChain, falseChain);
           LoadCond(lhs);
           ASSERT(lhs.kind = itemCond);
           Emit(opBRA, 0, 0, NegateCond(lhs.opCond), 0);
@@ -997,7 +1001,7 @@ BEGIN
           ASSERT(elses.kind = AST.stmtElse)
         END;
         FixChain(trueChain, cp);
-        GenStatements(elses.body);
+        GenStatements(l, elses.body);
         elses := elses.elsifs
       END;
       FixChain(falseChain, cp);
@@ -1005,8 +1009,8 @@ BEGIN
     ELSIF s.kind = AST.stmtRepeat THEN
       loopStart := cp;
       trueChain := 0; falseChain := 0;
-      GenStatements(s.body);
-      GenExpr(s.cond, lhs, trueChain, falseChain);
+      GenStatements(l, s.body);
+      GenExpr(l, s.cond, lhs, trueChain, falseChain);
       (* False chain immediatly returns to loopStart *)
       FixChain(falseChain, loopStart);
       LoadCond(lhs);
@@ -1019,10 +1023,10 @@ BEGIN
       after := cp;
       Emit(opBRA, 0, 0, opB, 0);
       loopStart := cp;
-      GenStatements(s.body);
+      GenStatements(l, s.body);
       codeBuffer[after].value := cp; (* fix first branch to point to compare *)
       trueChain := 0; falseChain := 0;
-      GenExpr(s.cond, lhs, trueChain, falseChain);
+      GenExpr(l, s.cond, lhs, trueChain, falseChain);
       (* True chain immediatly returns to loopStart *)
       FixChain(trueChain, loopStart);
       LoadCond(lhs);
@@ -1031,7 +1035,7 @@ BEGIN
       (* Loop done, so the false chain links here *)
       FixChain(falseChain, cp)
     ELSIF s.kind = AST.stmtProcCall THEN
-      GenExpr(s.cond, lhs, trueChain, falseChain);
+      GenExpr(l, s.cond, lhs, trueChain, falseChain);
       ASSERT(curReg <= 1);
       IF curReg = 1 THEN
         (* ProcCall was a function that returned a value that can be ignored *)
@@ -1105,8 +1109,8 @@ BEGIN
     INC(i, 4);
     DEC(registersInUse)
   END;
-  GenStatements(d.body);
-  IF d.expr # NIL THEN GenReturn(d.expr) END;
+  GenStatements(l, d.body);
+  IF d.expr # NIL THEN GenReturn(l, d.expr) END;
   (* Epilog *)
   Emit(opLDW, rLR, rSP, 0, 0);
   Emit(opADDI, rSP, rSP, 0, fp);
@@ -1133,6 +1137,13 @@ BEGIN
   END
 END GenStartMain;
 
+PROCEDURE GenStringPool;
+BEGIN
+  GenStr("const uint8_t STRING_POOL[] = {"); GenLn;
+  Lex.OutPool(strings);
+  GenStr("};"); GenLn;
+END GenStringPool;
+
 PROCEDURE GenEndMain*(l :Lex.Lexer);
 BEGIN
   Emit(opHALT, 0, 0, 0, 0);
@@ -1140,7 +1151,8 @@ BEGIN
     DumpCode(mainStartPc);
     GenStr("};"); GenLn;
     GenStr("#define START_PC ");
-    Out.Int(mainStartPc); GenLn
+    Out.Int(mainStartPc); GenLn;
+    GenStringPool
   ELSE
     DumpAssembly(l, mainStartPc)
   END
@@ -1158,5 +1170,6 @@ BEGIN
   lastType := 0;
   mainStartPc := 0;
   genCode := FALSE;
-  pc := 0
+  pc := 0;
+  Lex.PoolInit(strings)
 END RCodegen.

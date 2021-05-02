@@ -136,6 +136,12 @@ void do_trap(int pc, int32_t *regs, int32_t *mem) {
   }
 }
 
+void copy_strings_to_mem(uint8_t *mem) {
+  for (size_t i=0; i < sizeof(STRING_POOL); i++) {
+    mem[i] = STRING_POOL[i];
+  }
+}
+
 void interpret(void) {
   int pc = START_PC;
   int32_t r[16];
@@ -146,6 +152,7 @@ void interpret(void) {
   for (int i = 0; i < MAX_MEM; i++) {
     mem[i] = 0;
   }
+  copy_strings_to_mem((uint8_t*)mem);
   int left = 0; /* previous compare */
   int right = 0;
   while (1) {

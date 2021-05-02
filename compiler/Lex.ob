@@ -127,7 +127,7 @@ VAR
   TokenNames* :ARRAY tEOF+1, KwdSize OF CHAR;
   fatal :BOOLEAN;
 
-PROCEDURE PoolInit(VAR sp :StringPool);
+PROCEDURE PoolInit*(VAR sp :StringPool);
 VAR
   i :INTEGER;
 BEGIN
@@ -166,7 +166,7 @@ BEGIN
   (* Copy and compute hash at the same time *)
   hash := 811C9DC5H;
   i := 0;
-  WHILE (i < length) & (s[i] # 0X) DO
+  WHILE (i < length) & (s[offset + i] # 0X) DO
     hash := hash BITXOR ORD(s[offset + i]);
     hash := hash * 16777619;
     sp.buf[sp.last + i] := s[offset + i];
@@ -261,6 +261,11 @@ BEGIN
   RETURN len
 END StringLenI;
 
+PROCEDURE CopyLexToPool*(l :Lexer; s :PoolIndex; VAR destPool :StringPool) :PoolIndex;
+BEGIN
+  RETURN StringInternRange(destPool, l.sp.buf, s, StringLenI(l, s))
+END CopyLexToPool;
+
 PROCEDURE FirstChar*(l :Lexer; s :PoolIndex) :INTEGER;
 BEGIN
   RETURN ORD(l.sp.buf[s])
@@ -294,6 +299,17 @@ BEGIN
   END;
   Out.Str(22X);
 END OutStrEscaped;
+
+PROCEDURE OutPool*(sp :StringPool);
+VAR
+  i :INTEGER;
+BEGIN
+  FOR i := 0 TO sp.last-1 DO
+    Out.Int(ORD(sp.buf[i]));
+    Out.Str(",");
+    Out.Ln
+  END
+END OutPool;
 
 PROCEDURE IsOneChar*(l :Lexer; s :PoolIndex) :BOOLEAN;
 BEGIN
