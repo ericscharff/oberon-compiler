@@ -1152,6 +1152,8 @@ BEGIN
     GenStr("};"); GenLn;
     GenStr("#define START_PC ");
     Out.Int(mainStartPc); GenLn;
+    GenStr("#define STRING_POOL_START ");
+    Out.Int(globalOffset); GenLn;
     GenStringPool
   ELSE
     DumpAssembly(l, mainStartPc)

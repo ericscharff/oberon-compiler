@@ -138,7 +138,7 @@ void do_trap(int pc, int32_t *regs, int32_t *mem) {
 
 void copy_strings_to_mem(uint8_t *mem) {
   for (size_t i=0; i < sizeof(STRING_POOL); i++) {
-    mem[i] = STRING_POOL[i];
+    mem[i + STRING_POOL_START] = STRING_POOL[i];
   }
 }
 
