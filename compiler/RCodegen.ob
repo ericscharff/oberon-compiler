@@ -460,7 +460,7 @@ BEGIN
     IF item.isByte THEN
       Emit(opLDB, item.r, item.r, 0, item.offset)
     ELSE
-      Emit(opLDB, item.r, item.r, 0, item.offset)
+      Emit(opLDW, item.r, item.r, 0, item.offset)
     END
     (* item.r already allocated *)
   ELSIF item.kind = itemConst THEN
