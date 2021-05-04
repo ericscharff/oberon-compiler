@@ -304,7 +304,7 @@ PROCEDURE OutPool*(sp :StringPool);
 VAR
   i :INTEGER;
 BEGIN
-  FOR i := 0 TO sp.last-1 DO
+  FOR i := 0 TO sp.last DO
     Out.Int(ORD(sp.buf[i]));
     Out.Str(",");
     Out.Ln
