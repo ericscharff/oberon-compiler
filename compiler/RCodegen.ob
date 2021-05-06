@@ -20,7 +20,8 @@ CONST
   opSTB = 10; (* Mem[rb + offset] := ra (byte) *)
   opBRA = 12; (* PC := value (see below)       *)
   opBL  = 50; (* LR := PC + 1, PC := value     *)
-  opBrg = 51; (* PC := ra                      *)
+  opBLr = 51; (* LR := PC + 1, PC := rc        *)
+  opBrg = 52; (* PC := ra                      *)
 
   (* Branches have opcode opBRA, and r.c is    *)
   (* the conndition code, given below:         *)
@@ -245,6 +246,8 @@ BEGIN
       GenStr("BL "); Out.Int(codeBuffer[i].value);
       GenStr(" ("); GenQName(l, codeBuffer[i].q);
       GenStr(")")
+    ELSIF op = opBLr THEN
+      GenStr("BL "); GenReg(codeBuffer[i].rc)
     ELSIF op = opBrg THEN
       GenStr("B "); GenReg(codeBuffer[i].ra)
     ELSIF op = opHALT THEN
@@ -317,6 +320,8 @@ BEGIN
       END;
     ELSIF op = opBL THEN
       GenStr("BL");
+    ELSIF op = opBLr THEN
+      GenStr("BLr");
     ELSIF op = opBrg THEN
       GenStr("Br");
     ELSIF op = opHALT THEN
@@ -705,7 +710,7 @@ VAR
   savedRegister :Register;
   localTrueChain, localFalseChain :INTEGER;
 BEGIN
-  item.isByte := (e.typ # NIL) & (e.typ.kind = AST.typeChar);
+  rhs.isByte := FALSE;
   IF e.kind = AST.exprVal THEN
     item.kind := itemConst;
     IF e.typ.kind IN {AST.typeInteger, AST.typeBoolean, AST.typeChar} THEN
@@ -731,6 +736,10 @@ BEGIN
         item.r := rSP;
         item.offset := item.offset + stackOffset
       END
+    ELSIF e.decl.kind = AST.declProcedure THEN
+      ASSERT(e.decl.offset >= 0);
+      item.kind := itemConst;
+      item.offset := e.decl.offset
     ELSIF (e.decl.kind = AST.declVarParam) OR
        ((e.decl.kind = AST.declParam) &
         (e.typ.kind IN {AST.typeArray, AST.typeRecord})) THEN
@@ -884,7 +893,17 @@ BEGIN
       actualParam := actualParam.next;
       formalParam := formalParam.next
     END;
-    Emit(opBL, 0, 0, 0, e.lhs.decl.offset);
+    IF e.lhs.decl.kind = AST.declProcedure THEN
+      Emit(opBL, 0, 0, 0, e.lhs.decl.offset);
+    ELSE
+      (* pointer to proc, var or param *)
+      localTrueChain := 0; localFalseChain := 0;
+      GenExpr(l, e.lhs, item, localTrueChain, localFalseChain);
+      LoadValue(item, localTrueChain, localFalseChain);
+      ASSERT(item.kind = itemReg);
+      Emit(opBLr, 0, 0, item.r, 0);
+      DecCurReg
+    END;
     codeBuffer[cp - 1].q := e.lhs.decl.qname;
     item.kind := itemReg; item.r := 0;
     IF (savedRegister > 0) & (e.lhs.typ.base.kind # AST.typeNil) THEN
@@ -946,6 +965,7 @@ VAR
   item :Item;
 BEGIN
   ASSERT(curReg = 0);
+  item.isByte := FALSE;
   trueChain := 0; falseChain := 0;
   GenExpr(l, e, item, trueChain, falseChain);
   LoadValue(item, trueChain, falseChain);
@@ -967,6 +987,8 @@ VAR
 BEGIN
   WHILE s # NIL DO
     ASSERT(curReg = 0);
+    lhs.isByte := FALSE;
+    rhs.isByte := FALSE;
     IF s.kind = AST.stmtAssign THEN
       e := s.cond;
       ASSERT(e.kind = AST.exprAssign);

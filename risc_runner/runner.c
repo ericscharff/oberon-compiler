@@ -27,6 +27,7 @@ typedef enum Opcode {
   STW,  /* Mem[rb + offset] := ra (word) */
   STB,  /* Mem[rb + offset] := ra (byte) */
   BL,   /* LR := PC + 1, PC := offset    */
+  BLr,  /* LR := PC + 1, PC := rc        */
   Br,   /* PC := ra (usually LR)         */
   B,    /* branch always                 */
   BF,   /* branch never, basically NOP   */
@@ -43,8 +44,8 @@ typedef enum Opcode {
 const char *INSTR_NAMES[] = {
     "Invalid", "MOV",  "ADD",  "SUB",  "MUL",  "DIV",  "MOD",  "CMP",
     "MOVI",    "ADDI", "SUBI", "MULI", "DIVI", "MODI", "CMPI", "LDW",
-    "LDB",     "STW",  "STB",  "BL",   "Br",   "B",    "BF",   "BEQ",
-    "BNE",     "BLT",  "BGE",  "BLE",  "BGT",
+    "LDB",     "STW",  "STB",  "BL",   "BLr",  "Br",   "B",    "BF",
+    "BEQ",     "BNE",  "BLT",  "BGE",  "BLE",  "BGT",
 
     "HALT",
 };
@@ -257,6 +258,10 @@ void interpret(void) {
           do_trap(pc, r, mem);
           pc = r[LR];
         }
+        break;
+      case BLr:
+        r[LR] = pc;
+        pc = r[c];
         break;
       case Br:
         pc = r[a];
