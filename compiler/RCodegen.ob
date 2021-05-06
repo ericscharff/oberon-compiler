@@ -795,6 +795,15 @@ BEGIN
         ASSERT(FALSE)
       END
     END
+  ELSIF e.kind = AST.exprUnary THEN
+    IF e.op = Lex.tTILDE THEN
+      GenExpr(l, e.lhs, item, parentTrueChain, parentFalseChain);
+      LoadCond(item);
+      ASSERT(item.kind = itemCond);
+      item.opCond := NegateCond(item.opCond);
+    ELSE
+      ASSERT(FALSE);
+    END;
   ELSIF e.kind = AST.exprBinary THEN
     IF e.op = Lex.tAMP THEN
       (* op is short circuit boolean AND. If lhs is false, don't execute rhs. *)
