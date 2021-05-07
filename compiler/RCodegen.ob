@@ -754,6 +754,20 @@ BEGIN
     ELSE
       ASSERT(FALSE)
     END
+  ELSIF e.kind = AST.exprAssign THEN
+    ASSERT(e.lhs.typ.kind # AST.typeRecord);
+    GenExpr(l, e.lhs, item, parentTrueChain, parentFalseChain);
+    localTrueChain := 0; localFalseChain := 0;
+    GenExpr(l, e.rhs, rhs, localTrueChain, localFalseChain);
+    LoadValue(rhs, localTrueChain, localFalseChain);
+    ASSERT(item.kind IN {itemVar, itemRegI});
+    IF item.isByte THEN
+      Emit(opSTB, rhs.r, item.r, 0, item.offset);
+    ELSE
+      Emit(opSTW, rhs.r, item.r, 0, item.offset)
+    END;
+    IF item.kind = itemRegI THEN DecCurReg END;
+    DecCurReg
   ELSIF e.kind = AST.exprFieldRef THEN
     GenExpr(l, e.lhs, item, parentTrueChain, parentFalseChain);
     ASSERT(item.kind IN {itemVar, itemRegI});
@@ -976,7 +990,7 @@ END GenReturn;
 PROCEDURE GenStatements(l :Lex.Lexer; s :AST.Stmt);
 VAR
   e :AST.Expr;
-  lhs, rhs :Item;
+  lhs :Item;
   elses :AST.Stmt;
   (* code pointers *)
   loopStart :INTEGER;
@@ -988,19 +1002,8 @@ BEGIN
     IF s.kind = AST.stmtAssign THEN
       e := s.cond;
       ASSERT(e.kind = AST.exprAssign);
-      ASSERT(e.lhs.typ.kind # AST.typeRecord);
-      GenExpr(l, e.lhs, lhs, trueChain, falseChain);
       trueChain := 0; falseChain := 0;
-      GenExpr(l, e.rhs, rhs, trueChain, falseChain);
-      LoadValue(rhs, trueChain, falseChain);
-      ASSERT(lhs.kind IN {itemVar, itemRegI});
-      IF lhs.isByte THEN
-        Emit(opSTB, rhs.r, lhs.r, 0, lhs.offset);
-      ELSE
-        Emit(opSTW, rhs.r, lhs.r, 0, lhs.offset)
-      END;
-      IF lhs.kind = itemRegI THEN DecCurReg END;
-      DecCurReg
+      GenExpr(l, e, lhs, trueChain, falseChain);
     ELSIF s.kind = AST.stmtProcCall THEN
       GenExpr(l, s.cond, lhs, trueChain, falseChain);
       ASSERT(curReg <= 1);
