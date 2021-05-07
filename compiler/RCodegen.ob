@@ -710,7 +710,7 @@ VAR
   savedRegister :Register;
   localTrueChain, localFalseChain :INTEGER;
 BEGIN
-  rhs.isByte := FALSE;
+  item.isByte := (e.typ # NIL) & (e.typ.kind = AST.typeChar);
   IF e.kind = AST.exprVal THEN
     item.kind := itemConst;
     IF e.typ.kind IN {AST.typeInteger, AST.typeBoolean, AST.typeChar} THEN
@@ -736,10 +736,6 @@ BEGIN
         item.r := rSP;
         item.offset := item.offset + stackOffset
       END
-    ELSIF e.decl.kind = AST.declProcedure THEN
-      ASSERT(e.decl.offset >= 0);
-      item.kind := itemConst;
-      item.offset := e.decl.offset
     ELSIF (e.decl.kind = AST.declVarParam) OR
        ((e.decl.kind = AST.declParam) &
         (e.typ.kind IN {AST.typeArray, AST.typeRecord})) THEN
@@ -751,6 +747,10 @@ BEGIN
       item.r := curReg;
       item.offset := 0;
       IncCurReg
+    ELSIF e.decl.kind = AST.declProcedure THEN
+      ASSERT((e.decl.offset >= 0) OR (e.decl.offset <= -10));
+      item.kind := itemConst;
+      item.offset := e.decl.offset
     ELSE
       ASSERT(FALSE)
     END
@@ -845,8 +845,6 @@ BEGIN
       GenBinaryOp(e.op, item, rhs)
     END
   ELSIF e.kind = AST.exprProcCall THEN
-    ASSERT(e.lhs.decl # NIL);
-    ASSERT((e.lhs.decl.offset >= 0) OR (e.lhs.decl.offset <= -10));
     ASSERT(e.lhs.typ.kind = AST.typeProcedure);
     savedRegister := curReg;
     SaveRegisters;
@@ -893,18 +891,19 @@ BEGIN
       actualParam := actualParam.next;
       formalParam := formalParam.next
     END;
-    IF e.lhs.decl.kind = AST.declProcedure THEN
-      Emit(opBL, 0, 0, 0, e.lhs.decl.offset);
+    localTrueChain := 0; localFalseChain := 0;
+    GenExpr(l, e.lhs, item, localTrueChain, localFalseChain);
+    IF item.kind = itemConst THEN
+      (* Procedure call to PC relative address *)
+      ASSERT(e.lhs.decl.offset = item.offset);
+      Emit(opBL, 0, 0, 0, item.offset);
+      codeBuffer[cp - 1].q := e.lhs.decl.qname;
     ELSE
-      (* pointer to proc, var or param *)
-      localTrueChain := 0; localFalseChain := 0;
-      GenExpr(l, e.lhs, item, localTrueChain, localFalseChain);
+      (* Procedure call to pointer to procedure *)
       LoadValue(item, localTrueChain, localFalseChain);
-      ASSERT(item.kind = itemReg);
       Emit(opBLr, 0, 0, item.r, 0);
       DecCurReg
     END;
-    codeBuffer[cp - 1].q := e.lhs.decl.qname;
     item.kind := itemReg; item.r := 0;
     IF (savedRegister > 0) & (e.lhs.typ.base.kind # AST.typeNil) THEN
       (* Procedure has a return value in r0 *)
@@ -965,7 +964,6 @@ VAR
   item :Item;
 BEGIN
   ASSERT(curReg = 0);
-  item.isByte := FALSE;
   trueChain := 0; falseChain := 0;
   GenExpr(l, e, item, trueChain, falseChain);
   LoadValue(item, trueChain, falseChain);
@@ -987,8 +985,6 @@ VAR
 BEGIN
   WHILE s # NIL DO
     ASSERT(curReg = 0);
-    lhs.isByte := FALSE;
-    rhs.isByte := FALSE;
     IF s.kind = AST.stmtAssign THEN
       e := s.cond;
       ASSERT(e.kind = AST.exprAssign);
