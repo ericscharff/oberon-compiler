@@ -26,24 +26,28 @@ PROCEDURE PrintMaze;
 VAR
   x, y :INTEGER;
 BEGIN
-  FOR x := 0 TO WIDTH+1 DO
+  x := 0; WHILE x <= WIDTH+1 DO
     Out.Char("#");
+    x := x + 1;
   END;
   Out.Ln;
-  FOR y := 0 TO HEIGHT-1 DO
+  y := 0; WHILE y <= HEIGHT-1 DO
     Out.Char("#");
-    FOR x := 0 TO WIDTH-1 DO
+    x := 0; WHILE x <= WIDTH-1 DO
       IF maze[y*WIDTH + x] THEN
         Out.Char(" ");
       ELSE
         Out.Char("#");
       END;
+      x := x + 1;
     END;
     Out.Char("#");
     Out.Ln;
+    y := y + 1;
   END;
-  FOR x := 0 TO WIDTH+1 DO
+  x := 0; WHILE x <= WIDTH+1 DO
     Out.Char("#");
+    x := x + 1;
   END;
   Out.Ln;
 END PrintMaze;
@@ -70,11 +74,13 @@ VAR
   len  :INTEGER;
 BEGIN
   len := LEN(array);
-  FOR i := 0 TO len-1 DO
+  i := 0; WHILE i <= len-1 DO
     swap := Rand(len);
+    WriteChar(65); WriteInt(swap); WriteLn;
      t := array[i];
      array[i] := array[swap];
      array[swap] := t;
+    i := i + 1;
   END;
 END Shuffle;
 
@@ -92,15 +98,26 @@ BEGIN
   neighbors[0] := UP; neighbors[1] := DOWN; neighbors[2] := LEFT; neighbors[3] := RIGHT;
   maze[2*y*WIDTH + 2*x] := TRUE;
   Shuffle(neighbors);
-  FOR i := 0 TO 3 DO
+  i := 0; WHILE i <= 3 DO
     newX := x + offsets[neighbors[i]][0];
     newY := y + offsets[neighbors[i]][1];
+    Out.Int(x); Out.Char(" ");
+    Out.Int(y); Out.Char(" ");
+    Out.Int(newX); Out.Char(" ");
+    Out.Int(newY); Out.Char(" ");
+    IF OutOfBounds(newX, newY) THEN
+      Out.Str("OOB"); Out.Ln;
+    ELSE
+      WriteInt(maze[2*newY*WIDTH + 2*newX]);
+    END;
+    WriteLn;
     IF ~OutOfBounds(newX, newY) & ~maze[2*newY*WIDTH + 2*newX] THEN
       hallX := 2*x + offsets[neighbors[i]][0];
       hallY := 2*y + offsets[neighbors[i]][1];
       maze[hallY*WIDTH + hallX] := TRUE;
       Visit(newX, newY);
     END;
+    i := i + 1;
   END;
 END Visit;
 
@@ -111,7 +128,7 @@ BEGIN
   i := 0;
   WHILE i < WIDTH*HEIGHT DO
     maze[i] := FALSE;
-    INC(i)
+    i := i + 1;
   END;
   Visit(5, 3)
 END MakeMaze;
