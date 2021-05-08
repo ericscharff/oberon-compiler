@@ -955,7 +955,7 @@ BEGIN
     ELSIF e.iVal = AST.builtinWriteLn THEN
       ASSERT(curReg = 0);
       Emit(opMOVI, curReg, 0, 0, 0);
-      Emit(opSTW, item.r, curReg, 0, -3);
+      Emit(opSTW, curReg, curReg, 0, -3);
     ELSIF (e.iVal = AST.builtinChr) OR (e.iVal = AST.builtinOrd) THEN
       localTrueChain := 0; localFalseChain := 0;
       GenExpr(l, e.rhs, item, localTrueChain, localFalseChain);
