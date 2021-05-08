@@ -1,6 +1,6 @@
 MODULE RCodegen;
 
-IMPORT AST, Lex, Out;
+IMPORT AST, Decls, Lex, Out;
 
 CONST
   CACHE_SIZE = 100;
@@ -964,6 +964,26 @@ BEGIN
       localTrueChain := 0; localFalseChain := 0;
       GenExpr(l, e.rhs, item, localTrueChain, localFalseChain);
       GenLengthof(l, item, e.rhs);
+    ELSIF e.iVal = AST.builtinInc THEN
+      IF e.rhs.next = NIL THEN
+        e.rhs.next := AST.NewExprInteger(1, Decls.integerType);
+      END;
+      (* use actualParam to make e.rhs := e.rhs + e.rhs.next, *)
+      (* that is, x := x + 1.                                 *)
+      actualParam := AST.NewExprBinary(l, Lex.tPLUS, e.rhs, e.rhs.next, NIL);
+      actualParam := AST.NewExprAssign(l, e.rhs, actualParam);
+      localTrueChain := 0; localFalseChain := 0;
+      GenExpr(l, actualParam, item, localTrueChain, localFalseChain);
+    ELSIF e.iVal = AST.builtinDec THEN
+      IF e.rhs.next = NIL THEN
+        e.rhs.next := AST.NewExprInteger(1, Decls.integerType);
+      END;
+      (* use actualParam to make e.rhs := e.rhs - e.rhs.next, *)
+      (* that is, x := x - 1.                                 *)
+      actualParam := AST.NewExprBinary(l, Lex.tMINUS, e.rhs, e.rhs.next, NIL);
+      actualParam := AST.NewExprAssign(l, e.rhs, actualParam);
+      localTrueChain := 0; localFalseChain := 0;
+      GenExpr(l, actualParam, item, localTrueChain, localFalseChain);
     ELSE
       ASSERT(FALSE);
     END
