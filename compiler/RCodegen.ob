@@ -990,7 +990,7 @@ END GenReturn;
 PROCEDURE GenStatements(l :Lex.Lexer; s :AST.Stmt);
 VAR
   e :AST.Expr;
-  lhs :Item;
+  item :Item;
   elses :AST.Stmt;
   (* code pointers *)
   loopStart :INTEGER;
@@ -1003,9 +1003,9 @@ BEGIN
       e := s.cond;
       ASSERT(e.kind = AST.exprAssign);
       trueChain := 0; falseChain := 0;
-      GenExpr(l, e, lhs, trueChain, falseChain);
+      GenExpr(l, e, item, trueChain, falseChain);
     ELSIF s.kind = AST.stmtProcCall THEN
-      GenExpr(l, s.cond, lhs, trueChain, falseChain);
+      GenExpr(l, s.cond, item, trueChain, falseChain);
       ASSERT(curReg <= 1);
       IF curReg = 1 THEN
         (* ProcCall was a function that returned a value that can be ignored *)
@@ -1014,10 +1014,10 @@ BEGIN
     ELSIF s.kind = AST.stmtIf THEN
       after := 0;
       trueChain := 0; falseChain := 0;
-      GenExpr(l, s.cond, lhs, trueChain, falseChain);
-      LoadCond(lhs);
-      ASSERT(lhs.kind = itemCond);
-      Emit(opBRA, 0, 0, NegateCond(lhs.opCond), 0);
+      GenExpr(l, s.cond, item, trueChain, falseChain);
+      LoadCond(item);
+      ASSERT(item.kind = itemCond);
+      Emit(opBRA, 0, 0, NegateCond(item.opCond), 0);
       AddToChain(falseChain);
       FixChain(trueChain, cp);
       GenStatements(l, s.body);
@@ -1028,12 +1028,12 @@ BEGIN
         FixChain(falseChain, cp);
         trueChain := 0; falseChain := 0;
         IF elses.kind = AST.stmtElsIf THEN
-          GenExpr(l, elses.cond, lhs, trueChain, falseChain);
-          LoadCond(lhs);
-          ASSERT(lhs.kind = itemCond);
-          Emit(opBRA, 0, 0, NegateCond(lhs.opCond), 0);
+          GenExpr(l, elses.cond, item, trueChain, falseChain);
+          LoadCond(item);
+          ASSERT(item.kind = itemCond);
+          Emit(opBRA, 0, 0, NegateCond(item.opCond), 0);
           AddToChain(falseChain);
-          ASSERT(lhs.kind = itemCond);
+          ASSERT(item.kind = itemCond);
         ELSE
           ASSERT(elses.kind = AST.stmtElse)
         END;
@@ -1051,24 +1051,24 @@ BEGIN
       GenStatements(l, s.body);
       codeBuffer[after].value := cp; (* fix first branch to point to compare *)
       trueChain := 0; falseChain := 0;
-      GenExpr(l, s.cond, lhs, trueChain, falseChain);
+      GenExpr(l, s.cond, item, trueChain, falseChain);
       (* True chain immediatly returns to loopStart *)
       FixChain(trueChain, loopStart);
-      LoadCond(lhs);
-      ASSERT(lhs.kind = itemCond);
-      Emit(opBRA, 0, 0, lhs.opCond, loopStart);
+      LoadCond(item);
+      ASSERT(item.kind = itemCond);
+      Emit(opBRA, 0, 0, item.opCond, loopStart);
       (* Loop done, so the false chain links here *)
       FixChain(falseChain, cp)
     ELSIF s.kind = AST.stmtRepeat THEN
       loopStart := cp;
       trueChain := 0; falseChain := 0;
       GenStatements(l, s.body);
-      GenExpr(l, s.cond, lhs, trueChain, falseChain);
+      GenExpr(l, s.cond, item, trueChain, falseChain);
       (* False chain immediatly returns to loopStart *)
       FixChain(falseChain, loopStart);
-      LoadCond(lhs);
-      ASSERT(lhs.kind = itemCond);
-      Emit(opBRA, 0, 0, NegateCond(lhs.opCond), loopStart);
+      LoadCond(item);
+      ASSERT(item.kind = itemCond);
+      Emit(opBRA, 0, 0, NegateCond(item.opCond), loopStart);
       (* Loop done, so the true chain links here *)
       FixChain(trueChain, cp)
     ELSIF s.kind = AST.stmtEmpty THEN
