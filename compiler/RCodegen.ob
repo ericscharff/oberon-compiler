@@ -1091,6 +1091,40 @@ BEGIN
       Emit(opBRA, 0, 0, NegateCond(item.opCond), loopStart);
       (* Loop done, so the true chain links here *)
       FixChain(trueChain, cp)
+    ELSIF s.kind = AST.stmtFor THEN
+      (* s.cond is an assign, so s.cond.lhs is the LCV            *)
+      (* s.cond.next is the value that represents the end         *)
+      (* s.cond.next.next is the inc/dec, if present, otherwise 1 *)
+      IF s.cond.next.next = NIL THEN
+        s.cond.next.next := AST.NewExprInteger(1, Decls.integerType);
+      END;
+      trueChain := 0; falseChain := 0;
+      GenExpr(l, s.cond, item, trueChain, falseChain);
+      after := cp;
+      Emit(opBRA, 0, 0, opB, 0);
+      loopStart := cp;
+      GenStatements(l, s.body);
+      (* Make LCV := LCV + next (next might be negative) *)
+      e := AST.NewExprBinary(l, Lex.tPLUS, s.cond.lhs, s.cond.next.next, NIL);
+      e := AST.NewExprAssign(l, s.cond.lhs, e);
+      trueChain := 0; falseChain := 0;
+      GenExpr(l, e, item, trueChain, falseChain);
+      codeBuffer[after].value := cp; (* fix first branch to point to compare *)
+      IF (s.cond.next.next.kind = AST.exprVal) & (s.cond.next.next.iVal > 0) THEN
+        (* cond is LCV <= last *)
+        e := AST.NewExprBinary(l, Lex.tLTEQ, s.cond.lhs, s.cond.next, Decls.booleanType);
+      ELSE
+        (* cond is LCV >= last *)
+        e := AST.NewExprBinary(l, Lex.tGTEQ, s.cond.lhs, s.cond.next, Decls.booleanType);
+      END;
+      GenExpr(l, e, item, trueChain, falseChain);
+      (* True chain immediatly returns to loopStart *)
+      FixChain(trueChain, loopStart);
+      LoadCond(item);
+      ASSERT(item.kind = itemCond);
+      Emit(opBRA, 0, 0, item.opCond, loopStart);
+      (* Loop done, so the false chain links here *)
+      FixChain(falseChain, cp)
     ELSIF s.kind = AST.stmtEmpty THEN
     ELSE
       ASSERT(FALSE)
