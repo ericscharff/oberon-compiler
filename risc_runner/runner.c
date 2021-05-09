@@ -108,21 +108,38 @@ void dumpstate(int pc, int32_t *regs, uint8_t *mem) {
        mem + MAX_MEM_BYTES - 2 * 16);
   line("R7", regs[8], " LR", regs[LR], MAX_MEM_BYTES - 1 * 16,
        mem + MAX_MEM_BYTES - 1 * 16);
-  Opcode op = PROGRAM[pc].opcode;
-  Register a = PROGRAM[pc].ra;
-  Register b = PROGRAM[pc].rb;
-  Register c = PROGRAM[pc].rc;
-  int offset = PROGRAM[pc].offset;
   if (pc < 0) {
     printf("TRAP %d\n", pc);
   } else {
-    printf("%5d: %s %s, %s, %s, #%d\n", pc, INSTR_NAMES[op], REG_NAMES[a],
-           REG_NAMES[b], REG_NAMES[c], offset);
+    for (int instr = ((pc - 8) < 0) ? 0 : (pc - 8); instr <= pc; instr++) {
+      Opcode op = PROGRAM[instr].opcode;
+      Register a = PROGRAM[instr].ra;
+      Register b = PROGRAM[instr].rb;
+      Register c = PROGRAM[instr].rc;
+      int offset = PROGRAM[instr].offset;
+      printf("%5d: %s %s, %s, %s, #%d\n", instr, INSTR_NAMES[op], REG_NAMES[a],
+             REG_NAMES[b], REG_NAMES[c], offset);
+    }
   }
 }
 
 void do_trap(int pc, int32_t *regs, int32_t *mem) {
-  if (pc == -10) {
+  if (pc == -1) {
+    fputs("NIL derefernce\n", stderr);
+    pc = regs[LR];
+    dumpstate(pc, regs, (uint8_t *)mem);
+    exit(1);
+  } else if (pc == -2) {
+    fputs("Array index out of bounds\n", stderr);
+    pc = regs[LR];
+    dumpstate(pc, regs, (uint8_t *)mem);
+    exit(1);
+  } else if (pc == -3) {
+    fputs("ASSERT failure\n", stderr);
+    pc = regs[LR];
+    dumpstate(pc, regs, (uint8_t *)mem);
+    exit(1);
+  } else if (pc == -10) {
     /* Out.Int */
     printf("%d", regs[0]);
   } else if (pc == -12) {
@@ -136,6 +153,8 @@ void do_trap(int pc, int32_t *regs, int32_t *mem) {
     putchar('\n');
   } else {
     fprintf(stderr, "Bad trap %d, %d", pc, mem[0]);
+    pc = regs[LR];
+    dumpstate(pc, regs, (uint8_t *)mem);
     exit(1);
   }
 }
@@ -254,7 +273,7 @@ void interpret(void) {
       case BL:
         r[LR] = pc;
         pc = offset;
-        if (pc <= -10) {
+        if (pc < 0) {
           do_trap(pc, r, mem);
           pc = r[LR];
         }

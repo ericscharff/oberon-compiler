@@ -6,6 +6,11 @@ CONST
   CACHE_SIZE = 100;
   CODE_BUFFER = 2000; (* Code for the procedure being generated, for fixups. *)
 
+  (* Traps *)
+  NIL_TRAP    = -1;
+  BOUNDS_TRAP = -2;
+  ASSERT_TRAP = -3;
+
   (* Opcodes *)
   opMOV = 0;  (* ra := rb                      *)
   opADD = 1;  (* ra := rb + rc                 *)
@@ -984,6 +989,15 @@ BEGIN
       actualParam := AST.NewExprAssign(l, e.rhs, actualParam);
       localTrueChain := 0; localFalseChain := 0;
       GenExpr(l, actualParam, item, localTrueChain, localFalseChain);
+    ELSIF e.iVal = AST.builtinAssert THEN
+      localTrueChain := 0; localFalseChain := 0;
+      GenExpr(l, e.rhs, item, localFalseChain, localTrueChain);
+      LoadCond(item);
+      Emit(opBRA, 0, 0, item.opCond, pc + 2);
+      AddToChain(localFalseChain);
+      FixChain(localTrueChain, cp);
+      Emit(opBL, 0, 0, 0, ASSERT_TRAP);
+      FixChain(localFalseChain, cp);
     ELSE
       ASSERT(FALSE);
     END
