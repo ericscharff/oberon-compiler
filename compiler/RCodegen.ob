@@ -35,6 +35,7 @@ CONST
   opBLE = 6;  (* <= *) opBGT = 14;  (* >  *)
   opB   = 7;  (* branch always *)
   opBF  = 15; (* branch never, basically NOP *)
+  opBHI = 12; (* Branch if high - ~(~C|Z) *)
 
   opMOVI = 100; (* ra := immediate      *)
   opADDI = 101; (* ra := rb + immediate *)
@@ -108,6 +109,7 @@ VAR
                          (* x for g, the SP needs to be offset, restored when *)
                          (* the registers are restored.                       *)
   genCode      :BOOLEAN;
+  genBoundsCheck :BOOLEAN;
   mainStartPc  :INTEGER;
   strings      :Lex.StringPool;
 
@@ -245,6 +247,7 @@ BEGIN
         | opBLE: GenStr("BLE ")
         | opB: GenStr("B ");
         | opBF: GenStr("BF ");
+        | opBHI: GenStr("BHI ");
       END;
       Out.Int(codeBuffer[i].value + delta)
     ELSIF op = opBL THEN
@@ -322,6 +325,7 @@ BEGIN
         | opBLE: GenStr("BLE ")
         | opB: GenStr("B ");
         | opBF: GenStr("BF ");
+        | opBHI: GenStr("BHI ");
       END;
     ELSIF op = opBL THEN
       GenStr("BL");
@@ -710,6 +714,7 @@ PROCEDURE GenExpr(l :Lex.Lexer; e :AST.Expr; VAR item :Item;
 VAR
   size :INTEGER;
   rhs  :Item;
+  arrayItem :Item;
   actualParam :AST.Expr;
   formalParam :AST.Decl;
   savedRegister :Register;
@@ -791,7 +796,6 @@ BEGIN
   ELSIF e.kind = AST.exprArrayRef THEN
     (* rhs is array index *)
     GenExpr(l, e.rhs, rhs, parentTrueChain, parentFalseChain);
-    (* Check bounds here! *)
     (* lhs is the array *)
     GenExpr(l, e.lhs, item, parentTrueChain, parentFalseChain);
     ASSERT(item.kind IN {itemVar, itemRegI});
@@ -808,6 +812,13 @@ BEGIN
       item.offset := item.offset + size*rhs.offset
     ELSE
       Load(rhs);
+      IF genBoundsCheck THEN
+        GenExpr(l, e.lhs, arrayItem, parentTrueChain, parentFalseChain);
+        GenLengthof(l, arrayItem, e.lhs);
+        Emit(opCMP, arrayItem.r, arrayItem.r, rhs.r, 0);
+        Emit(opBRA, 0, 0, opBHI, BOUNDS_TRAP);
+        DecCurReg;
+      END;
       IF size > 1 THEN
         Emit(opMULI, rhs.r, rhs.r, 0, size)
       END;
@@ -1270,6 +1281,7 @@ BEGIN
   lastType := 0;
   mainStartPc := 0;
   genCode := FALSE;
+  genBoundsCheck := TRUE;
   pc := 0;
   Lex.PoolInit(strings)
 END RCodegen.

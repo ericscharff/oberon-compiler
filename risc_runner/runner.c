@@ -37,6 +37,7 @@ typedef enum Opcode {
   BGE,
   BLE,
   BGT,
+  BHI,
 
   HALT,
 } Opcode;
@@ -45,7 +46,7 @@ const char *INSTR_NAMES[] = {
     "Invalid", "MOV",  "ADD",  "SUB",  "MUL",  "DIV",  "MOD",  "CMP",
     "MOVI",    "ADDI", "SUBI", "MULI", "DIVI", "MODI", "CMPI", "LDW",
     "LDB",     "STW",  "STB",  "BL",   "BLr",  "Br",   "B",    "BF",
-    "BEQ",     "BNE",  "BLT",  "BGE",  "BLE",  "BGT",
+    "BEQ",     "BNE",  "BLT",  "BGE",  "BLE",  "BGT",  "BHI",
 
     "HALT",
 };
@@ -318,6 +319,21 @@ void interpret(void) {
       case BGE:
         if (left >= right) {
           pc = offset;
+        }
+        break;
+      case BHI:
+        /* used for array bounds checks. This corresponds to */
+        /* CMP length, index                                 */
+        /* BHI -2                                            */
+        /* This could be accomplished with carry flags, but  */
+        /* wanted to make sure it was correct in C.          */
+        if ((right < 0) || (right >= left)) {
+          pc = offset;
+          if (pc < 0) {
+            r[LR] = pc;
+            do_trap(pc, r, mem);
+            pc = r[LR];
+          }
         }
         break;
       case Invalid:
