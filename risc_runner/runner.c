@@ -180,6 +180,11 @@ void interpret(void) {
   int left = 0; /* previous compare */
   int right = 0;
   while (1) {
+    if (pc < 0) {
+      do_trap(pc, r, mem);
+      pc = r[LR];
+      continue;
+    }
     Opcode op = PROGRAM[pc].opcode;
     Register a = PROGRAM[pc].ra;
     Register b = PROGRAM[pc].rb;
@@ -274,10 +279,6 @@ void interpret(void) {
       case BL:
         r[LR] = pc;
         pc = offset;
-        if (pc < 0) {
-          do_trap(pc, r, mem);
-          pc = r[LR];
-        }
         break;
       case BLr:
         r[LR] = pc;
@@ -329,11 +330,6 @@ void interpret(void) {
         /* wanted to make sure it was correct in C.          */
         if ((right < 0) || (right >= left)) {
           pc = offset;
-          if (pc < 0) {
-            r[LR] = pc;
-            do_trap(pc, r, mem);
-            pc = r[LR];
-          }
         }
         break;
       case Invalid:
