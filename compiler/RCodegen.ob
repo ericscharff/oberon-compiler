@@ -112,6 +112,7 @@ VAR
                          (* the registers are restored.                       *)
   genCode      :BOOLEAN;
   genBoundsCheck :BOOLEAN;
+  genNilCheck    :BOOLEAN;
   mainStartPc  :INTEGER;
   strings      :Lex.StringPool;
 
@@ -794,6 +795,10 @@ BEGIN
     (* may not have been yet.                                  *)
     CalculateSize(e.lhs.typ.base);
     Load(item);
+    IF genNilCheck THEN
+      Emit(opCMPI, item.r, item.r, 0, 0);
+      Emit(opBRA, LINK, 0, opBEQ, NIL_TRAP);
+    END;
     (* The value in a register is now a pointer *)
     item.kind := itemRegI;
     item.offset := 0
@@ -1286,6 +1291,7 @@ BEGIN
   mainStartPc := 0;
   genCode := FALSE;
   genBoundsCheck := TRUE;
+  genNilCheck := TRUE;
   pc := 0;
   Lex.PoolInit(strings)
 END RCodegen.
