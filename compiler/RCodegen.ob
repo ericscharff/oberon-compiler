@@ -11,6 +11,8 @@ CONST
   BOUNDS_TRAP = -2;
   ASSERT_TRAP = -3;
 
+  LINK = 1; (* If set, branch preceded by link *)
+
   (* Opcodes *)
   opMOV = 0;  (* ra := rb                      *)
   opADD = 1;  (* ra := rb + rc                 *)
@@ -725,6 +727,8 @@ BEGIN
     item.kind := itemConst;
     IF e.typ.kind IN {AST.typeInteger, AST.typeBoolean, AST.typeChar} THEN
       item.offset := e.iVal
+    ELSIF e.typ.kind = AST.typeNil THEN
+      item.offset := 0
     ELSIF e.typ.kind = AST.typeString THEN
       item.kind := itemVar;
       item.offset := Lex.CopyLexToPool(l, e.iVal, strings) + globalOffset;
@@ -816,7 +820,7 @@ BEGIN
         GenExpr(l, e.lhs, arrayItem, parentTrueChain, parentFalseChain);
         GenLengthof(l, arrayItem, e.lhs);
         Emit(opCMP, arrayItem.r, arrayItem.r, rhs.r, 0);
-        Emit(opBRA, 0, 0, opBHI, BOUNDS_TRAP);
+        Emit(opBRA, LINK, 0, opBHI, BOUNDS_TRAP);
         DecCurReg;
       END;
       IF size > 1 THEN
@@ -1007,7 +1011,7 @@ BEGIN
       Emit(opBRA, 0, 0, item.opCond, pc + 2);
       AddToChain(localFalseChain);
       FixChain(localTrueChain, cp);
-      Emit(opBL, 0, 0, 0, ASSERT_TRAP);
+      Emit(opBL, LINK, 0, 0, ASSERT_TRAP);
       FixChain(localFalseChain, cp);
     ELSE
       ASSERT(FALSE);
