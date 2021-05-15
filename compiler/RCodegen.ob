@@ -88,6 +88,8 @@ TYPE
   END;
 
 VAR
+  GenExpr      :PROCEDURE(l :Lex.Lexer; e :AST.Expr; VAR item :Item;
+                          VAR parentTrueChain, parentFalseChain :INTEGER);
   typeCache    :ARRAY CACHE_SIZE OF AST.Type; (* Already reached types        *)
   typeSizes    :ARRAY CACHE_SIZE OF INTEGER;  (* Map RECORD and ARRAY to size *)
   codeBuffer   :ARRAY CODE_BUFFER OF Instruction;
@@ -604,7 +606,7 @@ BEGIN
   RETURN cond
 END NegateCond;
 
-PROCEDURE GenBinaryOp(op :Lex.TokenKind; VAR lhs, rhs :Item);
+PROCEDURE GenBinary(op :Lex.TokenKind; VAR lhs, rhs :Item);
 BEGIN
   IF op = Lex.tPLUS THEN
     IF lhs.kind = itemConst THEN
@@ -679,7 +681,7 @@ BEGIN
   ELSE
     ASSERT(FALSE)
   END
-END GenBinaryOp;
+END GenBinary;
 
 PROCEDURE GenLengthof(l: Lex.Lexer; VAR item :Item; e :AST.Expr);
 BEGIN
@@ -712,319 +714,385 @@ BEGIN
   END;
 END GenLengthof;
 
-PROCEDURE GenExpr(l :Lex.Lexer; e :AST.Expr; VAR item :Item;
-                  VAR parentTrueChain, parentFalseChain :INTEGER);
+PROCEDURE GenVal(l :Lex.Lexer; e :AST.Expr; VAR item :Item);
+BEGIN
+  item.kind := itemConst;
+  IF e.typ.kind IN {AST.typeInteger, AST.typeBoolean, AST.typeChar} THEN
+    item.offset := e.iVal
+  ELSIF e.typ.kind = AST.typeNil THEN
+    item.offset := 0
+  ELSIF e.typ.kind = AST.typeString THEN
+    item.kind := itemVar;
+    item.offset := Lex.CopyLexToPool(l, e.iVal, strings) + globalOffset;
+    item.r := rGB;
+  ELSE
+    ASSERT(FALSE)
+  END
+END GenVal;
+
+PROCEDURE GenIdentRef(e :AST.Expr; VAR item :Item);
+BEGIN
+  IF (e.decl.kind = AST.declVar) OR
+     ((e.decl.kind = AST.declParam) &
+      ~(e.typ.kind IN {AST.typeArray, AST.typeRecord})) THEN
+    (* Vars and params (except arrays and records) are values *)
+    item.kind := itemVar;
+    ASSERT(e.decl.offset # -1);
+    item.offset := e.decl.offset;
+    IF (e.decl.kind = AST.declVar) & (e.decl.nesting = 0) THEN
+      item.r := rGB
+    ELSE
+      item.r := rSP;
+      item.offset := item.offset + stackOffset
+    END
+  ELSIF (e.decl.kind = AST.declVarParam) OR
+     ((e.decl.kind = AST.declParam) &
+      (e.typ.kind IN {AST.typeArray, AST.typeRecord})) THEN
+    CalculateSize(e.typ);
+    (* Var params, arrays, and records are passed by reference *)
+    ASSERT(e.decl.offset # -1);
+    Emit(opLDW, curReg, rSP, 0, e.decl.offset + stackOffset);
+    item.kind := itemRegI;
+    item.r := curReg;
+    item.offset := 0;
+    IncCurReg
+  ELSIF e.decl.kind = AST.declProcedure THEN
+    ASSERT((e.decl.offset >= 0) OR (e.decl.offset <= -10));
+    item.kind := itemConst;
+    item.offset := e.decl.offset
+  ELSE
+    ASSERT(FALSE)
+  END
+END GenIdentRef;
+
+PROCEDURE GenAssign(l :Lex.Lexer; e :AST.Expr; VAR item :Item;
+                    VAR parentTrueChain, parentFalseChain :INTEGER);
+VAR
+  rhs                             :Item;
+  localTrueChain, localFalseChain :INTEGER;
+BEGIN
+  ASSERT(e.lhs.typ.kind # AST.typeRecord);
+  GenExpr(l, e.lhs, item, parentTrueChain, parentFalseChain);
+  localTrueChain := 0; localFalseChain := 0;
+  GenExpr(l, e.rhs, rhs, localTrueChain, localFalseChain);
+  LoadValue(rhs, localTrueChain, localFalseChain);
+  ASSERT(item.kind IN {itemVar, itemRegI});
+  IF item.isByte THEN
+    Emit(opSTB, rhs.r, item.r, 0, item.offset);
+  ELSE
+    Emit(opSTW, rhs.r, item.r, 0, item.offset)
+  END;
+  IF item.kind = itemRegI THEN DecCurReg END;
+  DecCurReg
+END GenAssign;
+
+PROCEDURE GenFieldRef(l :Lex.Lexer; e :AST.Expr; VAR item :Item;
+                      VAR parentTrueChain, parentFalseChain :INTEGER);
+BEGIN
+  GenExpr(l, e.lhs, item, parentTrueChain, parentFalseChain);
+  ASSERT(item.kind IN {itemVar, itemRegI});
+  ASSERT(e.decl.offset >= 0);
+  item.offset := item.offset + e.decl.offset
+END GenFieldRef;
+
+PROCEDURE GenPointerDeref(l :Lex.Lexer; e :AST.Expr; VAR item :Item;
+                          VAR parentTrueChain, parentFalseChain :INTEGER);
+BEGIN
+  GenExpr(l, e.lhs, item, parentTrueChain, parentFalseChain);
+  ASSERT(e.lhs.typ.kind = AST.typePointer);
+  (* While the pointer has been visited, the type pointed to *)
+  (* may not have been yet.                                  *)
+  CalculateSize(e.lhs.typ.base);
+  Load(item);
+  IF genNilCheck THEN
+    Emit(opCMPI, item.r, item.r, 0, 0);
+    Emit(opBRA, LINK, 0, opBEQ, NIL_TRAP);
+  END;
+  (* The value in a register is now a pointer *)
+  item.kind := itemRegI;
+  item.offset := 0
+END GenPointerDeref;
+
+PROCEDURE GenArrayRef(l :Lex.Lexer; e :AST.Expr; VAR item :Item;
+                      VAR parentTrueChain, parentFalseChain :INTEGER);
+VAR
+  size           :INTEGER;
+  arrayItem, rhs :Item;
+BEGIN
+  (* rhs is array index *)
+  GenExpr(l, e.rhs, rhs, parentTrueChain, parentFalseChain);
+  (* lhs is the array *)
+  GenExpr(l, e.lhs, item, parentTrueChain, parentFalseChain);
+  ASSERT(item.kind IN {itemVar, itemRegI});
+  ASSERT(e.lhs.typ.kind = AST.typeArray);
+  size := CalculateSize(e.lhs.typ.base);
+  ASSERT(size > 0);
+  IF e.lhs.typ.base.kind = AST.typeChar THEN
+    size := 1;
+    item.isByte := TRUE;
+  ELSE
+    item.isByte := FALSE;
+  END;
+  IF rhs.kind = itemConst THEN
+    item.offset := item.offset + size*rhs.offset
+  ELSE
+    Load(rhs);
+    IF genBoundsCheck THEN
+      GenExpr(l, e.lhs, arrayItem, parentTrueChain, parentFalseChain);
+      GenLengthof(l, arrayItem, e.lhs);
+      Emit(opCMP, arrayItem.r, arrayItem.r, rhs.r, 0);
+      Emit(opBRA, LINK, 0, opBHI, BOUNDS_TRAP);
+      DecCurReg;
+    END;
+    IF size > 1 THEN
+      Emit(opMULI, rhs.r, rhs.r, 0, size)
+    END;
+    IF item.kind = itemVar THEN
+      Emit(opADD, rhs.r, item.r, rhs.r, 0);
+      item.kind := itemRegI;
+      item.r := rhs.r
+    ELSIF item.kind = itemRegI THEN
+      Emit(opADD, item.r, item.r, rhs.r, 0);
+      (* rhs.r no longer needed *)
+      DecCurReg
+    ELSE
+      ASSERT(FALSE)
+    END
+  END
+END GenArrayRef;
+
+PROCEDURE GenUnaryOp(l :Lex.Lexer; e :AST.Expr; VAR item :Item;
+                     VAR parentTrueChain, parentFalseChain :INTEGER);
+BEGIN
+  IF e.op = Lex.tTILDE THEN
+    GenExpr(l, e.lhs, item, parentTrueChain, parentFalseChain);
+    LoadCond(item);
+    ASSERT(item.kind = itemCond);
+    item.opCond := NegateCond(item.opCond);
+  ELSE
+    ASSERT(FALSE);
+  END
+END GenUnaryOp;
+
+PROCEDURE GenBinaryOp(l :Lex.Lexer; e :AST.Expr; VAR item :Item;
+                      VAR parentTrueChain, parentFalseChain :INTEGER);
+VAR
+  rhs                             :Item;
+  localTrueChain, localFalseChain :INTEGER;
+BEGIN
+  IF e.op = Lex.tAMP THEN
+    (* op is short circuit boolean AND. If lhs is false, don't execute rhs. *)
+    (* also, if lhs short circuits to true, run rhs.                        *)
+    localTrueChain := 0;
+    GenExpr(l, e.lhs, item, localTrueChain, parentFalseChain);
+    LoadCond(item);
+    ASSERT(item.kind = itemCond);
+    Emit(opBRA, 0, 0, NegateCond(item.opCond), 0);
+    AddToChain(parentFalseChain);
+    (* lhs was true, so run rhs *)
+    FixChain(localTrueChain, cp);
+    GenExpr(l, e.rhs, item, parentTrueChain, parentFalseChain);
+  ELSIF e.op = Lex.tOR THEN
+    (* op is short circuit boolean OR. If lhs is true, don't execute rhs. *)
+    (* also, if lhs short circuits to false, run rhs.                     *)
+    localFalseChain := 0;
+    GenExpr(l, e.lhs, item, parentTrueChain, localFalseChain);
+    LoadCond(item);
+    ASSERT(item.kind = itemCond);
+    Emit(opBRA, 0, 0, item.opCond, 0);
+    AddToChain(parentTrueChain);
+    (* lhs was false, so run rhs *)
+    FixChain(localFalseChain, cp);
+    GenExpr(l, e.rhs, item, parentTrueChain, parentFalseChain);
+  ELSE
+    GenExpr(l, e.lhs, item, parentTrueChain, parentFalseChain);
+    IF item.kind # itemConst THEN Load(item) END;
+    GenExpr(l, e.rhs, rhs, parentTrueChain, parentFalseChain);
+    GenBinary(e.op, item, rhs)
+  END
+END GenBinaryOp;
+
+PROCEDURE GenProcCall(l :Lex.Lexer; e :AST.Expr; VAR item :Item);
 VAR
   size :INTEGER;
-  rhs  :Item;
-  arrayItem :Item;
   actualParam :AST.Expr;
   formalParam :AST.Decl;
   savedRegister :Register;
   localTrueChain, localFalseChain :INTEGER;
 BEGIN
+  ASSERT(e.lhs.typ.kind = AST.typeProcedure);
+  savedRegister := curReg;
+  SaveRegisters;
+  curReg := 0;
+  actualParam := e.rhs;
+  formalParam := e.lhs.typ.fields;
+  size := e.lhs.typ.length;
+  WHILE size > 0 DO
+    ASSERT(formalParam # NIL);
+    ASSERT(actualParam # NIL);
+    IF (formalParam.kind = AST.declParam) &
+       ~(formalParam.typ.kind IN {AST.typeArray, AST.typeRecord}) THEN
+      (* Normal params passed by value *)
+      localTrueChain := 0; localFalseChain := 0;
+      GenExpr(l, actualParam, item, localTrueChain, localFalseChain);
+      LoadValue(item, localTrueChain, localFalseChain);
+    ELSIF (formalParam.kind = AST.declVarParam) OR
+           ((formalParam.kind = AST.declParam) &
+            (formalParam.typ.kind IN {AST.typeArray, AST.typeRecord})) THEN
+      (* VAR params, arrays, and records passed by reference *)
+      localTrueChain := 0; localFalseChain := 0;
+      GenExpr(l, actualParam, item, localTrueChain, localFalseChain);
+      IF item.kind = itemVar THEN
+        (* Reg is SP, so reserve a new register *)
+        Emit(opADDI, curReg, item.r, 0, item.offset);
+        IncCurReg
+      ELSIF item.kind = itemRegI THEN
+        ASSERT(item.r = curReg - 1);
+        IF item.offset > 0 THEN
+          Emit(opADDI, item.r, item.r, 0, item.offset)
+        END
+      ELSE
+        ASSERT(FALSE)
+      END;
+      IF AST.IsOpenArray(formalParam.typ) THEN
+        (* Open arrays must also pass their length *)
+        GenExpr(l, actualParam, item, localTrueChain, localFalseChain);
+        GenLengthof(l, item, actualParam);
+      END;
+    ELSE
+      ASSERT(FALSE)
+    END;
+    DEC(size);
+    actualParam := actualParam.next;
+    formalParam := formalParam.next
+  END;
+  localTrueChain := 0; localFalseChain := 0;
+  GenExpr(l, e.lhs, item, localTrueChain, localFalseChain);
+  IF item.kind = itemConst THEN
+    (* Procedure call to PC relative address *)
+    ASSERT(e.lhs.decl.offset = item.offset);
+    Emit(opBL, 0, 0, 0, item.offset);
+    codeBuffer[cp - 1].q := e.lhs.decl.qname;
+  ELSE
+    (* Procedure call to pointer to procedure *)
+    LoadValue(item, localTrueChain, localFalseChain);
+    Emit(opBLr, 0, 0, item.r, 0);
+    DecCurReg
+  END;
+  item.kind := itemReg; item.r := 0;
+  IF (savedRegister > 0) & (e.lhs.typ.base.kind # AST.typeNil) THEN
+    (* Procedure has a return value in r0 *)
+    Emit(opMOV, savedRegister, 0, 0, 0);
+    item.r := savedRegister
+  END;
+  curReg := savedRegister;
+  RestoreRegisters;
+  IF e.lhs.typ.base.kind # AST.typeNil THEN
+    INC(curReg)
+  END
+END GenProcCall;
+
+PROCEDURE GenBuiltin(l :Lex.Lexer; e :AST.Expr; VAR item :Item);
+VAR
+  actualParam :AST.Expr;
+  localTrueChain, localFalseChain :INTEGER;
+BEGIN
+  IF e.iVal = AST.builtinReadInt THEN
+    localTrueChain := 0; localFalseChain := 0;
+    GenExpr(l, e.rhs, item, localTrueChain, localFalseChain);
+    Emit(opMOVI, curReg, 0, 0, 0);
+    Emit(opLDW, curReg, curReg, 0, -1);
+    Emit(opSTW, curReg, item.r, 0, item.offset);
+  ELSIF e.iVal = AST.builtinWriteInt THEN
+    localTrueChain := 0; localFalseChain := 0;
+    GenExpr(l, e.rhs, item, localTrueChain, localFalseChain);
+    LoadValue(item, localTrueChain, localFalseChain);
+    ASSERT(curReg = 1);
+    Emit(opMOVI, curReg, 0, 0, 0);
+    Emit(opSTW, item.r, curReg, 0, -1);
+    DecCurReg;
+  ELSIF e.iVal = AST.builtinWriteChar THEN
+    localTrueChain := 0; localFalseChain := 0;
+    GenExpr(l, e.rhs, item, localTrueChain, localFalseChain);
+    LoadValue(item, localTrueChain, localFalseChain);
+    ASSERT(curReg = 1);
+    Emit(opMOVI, curReg, 0, 0, 0);
+    Emit(opSTW, item.r, curReg, 0, -2);
+    DecCurReg;
+  ELSIF e.iVal = AST.builtinWriteLn THEN
+    ASSERT(curReg = 0);
+    Emit(opMOVI, curReg, 0, 0, 0);
+    Emit(opSTW, curReg, curReg, 0, -3);
+  ELSIF (e.iVal = AST.builtinChr) OR (e.iVal = AST.builtinOrd) THEN
+    localTrueChain := 0; localFalseChain := 0;
+    GenExpr(l, e.rhs, item, localTrueChain, localFalseChain);
+    LoadValue(item, localTrueChain, localFalseChain);
+  ELSIF e.iVal = AST.builtinLen THEN
+    localTrueChain := 0; localFalseChain := 0;
+    GenExpr(l, e.rhs, item, localTrueChain, localFalseChain);
+    GenLengthof(l, item, e.rhs);
+  ELSIF e.iVal = AST.builtinInc THEN
+    IF e.rhs.next = NIL THEN
+      e.rhs.next := AST.NewExprInteger(1, Decls.integerType);
+    END;
+    (* use actualParam to make e.rhs := e.rhs + e.rhs.next, *)
+    (* that is, x := x + 1.                                 *)
+    actualParam := AST.NewExprBinary(l, Lex.tPLUS, e.rhs, e.rhs.next, NIL);
+    actualParam := AST.NewExprAssign(l, e.rhs, actualParam);
+    localTrueChain := 0; localFalseChain := 0;
+    GenExpr(l, actualParam, item, localTrueChain, localFalseChain);
+  ELSIF e.iVal = AST.builtinDec THEN
+    IF e.rhs.next = NIL THEN
+      e.rhs.next := AST.NewExprInteger(1, Decls.integerType);
+    END;
+    (* use actualParam to make e.rhs := e.rhs - e.rhs.next, *)
+    (* that is, x := x - 1.                                 *)
+    actualParam := AST.NewExprBinary(l, Lex.tMINUS, e.rhs, e.rhs.next, NIL);
+    actualParam := AST.NewExprAssign(l, e.rhs, actualParam);
+    localTrueChain := 0; localFalseChain := 0;
+    GenExpr(l, actualParam, item, localTrueChain, localFalseChain);
+  ELSIF e.iVal = AST.builtinAssert THEN
+    localTrueChain := 0; localFalseChain := 0;
+    GenExpr(l, e.rhs, item, localFalseChain, localTrueChain);
+    LoadCond(item);
+    Emit(opBRA, 0, 0, item.opCond, pc + 2);
+    AddToChain(localFalseChain);
+    FixChain(localTrueChain, cp);
+    Emit(opBL, LINK, 0, 0, ASSERT_TRAP);
+    FixChain(localFalseChain, cp);
+  ELSE
+    ASSERT(FALSE);
+  END
+END GenBuiltin;
+
+PROCEDURE GenExpr0(l :Lex.Lexer; e :AST.Expr; VAR item :Item;
+                   VAR parentTrueChain, parentFalseChain :INTEGER);
+BEGIN
   item.isByte := (e.typ # NIL) & (e.typ.kind = AST.typeChar);
   IF e.kind = AST.exprVal THEN
-    item.kind := itemConst;
-    IF e.typ.kind IN {AST.typeInteger, AST.typeBoolean, AST.typeChar} THEN
-      item.offset := e.iVal
-    ELSIF e.typ.kind = AST.typeNil THEN
-      item.offset := 0
-    ELSIF e.typ.kind = AST.typeString THEN
-      item.kind := itemVar;
-      item.offset := Lex.CopyLexToPool(l, e.iVal, strings) + globalOffset;
-      item.r := rGB;
-    ELSE
-      ASSERT(FALSE)
-    END
+    GenVal(l, e, item)
   ELSIF e.kind = AST.exprIdentRef THEN
-    IF (e.decl.kind = AST.declVar) OR
-       ((e.decl.kind = AST.declParam) &
-        ~(e.typ.kind IN {AST.typeArray, AST.typeRecord})) THEN
-      (* Vars and params (except arrays and records) are values *)
-      item.kind := itemVar;
-      ASSERT(e.decl.offset # -1);
-      item.offset := e.decl.offset;
-      IF (e.decl.kind = AST.declVar) & (e.decl.nesting = 0) THEN
-        item.r := rGB
-      ELSE
-        item.r := rSP;
-        item.offset := item.offset + stackOffset
-      END
-    ELSIF (e.decl.kind = AST.declVarParam) OR
-       ((e.decl.kind = AST.declParam) &
-        (e.typ.kind IN {AST.typeArray, AST.typeRecord})) THEN
-      CalculateSize(e.typ);
-      (* Var params, arrays, and records are passed by reference *)
-      ASSERT(e.decl.offset # -1);
-      Emit(opLDW, curReg, rSP, 0, e.decl.offset + stackOffset);
-      item.kind := itemRegI;
-      item.r := curReg;
-      item.offset := 0;
-      IncCurReg
-    ELSIF e.decl.kind = AST.declProcedure THEN
-      ASSERT((e.decl.offset >= 0) OR (e.decl.offset <= -10));
-      item.kind := itemConst;
-      item.offset := e.decl.offset
-    ELSE
-      ASSERT(FALSE)
-    END
+    GenIdentRef(e, item)
   ELSIF e.kind = AST.exprAssign THEN
-    ASSERT(e.lhs.typ.kind # AST.typeRecord);
-    GenExpr(l, e.lhs, item, parentTrueChain, parentFalseChain);
-    localTrueChain := 0; localFalseChain := 0;
-    GenExpr(l, e.rhs, rhs, localTrueChain, localFalseChain);
-    LoadValue(rhs, localTrueChain, localFalseChain);
-    ASSERT(item.kind IN {itemVar, itemRegI});
-    IF item.isByte THEN
-      Emit(opSTB, rhs.r, item.r, 0, item.offset);
-    ELSE
-      Emit(opSTW, rhs.r, item.r, 0, item.offset)
-    END;
-    IF item.kind = itemRegI THEN DecCurReg END;
-    DecCurReg
+    GenAssign(l, e, item, parentTrueChain, parentFalseChain)
   ELSIF e.kind = AST.exprFieldRef THEN
-    GenExpr(l, e.lhs, item, parentTrueChain, parentFalseChain);
-    ASSERT(item.kind IN {itemVar, itemRegI});
-    ASSERT(e.decl.offset >= 0);
-    item.offset := item.offset + e.decl.offset
+    GenFieldRef(l, e, item, parentTrueChain, parentFalseChain)
   ELSIF e.kind = AST.exprPointerDeref THEN
-    GenExpr(l, e.lhs, item, parentTrueChain, parentFalseChain);
-    ASSERT(e.lhs.typ.kind = AST.typePointer);
-    (* While the pointer has been visited, the type pointed to *)
-    (* may not have been yet.                                  *)
-    CalculateSize(e.lhs.typ.base);
-    Load(item);
-    IF genNilCheck THEN
-      Emit(opCMPI, item.r, item.r, 0, 0);
-      Emit(opBRA, LINK, 0, opBEQ, NIL_TRAP);
-    END;
-    (* The value in a register is now a pointer *)
-    item.kind := itemRegI;
-    item.offset := 0
+    GenPointerDeref(l, e, item, parentTrueChain, parentFalseChain)
   ELSIF e.kind = AST.exprArrayRef THEN
-    (* rhs is array index *)
-    GenExpr(l, e.rhs, rhs, parentTrueChain, parentFalseChain);
-    (* lhs is the array *)
-    GenExpr(l, e.lhs, item, parentTrueChain, parentFalseChain);
-    ASSERT(item.kind IN {itemVar, itemRegI});
-    ASSERT(e.lhs.typ.kind = AST.typeArray);
-    size := CalculateSize(e.lhs.typ.base);
-    ASSERT(size > 0);
-    IF e.lhs.typ.base.kind = AST.typeChar THEN
-      size := 1;
-      item.isByte := TRUE;
-    ELSE
-      item.isByte := FALSE;
-    END;
-    IF rhs.kind = itemConst THEN
-      item.offset := item.offset + size*rhs.offset
-    ELSE
-      Load(rhs);
-      IF genBoundsCheck THEN
-        GenExpr(l, e.lhs, arrayItem, parentTrueChain, parentFalseChain);
-        GenLengthof(l, arrayItem, e.lhs);
-        Emit(opCMP, arrayItem.r, arrayItem.r, rhs.r, 0);
-        Emit(opBRA, LINK, 0, opBHI, BOUNDS_TRAP);
-        DecCurReg;
-      END;
-      IF size > 1 THEN
-        Emit(opMULI, rhs.r, rhs.r, 0, size)
-      END;
-      IF item.kind = itemVar THEN
-        Emit(opADD, rhs.r, item.r, rhs.r, 0);
-        item.kind := itemRegI;
-        item.r := rhs.r
-      ELSIF item.kind = itemRegI THEN
-        Emit(opADD, item.r, item.r, rhs.r, 0);
-        (* rhs.r no longer needed *)
-        DecCurReg
-      ELSE
-        ASSERT(FALSE)
-      END
-    END
+    GenArrayRef(l, e, item, parentTrueChain, parentFalseChain)
   ELSIF e.kind = AST.exprUnary THEN
-    IF e.op = Lex.tTILDE THEN
-      GenExpr(l, e.lhs, item, parentTrueChain, parentFalseChain);
-      LoadCond(item);
-      ASSERT(item.kind = itemCond);
-      item.opCond := NegateCond(item.opCond);
-    ELSE
-      ASSERT(FALSE);
-    END;
+    GenUnaryOp(l, e, item, parentTrueChain, parentFalseChain)
   ELSIF e.kind = AST.exprBinary THEN
-    IF e.op = Lex.tAMP THEN
-      (* op is short circuit boolean AND. If lhs is false, don't execute rhs. *)
-      (* also, if lhs short circuits to true, run rhs.                        *)
-      localTrueChain := 0;
-      GenExpr(l, e.lhs, item, localTrueChain, parentFalseChain);
-      LoadCond(item);
-      ASSERT(item.kind = itemCond);
-      Emit(opBRA, 0, 0, NegateCond(item.opCond), 0);
-      AddToChain(parentFalseChain);
-      (* lhs was true, so run rhs *)
-      FixChain(localTrueChain, cp);
-      GenExpr(l, e.rhs, item, parentTrueChain, parentFalseChain);
-    ELSIF e.op = Lex.tOR THEN
-      (* op is short circuit boolean OR. If lhs is true, don't execute rhs. *)
-      (* also, if lhs short circuits to false, run rhs.                     *)
-      localFalseChain := 0;
-      GenExpr(l, e.lhs, item, parentTrueChain, localFalseChain);
-      LoadCond(item);
-      ASSERT(item.kind = itemCond);
-      Emit(opBRA, 0, 0, item.opCond, 0);
-      AddToChain(parentTrueChain);
-      (* lhs was false, so run rhs *)
-      FixChain(localFalseChain, cp);
-      GenExpr(l, e.rhs, item, parentTrueChain, parentFalseChain);
-    ELSE
-      GenExpr(l, e.lhs, item, parentTrueChain, parentFalseChain);
-      IF item.kind # itemConst THEN Load(item) END;
-      GenExpr(l, e.rhs, rhs, parentTrueChain, parentFalseChain);
-      GenBinaryOp(e.op, item, rhs)
-    END
+    GenBinaryOp(l, e, item, parentTrueChain, parentFalseChain)
   ELSIF e.kind = AST.exprProcCall THEN
-    ASSERT(e.lhs.typ.kind = AST.typeProcedure);
-    savedRegister := curReg;
-    SaveRegisters;
-    curReg := 0;
-    actualParam := e.rhs;
-    formalParam := e.lhs.typ.fields;
-    size := e.lhs.typ.length;
-    WHILE size > 0 DO
-      ASSERT(formalParam # NIL);
-      ASSERT(actualParam # NIL);
-      IF (formalParam.kind = AST.declParam) &
-         ~(formalParam.typ.kind IN {AST.typeArray, AST.typeRecord}) THEN
-        (* Normal params passed by value *)
-        localTrueChain := 0; localFalseChain := 0;
-        GenExpr(l, actualParam, item, localTrueChain, localFalseChain);
-        LoadValue(item, localTrueChain, localFalseChain);
-      ELSIF (formalParam.kind = AST.declVarParam) OR
-             ((formalParam.kind = AST.declParam) &
-              (formalParam.typ.kind IN {AST.typeArray, AST.typeRecord})) THEN
-        (* VAR params, arrays, and records passed by reference *)
-        localTrueChain := 0; localFalseChain := 0;
-        GenExpr(l, actualParam, item, localTrueChain, localFalseChain);
-        IF item.kind = itemVar THEN
-          (* Reg is SP, so reserve a new register *)
-          Emit(opADDI, curReg, item.r, 0, item.offset);
-          IncCurReg
-        ELSIF item.kind = itemRegI THEN
-          ASSERT(item.r = curReg - 1);
-          IF item.offset > 0 THEN
-            Emit(opADDI, item.r, item.r, 0, item.offset)
-          END
-        ELSE
-          ASSERT(FALSE)
-        END;
-        IF AST.IsOpenArray(formalParam.typ) THEN
-          (* Open arrays must also pass their length *)
-          GenExpr(l, actualParam, item, localTrueChain, localFalseChain);
-          GenLengthof(l, item, actualParam);
-        END;
-      ELSE
-        ASSERT(FALSE)
-      END;
-      DEC(size);
-      actualParam := actualParam.next;
-      formalParam := formalParam.next
-    END;
-    localTrueChain := 0; localFalseChain := 0;
-    GenExpr(l, e.lhs, item, localTrueChain, localFalseChain);
-    IF item.kind = itemConst THEN
-      (* Procedure call to PC relative address *)
-      ASSERT(e.lhs.decl.offset = item.offset);
-      Emit(opBL, 0, 0, 0, item.offset);
-      codeBuffer[cp - 1].q := e.lhs.decl.qname;
-    ELSE
-      (* Procedure call to pointer to procedure *)
-      LoadValue(item, localTrueChain, localFalseChain);
-      Emit(opBLr, 0, 0, item.r, 0);
-      DecCurReg
-    END;
-    item.kind := itemReg; item.r := 0;
-    IF (savedRegister > 0) & (e.lhs.typ.base.kind # AST.typeNil) THEN
-      (* Procedure has a return value in r0 *)
-      Emit(opMOV, savedRegister, 0, 0, 0);
-      item.r := savedRegister
-    END;
-    curReg := savedRegister;
-    RestoreRegisters;
-    IF e.lhs.typ.base.kind # AST.typeNil THEN
-      INC(curReg)
-    END
+    GenProcCall(l, e, item)
   ELSIF e.kind = AST.exprBuiltin THEN
-    IF e.iVal = AST.builtinReadInt THEN
-      localTrueChain := 0; localFalseChain := 0;
-      GenExpr(l, e.rhs, item, localTrueChain, localFalseChain);
-      Emit(opMOVI, curReg, 0, 0, 0);
-      Emit(opLDW, curReg, curReg, 0, -1);
-      Emit(opSTW, curReg, item.r, 0, item.offset);
-    ELSIF e.iVal = AST.builtinWriteInt THEN
-      localTrueChain := 0; localFalseChain := 0;
-      GenExpr(l, e.rhs, item, localTrueChain, localFalseChain);
-      LoadValue(item, localTrueChain, localFalseChain);
-      ASSERT(curReg = 1);
-      Emit(opMOVI, curReg, 0, 0, 0);
-      Emit(opSTW, item.r, curReg, 0, -1);
-      DecCurReg;
-    ELSIF e.iVal = AST.builtinWriteChar THEN
-      localTrueChain := 0; localFalseChain := 0;
-      GenExpr(l, e.rhs, item, localTrueChain, localFalseChain);
-      LoadValue(item, localTrueChain, localFalseChain);
-      ASSERT(curReg = 1);
-      Emit(opMOVI, curReg, 0, 0, 0);
-      Emit(opSTW, item.r, curReg, 0, -2);
-      DecCurReg;
-    ELSIF e.iVal = AST.builtinWriteLn THEN
-      ASSERT(curReg = 0);
-      Emit(opMOVI, curReg, 0, 0, 0);
-      Emit(opSTW, curReg, curReg, 0, -3);
-    ELSIF (e.iVal = AST.builtinChr) OR (e.iVal = AST.builtinOrd) THEN
-      localTrueChain := 0; localFalseChain := 0;
-      GenExpr(l, e.rhs, item, localTrueChain, localFalseChain);
-      LoadValue(item, localTrueChain, localFalseChain);
-    ELSIF e.iVal = AST.builtinLen THEN
-      localTrueChain := 0; localFalseChain := 0;
-      GenExpr(l, e.rhs, item, localTrueChain, localFalseChain);
-      GenLengthof(l, item, e.rhs);
-    ELSIF e.iVal = AST.builtinInc THEN
-      IF e.rhs.next = NIL THEN
-        e.rhs.next := AST.NewExprInteger(1, Decls.integerType);
-      END;
-      (* use actualParam to make e.rhs := e.rhs + e.rhs.next, *)
-      (* that is, x := x + 1.                                 *)
-      actualParam := AST.NewExprBinary(l, Lex.tPLUS, e.rhs, e.rhs.next, NIL);
-      actualParam := AST.NewExprAssign(l, e.rhs, actualParam);
-      localTrueChain := 0; localFalseChain := 0;
-      GenExpr(l, actualParam, item, localTrueChain, localFalseChain);
-    ELSIF e.iVal = AST.builtinDec THEN
-      IF e.rhs.next = NIL THEN
-        e.rhs.next := AST.NewExprInteger(1, Decls.integerType);
-      END;
-      (* use actualParam to make e.rhs := e.rhs - e.rhs.next, *)
-      (* that is, x := x - 1.                                 *)
-      actualParam := AST.NewExprBinary(l, Lex.tMINUS, e.rhs, e.rhs.next, NIL);
-      actualParam := AST.NewExprAssign(l, e.rhs, actualParam);
-      localTrueChain := 0; localFalseChain := 0;
-      GenExpr(l, actualParam, item, localTrueChain, localFalseChain);
-    ELSIF e.iVal = AST.builtinAssert THEN
-      localTrueChain := 0; localFalseChain := 0;
-      GenExpr(l, e.rhs, item, localFalseChain, localTrueChain);
-      LoadCond(item);
-      Emit(opBRA, 0, 0, item.opCond, pc + 2);
-      AddToChain(localFalseChain);
-      FixChain(localTrueChain, cp);
-      Emit(opBL, LINK, 0, 0, ASSERT_TRAP);
-      FixChain(localFalseChain, cp);
-    ELSE
-      ASSERT(FALSE);
-    END
+    GenBuiltin(l, e, item)
   ELSE
     ASSERT(FALSE)
   END
-END GenExpr;
+END GenExpr0;
 
 PROCEDURE GenReturn(l :Lex.Lexer; e :AST.Expr);
 VAR
@@ -1285,6 +1353,7 @@ BEGIN
 END EnableDumpCode;
 
 BEGIN
+  GenExpr := GenExpr0;
   globalOffset := 0;
   stackOffset := 0;
   lastType := 0;
