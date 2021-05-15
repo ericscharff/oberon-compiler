@@ -1290,7 +1290,7 @@ BEGIN
   lastType := 0;
   mainStartPc := 0;
   genCode := FALSE;
-  genBoundsCheck := TRUE;
+  genBoundsCheck := FALSE;
   genNilCheck := TRUE;
   pc := 0;
   Lex.PoolInit(strings)
