@@ -367,17 +367,100 @@ TestBed_SumTest: code offset: 307
 321	LDW LR, SP, #0
 322	ADD SP, SP, #20
 323	B LR
-TestBed__module_init_: code offset: 324
-324	SUB SP, SP, #4
+TestBed_C1: code offset: 324
+	; a offset 4
+	; b offset 8
+324	SUB SP, SP, #12
 325	STW LR, SP, #0
-326	B 330
-327	BL 0 (TestBed_FieldTest)
-328	BL 33 (TestBed_CondTest)
-329	BL 207 (TestBed_FuncTest)
-330	BL 307 (TestBed_SumTest)
-331	LDW LR, SP, #0
-332	ADD SP, SP, #4
-333	B LR
-__start__: 334
-334	BL 324 (TestBed__module_init_)
-335	HALT
+326	STW R0, SP, #4
+327	STW R1, SP, #8
+328	LDW R0, SP, #4
+329	CMP R0, #10
+330	BLE 338
+331	LDW R0, SP, #8
+332	CMP R0, #20
+333	BLE 338
+334	MOV R0, #1
+335	MOV R1, #0
+336	STW R0, R1, #-1
+337	B 341
+338	MOV R0, #0
+339	MOV R1, #0
+340	STW R0, R1, #-1
+341	MOV R0, #0
+342	STW R0, R0, #-3
+343	LDW LR, SP, #0
+344	ADD SP, SP, #12
+345	B LR
+TestBed_C2: code offset: 346
+	; a offset 4
+	; b offset 8
+346	SUB SP, SP, #12
+347	STW LR, SP, #0
+348	STW R0, SP, #4
+349	STW R1, SP, #8
+350	LDW R0, SP, #4
+351	CMP R0, #10
+352	BLE 360
+353	LDW R0, SP, #8
+354	CMP R0, #20
+355	BGT 360
+356	MOV R0, #1
+357	MOV R1, #0
+358	STW R0, R1, #-1
+359	B 363
+360	MOV R0, #0
+361	MOV R1, #0
+362	STW R0, R1, #-1
+363	MOV R0, #0
+364	STW R0, R0, #-3
+365	LDW LR, SP, #0
+366	ADD SP, SP, #12
+367	B LR
+TestBed_ShortCircuitTest: code offset: 368
+368	SUB SP, SP, #4
+369	STW LR, SP, #0
+370	MOV R0, #3
+371	MOV R1, #4
+372	BL 324 (TestBed_C1)
+373	MOV R0, #3
+374	MOV R1, #40
+375	BL 324 (TestBed_C1)
+376	MOV R0, #30
+377	MOV R1, #4
+378	BL 324 (TestBed_C1)
+379	MOV R0, #30
+380	MOV R1, #40
+381	BL 324 (TestBed_C1)
+382	MOV R0, #0
+383	STW R0, R0, #-3
+384	MOV R0, #3
+385	MOV R1, #4
+386	BL 346 (TestBed_C2)
+387	MOV R0, #3
+388	MOV R1, #40
+389	BL 346 (TestBed_C2)
+390	MOV R0, #30
+391	MOV R1, #4
+392	BL 346 (TestBed_C2)
+393	MOV R0, #30
+394	MOV R1, #40
+395	BL 346 (TestBed_C2)
+396	LDW LR, SP, #0
+397	ADD SP, SP, #4
+398	B LR
+TestBed__module_init_: code offset: 399
+399	SUB SP, SP, #4
+400	STW LR, SP, #0
+401	B 405
+402	BL 0 (TestBed_FieldTest)
+403	BL 33 (TestBed_CondTest)
+404	BL 207 (TestBed_FuncTest)
+405	BL 307 (TestBed_SumTest)
+406	BL 368 (TestBed_ShortCircuitTest)
+407	LDW LR, SP, #0
+408	ADD SP, SP, #4
+409	B LR
+__start__: 410
+410	BL 399 (TestBed__module_init_)
+411	HALT

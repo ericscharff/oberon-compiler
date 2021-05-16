@@ -122,11 +122,35 @@ BEGIN
   Sum(a, 0, a)
 END SumTest;
 
+PROCEDURE ShortCircuitTest;
+PROCEDURE C1(a, b :INTEGER);
+BEGIN
+  IF ((a > 10) & (b > 20)) THEN WriteInt(1) ELSE WriteInt(0) END;
+  WriteLn;
+END C1;
+PROCEDURE C2(a, b :INTEGER);
+BEGIN
+  IF (~((a > 10) & (b > 20))) THEN WriteInt(1) ELSE WriteInt(0) END;
+  WriteLn;
+END C2;
+BEGIN
+  C1(3, 4);
+  C1(3, 40);
+  C1(30, 4);
+  C1(30, 40);
+  WriteLn;
+  C2(3, 4);
+  C2(3, 40);
+  C2(30, 4);
+  C2(30, 40);
+END ShortCircuitTest;
+
 BEGIN
   IF FALSE THEN
     FieldTest;
     CondTest;
     FuncTest
   END;
-  SumTest
+  SumTest;
+  ShortCircuitTest;
 END TestBed.
