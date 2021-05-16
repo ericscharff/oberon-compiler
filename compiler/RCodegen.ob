@@ -865,7 +865,7 @@ PROCEDURE GenUnaryOp(l :Lex.Lexer; e :AST.Expr; VAR item :Item;
                      VAR parentTrueChain, parentFalseChain :INTEGER);
 BEGIN
   IF e.op = Lex.tTILDE THEN
-    GenExpr(l, e.lhs, item, parentTrueChain, parentFalseChain);
+    GenExpr(l, e.lhs, item, parentFalseChain, parentTrueChain);
     LoadCond(item);
     ASSERT(item.kind = itemCond);
     item.opCond := NegateCond(item.opCond);
