@@ -5,6 +5,7 @@ IMPORT Out;
 TYPE
   R = RECORD x, y :INTEGER END;
   AR = ARRAY 4 OF R;
+  AR2 = ARRAY 7, 8 OF R;
 
 VAR
   flag :BOOLEAN;
@@ -26,20 +27,35 @@ END RefTest;
 
 PROCEDURE Sum(as :ARRAY OF R);
 VAR
-  s :INTEGER;
+  i, s :INTEGER;
 BEGIN
-  s := as[2].x;
+  i := 0; s := 0;
+  WHILE i < LEN(as) DO
+    s := s + as[i].x;
+    INC(i)
+  END;
+  WriteInt(s); WriteLn
 END Sum;
 
 PROCEDURE TestAr;
 VAR
   ar :AR;
 BEGIN
-  ar[0].x := 1;
-  ar[1].x := 1;
-  ar[2].x := 1;
+  ar[0].x := 20;
+  ar[1].x := 40;
+  ar[2].x := 60;
   Sum(ar);
 END TestAr;
+
+PROCEDURE TestTwo;
+VAR
+  ar :AR2;
+  i, j :INTEGER;
+BEGIN
+  i := 3; j := 3;
+  ar[i, j].x := 33
+END TestTwo;
+
 BEGIN
   flag := TRUE;
   a.x := 1;
@@ -47,4 +63,5 @@ BEGIN
   RefTest(a.y, a.x > a.y, flag, flag, a);
   Out.Int(a.y); Out.Ln;
   TestAr;
+  TestTwo;
 END ArTest.

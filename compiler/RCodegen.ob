@@ -694,23 +694,17 @@ BEGIN
     item.offset := e.typ.length;
     Load(item);
   ELSIF e.typ.kind = AST.typeBuffer THEN
-    (* TODO: buffer support
-    GenExpr(l, e);
-    GenStr(".len");
-    *)
-    ASSERT(FALSE)
+    (* TODO: buffer support *)
+    ASSERT(FALSE);
   ELSE
     ASSERT(e.kind = AST.exprIdentRef);
-    ASSERT(item.kind = itemRegI);
-    (* This is subtle. e must be a VAR param, which means loading the
-       expression (which already happened) just emitted "LDW Rn, SP, #x" which
-       loaded the pointer to the array into Rn.  Instead, this should have
-       been LDW Rn, SP, #(x+4), because the immediate next thing on the stack
-       should be the open array length. Rewrite to fetch the length. *)
-    ASSERT(codeBuffer[cp-1].op = opLDW);
-    ASSERT(codeBuffer[cp-1].rb = rSP);
-    codeBuffer[cp-1].value := codeBuffer[cp-1].value + 4;
-    item.kind := itemReg;
+    ASSERT(e.decl # NIL);
+    ASSERT((e.decl.kind = AST.declVarParam) OR (e.decl.kind = AST.declParam));
+    ASSERT(e.decl.offset # -1);
+    item.kind := itemVar;
+    item.r := rSP;
+    item.offset := e.decl.offset + 4; (* The extra param for length *)
+    Load(item);
   END;
 END GenLengthof;
 
@@ -838,7 +832,6 @@ BEGIN
   ELSE
     Load(rhs);
     IF genBoundsCheck THEN
-      GenExpr(l, e.lhs, arrayItem, parentTrueChain, parentFalseChain);
       GenLengthof(l, arrayItem, e.lhs);
       Emit(opCMP, arrayItem.r, arrayItem.r, rhs.r, 0);
       Emit(opBRA, LINK, 0, opBHI, BOUNDS_TRAP);
@@ -1028,8 +1021,6 @@ BEGIN
     GenExpr(l, e.rhs, item, localTrueChain, localFalseChain);
     LoadValue(item, localTrueChain, localFalseChain);
   ELSIF e.iVal = AST.builtinLen THEN
-    localTrueChain := 0; localFalseChain := 0;
-    GenExpr(l, e.rhs, item, localTrueChain, localFalseChain);
     GenLengthof(l, item, e.rhs);
   ELSIF e.iVal = AST.builtinInc THEN
     IF e.rhs.next = NIL THEN
@@ -1359,7 +1350,7 @@ BEGIN
   lastType := 0;
   mainStartPc := 0;
   genCode := FALSE;
-  genBoundsCheck := FALSE;
+  genBoundsCheck := TRUE;
   genNilCheck := TRUE;
   pc := 0;
   Lex.PoolInit(strings)
