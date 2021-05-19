@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -170,6 +171,7 @@ void interpret(void) {
   int pc = START_PC;
   int32_t r[16];
   int32_t mem[MAX_MEM];
+  bool zFlag;
 
   r[GB] = 0;
   r[SP] = MAX_MEM_BYTES - 4;
@@ -200,44 +202,56 @@ void interpret(void) {
         break;
       case ADD:
         r[a] = r[b] + r[c];
+        zFlag = r[a] == 0;
         break;
       case SUB:
         r[a] = r[b] - r[c];
+        zFlag = r[a] == 0;
         break;
       case MUL:
         r[a] = r[b] * r[c];
+        zFlag = r[a] == 0;
         break;
       case DIV:
         r[a] = r[b] / r[c];
+        zFlag = r[a] == 0;
         break;
       case MOD:
         r[a] = r[b] % r[c];
+        zFlag = r[a] == 0;
         break;
       case CMP:
         left = r[b];
         right = r[c];
+        zFlag = left == right;
         break;
       case MOVI:
         r[a] = offset;
         break;
       case ADDI:
         r[a] = r[b] + offset;
+        zFlag = r[a] == 0;
         break;
       case SUBI:
         r[a] = r[b] - offset;
+        zFlag = r[a] == 0;
         break;
       case MULI:
         r[a] = r[b] * offset;
+        zFlag = r[a] == 0;
         break;
       case DIVI:
         r[a] = r[b] / offset;
+        zFlag = r[a] == 0;
         break;
       case MODI:
         r[a] = r[b] % offset;
+        zFlag = r[a] == 0;
         break;
       case CMPI:
         left = r[b];
         right = offset;
+        zFlag = left == right;
         break;
       case LDW: {
         int address = r[b] + offset;
@@ -296,7 +310,7 @@ void interpret(void) {
         if (a) {
           r[LR] = pc;
         }
-        if (left == right) {
+        if (zFlag) {
           pc = offset;
         }
         break;
@@ -304,7 +318,7 @@ void interpret(void) {
         if (a) {
           r[LR] = pc;
         }
-        if (left != right) {
+        if (!zFlag) {
           pc = offset;
         }
         break;
