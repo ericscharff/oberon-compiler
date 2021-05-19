@@ -307,50 +307,50 @@ void interpret(void) {
       case BF:
         break;
       case BEQ:
-        if (a) {
-          r[LR] = pc;
-        }
         if (zFlag) {
+          if (a) {
+            r[LR] = pc;
+          }
           pc = offset;
         }
         break;
       case BNE:
-        if (a) {
-          r[LR] = pc;
-        }
         if (!zFlag) {
+          if (a) {
+            r[LR] = pc;
+          }
           pc = offset;
         }
         break;
       case BLT:
-        if (a) {
-          r[LR] = pc;
-        }
         if (left < right) {
+          if (a) {
+            r[LR] = pc;
+          }
           pc = offset;
         }
         break;
       case BLE:
-        if (a) {
-          r[LR] = pc;
-        }
         if (left <= right) {
+          if (a) {
+            r[LR] = pc;
+          }
           pc = offset;
         }
         break;
       case BGT:
-        if (a) {
-          r[LR] = pc;
-        }
         if (left > right) {
+          if (a) {
+            r[LR] = pc;
+          }
           pc = offset;
         }
         break;
       case BGE:
-        if (a) {
-          r[LR] = pc;
-        }
         if (left >= right) {
+          if (a) {
+            r[LR] = pc;
+          }
           pc = offset;
         }
         break;
@@ -360,10 +360,10 @@ void interpret(void) {
         /* BHI -2                                            */
         /* This could be accomplished with carry flags, but  */
         /* wanted to make sure it was correct in C.          */
-        if (a) {
-          r[LR] = pc;
-        }
         if ((right < 0) || (right >= left)) {
+          if (a) {
+            r[LR] = pc;
+          }
           pc = offset;
         }
         break;
