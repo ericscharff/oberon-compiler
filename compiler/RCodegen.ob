@@ -254,7 +254,11 @@ BEGIN
         | opBF: GenStr("BF ");
         | opBHI: GenStr("BHI ");
       END;
-      Out.Int(codeBuffer[i].value + delta)
+      IF codeBuffer[i].value >= 0 THEN
+        Out.Int(codeBuffer[i].value + delta)
+      ELSE
+        Out.Int(codeBuffer[i].value)
+      END
     ELSIF op = opBL THEN
       GenStr("BL "); Out.Int(codeBuffer[i].value);
       GenStr(" ("); GenQName(l, codeBuffer[i].q);
@@ -320,7 +324,9 @@ BEGIN
     ELSIF op = opSTB THEN
       GenStr("STB");
     ELSIF op = opBRA THEN
-      INC(offset, delta);
+      IF offset >= 0 THEN
+        INC(offset, delta);
+      END;
       CASE codeBuffer[i].rc OF
         opBEQ: GenStr("BEQ ")
         | opBNE: GenStr("BNE ")
