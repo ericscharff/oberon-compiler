@@ -1,0 +1,50 @@
+MODULE SetTest;
+
+PROCEDURE Test;
+VAR
+  s, s2 :SET;
+  i, j, k :INTEGER;
+BEGIN
+  s := {};
+  WriteInt(s); WriteLn;
+  s := {1};
+  WriteInt(s); WriteLn;
+  i := 1; j := 0; k := 2;
+  s := {i};
+  WriteInt(s); WriteLn;
+  s := {i, j, k};
+  WriteInt(s); WriteLn;
+  s := {j .. k};
+  WriteInt(s); WriteLn;
+  i := 0; j := 3; k := 7;
+  s := {i .. j, j .. k};
+  WriteInt(s); WriteLn;
+  s := s - {7};
+  WriteInt(s); WriteLn;
+  s := {0};
+  s2 := {7};
+  s := s + s2;
+  WriteInt(s); WriteLn;
+  s := {0};
+  s2 := {7};
+  s := s - s2;
+  WriteInt(s); WriteLn;
+  s := {0};
+  s2 := {7};
+  s := s * s2;
+  WriteInt(s); WriteLn;
+  s := {0};
+  s2 := {7};
+  s := s / s2;
+  WriteInt(s); WriteLn;
+  IF 0 IN s THEN WriteInt(10) ELSE WriteInt(0) END;
+  IF i IN s THEN WriteInt(10) ELSE WriteInt(0) END;
+  IF 1 IN s THEN WriteInt(10) ELSE WriteInt(0) END;
+  IF 7 IN s THEN WriteInt(10) ELSE WriteInt(0) END;
+  IF 8 IN s THEN WriteInt(10) ELSE WriteInt(0) END;
+  WriteLn
+END Test;
+
+BEGIN
+  Test
+END SetTest.
