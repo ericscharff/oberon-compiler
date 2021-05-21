@@ -863,13 +863,28 @@ END GenArrayRef;
 PROCEDURE GenUnaryOp(l :Lex.Lexer; e :AST.Expr; VAR item :Item;
                      VAR parentTrueChain, parentFalseChain :INTEGER);
 BEGIN
-  IF e.op = Lex.tTILDE THEN
-    GenExpr(l, e.lhs, item, parentFalseChain, parentTrueChain);
-    LoadCond(item);
-    ASSERT(item.kind = itemCond);
-    item.opCond := NegateCond(item.opCond);
+  IF e.lhs.typ.kind = AST.typeInteger THEN
+    IF e.op = Lex.tPLUS THEN
+      GenExpr(l, e.lhs, item, parentTrueChain, parentFalseChain);
+    ELSIF e.op = Lex.tMINUS THEN
+      GenExpr(l, e.lhs, item, parentTrueChain, parentFalseChain);
+      Load(item);
+      Emit(opMOVI, curReg, 0, 0, 0);
+      Emit(opSUB, item.r, curReg, item.r, 0)
+    ELSE
+      ASSERT(FALSE)
+    END
+  ELSIF e.lhs.typ.kind = AST.typeBoolean THEN
+    IF e.op = Lex.tTILDE THEN
+      GenExpr(l, e.lhs, item, parentFalseChain, parentTrueChain);
+      LoadCond(item);
+      ASSERT(item.kind = itemCond);
+      item.opCond := NegateCond(item.opCond);
+    ELSE
+      ASSERT(FALSE);
+    END
   ELSE
-    ASSERT(FALSE);
+    ASSERT(FALSE)
   END
 END GenUnaryOp;
 
