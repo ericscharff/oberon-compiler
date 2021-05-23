@@ -732,6 +732,28 @@ BEGIN
       Emit(opMOD, lhs.r, lhs.r, rhs.r, 0);
       DecCurReg
     END
+  ELSIF op = Lex.tDOTDOT THEN
+    Load(lhs);
+    Load(rhs);
+    (* {m .. n}, m is lhs, n is rhs *)
+    (* conceptually, this is {0 .. n} - {0 .. m-1} *)
+
+    (* Start with one zero, FFFFFFFE, and shift left to get n zeros, *)
+    (* then invert to get n ones.                                    *)
+    (* If rhs is a constant, this could be precomputed and optimized *)
+    Emit(opMOVI, curReg, 0, 0, -2);
+    Emit(opLSL, rhs.r, curReg, rhs.r, 0);
+    Emit(opXORI, rhs.r, rhs.r, 0, -1);
+
+    (* Start with one zero, FFFFFFFF, and shift left to get m-1      *)
+    (* zeros, then invert to get m-1 ones.                           *)
+    (* If lhs is a constant, this could be precomputed and optimized *)
+    Emit(opMOVI, curReg, 0, 0, -1);
+    Emit(opLSL, lhs.r, curReg, lhs.r, 0);
+    Emit(opXORI, lhs.r, lhs.r, 0, -1);
+
+    Emit(opANN, lhs.r, rhs.r, lhs.r, 0);
+    DecCurReg
   ELSIF op = Lex.tEQ THEN
     GenCompare(lhs, rhs, opBEQ)
   ELSIF op = Lex.tPOUND THEN
