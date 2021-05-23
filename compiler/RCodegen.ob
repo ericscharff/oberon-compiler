@@ -672,7 +672,7 @@ BEGIN
   RETURN cond
 END NegateCond;
 
-PROCEDURE GenBinary(op :Lex.TokenKind; VAR lhs, rhs :Item);
+PROCEDURE GenIntegerOp(op :Lex.TokenKind; VAR lhs, rhs :Item);
 BEGIN
   IF op = Lex.tPLUS THEN
     IF lhs.kind = itemConst THEN
@@ -769,7 +769,81 @@ BEGIN
   ELSE
     ASSERT(FALSE)
   END
-END GenBinary;
+END GenIntegerOp;
+
+PROCEDURE GenSetOp(op :Lex.TokenKind; VAR lhs, rhs :Item);
+BEGIN
+  IF op = Lex.tPLUS THEN
+    IF lhs.kind = itemConst THEN
+      Load(rhs);
+      lhs.kind := rhs.kind; lhs.r := rhs.r;
+      Emit(opORI, lhs.r, lhs.r, 0, lhs.offset)
+    ELSIF rhs.kind = itemConst THEN
+      Load(lhs);
+      Emit(opORI, lhs.r, lhs.r, 0, rhs.offset)
+    ELSE
+      Load(lhs);
+      Load(rhs);
+      Emit(opOR, lhs.r, lhs.r, rhs.r, 0);
+      DecCurReg
+    END
+  ELSIF op = Lex.tMINUS THEN
+    IF rhs.kind = itemConst THEN
+      Load(lhs);
+      Emit(opANNI, lhs.r, lhs.r, 0, rhs.offset)
+    ELSE
+      Load(lhs);
+      Load(rhs);
+      Emit(opANN, lhs.r, lhs.r, rhs.r, 0);
+      DecCurReg
+    END
+  ELSIF op = Lex.tSTAR THEN
+    IF lhs.kind = itemConst THEN
+      Load(rhs);
+      lhs.kind := rhs.kind; lhs.r := rhs.r;
+      Emit(opANDI, lhs.r, lhs.r, 0, lhs.offset)
+    ELSIF rhs.kind = itemConst THEN
+      Load(lhs);
+      Emit(opANDI, lhs.r, lhs.r, 0, rhs.offset)
+    ELSE
+      Load(lhs);
+      Load(rhs);
+      Emit(opAND, lhs.r, lhs.r, rhs.r, 0);
+      DecCurReg
+    END
+  ELSIF op = Lex.tSLASH THEN
+    IF rhs.kind = itemConst THEN
+      Load(lhs);
+      Emit(opXORI, lhs.r, lhs.r, 0, rhs.offset)
+    ELSE
+      Load(lhs);
+      Load(rhs);
+      Emit(opXOR, lhs.r, lhs.r, rhs.r, 0);
+      DecCurReg
+    END
+  ELSIF op = Lex.tEQ THEN
+    GenCompare(lhs, rhs, opBEQ)
+  ELSIF op = Lex.tPOUND THEN
+    GenCompare(lhs, rhs, opBNE)
+  ELSIF op = Lex.tIN THEN
+    Load(lhs);
+    Emit(opMOVI, curReg, 0, 0, 1);
+    Emit(opLSL, lhs.r, curReg, lhs.r, 0);
+    IF rhs.kind = itemConst THEN
+      Emit(opANDI, lhs.r, lhs.r, 0, rhs.offset)
+    ELSE
+      Load(rhs);
+      Emit(opAND, lhs.r, lhs.r, rhs.r, 0);
+      DecCurReg
+    END;
+    lhs.kind := itemCond;
+    lhs.opCond := opBNE;
+    (* We don't need or want the result of the lhs, which is always loaded *)
+    DecCurReg
+  ELSE
+    ASSERT(FALSE)
+  END
+END GenSetOp;
 
 PROCEDURE GenLengthof(l: Lex.Lexer; VAR item :Item; e :AST.Expr);
 BEGIN
@@ -963,6 +1037,14 @@ BEGIN
     ELSE
       ASSERT(FALSE)
     END
+  ELSIF e.lhs.typ.kind = AST.typeSet THEN
+    IF e.op = Lex.tMINUS THEN
+      GenExpr(l, e.lhs, item, parentTrueChain, parentFalseChain);
+      Load(item);
+      Emit(opXORI, item.r, item.r, 0, -1)
+    ELSE
+      ASSERT(FALSE)
+    END
   ELSIF e.lhs.typ.kind = AST.typeBoolean THEN
     IF e.op = Lex.tTILDE THEN
       GenExpr(l, e.lhs, item, parentFalseChain, parentTrueChain);
@@ -1011,7 +1093,11 @@ BEGIN
     GenExpr(l, e.lhs, item, parentTrueChain, parentFalseChain);
     IF item.kind # itemConst THEN Load(item) END;
     GenExpr(l, e.rhs, rhs, parentTrueChain, parentFalseChain);
-    GenBinary(e.op, item, rhs)
+    IF e.rhs.typ.kind = AST.typeSet THEN
+      GenSetOp(e.op, item, rhs)
+    ELSE
+      GenIntegerOp(e.op, item, rhs)
+    END
   END
 END GenBinaryOp;
 

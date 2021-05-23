@@ -9,13 +9,23 @@ BEGIN
   WriteInt(s); WriteLn;
   s := {1};
   WriteInt(s); WriteLn;
+  s := s + s;
+  WriteInt(s); WriteLn;
   i := 1; j := 0; k := 2;
   s := {i};
   WriteInt(s); WriteLn;
+  s := -{i};
+  WriteInt(s); WriteLn;
   s := {i, j, k};
   WriteInt(s); WriteLn;
-(*
   s := {j .. k};
+  WriteInt(s); WriteLn;
+  i := 3; j := 9;
+  s := {0 .. j};
+  WriteInt(s); WriteLn;
+  s := {2 .. j};
+  WriteInt(s); WriteLn;
+  s := {i .. 9};
   WriteInt(s); WriteLn;
   i := 0; j := 3; k := 7;
   s := {i .. j, j .. k};
@@ -44,7 +54,6 @@ BEGIN
   IF 7 IN s THEN WriteInt(10) ELSE WriteInt(0) END;
   IF 8 IN s THEN WriteInt(10) ELSE WriteInt(0) END;
   WriteLn
-*)
 END Test;
 
 BEGIN
