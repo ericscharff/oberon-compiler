@@ -56,9 +56,10 @@ typedef enum Opcode {
 } Opcode;
 
 const char *INSTR_NAMES[] = {
-    "Invalid", "MOV",  "ADD",  "SUB",  "MUL",  "DIV",  "MOD",  "CMP",
-    "MOVI",    "ADDI", "SUBI", "MULI", "DIVI", "MODI", "CMPI", "LDW",
-    "LDB",     "STW",  "STB",  "BL",   "BLr",  "Br",   "B",    "BF",
+    "Invalid", "MOV",  "ADD",  "SUB",  "MUL",  "DIV",  "MOD",  "LSL",  "ASR",
+    "AND",     "OR",   "XOR",  "ANN",  "CMP",  "MOVI", "ADDI", "SUBI", "MULI",
+    "DIVI",    "MODI", "LSLI", "ASRI", "ANDI", "ORI",  "XORI", "ANNI", "CMPI",
+    "LDW",     "LDB",  "STW",  "STB",  "BL",   "BLr",  "Br",   "B",    "BF",
     "BEQ",     "BNE",  "BLT",  "BGE",  "BLE",  "BGT",  "BHI",
 
     "HALT",
