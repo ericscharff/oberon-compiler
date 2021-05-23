@@ -20,12 +20,18 @@ CONST
   opMUL = 3;  (* ra := rb * rc                 *)
   opDIV = 4;  (* ra := rb / rc                 *)
   opMOD = 5;  (* ra := rb % rc                 *)
-  opCMP = 6;  (* rb - rc, affects conditions   *)
-  opLDW = 7;  (* ra := Mem[rb + offset] (word) *)
-  opLDB = 8;  (* ra := Mem[rb + offset] (byte) *)
-  opSTW = 9;  (* Mem[rb + offset] := ra (word) *)
-  opSTB = 10; (* Mem[rb + offset] := ra (byte) *)
-  opBRA = 12; (* PC := value (see below)       *)
+  opLSL = 6;  (* ra := rb << rc                *)
+  opASR = 7;  (* ra := rb >> rc                *)
+  opAND = 8;  (* ra := rb & rc                 *)
+  opOR  = 9;  (* ra := rb | rc                 *)
+  opXOR = 10; (* ra := rb ^ rc                 *)
+  opANN = 11; (* ra := rb & ~n                 *)
+  opCMP = 12; (* rb - rc, affects conditions   *)
+  opLDW = 13; (* ra := Mem[rb + offset] (word) *)
+  opLDB = 14; (* ra := Mem[rb + offset] (byte) *)
+  opSTW = 15; (* Mem[rb + offset] := ra (word) *)
+  opSTB = 16; (* Mem[rb + offset] := ra (byte) *)
+  opBRA = 17; (* PC := value (see below)       *)
   opBL  = 50; (* LR := PC + 1, PC := value     *)
   opBLr = 51; (* LR := PC + 1, PC := rc        *)
   opBrg = 52; (* PC := ra                      *)
@@ -39,13 +45,19 @@ CONST
   opBF  = 15; (* branch never, basically NOP *)
   opBHI = 12; (* Branch if high - ~(~C|Z) *)
 
-  opMOVI = 100; (* ra := immediate      *)
-  opADDI = 101; (* ra := rb + immediate *)
-  opSUBI = 102; (* ra := rb - immediate *)
-  opMULI = 103; (* ra := rb * immediate *)
-  opDIVI = 104; (* ra := rb / immediate *)
-  opMODI = 105; (* ra := rb % immediate *)
-  opCMPI = 106; (* rb - immediate       *)
+  opMOVI = 100; (* ra := immediate       *)
+  opADDI = 101; (* ra := rb + immediate  *)
+  opSUBI = 102; (* ra := rb - immediate  *)
+  opMULI = 103; (* ra := rb * immediate  *)
+  opDIVI = 104; (* ra := rb / immediate  *)
+  opMODI = 105; (* ra := rb % immediate  *)
+  opLSLI = 106; (* ra := rb << immediate *)
+  opASRI = 107; (* ra := rb >> immediate *)
+  opANDI = 108; (* ra := rb & immediate  *)
+  opORI  = 109; (* ra := rb | immediate  *)
+  opXORI = 110; (* ra := rb ^ immediate  *)
+  opANNI = 111; (* ra := rb & ~immediate *)
+  opCMPI = 112; (* rb - immediate        *)
 
   opHALT = 1000;
 
@@ -220,6 +232,18 @@ BEGIN
       Gen3("DIV", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].rc)
     ELSIF op = opMOD THEN
       Gen3("MOD", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].rc)
+    ELSIF op = opLSL THEN
+      Gen3("LSL", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].rc)
+    ELSIF op = opASR THEN
+      Gen3("ASR", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].rc)
+    ELSIF op = opAND THEN
+      Gen3("AND", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].rc)
+    ELSIF op = opOR THEN
+      Gen3("OR", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].rc)
+    ELSIF op = opXOR THEN
+      Gen3("XOR", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].rc)
+    ELSIF op = opANN THEN
+      Gen3("ANN", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].rc)
     ELSIF op = opCMP THEN
       Gen3("CMP", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].rc)
     ELSIF op = opADDI THEN
@@ -232,6 +256,18 @@ BEGIN
       Gen2("DIV", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].value)
     ELSIF op = opMODI THEN
       Gen2("MOD", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].value)
+    ELSIF op = opLSLI THEN
+      Gen2("LSL", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].value)
+    ELSIF op = opASRI THEN
+      Gen2("ASR", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].value)
+    ELSIF op = opANDI THEN
+      Gen2("AND", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].value)
+    ELSIF op = opORI THEN
+      Gen2("OR", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].value)
+    ELSIF op = opXORI THEN
+      Gen2("XOR", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].value)
+    ELSIF op = opANNI THEN
+      Gen2("ANN", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].value)
     ELSIF op = opCMPI THEN
       Gen2("CMP", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].value)
     ELSIF op = opLDW THEN
@@ -299,6 +335,18 @@ BEGIN
       GenStr("DIV");
     ELSIF op = opMOD THEN
       GenStr("MOD");
+    ELSIF op = opLSL THEN
+      GenStr("LSL");
+    ELSIF op = opASR THEN
+      GenStr("ASR");
+    ELSIF op = opAND THEN
+      GenStr("AND");
+    ELSIF op = opOR THEN
+      GenStr("OR");
+    ELSIF op = opXOR THEN
+      GenStr("XOR");
+    ELSIF op = opANN THEN
+      GenStr("ANN");
     ELSIF op = opCMP THEN
       GenStr("CMP");
     ELSIF op = opMOVI THEN
@@ -313,6 +361,18 @@ BEGIN
       GenStr("DIVI");
     ELSIF op = opMODI THEN
       GenStr("MODI");
+    ELSIF op = opLSLI THEN
+      GenStr("LSLI");
+    ELSIF op = opASRI THEN
+      GenStr("ASRI");
+    ELSIF op = opANDI THEN
+      GenStr("ANDI");
+    ELSIF op = opORI THEN
+      GenStr("ORI");
+    ELSIF op = opXORI THEN
+      GenStr("XORI");
+    ELSIF op = opANNI THEN
+      GenStr("ANNI");
     ELSIF op = opCMPI THEN
       GenStr("CMPI");
     ELSIF op = opLDW THEN
@@ -719,6 +779,8 @@ BEGIN
   item.kind := itemConst;
   IF e.typ.kind IN {AST.typeInteger, AST.typeBoolean, AST.typeChar} THEN
     item.offset := e.iVal
+  ELSIF e.typ.kind = AST.typeSet THEN
+    item.offset := ORD(e.setVal)
   ELSIF e.typ.kind = AST.typeNil THEN
     item.offset := 0
   ELSIF e.typ.kind = AST.typeString THEN
@@ -871,6 +933,11 @@ BEGIN
       Load(item);
       Emit(opMOVI, curReg, 0, 0, 0);
       Emit(opSUB, item.r, curReg, item.r, 0)
+    ELSIF e.op = Lex.tAsSetElt THEN
+      GenExpr(l, e.lhs, item, parentTrueChain, parentFalseChain);
+      Load(item);
+      Emit(opMOVI, curReg, 0, 0, 1);
+      Emit(opLSL, item.r, curReg, item.r, 0);
     ELSE
       ASSERT(FALSE)
     END

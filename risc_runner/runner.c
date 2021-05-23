@@ -15,6 +15,12 @@ typedef enum Opcode {
   MUL,  /* ra := rb * rc                 */
   DIV,  /* ra := rb / rc                 */
   MOD,  /* ra := rb % rc                 */
+  LSL,  /* ra := rb << rc                */
+  ASR,  /* ra := rb >> rc                */
+  AND,  /* ra := rb & rc                 */
+  OR,   /* ra := rb | rc                 */
+  XOR,  /* ra := rb ^ rc                 */
+  ANN,  /* ra := rb & ~n                 */
   CMP,  /* rb - rc, affects conditions   */
   MOVI, /* ra := offset                  */
   ADDI, /* ra := rb + offset             */
@@ -22,6 +28,12 @@ typedef enum Opcode {
   MULI, /* ra := rb * offset             */
   DIVI, /* ra := rb / offset             */
   MODI, /* ra := rb % offset             */
+  LSLI, /* ra := rb << immediate         */
+  ASRI, /* ra := rb >> immediate         */
+  ANDI, /* ra := rb & immediate          */
+  ORI,  /* ra := rb | immediate          */
+  XORI, /* ra := rb ^ immediate          */
+  ANNI, /* ra := rb & ~immediate         */
   CMPI, /* rb - offset                   */
   LDW,  /* ra := Mem[rb + offset] (word) */
   LDB,  /* ra := Mem[rb + offset] (byte) */
@@ -220,6 +232,30 @@ void interpret(void) {
         r[a] = r[b] % r[c];
         zFlag = r[a] == 0;
         break;
+      case LSL:
+        r[a] = r[b] << r[c];
+        zFlag = r[a] == 0;
+        break;
+      case ASR:
+        r[a] = r[b] >> r[c];
+        zFlag = r[a] == 0;
+        break;
+      case AND:
+        r[a] = r[b] & r[c];
+        zFlag = r[a] == 0;
+        break;
+      case OR:
+        r[a] = r[b] | r[c];
+        zFlag = r[a] == 0;
+        break;
+      case XOR:
+        r[a] = r[b] ^ r[c];
+        zFlag = r[a] == 0;
+        break;
+      case ANN:
+        r[a] = r[b] & ~r[c];
+        zFlag = r[a] == 0;
+        break;
       case CMP:
         left = r[b];
         right = r[c];
@@ -246,6 +282,30 @@ void interpret(void) {
         break;
       case MODI:
         r[a] = r[b] % offset;
+        zFlag = r[a] == 0;
+        break;
+      case LSLI:
+        r[a] = r[b] << offset;
+        zFlag = r[a] == 0;
+        break;
+      case ASRI:
+        r[a] = r[b] >> offset;
+        zFlag = r[a] == 0;
+        break;
+      case ANDI:
+        r[a] = r[b] & offset;
+        zFlag = r[a] == 0;
+        break;
+      case ORI:
+        r[a] = r[b] | offset;
+        zFlag = r[a] == 0;
+        break;
+      case XORI:
+        r[a] = r[b] ^ offset;
+        zFlag = r[a] == 0;
+        break;
+      case ANNI:
+        r[a] = r[b] & ~offset;
         zFlag = r[a] == 0;
         break;
       case CMPI:
