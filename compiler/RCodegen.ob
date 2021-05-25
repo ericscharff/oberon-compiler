@@ -1145,7 +1145,6 @@ BEGIN
       END;
       IF AST.IsOpenArray(formalParam.typ) THEN
         (* Open arrays must also pass their length *)
-        GenExpr(l, actualParam, item, localTrueChain, localFalseChain);
         GenLengthof(l, item, actualParam);
       END;
     ELSE
