@@ -603,6 +603,26 @@ BEGIN
   END
 END LoadValue;
 
+(* Loads the address of a variable into a register.                          *)
+(* If this is already in a register (e.g., RegI) no new register is reserve. *)
+(* However, for a varialble (relative to SP or GB) a new register allocated. *)
+PROCEDURE LoadAddress(VAR item :Item);
+BEGIN
+  IF item.kind = itemVar THEN
+    (* Reg is SP, so reserve a new register *)
+    Emit(opADDI, curReg, item.r, 0, item.offset);
+    item.offset := 0;
+    item.kind := itemRegI;
+    IncCurReg
+  ELSIF item.kind = itemRegI THEN
+    ASSERT(item.r = curReg - 1);
+    IF item.offset > 0 THEN
+      Emit(opADDI, item.r, item.r, 0, item.offset)
+    END
+  ELSE
+    ASSERT(FALSE)
+  END
+END LoadAddress;
 PROCEDURE AllocateGlobals*(l :Lex.Lexer; d :AST.Decl);
 BEGIN
   ASSERT(d.kind = AST.declVar);
@@ -1131,18 +1151,7 @@ BEGIN
       (* VAR params, arrays, and records passed by reference *)
       localTrueChain := 0; localFalseChain := 0;
       GenExpr(l, actualParam, item, localTrueChain, localFalseChain);
-      IF item.kind = itemVar THEN
-        (* Reg is SP, so reserve a new register *)
-        Emit(opADDI, curReg, item.r, 0, item.offset);
-        IncCurReg
-      ELSIF item.kind = itemRegI THEN
-        ASSERT(item.r = curReg - 1);
-        IF item.offset > 0 THEN
-          Emit(opADDI, item.r, item.r, 0, item.offset)
-        END
-      ELSE
-        ASSERT(FALSE)
-      END;
+      LoadAddress(item);
       IF AST.IsOpenArray(formalParam.typ) THEN
         (* Open arrays must also pass their length *)
         GenLengthof(l, item, actualParam);
