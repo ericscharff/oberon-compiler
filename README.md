@@ -6,7 +6,7 @@ eventual goal is for the compiler to emit code for some (probably virtual)
 machine.
 
 There are actually two compilers in this repository. The first is a
-bootstrapping compiler (in the `c\_bootstrap` directory), which is written in C.
+bootstrapping compiler (in the `c_bootstrap` directory), which is written in C.
 This is actively maintained (if there are bugs) but mostly exists to compile the
 main compiler, which is written in Oberon. This compiler is self-hosting (it can
 compile itself).

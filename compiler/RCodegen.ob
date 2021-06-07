@@ -623,6 +623,7 @@ BEGIN
     ASSERT(FALSE)
   END
 END LoadAddress;
+
 PROCEDURE AllocateGlobals*(l :Lex.Lexer; d :AST.Decl);
 BEGIN
   ASSERT(d.kind = AST.declVar);
