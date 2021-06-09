@@ -18,7 +18,7 @@ TRUE|FALSE|R1|R2|R3|R4|R1|R2|R3|R4
 code
 
 
-PROCEDURE tf(b :BOOLEAN);                                                                          
+PROCEDURE tf(b :BOOLEAN);
    0	 4EE90008	SUB SP SP      8
    1	 AFE00000	STR  LNK SP       0
    2	 A0E00004	STR   R0 SP       4
