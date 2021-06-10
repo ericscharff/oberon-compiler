@@ -15,7 +15,7 @@ END DoCopy;
 BEGIN
   r2.a := 10; r2.b := 20; r2.c := 30;
   DoCopy(r1, r2);
-(*  r1 := r2; *)
+  r1 := r2;
   WriteInt(r1.a);
   WriteInt(r1.b);
   WriteInt(r1.c);
