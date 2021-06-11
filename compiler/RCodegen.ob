@@ -949,20 +949,33 @@ PROCEDURE GenAssign(l :Lex.Lexer; e :AST.Expr; VAR item :Item;
 VAR
   rhs                             :Item;
   localTrueChain, localFalseChain :INTEGER;
+  i, structSize                   :INTEGER;
 BEGIN
-  ASSERT(e.lhs.typ.kind # AST.typeRecord);
   GenExpr(l, e.lhs, item, parentTrueChain, parentFalseChain);
   localTrueChain := 0; localFalseChain := 0;
   GenExpr(l, e.rhs, rhs, localTrueChain, localFalseChain);
-  LoadValue(rhs, localTrueChain, localFalseChain);
-  ASSERT(item.kind IN {itemVar, itemRegI});
-  IF item.isByte THEN
-    Emit(opSTB, rhs.r, item.r, 0, item.offset);
+
+  IF e.lhs.typ.kind = AST.typeRecord THEN
+    structSize := CalculateSize(e.lhs.typ);
+    i := 0;
+    WHILE i < structSize DO
+      Emit(opLDW, curReg, rhs.r, 0, rhs.offset + i);
+      Emit(opSTW, curReg, item.r, 0, item.offset + i);
+      i := i + 4
+    END;
+    IF rhs.kind = itemRegI THEN DecCurReg END;
+    IF item.kind = itemRegI THEN DecCurReg END;
   ELSE
-    Emit(opSTW, rhs.r, item.r, 0, item.offset)
-  END;
-  IF item.kind = itemRegI THEN DecCurReg END;
-  DecCurReg
+    LoadValue(rhs, localTrueChain, localFalseChain);
+    ASSERT(item.kind IN {itemVar, itemRegI});
+    IF item.isByte THEN
+      Emit(opSTB, rhs.r, item.r, 0, item.offset);
+    ELSE
+      Emit(opSTW, rhs.r, item.r, 0, item.offset)
+    END;
+    IF item.kind = itemRegI THEN DecCurReg END;
+    DecCurReg
+  END
 END GenAssign;
 
 PROCEDURE GenFieldRef(l :Lex.Lexer; e :AST.Expr; VAR item :Item;
