@@ -612,10 +612,10 @@ BEGIN
     (* Reg is SP, so reserve a new register *)
     Emit(opADDI, curReg, item.r, 0, item.offset);
     item.offset := 0;
+    item.r := curReg;
     item.kind := itemRegI;
     IncCurReg
   ELSIF item.kind = itemRegI THEN
-    ASSERT(item.r = curReg - 1);
     IF item.offset > 0 THEN
       Emit(opADDI, item.r, item.r, 0, item.offset)
     END
@@ -957,14 +957,30 @@ BEGIN
 
   IF e.lhs.typ.kind = AST.typeRecord THEN
     structSize := CalculateSize(e.lhs.typ);
-    i := 0;
-    WHILE i < structSize DO
-      Emit(opLDW, curReg, rhs.r, 0, rhs.offset + i);
-      Emit(opSTW, curReg, item.r, 0, item.offset + i);
-      i := i + 4
-    END;
-    IF rhs.kind = itemRegI THEN DecCurReg END;
-    IF item.kind = itemRegI THEN DecCurReg END;
+    IF structSize <= 30 THEN
+      (* Unrolled copy from dst to src *)
+      i := 0;
+      WHILE i < structSize DO
+        Emit(opLDW, curReg, rhs.r, 0, rhs.offset + i);
+        Emit(opSTW, curReg, item.r, 0, item.offset + i);
+        i := i + 4
+      END;
+      IF rhs.kind = itemRegI THEN DecCurReg END;
+      IF item.kind = itemRegI THEN DecCurReg END;
+    ELSE
+      (* Loop based copy *)
+      LoadAddress(item);
+      LoadAddress(rhs);
+      Emit(opMOVI, curReg, 0, 0, structSize);
+      IncCurReg;
+      Emit(opLDW, curReg, rhs.r, 0, rhs.offset);
+      Emit(opSTW, curReg, item.r, 0, item.offset);
+      Emit(opADDI, item.r, item.r, 0, 4);
+      Emit(opADDI, rhs.r, rhs.r, 0, 4);
+      Emit(opSUBI, curReg-1, curReg-1, 0, 4);
+      Emit(opBRA, 0, 0, opBGT, cp-5);
+      DecCurReg; DecCurReg; DecCurReg
+    END
   ELSE
     LoadValue(rhs, localTrueChain, localFalseChain);
     ASSERT(item.kind IN {itemVar, itemRegI});

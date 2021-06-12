@@ -218,6 +218,8 @@ void interpret(void) {
         zFlag = r[a] == 0;
         break;
       case SUB:
+        left = r[b];
+        right = r[c];
         r[a] = r[b] - r[c];
         zFlag = r[a] == 0;
         break;
@@ -270,6 +272,8 @@ void interpret(void) {
         zFlag = r[a] == 0;
         break;
       case SUBI:
+        left = r[b];
+        right = offset;
         r[a] = r[b] - offset;
         zFlag = r[a] == 0;
         break;
