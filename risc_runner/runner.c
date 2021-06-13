@@ -3,6 +3,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/* Defining COVERAGE generates an instruciton coverage report */
+#define COVERAGE
+
 /* Maxiumum memory (in int32_t */
 #define MAX_MEM 8192
 #define MAX_MEM_BYTES (MAX_MEM * 4)
@@ -99,6 +102,10 @@ typedef struct Instruction {
 
 #include "risc_code.txt"
 
+#ifdef COVERAGE
+uint32_t visited_ip[(sizeof(PROGRAM) / sizeof(Instruction)) / 32 + 1];
+#endif
+
 void line(const char *reg0, int32_t r0, const char *reg1, int32_t r1,
           int32_t mem, uint8_t *contents) {
   printf(
@@ -180,12 +187,32 @@ void copy_strings_to_mem(uint8_t *mem) {
   }
 }
 
+void set_visited(int pc) {
+  int loc = pc / 32;
+  int bitLoc = pc % 32;
+  visited_ip[loc] |= 1 << bitLoc;
+}
+
+void print_unvisited(void) {
+  printf("Unvisted instructions:\n");
+  for (size_t pc=0; pc < (sizeof(PROGRAM) / sizeof(Instruction)); pc++) {
+    if ((visited_ip[pc/32] & (1 << pc % 32)) == 0) {
+      printf("%d\n", pc);
+    }
+  }
+}
+
 void interpret(void) {
   int pc = START_PC;
   int32_t r[16];
   int32_t mem[MAX_MEM];
   bool zFlag;
 
+#ifdef COVERAGE
+  for (size_t ip=0; ip < (sizeof(visited_ip) / sizeof(uint32_t)); ip++) {
+    visited_ip[ip] = 0;
+  }
+#endif
   r[GB] = 0;
   r[SP] = MAX_MEM_BYTES - 4;
   for (int i = 0; i < MAX_MEM; i++) {
@@ -195,6 +222,9 @@ void interpret(void) {
   int left = 0; /* previous compare */
   int right = 0;
   while (1) {
+#ifdef COVERAGE
+    set_visited(pc);
+#endif
     if (pc < 0) {
       do_trap(pc, r, mem);
       pc = r[LR];
@@ -435,6 +465,9 @@ void interpret(void) {
       case Invalid:
         return;
       case HALT:
+#ifdef COVERAGE
+        print_unvisited();
+#endif
         return;
     }
   }
