@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 /* Defining COVERAGE generates an instruciton coverage report */
-#define COVERAGE
+//#define COVERAGE
 
 /* Maxiumum memory (in int32_t */
 #define MAX_MEM 8192
@@ -42,6 +42,8 @@ typedef enum Opcode {
   LDB,  /* ra := Mem[rb + offset] (byte) */
   STW,  /* Mem[rb + offset] := ra (word) */
   STB,  /* Mem[rb + offset] := ra (byte) */
+  LDWC, /* ra := Mem[rb + offset] (code) */
+  CJP,  /* Case jump (offset)            */
   BL,   /* LR := PC + 1, PC := offset    */
   BLr,  /* LR := PC + 1, PC := rc        */
   Br,   /* PC := ra (usually LR)         */
@@ -62,8 +64,8 @@ const char *INSTR_NAMES[] = {
     "Invalid", "MOV",  "ADD",  "SUB",  "MUL",  "DIV",  "MOD",  "LSL",  "ASR",
     "AND",     "OR",   "XOR",  "ANN",  "CMP",  "MOVI", "ADDI", "SUBI", "MULI",
     "DIVI",    "MODI", "LSLI", "ASRI", "ANDI", "ORI",  "XORI", "ANNI", "CMPI",
-    "LDW",     "LDB",  "STW",  "STB",  "BL",   "BLr",  "Br",   "B",    "BF",
-    "BEQ",     "BNE",  "BLT",  "BGE",  "BLE",  "BGT",  "BHI",
+    "LDW",     "LDB",  "STW",  "STB",  "LDWC", "CJP",  "BL",   "BLr",  "Br",
+    "B",       "BF",   "BEQ",  "BNE",  "BLT",  "BGE",  "BLE",  "BGT",  "BHI",
 
     "HALT",
 };
@@ -187,6 +189,7 @@ void copy_strings_to_mem(uint8_t *mem) {
   }
 }
 
+#ifdef COVERAGE
 void set_visited(int pc) {
   int loc = pc / 32;
   int bitLoc = pc % 32;
@@ -195,12 +198,13 @@ void set_visited(int pc) {
 
 void print_unvisited(void) {
   printf("Unvisted instructions:\n");
-  for (size_t pc=0; pc < (sizeof(PROGRAM) / sizeof(Instruction)); pc++) {
-    if ((visited_ip[pc/32] & (1 << pc % 32)) == 0) {
+  for (size_t pc = 0; pc < (sizeof(PROGRAM) / sizeof(Instruction)); pc++) {
+    if ((visited_ip[pc / 32] & (1 << pc % 32)) == 0) {
       printf("%d\n", pc);
     }
   }
 }
+#endif
 
 void interpret(void) {
   int pc = START_PC;
@@ -209,7 +213,7 @@ void interpret(void) {
   bool zFlag;
 
 #ifdef COVERAGE
-  for (size_t ip=0; ip < (sizeof(visited_ip) / sizeof(uint32_t)); ip++) {
+  for (size_t ip = 0; ip < (sizeof(visited_ip) / sizeof(uint32_t)); ip++) {
     visited_ip[ip] = 0;
   }
 #endif
@@ -385,6 +389,17 @@ void interpret(void) {
         mem[address / 4] = current;
         break;
       }
+      case LDWC: {
+        int address = r[b] + offset;
+        if (PROGRAM[address].opcode != CJP) {
+          do_trap(pc, r, mem);
+        }
+        r[a] = PROGRAM[address].offset;
+        break;
+      }
+      case CJP:
+        do_trap(pc, r, mem);
+        break;
       case BL:
         r[LR] = pc;
         pc = offset;

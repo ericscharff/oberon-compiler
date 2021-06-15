@@ -14,27 +14,29 @@ CONST
   LINK = 1; (* If set, branch preceded by link *)
 
   (* Opcodes *)
-  opMOV = 0;  (* ra := rb                      *)
-  opADD = 1;  (* ra := rb + rc                 *)
-  opSUB = 2;  (* ra := rb - rc                 *)
-  opMUL = 3;  (* ra := rb * rc                 *)
-  opDIV = 4;  (* ra := rb / rc                 *)
-  opMOD = 5;  (* ra := rb % rc                 *)
-  opLSL = 6;  (* ra := rb << rc                *)
-  opASR = 7;  (* ra := rb >> rc                *)
-  opAND = 8;  (* ra := rb & rc                 *)
-  opOR  = 9;  (* ra := rb | rc                 *)
-  opXOR = 10; (* ra := rb ^ rc                 *)
-  opANN = 11; (* ra := rb & ~n                 *)
-  opCMP = 12; (* rb - rc, affects conditions   *)
-  opLDW = 13; (* ra := Mem[rb + offset] (word) *)
-  opLDB = 14; (* ra := Mem[rb + offset] (byte) *)
-  opSTW = 15; (* Mem[rb + offset] := ra (word) *)
-  opSTB = 16; (* Mem[rb + offset] := ra (byte) *)
-  opBRA = 17; (* PC := value (see below)       *)
-  opBL  = 50; (* LR := PC + 1, PC := value     *)
-  opBLr = 51; (* LR := PC + 1, PC := rc        *)
-  opBrg = 52; (* PC := ra                      *)
+  opMOV  = 0;  (* ra := rb                      *)
+  opADD  = 1;  (* ra := rb + rc                 *)
+  opSUB  = 2;  (* ra := rb - rc                 *)
+  opMUL  = 3;  (* ra := rb * rc                 *)
+  opDIV  = 4;  (* ra := rb / rc                 *)
+  opMOD  = 5;  (* ra := rb % rc                 *)
+  opLSL  = 6;  (* ra := rb << rc                *)
+  opASR  = 7;  (* ra := rb >> rc                *)
+  opAND  = 8;  (* ra := rb & rc                 *)
+  opOR   = 9;  (* ra := rb | rc                 *)
+  opXOR  = 10; (* ra := rb ^ rc                 *)
+  opANN  = 11; (* ra := rb & ~n                 *)
+  opCMP  = 12; (* rb - rc, affects conditions   *)
+  opLDW  = 13; (* ra := Mem[rb + offset] (word) *)
+  opLDB  = 14; (* ra := Mem[rb + offset] (byte) *)
+  opSTW  = 15; (* Mem[rb + offset] := ra (word) *)
+  opSTB  = 16; (* Mem[rb + offset] := ra (byte) *)
+  opLDWC = 17; (* ra := Mem[rb + offset] (code) *)
+  opCJP  = 18; (* Case jump (pc offset)         *)
+  opBRA  = 19; (* PC := value (see below)       *)
+  opBL   = 50; (* LR := PC + 1, PC := value     *)
+  opBLr  = 51; (* LR := PC + 1, PC := rc        *)
+  opBrg  = 52; (* PC := ra                      *)
 
   (* Branches have opcode opBRA, and r.c is    *)
   (* the conndition code, given below:         *)
@@ -278,6 +280,10 @@ BEGIN
       Gen2("STW", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].value)
     ELSIF op = opSTB THEN
       Gen2("STB", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].value)
+    ELSIF op = opLDWC THEN
+      Gen2("LDWC", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].value)
+    ELSIF op = opCJP THEN
+      GenStr("CASE "); GenReg(codeBuffer[i].value)
     ELSIF op = opBRA THEN
       CASE codeBuffer[i].rc OF
         opBEQ: GenStr("BEQ ")
@@ -383,6 +389,10 @@ BEGIN
       GenStr("STW");
     ELSIF op = opSTB THEN
       GenStr("STB");
+    ELSIF op = opLDWC THEN
+      GenStr("LDWC");
+    ELSIF op = opCJP THEN
+      GenStr("CJP");
     ELSIF op = opBRA THEN
       IF offset >= 0 THEN
         INC(offset, delta);
