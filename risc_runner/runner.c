@@ -489,7 +489,7 @@ void interpret(void) {
 }
 
 int main(int argc, char **argv) {
-  printf("%s(%d): %d %d\n", argv[0], argc, PROGRAM[0].opcode,
+  printf("%s(%d): %d %zd\n", argv[0], argc, PROGRAM[0].opcode,
          sizeof(PROGRAM) / sizeof(Instruction));
   interpret();
   return 0;
