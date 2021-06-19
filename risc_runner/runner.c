@@ -398,7 +398,7 @@ void interpret(void) {
         break;
       }
       case CJP:
-        do_trap(pc, r, mem);
+        pc = offset;
         break;
       case BL:
         r[LR] = pc;

@@ -1,0 +1,36 @@
+MODULE CaseTest;
+
+PROCEDURE Start;
+BEGIN
+  WriteChar(41X)
+END Start;
+
+PROCEDURE Trial(a :INTEGER);
+BEGIN
+  CASE a OF
+    0 :WriteInt(100)
+  | 1 :WriteInt(101)
+  | 2 :WriteInt(102)
+  | 3 :WriteInt(103)
+  | 4 :WriteInt(104)
+  | 5 :WriteInt(105)
+  | 8 .. 10 :WriteInt(3333)
+  END;
+  WriteLn
+END Trial;
+
+BEGIN
+  Start;
+  Trial(-5);
+  Trial(33);
+  Trial(0);
+  Trial(1);
+  Trial(2);
+  Trial(3);
+  Trial(4);
+  Trial(5);
+  Trial(6);
+  Trial(7);
+  Trial(8);
+  Trial(10);
+END CaseTest.

@@ -104,6 +104,7 @@ TYPE
 VAR
   GenExpr      :PROCEDURE(l :Lex.Lexer; e :AST.Expr; VAR item :Item;
                           VAR parentTrueChain, parentFalseChain :INTEGER);
+  GenCase      :PROCEDURE(l :Lex.Lexer; s :AST.Stmt);
   typeCache    :ARRAY CACHE_SIZE OF AST.Type; (* Already reached types        *)
   typeSizes    :ARRAY CACHE_SIZE OF INTEGER;  (* Map RECORD and ARRAY to size *)
   codeBuffer   :ARRAY CODE_BUFFER OF Instruction;
@@ -283,7 +284,7 @@ BEGIN
     ELSIF op = opLDWC THEN
       Gen2("LDWC", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].value)
     ELSIF op = opCJP THEN
-      GenStr("CASE "); GenReg(codeBuffer[i].value)
+      GenStr("CASE "); Out.Int(codeBuffer[i].value)
     ELSIF op = opBRA THEN
       CASE codeBuffer[i].rc OF
         opBEQ: GenStr("BEQ ")
@@ -1462,6 +1463,8 @@ BEGIN
       Emit(opBRA, 0, 0, item.opCond, loopStart);
       (* Loop done, so the false chain links here *)
       FixChain(falseChain, cp)
+    ELSIF s.kind = AST.stmtCase THEN
+      GenCase(l, s)
     ELSIF s.kind = AST.stmtEmpty THEN
     ELSE
       ASSERT(FALSE)
@@ -1470,6 +1473,98 @@ BEGIN
     s := s.next
   END
 END GenStatements;
+
+PROCEDURE GenCase0(l :Lex.Lexer; s :AST.Stmt);
+VAR
+  i, j, smallest, largest, caseTableStart :INTEGER;
+  t :AST.Stmt;
+  e :AST.Expr;
+  item :Item;
+  after, localTrueChain, localFalseChain :INTEGER;
+BEGIN
+  after := 0;
+  smallest := 2147483647;
+  largest := -2147483648;
+  (* First, figure out the range of labels *)
+  t := s.elsifs;
+  WHILE t # NIL DO
+    ASSERT(t.kind = AST.stmtCaseItem);
+    ASSERT(t.next = NIL);
+    ASSERT(t.cond.kind = AST.exprBinary);
+    (* Case items have a special cond, which has possibly more than one *)
+    (* expr. The expr is either an equal (where the lhs is the case,    *)
+    (* which can be ignored), or a CaseDotDot operator, which should be *)
+    (* expanded here since the cases must be constant.                  *)
+    e := t.cond;
+    WHILE e # NIL DO
+      IF e.op = Lex.tEQ THEN
+        ASSERT(AST.IsConst(e.rhs));
+        IF e.rhs.iVal < smallest THEN smallest := e.rhs.iVal END;
+        IF e.rhs.iVal > largest THEN largest := e.rhs.iVal END;
+      ELSIF e.op = Lex.tCaseDotDot THEN
+        ASSERT(AST.IsConst(e.lhs.rhs));
+        ASSERT(AST.IsConst(e.rhs.rhs));
+        IF e.lhs.rhs.iVal < smallest THEN smallest := e.lhs.rhs.iVal END;
+        IF e.lhs.rhs.iVal > largest THEN largest := e.lhs.rhs.iVal END;
+        IF e.rhs.rhs.iVal < smallest THEN smallest := e.rhs.rhs.iVal END;
+        IF e.rhs.rhs.iVal > largest THEN largest := e.rhs.rhs.iVal END;
+      ELSE
+        ASSERT(FALSE)
+      END;
+      e := e.next
+    END;
+    t := t.elsifs
+  END;
+  (* case condition *)
+  GenExpr(l, s.cond, item, localTrueChain, localFalseChain);
+  LoadValue(item, localTrueChain, localFalseChain);
+  (* upper bound *)
+  Emit(opCMPI, item.r, item.r, 0, largest);
+  Emit(opBRA, 0, 0, opBGT, 0);
+  AddToChain(after);
+  (* lower bound *)
+  Emit(opCMPI, item.r, item.r, 0, smallest);
+  Emit(opBRA, 0, 0, opBLT, 0);
+  AddToChain(after);
+  DecCurReg;
+  (* Jump using jump table *)
+  IF smallest # 0 THEN
+    Emit(opSUBI, item.r, item.r, 0, smallest)
+  END;
+  Emit(opADDI, item.r, item.r, 0, pc+2); (* offset to jump table *)
+  Emit(opBrg, item.r, 0, 0, 0);
+  caseTableStart := cp;
+  FOR i := smallest TO largest DO
+    Emit(opCJP, 0, 0, 0, 0)
+  END;
+  (* For each case, update jump table and generate code *)
+  t := s.elsifs;
+  WHILE t # NIL DO
+    i := pc; (* i = destination of case label *)
+    e := t.cond;
+    WHILE e # NIL DO
+      IF e.op = Lex.tEQ THEN
+        codeBuffer[caseTableStart + e.rhs.iVal - smallest].value := i;
+      ELSIF e.op = Lex.tCaseDotDot THEN
+        FOR j := e.lhs.rhs.iVal TO e.rhs.rhs.iVal DO
+          codeBuffer[caseTableStart + j - smallest].value := i;
+        END;
+      END;
+      e := e.next
+    END;
+    GenStatements(l, t.body);
+    Emit(opBRA, 0, 0, opB, 0);
+    AddToChain(after);
+    t := t.elsifs
+  END;
+  (* Fix any gaps in the case table *)
+  FOR i := smallest TO largest DO
+    IF codeBuffer[caseTableStart + i].value = 0 THEN
+      codeBuffer[caseTableStart + i].value := pc
+    END
+  END;
+  FixChain(after, cp)
+END GenCase0;
 
 PROCEDURE GenerateProc*(l :Lex.Lexer; d :AST.Decl);
 VAR
@@ -1589,6 +1684,7 @@ END EnableDumpCode;
 
 BEGIN
   GenExpr := GenExpr0;
+  GenCase := GenCase0;
   globalOffset := 0;
   stackOffset := 0;
   lastType := 0;
