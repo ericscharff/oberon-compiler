@@ -42,7 +42,6 @@ typedef enum Opcode {
   LDB,  /* ra := Mem[rb + offset] (byte) */
   STW,  /* Mem[rb + offset] := ra (word) */
   STB,  /* Mem[rb + offset] := ra (byte) */
-  LDWC, /* ra := Mem[rb + offset] (code) */
   CJP,  /* Case jump (offset)            */
   BL,   /* LR := PC + 1, PC := offset    */
   BLr,  /* LR := PC + 1, PC := rc        */
@@ -64,8 +63,8 @@ const char *INSTR_NAMES[] = {
     "Invalid", "MOV",  "ADD",  "SUB",  "MUL",  "DIV",  "MOD",  "LSL",  "ASR",
     "AND",     "OR",   "XOR",  "ANN",  "CMP",  "MOVI", "ADDI", "SUBI", "MULI",
     "DIVI",    "MODI", "LSLI", "ASRI", "ANDI", "ORI",  "XORI", "ANNI", "CMPI",
-    "LDW",     "LDB",  "STW",  "STB",  "LDWC", "CJP",  "BL",   "BLr",  "Br",
-    "B",       "BF",   "BEQ",  "BNE",  "BLT",  "BGE",  "BLE",  "BGT",  "BHI",
+    "LDW",     "LDB",  "STW",  "STB",  "CJP",  "BL",   "BLr",  "Br",   "B",
+    "BF",      "BEQ",  "BNE",  "BLT",  "BGE",  "BLE",  "BGT",  "BHI",
 
     "HALT",
 };
@@ -387,14 +386,6 @@ void interpret(void) {
         current = current & (~mask);
         current = current | ((r[a] & 0xff) << ((address % 4) * 8));
         mem[address / 4] = current;
-        break;
-      }
-      case LDWC: {
-        int address = r[b] + offset;
-        if (PROGRAM[address].opcode != CJP) {
-          do_trap(pc, r, mem);
-        }
-        r[a] = PROGRAM[address].offset;
         break;
       }
       case CJP:
