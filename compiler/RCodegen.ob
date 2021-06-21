@@ -987,6 +987,8 @@ BEGIN
       Emit(opBRA, 0, 0, opBGT, cp-5);
       DecCurReg; DecCurReg; DecCurReg
     END
+  ELSIF e.lhs.typ.kind = AST.typeArray THEN
+    ASSERT(FALSE)
   ELSE
     LoadValue(rhs, localTrueChain, localFalseChain);
     ASSERT(item.kind IN {itemVar, itemRegI});
