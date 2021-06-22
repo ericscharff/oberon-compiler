@@ -10,6 +10,7 @@ TYPE
 VAR
   flag :BOOLEAN;
   a :R;
+  w1, w2 :ARRAY 8 OF CHAR;
 
 PROCEDURE P(VAR b :BOOLEAN);
 BEGIN
@@ -58,6 +59,9 @@ END TestTwo;
 
 BEGIN
   flag := TRUE;
+  w2[1] := 1X;
+  w2[2] := 2X;
+  w1 := w2;
   a.x := 1;
   a.y := 2;
   RefTest(a.y, a.x > a.y, flag, flag, a);
