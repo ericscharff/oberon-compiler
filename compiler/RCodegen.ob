@@ -950,43 +950,50 @@ BEGIN
   END
 END GenIdentRef;
 
+(* Copy structs or arrays *)
+PROCEDURE CopyStructure(e :AST.Expr; VAR item, rhs :Item);
+VAR
+  i, structSize                   :INTEGER;
+BEGIN
+  structSize := CalculateSize(e.lhs.typ);
+  IF structSize <= 30 THEN
+    (* Unrolled copy from dst to src *)
+    i := 0;
+    WHILE i < structSize DO
+      Emit(opLDW, curReg, rhs.r, 0, rhs.offset + i);
+      Emit(opSTW, curReg, item.r, 0, item.offset + i);
+      i := i + 4
+    END;
+    IF rhs.kind = itemRegI THEN DecCurReg END;
+    IF item.kind = itemRegI THEN DecCurReg END;
+  ELSE
+    (* Loop based copy *)
+    LoadAddress(item);
+    LoadAddress(rhs);
+    Emit(opMOVI, curReg, 0, 0, structSize);
+    IncCurReg;
+    Emit(opLDW, curReg, rhs.r, 0, rhs.offset);
+    Emit(opSTW, curReg, item.r, 0, item.offset);
+    Emit(opADDI, item.r, item.r, 0, 4);
+    Emit(opADDI, rhs.r, rhs.r, 0, 4);
+    Emit(opSUBI, curReg-1, curReg-1, 0, 4);
+    Emit(opBRA, 0, 0, opBGT, cp-5);
+    DecCurReg; DecCurReg; DecCurReg
+  END
+END CopyStructure;
+
 PROCEDURE GenAssign(l :Lex.Lexer; e :AST.Expr; VAR item :Item;
                     VAR parentTrueChain, parentFalseChain :INTEGER);
 VAR
   rhs                             :Item;
   localTrueChain, localFalseChain :INTEGER;
-  i, structSize                   :INTEGER;
 BEGIN
   GenExpr(l, e.lhs, item, parentTrueChain, parentFalseChain);
   localTrueChain := 0; localFalseChain := 0;
   GenExpr(l, e.rhs, rhs, localTrueChain, localFalseChain);
 
   IF e.lhs.typ.kind = AST.typeRecord THEN
-    structSize := CalculateSize(e.lhs.typ);
-    IF structSize <= 30 THEN
-      (* Unrolled copy from dst to src *)
-      i := 0;
-      WHILE i < structSize DO
-        Emit(opLDW, curReg, rhs.r, 0, rhs.offset + i);
-        Emit(opSTW, curReg, item.r, 0, item.offset + i);
-        i := i + 4
-      END;
-      IF rhs.kind = itemRegI THEN DecCurReg END;
-      IF item.kind = itemRegI THEN DecCurReg END;
-    ELSE
-      (* Loop based copy *)
-      LoadAddress(item);
-      LoadAddress(rhs);
-      Emit(opMOVI, curReg, 0, 0, structSize);
-      IncCurReg;
-      Emit(opLDW, curReg, rhs.r, 0, rhs.offset);
-      Emit(opSTW, curReg, item.r, 0, item.offset);
-      Emit(opADDI, item.r, item.r, 0, 4);
-      Emit(opADDI, rhs.r, rhs.r, 0, 4);
-      Emit(opSUBI, curReg-1, curReg-1, 0, 4);
-      Emit(opBRA, 0, 0, opBGT, cp-5);
-      DecCurReg; DecCurReg; DecCurReg
-    END
+    CopyStructure(e, item, rhs)
   ELSIF e.lhs.typ.kind = AST.typeArray THEN
     ASSERT(FALSE)
   ELSE
