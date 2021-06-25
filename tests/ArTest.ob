@@ -63,8 +63,10 @@ BEGIN
   w2[1].y := 2;
   w2[2].x := 3;
   w2[2].y := 4;
+  Out.Str("Before copy"); Out.Ln;
   Out.Int(w1[1].x); Out.Int(w1[1].y); Out.Int(w1[2].x); Out.Int(w1[2].y); Out.Ln;
   w1 := w2;
+  Out.Str("After copy"); Out.Ln;
   Out.Int(w1[1].x); Out.Int(w1[1].y); Out.Int(w1[2].x); Out.Int(w1[2].y); Out.Ln;
   a.x := 1;
   a.y := 2;
