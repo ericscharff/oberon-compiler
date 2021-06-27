@@ -10,7 +10,7 @@ TYPE
 VAR
   flag :BOOLEAN;
   a :R;
-  w1, w2 :ARRAY 8 OF R;
+  w1, w2 :ARRAY 4 OF R;
 
 PROCEDURE P(VAR b :BOOLEAN);
 BEGIN
