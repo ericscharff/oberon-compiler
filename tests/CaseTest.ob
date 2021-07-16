@@ -8,12 +8,12 @@ END Start;
 PROCEDURE Trial(a :INTEGER);
 BEGIN
   CASE a OF
-    0 :WriteInt(100)
-  | 1 :WriteInt(101)
-  | 2 :WriteInt(102)
-  | 3 :WriteInt(103)
-  | 4 :WriteInt(104)
-  | 5 :WriteInt(105)
+    0 :WriteInt(1000)
+  | 1 :WriteInt(1001)
+  | 2 :WriteInt(1002)
+  | 3 :WriteInt(1003)
+  | 4 :WriteInt(1004)
+  | 5 :WriteInt(1005)
   | 8 .. 10 :WriteInt(3333)
   END;
   WriteLn
