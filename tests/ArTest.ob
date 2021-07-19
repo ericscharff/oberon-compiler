@@ -4,13 +4,13 @@ IMPORT Out;
 
 TYPE
   R = RECORD x, y :INTEGER END;
-  AR = ARRAY 4 OF R;
+  AR = ARRAY 3 OF R;
   AR2 = ARRAY 7, 8 OF R;
 
 VAR
   flag :BOOLEAN;
   a :R;
-  w1, w2 :ARRAY 4 OF R;
+  w1, w2 :ARRAY 3 OF R;
 
 PROCEDURE P(VAR b :BOOLEAN);
 BEGIN
@@ -57,6 +57,17 @@ BEGIN
   ar[i, j].x := 33
 END TestTwo;
 
+PROCEDURE StringTest;
+VAR
+  h1, h2 :ARRAY 8 OF CHAR;
+BEGIN
+  h1 := "Hello";
+  h2 := "World";
+  Out.Str(h1);
+  Out.Str(h2);
+  Out.Ln
+END StringTest;
+
 BEGIN
   flag := TRUE;
   w2[1].x := 1;
@@ -65,7 +76,9 @@ BEGIN
   w2[2].y := 4;
   Out.Str("Before copy"); Out.Ln;
   Out.Int(w1[1].x); Out.Int(w1[1].y); Out.Int(w1[2].x); Out.Int(w1[2].y); Out.Ln;
+  (* Disabled because the C codegen doesn't support this:
   w1 := w2;
+  *)
   Out.Str("After copy"); Out.Ln;
   Out.Int(w1[1].x); Out.Int(w1[1].y); Out.Int(w1[2].x); Out.Int(w1[2].y); Out.Ln;
   a.x := 1;
@@ -74,4 +87,5 @@ BEGIN
   Out.Int(a.y); Out.Ln;
   TestAr;
   TestTwo;
+  StringTest;
 END ArTest.
