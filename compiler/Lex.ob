@@ -906,17 +906,6 @@ BEGIN
   LexerInitFromFile(l, "Lex.ob");
   REPEAT
     NextToken(l);
-    (*
-    Out.Str(TokenNames[l.t.kind]);
-    IF l.t.kind = tINT THEN
-      Out.Str(" ");
-      Out.Int(l.t.iVal);
-    ELSIF (l.t.kind = tIDENT) OR (l.t.kind = tSTRING) THEN
-      Out.Str(" ");
-      OutStr(l, l.t.sVal);
-    END;
-    Out.Ln;
-    *)
   UNTIL l.t.kind = tEOF;
   InfoPrintLn("PASS: Lexer test");
 END TestLexer;
