@@ -11,8 +11,8 @@ CONST
   DOWN   =  1;
   LEFT   =  2;
   RIGHT  =  3;
-  WIDTH  = 63; (* Must be odd *)
-  HEIGHT = 21; (* Must be odd *)
+  WIDTH  = 67; (* Must be odd *)
+  HEIGHT = 23; (* Must be odd *)
 
 TYPE
   Offset = ARRAY 2 OF INTEGER;
