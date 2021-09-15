@@ -26,7 +26,7 @@ END B;
 
 BEGIN
   IF i > 0 THEN
-    Out.Str("A "); Out.It(i); Out.Ln;
+    Out.Str("A "); Out.Int(i); Out.Ln;
     B(i-1)
   END;
   Out.Str("A "); Out.Int(i); Out.Str(" complete"); Out.Ln
