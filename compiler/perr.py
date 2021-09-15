@@ -13,4 +13,4 @@ for line in fileinput.input():
       for i in range(pos):
         if contents[i] == '\n':
           linenum += 1
-    print('%s:%d:%s' % (fileName, linenum, message))
+    print(f'{fileName}:{linenum}:{message}')
