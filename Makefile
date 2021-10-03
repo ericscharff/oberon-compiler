@@ -1,4 +1,3 @@
-CC=gcc
 BUILDDIR=build
 CFLAGS=-g -Wall -Wextra -Wpedantic
 
