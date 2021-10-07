@@ -68,6 +68,19 @@ BEGIN
   Out.Ln
 END StringTest;
 
+PROCEDURE ArrayOfStringTest;
+VAR
+  pool :ARRAY 4, 5 OF CHAR;
+BEGIN
+  pool[0] := "EF";
+  pool[1] := "CD";
+  pool[2] := "AB";
+  Out.Str(pool[2]);
+  Out.Str(pool[1]);
+  Out.Str(pool[0]);
+  Out.Ln
+END ArrayOfStringTest;
+
 BEGIN
   flag := TRUE;
   w2[1].x := 1;
@@ -88,4 +101,5 @@ BEGIN
   TestAr;
   TestTwo;
   StringTest;
+  ArrayOfStringTest;
 END ArTest.
