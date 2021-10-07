@@ -19,33 +19,37 @@ IOTest_Neat: code offset: 5
 IOTest__module_init_: code offset: 13
 13	SUB SP, SP, #4
 14	STW LR, SP, #0
-15	MOV R0, #101
-16	BL -12 (Out_Char)
-17	MOV R0, #65
-18	STW R0, GB, #0
-19	B 25
-20	LDW R0, GB, #0
-21	BL 5 (IOTest_Neat)
-22	LDW R0, GB, #0
-23	ADD R0, R0, #1
-24	STW R0, GB, #0
-25	LDW R0, GB, #0
-26	CMP R0, #91
-27	BLT 20
-28	BL -15 (Out_Ln)
-29	MOV R0, #0
-30	LDW R0, R0, #-1
-31	STW R0, GB, #4
-32	LDW R0, GB, #4
-33	ADD R0, R0, #1
-34	STW R0, GB, #4
-35	LDW R0, GB, #4
-36	BL -10 (Out_Int)
-37	BL -15 (Out_Ln)
-38	LDW LR, SP, #0
-39	ADD SP, SP, #4
-40	B LR
-__start__: 41
-41	BL 0 (Out__module_init_)
-42	BL 13 (IOTest__module_init_)
-43	HALT
+15	ADD R0, GB, #8
+16	MOV R1, #27
+17	BL -13 (Out_Str)
+18	BL -15 (Out_Ln)
+19	MOV R0, #101
+20	BL -12 (Out_Char)
+21	MOV R0, #65
+22	STW R0, GB, #0
+23	B 29
+24	LDW R0, GB, #0
+25	BL 5 (IOTest_Neat)
+26	LDW R0, GB, #0
+27	ADD R0, R0, #1
+28	STW R0, GB, #0
+29	LDW R0, GB, #0
+30	CMP R0, #91
+31	BLT 24
+32	BL -15 (Out_Ln)
+33	MOV R0, #0
+34	LDW R0, R0, #-1
+35	STW R0, GB, #4
+36	LDW R0, GB, #4
+37	ADD R0, R0, #1
+38	STW R0, GB, #4
+39	LDW R0, GB, #4
+40	BL -10 (Out_Int)
+41	BL -15 (Out_Ln)
+42	LDW LR, SP, #0
+43	ADD SP, SP, #4
+44	B LR
+__start__: 45
+45	BL 0 (Out__module_init_)
+46	BL 13 (IOTest__module_init_)
+47	HALT

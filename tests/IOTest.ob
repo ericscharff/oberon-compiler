@@ -11,6 +11,8 @@ BEGIN
 END Neat;
 
 BEGIN
+  Out.Str("Hello 🂤 🂥 🂦 World");
+  Out.Ln;
   Out.Char(65X);
   i := 65;
   WHILE i < 91 DO
