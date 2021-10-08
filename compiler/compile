@@ -10,7 +10,7 @@ cp $COMPILERDIR/*.ob $BUILDDIR
 cp *.ob $BUILDDIR
 cd $BUILDDIR
 
-CC=gcc
+CC=${CC:-cc}
 EXT=.c
 OCFLAGS=
 inSwitches=1

@@ -12,7 +12,7 @@ cp $RUNNERDIR/* $BUILDDIR
 cp *.ob $BUILDDIR
 cd $BUILDDIR
 
-CC=gcc
+CC=${CC:-cc}
 
 cd $BUILDDIR
 ./oberonr $1 | $PERR
