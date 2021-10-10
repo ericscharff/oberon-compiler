@@ -1,3 +1,4 @@
+(* Written with Oberon S3. Likely not working *)
 MODULE M6502;
 
 IMPORT BIT, SYSTEM;

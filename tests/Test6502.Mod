@@ -1,3 +1,4 @@
+(* Written with Oberon S3. Likely not working *)
 MODULE Test6502;
 
 IMPORT M6502, BIT, In, Out, Files;
