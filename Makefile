@@ -1,5 +1,6 @@
 BUILDDIR=build
-CFLAGS=-g -Wall -Wextra -Wpedantic
+#CFLAGS=-g -Wall -Wextra -Wpedantic
+CFLAGS=-O2
 
 BOOTSTRAP_SRCS=$(wildcard c_bootstrap/*.c)
 COMPILER_SRCS=$(wildcard compiler/*.ob) compiler/runtime.c
