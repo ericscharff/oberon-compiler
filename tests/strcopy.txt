@@ -1,3 +1,4 @@
+(* StrCopy source code *)
 MODULE StrCopy;
 
 IMPORT Texts, Oberon;
@@ -25,6 +26,8 @@ BEGIN
   Runner
 END StrCopy.
 
+(* StrCopy disassembled from Project Oberon *)
+(* $ ../norebo ORTool.DecObj StrCopy.rsc *)
 ORTool 18.2.2013
 decode StrCopy.rsc
 StrCopy D633A923   1   380
