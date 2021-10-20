@@ -5,12 +5,12 @@ IMPORT Texts, Oberon;
 
 VAR W: Texts.Writer;
 
-PROCEDURE P(s :ARRAY OF CHAR);
+PROCEDURE P(src :ARRAY OF CHAR);
 VAR
-  x :ARRAY 8 OF CHAR;
+  dest :ARRAY 8 OF CHAR;
 BEGIN
-  x := s;
-  Texts.WriteString(W, x); Texts.WriteLn(W);
+  dest := src;
+  Texts.WriteString(W, dest); Texts.WriteLn(W);
 END P;
 
 PROCEDURE Runner*;
@@ -49,21 +49,21 @@ code
 ; stack space = size of x (8 bytes) + R0 (4 bytes) + R1 (4 bytes) + lnk (4 bytes)
    0     4EE90014       SUB SP SP 20    ; Reserve stack space
    1     AFE00000       STR LNK SP 0    ; SP+0 = Return address
-   2     A0E00004       STR R0 SP 4     ; SP+4 = s
-   3     A1E00008       STR R1 SP 8     ; SP+8 = LEN(s)
-   4     40E8000C       ADD R0 SP 12    ; R0 = address of x
-   5     81E00004       LDR R1 SP 4     ; R1 = s
-   6     82E00008       LDR R2 SP 8     ; R2 = LEN(s)
-   7     E100000B       BEQ 11
+   2     A0E00004       STR R0 SP 4     ; SP+4 = src
+   3     A1E00008       STR R1 SP 8     ; SP+8 = LEN(src)
+   4     40E8000C       ADD R0 SP 12    ; R0 = address of dest
+   5     81E00004       LDR R1 SP 4     ; R1 = src
+   6     82E00008       LDR R2 SP 8     ; R2 = LEN(src)
+   7     E100000B       BEQ 11          ;
    8     42280003       ADD R2 R2 3     ; rounding to multiple of 4, R2 = R2+3
-   9     42220002       ASR R2 R2 2     ; R2 = R2 >> 2 (size of s in words, size)
-  10     43000002       MOV R3 R0 2     ; R3 = 2 (which is the static sizw of x, 2 words)
-  11     03290003       SUB R3 R2 R3    ; R3 = size(s) (words) - size(x) (words)
-  12     DE01593C       BLGT  MT        ; if out of bounds, TRAP
-  13     83100000       LDR R3 R1 0     ; R3 = Mem[R1+0] (current word of s)
-  14     41180004       ADD R1 R1 4     ; R1 = R1 + 4 (advance s pointer)
+   9     42220002       ASR R2 R2 2     ; R2 = R2 >> 2 (size of src in words, size)
+  10     43000002       MOV R3 R0 2     ; R3 = 2 (which is the static size of dest, 2 words)
+  11     03290003       SUB R3 R2 R3    ; R3 = size(src) (words) - size(dest) (words)
+  12     DE01593C       BLGT  MT        ; if out of bounds (LEN(src) > LEN(dest)), TRAP
+  13     83100000       LDR R3 R1 0     ; R3 = Mem[R1+0] (current word of src)
+  14     41180004       ADD R1 R1 4     ; R1 = R1 + 4 (advance src pointer)
   15     A3000000       STR R3 R0 0     ; Copy word Mem[R0+0] = R3
-  16     40080004       ADD R0 R0 4     ; R0 = R0 + 4 (advance x pointer)
+  16     40080004       ADD R0 R0 4     ; R0 = R0 + 4 (advance dest pointer)
   17     42290001       SUB R2 R2 1     ; R2 = R2 - 1 (processed 1 word)
   18     E9FFFFFA       BNE -6          ; if not done, jump back to 13
   19     8D000013       LDR SB R0 19
