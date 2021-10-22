@@ -443,7 +443,7 @@ void gen_builtin_procedure(Expr *proc, Expr **args) {
     // NEW(p) --> p = malloc(sizeof(<P ELEMENT TYPE>))
     Expr *p = args[0];
     gen_expr(p);
-    gen_str(" = calloc(1, sizeof(");
+    gen_str(" = malloc(sizeof(");
     gen_qname(p->type->pointer_type.element_type->package_name,
               p->type->pointer_type.element_type->name);
     gen_str("))");

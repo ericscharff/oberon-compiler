@@ -179,6 +179,7 @@ int string_hash(const char *s) {
   int hash = 0x811c9dc5;
   while (*s) {
     hash ^= *s;
+    hash &= 0x7fffffff;
     hash *= 16777619;
     s++;
   }

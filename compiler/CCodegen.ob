@@ -644,7 +644,7 @@ BEGIN
         GenStr(" = new ");
         GenQName(l, e.rhs.typ.base.decl.qname);
       ELSE
-        GenStr(" = calloc(1, sizeof(");
+        GenStr(" = malloc(sizeof(");
         GenQName(l, e.rhs.typ.base.decl.qname);
         GenStr("))");
       END;
