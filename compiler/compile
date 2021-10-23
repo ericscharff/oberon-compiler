@@ -34,4 +34,4 @@ done
 
 cd $BUILDDIR
 ./oberon $OCFLAGS $1 | $PERR
-./oberon $OCFLAGS $1 > out$EXT && $CC -g -Wall -Wextra -Wpedantic -o out.prg out$EXT
+./oberon $OCFLAGS $1 > out$EXT && $CC -g -std=c17 -Wall -Wextra -Wpedantic -o out.prg out$EXT
