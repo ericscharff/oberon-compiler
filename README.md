@@ -27,7 +27,7 @@ Once bootstrapped, the `build` directory contains a shell script called
 $ make
 # Build an example
 $ cd tests
-$ ../build/compile FibFact.out
+$ ../build/compile FibFact.ob
 # Transpiles to ../build/out.c and then compiles to ../build/out.prg
 # Run the example
 $ ../build/out.prg
