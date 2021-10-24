@@ -11,15 +11,18 @@ cp *.ob $BUILDDIR
 cd $BUILDDIR
 
 CC=${CC:-cc}
+CXX=${CXX:-g++}
 EXT=.c
+CSTDFLAGS=-std=c17
 OCFLAGS=
 inSwitches=1
 
 while [ $inSwitches -eq 1 ]; do
   if [ $1 = "-cpp" ]; then
-    CC=g++
+    CC=$CXX
     EXT=.cpp
     OCFLAGS=-cpp
+    CSTDFLAGS=
     shift
   elif [ $1 = "-bounds" ]; then
     OCFLAGS="$OCFLAGS -bounds"
@@ -34,4 +37,4 @@ done
 
 cd $BUILDDIR
 ./oberon $OCFLAGS $1 | $PERR
-./oberon $OCFLAGS $1 > out$EXT && $CC -g -std=c17 -Wall -Wextra -Wpedantic -o out.prg out$EXT
+./oberon $OCFLAGS $1 > out$EXT && $CC -g $CSTDFLAGS -Wall -Wextra -Wpedantic -o out.prg out$EXT
