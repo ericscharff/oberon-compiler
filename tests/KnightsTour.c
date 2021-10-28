@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-#define N 8
+#define N 5
 
 const int move_x[] = {2, 1, -1, -2, -2, -1, 1, 2};
 const int move_y[] = {1, 2, 2, 1, -1, -2, -2, -1};

@@ -1,7 +1,7 @@
 MODULE KnightsTour;
 
 CONST
-  N = 8;
+  N = 5;
 
 VAR
   board :ARRAY N, N OF INTEGER;
