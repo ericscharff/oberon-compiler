@@ -1,0 +1,69 @@
+MODULE KnightsTour;
+
+CONST
+  N = 8;
+
+VAR
+  board :ARRAY N, N OF INTEGER;
+  moveX, moveY :ARRAY 8 OF INTEGER;
+
+PROCEDURE Setup;
+VAR i, j :INTEGER;
+BEGIN
+  FOR i := 0 TO N-1 DO
+    FOR j := 0 TO N-1 DO
+      board[i][j] := -1
+    END
+  END;
+  moveX[0] := 2; moveX[1] := 1; moveX[2] := -1; moveX[3] := -2;
+  moveX[4] := -2; moveX[5] := -1; moveX[6] := 1; moveX[7] := 2;
+
+  moveY[0] := 1; moveY[1] := 2; moveY[2] := 2; moveY[3] := 1;
+  moveY[4] := -1; moveY[5] := -2; moveY[6] := -2; moveY[7] := -1;
+END Setup;
+
+PROCEDURE Solve(curX, curY, curMove :INTEGER) :BOOLEAN;
+VAR
+  done :BOOLEAN;
+  move, newX, newY :INTEGER;
+BEGIN
+  IF curMove = N*N THEN
+    done := TRUE
+  ELSE
+    done := FALSE;
+    move := 0;
+    WHILE (~done) & (move < 8) DO
+      newX := curX + moveX[move];
+      newY := curY + moveY[move];
+      IF ((newX >= 0) & (newX < N) & (newY >= 0) & (newY < N) &
+        (board[newX][newY] = -1)) THEN
+        board[newX][newY] := curMove;
+        IF Solve(newX, newY, curMove+1) THEN
+          done := TRUE
+        ELSE
+          board[newX][newY] := -1
+        END
+      END;
+      INC(move)
+    END
+  END;
+  RETURN done
+END Solve;
+
+PROCEDURE PrintBoard;
+VAR i, j :INTEGER;
+BEGIN
+  FOR i := 0 TO N-1 DO
+    FOR j := 0 TO N-1 DO
+      WriteInt(board[i, j])
+    END;
+    WriteLn;
+  END;
+END PrintBoard;
+
+BEGIN
+  Setup;
+  board[0, 0] := 0;
+  Solve(0, 0, 1);
+  PrintBoard;
+END KnightsTour.
