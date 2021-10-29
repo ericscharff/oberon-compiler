@@ -44,8 +44,8 @@ void printBoard(void) {
 
 int main(void) {
   setup();
-  board[0][0] = 0;
-  if (solve(0, 0, 1)) {
+  board[7][7] = 0;
+  if (solve(7, 7, 1)) {
     printf("Success\n");
   } else {
     printf("Failure\n");

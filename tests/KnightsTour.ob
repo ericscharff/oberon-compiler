@@ -63,7 +63,7 @@ END PrintBoard;
 
 BEGIN
   Setup;
-  board[0, 0] := 0;
-  Solve(0, 0, 1);
+  board[7, 7] := 0;
+  Solve(7, 7, 1);
   PrintBoard;
 END KnightsTour.
