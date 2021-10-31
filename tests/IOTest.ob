@@ -2,6 +2,8 @@ MODULE IOTest;
 
 IMPORT Out;
 
+CONST
+  Hi = "Hello 🂤 🂥 🂦 World";
 VAR
   a, i :INTEGER;
 
@@ -11,7 +13,7 @@ BEGIN
 END Neat;
 
 BEGIN
-  Out.Str("Hello 🂤 🂥 🂦 World");
+  Out.Str(Hi);
   Out.Ln;
   Out.Char(65X);
   i := 65;
