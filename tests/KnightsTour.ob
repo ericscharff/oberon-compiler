@@ -13,17 +13,18 @@ MODULE KnightsTour;
   moveX and moveY.  For example, the second entry is 1 over and 2 down.
 *)
 CONST
-  N = 8;
+  W = 6;
+  H = 4;
 
 VAR
-  board :ARRAY N, N OF INTEGER;
+  board :ARRAY H, W OF INTEGER;
   moveX, moveY :ARRAY 8 OF INTEGER;
 
 PROCEDURE Setup;
 VAR i, j :INTEGER;
 BEGIN
-  FOR i := 0 TO N-1 DO
-    FOR j := 0 TO N-1 DO
+  FOR i := 0 TO H-1 DO
+    FOR j := 0 TO W-1 DO
       board[i][j] := -1
     END
   END;
@@ -39,7 +40,7 @@ VAR
   done :BOOLEAN;
   move, newX, newY :INTEGER;
 BEGIN
-  IF curMove = N*N THEN
+  IF curMove = W*H THEN
     done := TRUE
   ELSE
     done := FALSE;
@@ -47,13 +48,13 @@ BEGIN
     WHILE (~done) & (move < 8) DO
       newX := curX + moveX[move];
       newY := curY + moveY[move];
-      IF ((newX >= 0) & (newX < N) & (newY >= 0) & (newY < N) &
-        (board[newX][newY] = -1)) THEN
-        board[newX][newY] := curMove;
+      IF ((newX >= 0) & (newX < W) & (newY >= 0) & (newY < H) &
+        (board[newY][newX] = -1)) THEN
+        board[newY][newX] := curMove;
         IF Solve(newX, newY, curMove+1) THEN
           done := TRUE
         ELSE
-          board[newX][newY] := -1
+          board[newY][newX] := -1
         END
       END;
       INC(move)
@@ -63,11 +64,11 @@ BEGIN
 END Solve;
 
 PROCEDURE PrintBoard;
-VAR i, j :INTEGER;
+VAR x, y :INTEGER;
 BEGIN
-  FOR i := 0 TO N-1 DO
-    FOR j := 0 TO N-1 DO
-      WriteInt(board[i, j])
+  FOR y := 0 TO H-1 DO
+    FOR x := 0 TO W-1 DO
+      WriteInt(board[y, x])
     END;
     WriteLn;
   END;
