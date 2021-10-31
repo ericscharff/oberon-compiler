@@ -1,5 +1,17 @@
 MODULE KnightsTour;
 
+(*
+  Produce a Knights tour by a brute force recursive descent technique. The
+  board is represented as a two-dimensional array of INTEGER, where a square
+  that has yet to be visited has a value of -1, otherwise the number is the
+  sequence (the first visited square is 0, second is 1, and so on.
+
+  This works for small boards and starting in the corner. On larger boards,
+  this will likely work but be painfully slow.
+
+  A knight can make eight moves, each represented in the two parallel arrays
+  moveX and moveY.  For example, the second entry is 1 over and 2 down.
+*)
 CONST
   N = 8;
 
@@ -63,7 +75,7 @@ END PrintBoard;
 
 BEGIN
   Setup;
-  board[7, 7] := 0;
-  Solve(7, 7, 1);
+  board[0, 0] := 0;
+  Solve(0, 0, 1);
   PrintBoard;
 END KnightsTour.
