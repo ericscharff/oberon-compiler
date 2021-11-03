@@ -1,0 +1,1407 @@
+MODULE Pentominoes;
+
+IMPORT Out;
+
+CONST
+  NumPieces = 12;
+  NumVariants = 63;
+  BoardWidth = 10;
+  BoardHeight = 6;
+
+TYPE
+  Point = RECORD x, y :INTEGER END;
+
+VAR
+  iter :INTEGER;
+  PieceNames :ARRAY NumPieces + 1 OF CHAR;
+  (* Key is variant, value is index into PieceNames *)
+  pieceId :ARRAY NumVariants OF INTEGER;
+  variants :ARRAY NumVariants, 5 OF Point;
+  board :ARRAY BoardWidth * BoardHeight OF CHAR;
+
+PROCEDURE PrintBoard;
+VAR
+  x, y :INTEGER;
+BEGIN
+  FOR y := 0 TO BoardHeight - 1 DO
+    FOR x := 0 TO BoardWidth - 1 DO
+      Out.Char(board[y * BoardWidth + x]);
+    END;
+    Out.Ln;
+  END;
+Out.Ln;
+END PrintBoard;
+
+PROCEDURE PlacePiece(pieceId, variantId, x, y :INTEGER);
+VAR i, boardX, boardY :INTEGER;
+BEGIN
+  FOR i := 0 TO 4 DO
+    boardX := x + variants[variantId, i].x;
+    boardY := y + variants[variantId, i].y;
+    board[boardY * BoardWidth + boardX] := PieceNames[pieceId];
+  END;
+END PlacePiece;
+
+PROCEDURE RemovePiece(variantId, x, y :INTEGER);
+VAR i, boardX, boardY :INTEGER;
+BEGIN
+  FOR i := 0 TO 4 DO
+    boardX := x + variants[variantId, i].x;
+    boardY := y + variants[variantId, i].y;
+    board[boardY * BoardWidth + boardX] := ".";
+  END;
+END RemovePiece;
+
+PROCEDURE CanPlace(variantId, x, y :INTEGER) :BOOLEAN;
+VAR i, boardX, boardY :INTEGER; placed :BOOLEAN;
+BEGIN
+  i := 0;
+  placed := TRUE;
+  WHILE placed & (i < 5) DO
+    boardX := x + variants[variantId, i].x;
+    boardY := y + variants[variantId, i].y;
+    IF (boardX < 0) OR
+       (boardX >= BoardWidth) OR
+       (boardY >= BoardHeight) OR
+       (board[boardY*BoardWidth + boardX] # ".") THEN
+      placed := FALSE;
+    ELSE
+      INC(i)
+    END;
+  END;
+  RETURN placed
+END CanPlace;
+
+PROCEDURE FirstEmptySquare() :INTEGER;
+VAR
+  i :INTEGER;
+BEGIN
+  i := 0;
+  WHILE (i < BoardWidth * BoardHeight) & (board[i] # ".") DO INC(i) END;
+  RETURN i
+END FirstEmptySquare;
+
+PROCEDURE Solve(pieces :SET) :BOOLEAN;
+VAR
+  found :BOOLEAN;
+  variant :INTEGER;
+  x, y :INTEGER;
+BEGIN
+  found := pieces = {};
+  variant := 0;
+  IF iter = 300000 THEN
+    WriteInt(pieces); WriteLn; PrintBoard; iter := 0
+  ELSE INC(iter) END;
+  y := FirstEmptySquare() DIV BoardWidth;
+  x := FirstEmptySquare() - y * BoardWidth;
+  WHILE ~found & (variant < NumVariants) DO
+    IF (pieceId[variant] IN pieces) & CanPlace(variant, x, y) THEN
+      PlacePiece(pieceId[variant], variant, x, y);
+      IF Solve(pieces - {pieceId[variant]}) THEN
+        found := TRUE
+      ELSE
+        RemovePiece(variant, x, y)
+      END;
+    END;
+    INC(variant);
+  END;
+  RETURN found
+END Solve;
+
+PROCEDURE Dump;
+VAR i :INTEGER;
+BEGIN
+  FOR i := 0 TO BoardWidth*BoardHeight - 1 DO
+    board[i] := ".";
+  END;
+  Solve({0 .. NumPieces-1});
+  PrintBoard
+(*
+  FOR i := 0 TO 62 DO
+    PlacePiece(pieceId[i], i, 2, 2);
+    PrintBoard;
+    RemovePiece(i, 2, 2);
+  END
+*)
+END Dump;
+
+
+BEGIN
+  (*PieceNames := "IFLNPTUVWXYZ";*)
+  PieceNames[0] := "I";
+  PieceNames[1] := "F";
+  PieceNames[2] := "L";
+  PieceNames[3] := "N";
+  PieceNames[4] := "P";
+  PieceNames[5] := "T";
+  PieceNames[6] := "U";
+  PieceNames[7] := "V";
+  PieceNames[8] := "W";
+  PieceNames[9] := "X";
+  PieceNames[10] := "Y";
+  PieceNames[11] := "Z";
+
+  (* 0 I [(0, 0), (0, 1), (0, 2), (0, 3), (0, 4)] *)
+  (*
+     #.....
+     #.....
+     #.....
+     #.....
+     #.....
+     ......
+  *)
+  pieceId[0] := 0;
+  variants[0, 0].x := 0;
+  variants[0, 0].y := 0;
+  variants[0, 1].x := 0;
+  variants[0, 1].y := 1;
+  variants[0, 2].x := 0;
+  variants[0, 2].y := 2;
+  variants[0, 3].x := 0;
+  variants[0, 3].y := 3;
+  variants[0, 4].x := 0;
+  variants[0, 4].y := 4;
+  (* 1 I [(0, 0), (1, 0), (2, 0), (3, 0), (4, 0)] *)
+  (*
+     #####.
+     ......
+     ......
+     ......
+     ......
+     ......
+  *)
+  pieceId[1] := 0;
+  variants[1, 0].x := 0;
+  variants[1, 0].y := 0;
+  variants[1, 1].x := 1;
+  variants[1, 1].y := 0;
+  variants[1, 2].x := 2;
+  variants[1, 2].y := 0;
+  variants[1, 3].x := 3;
+  variants[1, 3].y := 0;
+  variants[1, 4].x := 4;
+  variants[1, 4].y := 0;
+  (* 2 F [(0, 0), (1, 0), (-1, 1), (0, 1), (0, 2)] *)
+  (*
+     .##...
+     ##....
+     .#....
+     ......
+     ......
+     ......
+  *)
+  pieceId[2] := 1;
+  variants[2, 0].x := 0;
+  variants[2, 0].y := 0;
+  variants[2, 1].x := 1;
+  variants[2, 1].y := 0;
+  variants[2, 2].x := -1;
+  variants[2, 2].y := 1;
+  variants[2, 3].x := 0;
+  variants[2, 3].y := 1;
+  variants[2, 4].x := 0;
+  variants[2, 4].y := 2;
+  (* 3 F [(0, 1), (0, 0), (1, 2), (1, 1), (2, 1)] *)
+  (*
+     #.....
+     ###...
+     .#....
+     ......
+     ......
+     ......
+  *)
+  pieceId[3] := 1;
+  variants[3, 0].x := 0;
+  variants[3, 0].y := 1;
+  variants[3, 1].x := 0;
+  variants[3, 1].y := 0;
+  variants[3, 2].x := 1;
+  variants[3, 2].y := 2;
+  variants[3, 3].x := 1;
+  variants[3, 3].y := 1;
+  variants[3, 4].x := 2;
+  variants[3, 4].y := 1;
+  (* 4 F [(0, 2), (-1, 2), (1, 1), (0, 1), (0, 0)] *)
+  (*
+     .#....
+     .##...
+     ##....
+     ......
+     ......
+     ......
+  *)
+  pieceId[4] := 1;
+  variants[4, 0].x := 0;
+  variants[4, 0].y := 2;
+  variants[4, 1].x := -1;
+  variants[4, 1].y := 2;
+  variants[4, 2].x := 1;
+  variants[4, 2].y := 1;
+  variants[4, 3].x := 0;
+  variants[4, 3].y := 1;
+  variants[4, 4].x := 0;
+  variants[4, 4].y := 0;
+  (* 5 F [(1, 1), (1, 2), (0, 0), (0, 1), (-1, 1)] *)
+  (*
+     .#....
+     ###...
+     ..#...
+     ......
+     ......
+     ......
+  *)
+  pieceId[5] := 1;
+  variants[5, 0].x := 1;
+  variants[5, 0].y := 1;
+  variants[5, 1].x := 1;
+  variants[5, 1].y := 2;
+  variants[5, 2].x := 0;
+  variants[5, 2].y := 0;
+  variants[5, 3].x := 0;
+  variants[5, 3].y := 1;
+  variants[5, 4].x := -1;
+  variants[5, 4].y := 1;
+  (* 6 F [(1, 0), (0, 0), (2, 1), (1, 1), (1, 2)] *)
+  (*
+     ##....
+     .##...
+     .#....
+     ......
+     ......
+     ......
+  *)
+  pieceId[6] := 1;
+  variants[6, 0].x := 1;
+  variants[6, 0].y := 0;
+  variants[6, 1].x := 0;
+  variants[6, 1].y := 0;
+  variants[6, 2].x := 2;
+  variants[6, 2].y := 1;
+  variants[6, 3].x := 1;
+  variants[6, 3].y := 1;
+  variants[6, 4].x := 1;
+  variants[6, 4].y := 2;
+  (* 7 F [(-1, 1), (-1, 2), (0, 0), (0, 1), (1, 1)] *)
+  (*
+     .#....
+     ###...
+     #.....
+     ......
+     ......
+     ......
+  *)
+  pieceId[7] := 1;
+  variants[7, 0].x := -1;
+  variants[7, 0].y := 1;
+  variants[7, 1].x := -1;
+  variants[7, 1].y := 2;
+  variants[7, 2].x := 0;
+  variants[7, 2].y := 0;
+  variants[7, 3].x := 0;
+  variants[7, 3].y := 1;
+  variants[7, 4].x := 1;
+  variants[7, 4].y := 1;
+  (* 8 F [(0, 2), (1, 2), (-1, 1), (0, 1), (0, 0)] *)
+  (*
+     .#....
+     ##....
+     .##...
+     ......
+     ......
+     ......
+  *)
+  pieceId[8] := 1;
+  variants[8, 0].x := 0;
+  variants[8, 0].y := 2;
+  variants[8, 1].x := 1;
+  variants[8, 1].y := 2;
+  variants[8, 2].x := -1;
+  variants[8, 2].y := 1;
+  variants[8, 3].x := 0;
+  variants[8, 3].y := 1;
+  variants[8, 4].x := 0;
+  variants[8, 4].y := 0;
+  (* 9 F [(0, 1), (0, 0), (-1, 2), (-1, 1), (-2, 1)] *)
+  (*
+     ..#...
+     ###...
+     .#....
+     ......
+     ......
+     ......
+  *)
+  pieceId[9] := 1;
+  variants[9, 0].x := 0;
+  variants[9, 0].y := 1;
+  variants[9, 1].x := 0;
+  variants[9, 1].y := 0;
+  variants[9, 2].x := -1;
+  variants[9, 2].y := 2;
+  variants[9, 3].x := -1;
+  variants[9, 3].y := 1;
+  variants[9, 4].x := -2;
+  variants[9, 4].y := 1;
+  (* 10 L [(0, 0), (0, 1), (0, 2), (0, 3), (1, 3)] *)
+  (*
+     #.....
+     #.....
+     #.....
+     ##....
+     ......
+     ......
+  *)
+  pieceId[10] := 2;
+  variants[10, 0].x := 0;
+  variants[10, 0].y := 0;
+  variants[10, 1].x := 0;
+  variants[10, 1].y := 1;
+  variants[10, 2].x := 0;
+  variants[10, 2].y := 2;
+  variants[10, 3].x := 0;
+  variants[10, 3].y := 3;
+  variants[10, 4].x := 1;
+  variants[10, 4].y := 3;
+  (* 11 L [(-3, 1), (-2, 1), (-1, 1), (0, 1), (0, 0)] *)
+  (*
+     ...#..
+     ####..
+     ......
+     ......
+     ......
+     ......
+  *)
+  pieceId[11] := 2;
+  variants[11, 0].x := -3;
+  variants[11, 0].y := 1;
+  variants[11, 1].x := -2;
+  variants[11, 1].y := 1;
+  variants[11, 2].x := -1;
+  variants[11, 2].y := 1;
+  variants[11, 3].x := 0;
+  variants[11, 3].y := 1;
+  variants[11, 4].x := 0;
+  variants[11, 4].y := 0;
+  (* 12 L [(1, 3), (1, 2), (1, 1), (1, 0), (0, 0)] *)
+  (*
+     ##....
+     .#....
+     .#....
+     .#....
+     ......
+     ......
+  *)
+  pieceId[12] := 2;
+  variants[12, 0].x := 1;
+  variants[12, 0].y := 3;
+  variants[12, 1].x := 1;
+  variants[12, 1].y := 2;
+  variants[12, 2].x := 1;
+  variants[12, 2].y := 1;
+  variants[12, 3].x := 1;
+  variants[12, 3].y := 0;
+  variants[12, 4].x := 0;
+  variants[12, 4].y := 0;
+  (* 13 L [(3, 0), (2, 0), (1, 0), (0, 0), (0, 1)] *)
+  (*
+     ####..
+     #.....
+     ......
+     ......
+     ......
+     ......
+  *)
+  pieceId[13] := 2;
+  variants[13, 0].x := 3;
+  variants[13, 0].y := 0;
+  variants[13, 1].x := 2;
+  variants[13, 1].y := 0;
+  variants[13, 2].x := 1;
+  variants[13, 2].y := 0;
+  variants[13, 3].x := 0;
+  variants[13, 3].y := 0;
+  variants[13, 4].x := 0;
+  variants[13, 4].y := 1;
+  (* 14 L [(0, 0), (0, 1), (0, 2), (0, 3), (-1, 3)] *)
+  (*
+     .#....
+     .#....
+     .#....
+     ##....
+     ......
+     ......
+  *)
+  pieceId[14] := 2;
+  variants[14, 0].x := 0;
+  variants[14, 0].y := 0;
+  variants[14, 1].x := 0;
+  variants[14, 1].y := 1;
+  variants[14, 2].x := 0;
+  variants[14, 2].y := 2;
+  variants[14, 3].x := 0;
+  variants[14, 3].y := 3;
+  variants[14, 4].x := -1;
+  variants[14, 4].y := 3;
+  (* 15 L [(0, 0), (1, 0), (2, 0), (3, 0), (3, 1)] *)
+  (*
+     ####..
+     ...#..
+     ......
+     ......
+     ......
+     ......
+  *)
+  pieceId[15] := 2;
+  variants[15, 0].x := 0;
+  variants[15, 0].y := 0;
+  variants[15, 1].x := 1;
+  variants[15, 1].y := 0;
+  variants[15, 2].x := 2;
+  variants[15, 2].y := 0;
+  variants[15, 3].x := 3;
+  variants[15, 3].y := 0;
+  variants[15, 4].x := 3;
+  variants[15, 4].y := 1;
+  (* 16 L [(0, 3), (0, 2), (0, 1), (0, 0), (1, 0)] *)
+  (*
+     ##....
+     #.....
+     #.....
+     #.....
+     ......
+     ......
+  *)
+  pieceId[16] := 2;
+  variants[16, 0].x := 0;
+  variants[16, 0].y := 3;
+  variants[16, 1].x := 0;
+  variants[16, 1].y := 2;
+  variants[16, 2].x := 0;
+  variants[16, 2].y := 1;
+  variants[16, 3].x := 0;
+  variants[16, 3].y := 0;
+  variants[16, 4].x := 1;
+  variants[16, 4].y := 0;
+  (* 17 L [(3, 1), (2, 1), (1, 1), (0, 1), (0, 0)] *)
+  (*
+     #.....
+     ####..
+     ......
+     ......
+     ......
+     ......
+  *)
+  pieceId[17] := 2;
+  variants[17, 0].x := 3;
+  variants[17, 0].y := 1;
+  variants[17, 1].x := 2;
+  variants[17, 1].y := 1;
+  variants[17, 2].x := 1;
+  variants[17, 2].y := 1;
+  variants[17, 3].x := 0;
+  variants[17, 3].y := 1;
+  variants[17, 4].x := 0;
+  variants[17, 4].y := 0;
+  (* 18 N [(0, 0), (0, 1), (-1, 2), (0, 2), (-1, 3)] *)
+  (*
+     .#....
+     .#....
+     ##....
+     #.....
+     ......
+     ......
+  *)
+  pieceId[18] := 3;
+  variants[18, 0].x := 0;
+  variants[18, 0].y := 0;
+  variants[18, 1].x := 0;
+  variants[18, 1].y := 1;
+  variants[18, 2].x := -1;
+  variants[18, 2].y := 2;
+  variants[18, 3].x := 0;
+  variants[18, 3].y := 2;
+  variants[18, 4].x := -1;
+  variants[18, 4].y := 3;
+  (* 19 N [(0, 0), (1, 0), (2, 1), (2, 0), (3, 1)] *)
+  (*
+     ###...
+     ..##..
+     ......
+     ......
+     ......
+     ......
+  *)
+  pieceId[19] := 3;
+  variants[19, 0].x := 0;
+  variants[19, 0].y := 0;
+  variants[19, 1].x := 1;
+  variants[19, 1].y := 0;
+  variants[19, 2].x := 2;
+  variants[19, 2].y := 1;
+  variants[19, 3].x := 2;
+  variants[19, 3].y := 0;
+  variants[19, 4].x := 3;
+  variants[19, 4].y := 1;
+  (* 20 N [(-1, 3), (-1, 2), (0, 1), (-1, 1), (0, 0)] *)
+  (*
+     .#....
+     ##....
+     #.....
+     #.....
+     ......
+     ......
+  *)
+  pieceId[20] := 3;
+  variants[20, 0].x := -1;
+  variants[20, 0].y := 3;
+  variants[20, 1].x := -1;
+  variants[20, 1].y := 2;
+  variants[20, 2].x := 0;
+  variants[20, 2].y := 1;
+  variants[20, 3].x := -1;
+  variants[20, 3].y := 1;
+  variants[20, 4].x := 0;
+  variants[20, 4].y := 0;
+  (* 21 N [(3, 1), (2, 1), (1, 0), (1, 1), (0, 0)] *)
+  (*
+     ##....
+     .###..
+     ......
+     ......
+     ......
+     ......
+  *)
+  pieceId[21] := 3;
+  variants[21, 0].x := 3;
+  variants[21, 0].y := 1;
+  variants[21, 1].x := 2;
+  variants[21, 1].y := 1;
+  variants[21, 2].x := 1;
+  variants[21, 2].y := 0;
+  variants[21, 3].x := 1;
+  variants[21, 3].y := 1;
+  variants[21, 4].x := 0;
+  variants[21, 4].y := 0;
+  (* 22 N [(0, 0), (0, 1), (1, 2), (0, 2), (1, 3)] *)
+  (*
+     #.....
+     #.....
+     ##....
+     .#....
+     ......
+     ......
+  *)
+  pieceId[22] := 3;
+  variants[22, 0].x := 0;
+  variants[22, 0].y := 0;
+  variants[22, 1].x := 0;
+  variants[22, 1].y := 1;
+  variants[22, 2].x := 1;
+  variants[22, 2].y := 2;
+  variants[22, 3].x := 0;
+  variants[22, 3].y := 2;
+  variants[22, 4].x := 1;
+  variants[22, 4].y := 3;
+  (* 23 N [(-2, 1), (-1, 1), (0, 0), (0, 1), (1, 0)] *)
+  (*
+     ..##..
+     ###...
+     ......
+     ......
+     ......
+     ......
+  *)
+  pieceId[23] := 3;
+  variants[23, 0].x := -2;
+  variants[23, 0].y := 1;
+  variants[23, 1].x := -1;
+  variants[23, 1].y := 1;
+  variants[23, 2].x := 0;
+  variants[23, 2].y := 0;
+  variants[23, 3].x := 0;
+  variants[23, 3].y := 1;
+  variants[23, 4].x := 1;
+  variants[23, 4].y := 0;
+  (* 24 N [(1, 3), (1, 2), (0, 1), (1, 1), (0, 0)] *)
+  (*
+     #.....
+     ##....
+     .#....
+     .#....
+     ......
+     ......
+  *)
+  pieceId[24] := 3;
+  variants[24, 0].x := 1;
+  variants[24, 0].y := 3;
+  variants[24, 1].x := 1;
+  variants[24, 1].y := 2;
+  variants[24, 2].x := 0;
+  variants[24, 2].y := 1;
+  variants[24, 3].x := 1;
+  variants[24, 3].y := 1;
+  variants[24, 4].x := 0;
+  variants[24, 4].y := 0;
+  (* 25 N [(2, 0), (1, 0), (0, 1), (0, 0), (-1, 1)] *)
+  (*
+     .###..
+     ##....
+     ......
+     ......
+     ......
+     ......
+  *)
+  pieceId[25] := 3;
+  variants[25, 0].x := 2;
+  variants[25, 0].y := 0;
+  variants[25, 1].x := 1;
+  variants[25, 1].y := 0;
+  variants[25, 2].x := 0;
+  variants[25, 2].y := 1;
+  variants[25, 3].x := 0;
+  variants[25, 3].y := 0;
+  variants[25, 4].x := -1;
+  variants[25, 4].y := 1;
+  (* 26 P [(0, 0), (1, 0), (0, 1), (1, 1), (0, 2)] *)
+  (*
+     ##....
+     ##....
+     #.....
+     ......
+     ......
+     ......
+  *)
+  pieceId[26] := 4;
+  variants[26, 0].x := 0;
+  variants[26, 0].y := 0;
+  variants[26, 1].x := 1;
+  variants[26, 1].y := 0;
+  variants[26, 2].x := 0;
+  variants[26, 2].y := 1;
+  variants[26, 3].x := 1;
+  variants[26, 3].y := 1;
+  variants[26, 4].x := 0;
+  variants[26, 4].y := 2;
+  (* 27 P [(0, 1), (0, 0), (1, 1), (1, 0), (2, 1)] *)
+  (*
+     ##....
+     ###...
+     ......
+     ......
+     ......
+     ......
+  *)
+  pieceId[27] := 4;
+  variants[27, 0].x := 0;
+  variants[27, 0].y := 1;
+  variants[27, 1].x := 0;
+  variants[27, 1].y := 0;
+  variants[27, 2].x := 1;
+  variants[27, 2].y := 1;
+  variants[27, 3].x := 1;
+  variants[27, 3].y := 0;
+  variants[27, 4].x := 2;
+  variants[27, 4].y := 1;
+  (* 28 P [(0, 2), (-1, 2), (0, 1), (-1, 1), (0, 0)] *)
+  (*
+     .#....
+     ##....
+     ##....
+     ......
+     ......
+     ......
+  *)
+  pieceId[28] := 4;
+  variants[28, 0].x := 0;
+  variants[28, 0].y := 2;
+  variants[28, 1].x := -1;
+  variants[28, 1].y := 2;
+  variants[28, 2].x := 0;
+  variants[28, 2].y := 1;
+  variants[28, 3].x := -1;
+  variants[28, 3].y := 1;
+  variants[28, 4].x := 0;
+  variants[28, 4].y := 0;
+  (* 29 P [(2, 0), (2, 1), (1, 0), (1, 1), (0, 0)] *)
+  (*
+     ###...
+     .##...
+     ......
+     ......
+     ......
+     ......
+  *)
+  pieceId[29] := 4;
+  variants[29, 0].x := 2;
+  variants[29, 0].y := 0;
+  variants[29, 1].x := 2;
+  variants[29, 1].y := 1;
+  variants[29, 2].x := 1;
+  variants[29, 2].y := 0;
+  variants[29, 3].x := 1;
+  variants[29, 3].y := 1;
+  variants[29, 4].x := 0;
+  variants[29, 4].y := 0;
+  (* 30 P [(1, 0), (0, 0), (1, 1), (0, 1), (1, 2)] *)
+  (*
+     ##....
+     ##....
+     .#....
+     ......
+     ......
+     ......
+  *)
+  pieceId[30] := 4;
+  variants[30, 0].x := 1;
+  variants[30, 0].y := 0;
+  variants[30, 1].x := 0;
+  variants[30, 1].y := 0;
+  variants[30, 2].x := 1;
+  variants[30, 2].y := 1;
+  variants[30, 3].x := 0;
+  variants[30, 3].y := 1;
+  variants[30, 4].x := 1;
+  variants[30, 4].y := 2;
+  (* 31 P [(0, 0), (0, 1), (1, 0), (1, 1), (2, 0)] *)
+  (*
+     ###...
+     ##....
+     ......
+     ......
+     ......
+     ......
+  *)
+  pieceId[31] := 4;
+  variants[31, 0].x := 0;
+  variants[31, 0].y := 0;
+  variants[31, 1].x := 0;
+  variants[31, 1].y := 1;
+  variants[31, 2].x := 1;
+  variants[31, 2].y := 0;
+  variants[31, 3].x := 1;
+  variants[31, 3].y := 1;
+  variants[31, 4].x := 2;
+  variants[31, 4].y := 0;
+  (* 32 P [(0, 2), (1, 2), (0, 1), (1, 1), (0, 0)] *)
+  (*
+     #.....
+     ##....
+     ##....
+     ......
+     ......
+     ......
+  *)
+  pieceId[32] := 4;
+  variants[32, 0].x := 0;
+  variants[32, 0].y := 2;
+  variants[32, 1].x := 1;
+  variants[32, 1].y := 2;
+  variants[32, 2].x := 0;
+  variants[32, 2].y := 1;
+  variants[32, 3].x := 1;
+  variants[32, 3].y := 1;
+  variants[32, 4].x := 0;
+  variants[32, 4].y := 0;
+  (* 33 P [(1, 1), (1, 0), (0, 1), (0, 0), (-1, 1)] *)
+  (*
+     .##...
+     ###...
+     ......
+     ......
+     ......
+     ......
+  *)
+  pieceId[33] := 4;
+  variants[33, 0].x := 1;
+  variants[33, 0].y := 1;
+  variants[33, 1].x := 1;
+  variants[33, 1].y := 0;
+  variants[33, 2].x := 0;
+  variants[33, 2].y := 1;
+  variants[33, 3].x := 0;
+  variants[33, 3].y := 0;
+  variants[33, 4].x := -1;
+  variants[33, 4].y := 1;
+  (* 34 T [(0, 0), (1, 0), (2, 0), (1, 1), (1, 2)] *)
+  (*
+     ###...
+     .#....
+     .#....
+     ......
+     ......
+     ......
+  *)
+  pieceId[34] := 5;
+  variants[34, 0].x := 0;
+  variants[34, 0].y := 0;
+  variants[34, 1].x := 1;
+  variants[34, 1].y := 0;
+  variants[34, 2].x := 2;
+  variants[34, 2].y := 0;
+  variants[34, 3].x := 1;
+  variants[34, 3].y := 1;
+  variants[34, 4].x := 1;
+  variants[34, 4].y := 2;
+  (* 35 T [(0, 2), (0, 1), (0, 0), (1, 1), (2, 1)] *)
+  (*
+     #.....
+     ###...
+     #.....
+     ......
+     ......
+     ......
+  *)
+  pieceId[35] := 5;
+  variants[35, 0].x := 0;
+  variants[35, 0].y := 2;
+  variants[35, 1].x := 0;
+  variants[35, 1].y := 1;
+  variants[35, 2].x := 0;
+  variants[35, 2].y := 0;
+  variants[35, 3].x := 1;
+  variants[35, 3].y := 1;
+  variants[35, 4].x := 2;
+  variants[35, 4].y := 1;
+  (* 36 T [(1, 2), (0, 2), (-1, 2), (0, 1), (0, 0)] *)
+  (*
+     .#....
+     .#....
+     ###...
+     ......
+     ......
+     ......
+  *)
+  pieceId[36] := 5;
+  variants[36, 0].x := 1;
+  variants[36, 0].y := 2;
+  variants[36, 1].x := 0;
+  variants[36, 1].y := 2;
+  variants[36, 2].x := -1;
+  variants[36, 2].y := 2;
+  variants[36, 3].x := 0;
+  variants[36, 3].y := 1;
+  variants[36, 4].x := 0;
+  variants[36, 4].y := 0;
+  (* 37 T [(0, 0), (0, 1), (0, 2), (-1, 1), (-2, 1)] *)
+  (*
+     ..#...
+     ###...
+     ..#...
+     ......
+     ......
+     ......
+  *)
+  pieceId[37] := 5;
+  variants[37, 0].x := 0;
+  variants[37, 0].y := 0;
+  variants[37, 1].x := 0;
+  variants[37, 1].y := 1;
+  variants[37, 2].x := 0;
+  variants[37, 2].y := 2;
+  variants[37, 3].x := -1;
+  variants[37, 3].y := 1;
+  variants[37, 4].x := -2;
+  variants[37, 4].y := 1;
+  (* 38 U [(0, 0), (2, 0), (0, 1), (1, 1), (2, 1)] *)
+  (*
+     #.#...
+     ###...
+     ......
+     ......
+     ......
+     ......
+  *)
+  pieceId[38] := 6;
+  variants[38, 0].x := 0;
+  variants[38, 0].y := 0;
+  variants[38, 1].x := 2;
+  variants[38, 1].y := 0;
+  variants[38, 2].x := 0;
+  variants[38, 2].y := 1;
+  variants[38, 3].x := 1;
+  variants[38, 3].y := 1;
+  variants[38, 4].x := 2;
+  variants[38, 4].y := 1;
+  (* 39 U [(0, 2), (0, 0), (1, 2), (1, 1), (1, 0)] *)
+  (*
+     ##....
+     .#....
+     ##....
+     ......
+     ......
+     ......
+  *)
+  pieceId[39] := 6;
+  variants[39, 0].x := 0;
+  variants[39, 0].y := 2;
+  variants[39, 1].x := 0;
+  variants[39, 1].y := 0;
+  variants[39, 2].x := 1;
+  variants[39, 2].y := 2;
+  variants[39, 3].x := 1;
+  variants[39, 3].y := 1;
+  variants[39, 4].x := 1;
+  variants[39, 4].y := 0;
+  (* 40 U [(2, 1), (0, 1), (2, 0), (1, 0), (0, 0)] *)
+  (*
+     ###...
+     #.#...
+     ......
+     ......
+     ......
+     ......
+  *)
+  pieceId[40] := 6;
+  variants[40, 0].x := 2;
+  variants[40, 0].y := 1;
+  variants[40, 1].x := 0;
+  variants[40, 1].y := 1;
+  variants[40, 2].x := 2;
+  variants[40, 2].y := 0;
+  variants[40, 3].x := 1;
+  variants[40, 3].y := 0;
+  variants[40, 4].x := 0;
+  variants[40, 4].y := 0;
+  (* 41 U [(1, 0), (1, 2), (0, 0), (0, 1), (0, 2)] *)
+  (*
+     ##....
+     #.....
+     ##....
+     ......
+     ......
+     ......
+  *)
+  pieceId[41] := 6;
+  variants[41, 0].x := 1;
+  variants[41, 0].y := 0;
+  variants[41, 1].x := 1;
+  variants[41, 1].y := 2;
+  variants[41, 2].x := 0;
+  variants[41, 2].y := 0;
+  variants[41, 3].x := 0;
+  variants[41, 3].y := 1;
+  variants[41, 4].x := 0;
+  variants[41, 4].y := 2;
+  (* 42 V [(0, 0), (0, 1), (-2, 2), (-1, 2), (0, 2)] *)
+  (*
+     ..#...
+     ..#...
+     ###...
+     ......
+     ......
+     ......
+  *)
+  pieceId[42] := 7;
+  variants[42, 0].x := 0;
+  variants[42, 0].y := 0;
+  variants[42, 1].x := 0;
+  variants[42, 1].y := 1;
+  variants[42, 2].x := -2;
+  variants[42, 2].y := 2;
+  variants[42, 3].x := -1;
+  variants[42, 3].y := 2;
+  variants[42, 4].x := 0;
+  variants[42, 4].y := 2;
+  (* 43 V [(0, 0), (1, 0), (2, 2), (2, 1), (2, 0)] *)
+  (*
+     ###...
+     ..#...
+     ..#...
+     ......
+     ......
+     ......
+  *)
+  pieceId[43] := 7;
+  variants[43, 0].x := 0;
+  variants[43, 0].y := 0;
+  variants[43, 1].x := 1;
+  variants[43, 1].y := 0;
+  variants[43, 2].x := 2;
+  variants[43, 2].y := 2;
+  variants[43, 3].x := 2;
+  variants[43, 3].y := 1;
+  variants[43, 4].x := 2;
+  variants[43, 4].y := 0;
+  (* 44 V [(0, 2), (0, 1), (2, 0), (1, 0), (0, 0)] *)
+  (*
+     ###...
+     #.....
+     #.....
+     ......
+     ......
+     ......
+  *)
+  pieceId[44] := 7;
+  variants[44, 0].x := 0;
+  variants[44, 0].y := 2;
+  variants[44, 1].x := 0;
+  variants[44, 1].y := 1;
+  variants[44, 2].x := 2;
+  variants[44, 2].y := 0;
+  variants[44, 3].x := 1;
+  variants[44, 3].y := 0;
+  variants[44, 4].x := 0;
+  variants[44, 4].y := 0;
+  (* 45 V [(2, 2), (1, 2), (0, 0), (0, 1), (0, 2)] *)
+  (*
+     #.....
+     #.....
+     ###...
+     ......
+     ......
+     ......
+  *)
+  pieceId[45] := 7;
+  variants[45, 0].x := 2;
+  variants[45, 0].y := 2;
+  variants[45, 1].x := 1;
+  variants[45, 1].y := 2;
+  variants[45, 2].x := 0;
+  variants[45, 2].y := 0;
+  variants[45, 3].x := 0;
+  variants[45, 3].y := 1;
+  variants[45, 4].x := 0;
+  variants[45, 4].y := 2;
+  (* 46 W [(0, 0), (-1, 1), (0, 1), (-2, 2), (-1, 2)] *)
+  (*
+     ..#...
+     .##...
+     ##....
+     ......
+     ......
+     ......
+  *)
+  pieceId[46] := 8;
+  variants[46, 0].x := 0;
+  variants[46, 0].y := 0;
+  variants[46, 1].x := -1;
+  variants[46, 1].y := 1;
+  variants[46, 2].x := 0;
+  variants[46, 2].y := 1;
+  variants[46, 3].x := -2;
+  variants[46, 3].y := 2;
+  variants[46, 4].x := -1;
+  variants[46, 4].y := 2;
+  (* 47 W [(0, 0), (1, 1), (1, 0), (2, 2), (2, 1)] *)
+  (*
+     ##....
+     .##...
+     ..#...
+     ......
+     ......
+     ......
+  *)
+  pieceId[47] := 8;
+  variants[47, 0].x := 0;
+  variants[47, 0].y := 0;
+  variants[47, 1].x := 1;
+  variants[47, 1].y := 1;
+  variants[47, 2].x := 1;
+  variants[47, 2].y := 0;
+  variants[47, 3].x := 2;
+  variants[47, 3].y := 2;
+  variants[47, 4].x := 2;
+  variants[47, 4].y := 1;
+  (* 48 W [(-1, 2), (0, 1), (-1, 1), (1, 0), (0, 0)] *)
+  (*
+     .##...
+     ##....
+     #.....
+     ......
+     ......
+     ......
+  *)
+  pieceId[48] := 8;
+  variants[48, 0].x := -1;
+  variants[48, 0].y := 2;
+  variants[48, 1].x := 0;
+  variants[48, 1].y := 1;
+  variants[48, 2].x := -1;
+  variants[48, 2].y := 1;
+  variants[48, 3].x := 1;
+  variants[48, 3].y := 0;
+  variants[48, 4].x := 0;
+  variants[48, 4].y := 0;
+  (* 49 W [(2, 2), (1, 1), (1, 2), (0, 0), (0, 1)] *)
+  (*
+     #.....
+     ##....
+     .##...
+     ......
+     ......
+     ......
+  *)
+  pieceId[49] := 8;
+  variants[49, 0].x := 2;
+  variants[49, 0].y := 2;
+  variants[49, 1].x := 1;
+  variants[49, 1].y := 1;
+  variants[49, 2].x := 1;
+  variants[49, 2].y := 2;
+  variants[49, 3].x := 0;
+  variants[49, 3].y := 0;
+  variants[49, 4].x := 0;
+  variants[49, 4].y := 1;
+  (* 50 X [(0, 0), (-1, 1), (0, 1), (1, 1), (0, 2)] *)
+  (*
+     .#....
+     ###...
+     .#....
+     ......
+     ......
+     ......
+  *)
+  pieceId[50] := 9;
+  variants[50, 0].x := 0;
+  variants[50, 0].y := 0;
+  variants[50, 1].x := -1;
+  variants[50, 1].y := 1;
+  variants[50, 2].x := 0;
+  variants[50, 2].y := 1;
+  variants[50, 3].x := 1;
+  variants[50, 3].y := 1;
+  variants[50, 4].x := 0;
+  variants[50, 4].y := 2;
+  (* 51 Y [(0, 0), (-1, 1), (0, 1), (0, 2), (0, 3)] *)
+  (*
+     .#....
+     ##....
+     .#....
+     .#....
+     ......
+     ......
+  *)
+  pieceId[51] := 10;
+  variants[51, 0].x := 0;
+  variants[51, 0].y := 0;
+  variants[51, 1].x := -1;
+  variants[51, 1].y := 1;
+  variants[51, 2].x := 0;
+  variants[51, 2].y := 1;
+  variants[51, 3].x := 0;
+  variants[51, 3].y := 2;
+  variants[51, 4].x := 0;
+  variants[51, 4].y := 3;
+  (* 52 Y [(0, 0), (1, 1), (1, 0), (2, 0), (3, 0)] *)
+  (*
+     ####..
+     .#....
+     ......
+     ......
+     ......
+     ......
+  *)
+  pieceId[52] := 10;
+  variants[52, 0].x := 0;
+  variants[52, 0].y := 0;
+  variants[52, 1].x := 1;
+  variants[52, 1].y := 1;
+  variants[52, 2].x := 1;
+  variants[52, 2].y := 0;
+  variants[52, 3].x := 2;
+  variants[52, 3].y := 0;
+  variants[52, 4].x := 3;
+  variants[52, 4].y := 0;
+  (* 53 Y [(0, 3), (1, 2), (0, 2), (0, 1), (0, 0)] *)
+  (*
+     #.....
+     #.....
+     ##....
+     #.....
+     ......
+     ......
+  *)
+  pieceId[53] := 10;
+  variants[53, 0].x := 0;
+  variants[53, 0].y := 3;
+  variants[53, 1].x := 1;
+  variants[53, 1].y := 2;
+  variants[53, 2].x := 0;
+  variants[53, 2].y := 2;
+  variants[53, 3].x := 0;
+  variants[53, 3].y := 1;
+  variants[53, 4].x := 0;
+  variants[53, 4].y := 0;
+  (* 54 Y [(1, 1), (0, 0), (0, 1), (-1, 1), (-2, 1)] *)
+  (*
+     ..#...
+     ####..
+     ......
+     ......
+     ......
+     ......
+  *)
+  pieceId[54] := 10;
+  variants[54, 0].x := 1;
+  variants[54, 0].y := 1;
+  variants[54, 1].x := 0;
+  variants[54, 1].y := 0;
+  variants[54, 2].x := 0;
+  variants[54, 2].y := 1;
+  variants[54, 3].x := -1;
+  variants[54, 3].y := 1;
+  variants[54, 4].x := -2;
+  variants[54, 4].y := 1;
+  (* 55 Y [(0, 0), (1, 1), (0, 1), (0, 2), (0, 3)] *)
+  (*
+     #.....
+     ##....
+     #.....
+     #.....
+     ......
+     ......
+  *)
+  pieceId[55] := 10;
+  variants[55, 0].x := 0;
+  variants[55, 0].y := 0;
+  variants[55, 1].x := 1;
+  variants[55, 1].y := 1;
+  variants[55, 2].x := 0;
+  variants[55, 2].y := 1;
+  variants[55, 3].x := 0;
+  variants[55, 3].y := 2;
+  variants[55, 4].x := 0;
+  variants[55, 4].y := 3;
+  (* 56 Y [(-1, 1), (0, 0), (0, 1), (1, 1), (2, 1)] *)
+  (*
+     .#....
+     ####..
+     ......
+     ......
+     ......
+     ......
+  *)
+  pieceId[56] := 10;
+  variants[56, 0].x := -1;
+  variants[56, 0].y := 1;
+  variants[56, 1].x := 0;
+  variants[56, 1].y := 0;
+  variants[56, 2].x := 0;
+  variants[56, 2].y := 1;
+  variants[56, 3].x := 1;
+  variants[56, 3].y := 1;
+  variants[56, 4].x := 2;
+  variants[56, 4].y := 1;
+  (* 57 Y [(0, 3), (-1, 2), (0, 2), (0, 1), (0, 0)] *)
+  (*
+     .#....
+     .#....
+     ##....
+     .#....
+     ......
+     ......
+  *)
+  pieceId[57] := 10;
+  variants[57, 0].x := 0;
+  variants[57, 0].y := 3;
+  variants[57, 1].x := -1;
+  variants[57, 1].y := 2;
+  variants[57, 2].x := 0;
+  variants[57, 2].y := 2;
+  variants[57, 3].x := 0;
+  variants[57, 3].y := 1;
+  variants[57, 4].x := 0;
+  variants[57, 4].y := 0;
+  (* 58 Y [(3, 0), (2, 1), (2, 0), (1, 0), (0, 0)] *)
+  (*
+     ####..
+     ..#...
+     ......
+     ......
+     ......
+     ......
+  *)
+  pieceId[58] := 10;
+  variants[58, 0].x := 3;
+  variants[58, 0].y := 0;
+  variants[58, 1].x := 2;
+  variants[58, 1].y := 1;
+  variants[58, 2].x := 2;
+  variants[58, 2].y := 0;
+  variants[58, 3].x := 1;
+  variants[58, 3].y := 0;
+  variants[58, 4].x := 0;
+  variants[58, 4].y := 0;
+  (* 59 Z [(0, 0), (1, 0), (1, 1), (1, 2), (2, 2)] *)
+  (*
+     ##....
+     .#....
+     .##...
+     ......
+     ......
+     ......
+  *)
+  pieceId[59] := 11;
+  variants[59, 0].x := 0;
+  variants[59, 0].y := 0;
+  variants[59, 1].x := 1;
+  variants[59, 1].y := 0;
+  variants[59, 2].x := 1;
+  variants[59, 2].y := 1;
+  variants[59, 3].x := 1;
+  variants[59, 3].y := 2;
+  variants[59, 4].x := 2;
+  variants[59, 4].y := 2;
+  (* 60 Z [(-2, 2), (-2, 1), (-1, 1), (0, 1), (0, 0)] *)
+  (*
+     ..#...
+     ###...
+     #.....
+     ......
+     ......
+     ......
+  *)
+  pieceId[60] := 11;
+  variants[60, 0].x := -2;
+  variants[60, 0].y := 2;
+  variants[60, 1].x := -2;
+  variants[60, 1].y := 1;
+  variants[60, 2].x := -1;
+  variants[60, 2].y := 1;
+  variants[60, 3].x := 0;
+  variants[60, 3].y := 1;
+  variants[60, 4].x := 0;
+  variants[60, 4].y := 0;
+  (* 61 Z [(1, 0), (0, 0), (0, 1), (0, 2), (-1, 2)] *)
+  (*
+     .##...
+     .#....
+     ##....
+     ......
+     ......
+     ......
+  *)
+  pieceId[61] := 11;
+  variants[61, 0].x := 1;
+  variants[61, 0].y := 0;
+  variants[61, 1].x := 0;
+  variants[61, 1].y := 0;
+  variants[61, 2].x := 0;
+  variants[61, 2].y := 1;
+  variants[61, 3].x := 0;
+  variants[61, 3].y := 2;
+  variants[61, 4].x := -1;
+  variants[61, 4].y := 2;
+  (* 62 Z [(0, 0), (0, 1), (1, 1), (2, 1), (2, 2)] *)
+  (*
+     #.....
+     ###...
+     ..#...
+     ......
+     ......
+     ......
+  *)
+  pieceId[62] := 11;
+  variants[62, 0].x := 0;
+  variants[62, 0].y := 0;
+  variants[62, 1].x := 0;
+  variants[62, 1].y := 1;
+  variants[62, 2].x := 1;
+  variants[62, 2].y := 1;
+  variants[62, 3].x := 2;
+  variants[62, 3].y := 1;
+  variants[62, 4].x := 2;
+  variants[62, 4].y := 2;
+
+  iter := 0;
+  Dump;
+END Pentominoes.
