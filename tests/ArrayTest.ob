@@ -1,4 +1,4 @@
-MODULE ArTest;
+MODULE ArrayTest;
 
 IMPORT Out;
 
@@ -105,4 +105,4 @@ BEGIN
   ArrayOfStringTest;
   *)
 
-END ArTest.
+END ArrayTest.
