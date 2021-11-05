@@ -90,8 +90,8 @@ BEGIN
   PUSH(b, val)
 END AddToBuf;
 
-NATIVE PROCEDURE SetNativeVal(r :NatBuf; v :INTEGER); END SetNativeVal;
-NATIVE PROCEDURE CallNative(r :NatBuf); END CallNative;
+NATIVE (-9000) PROCEDURE SetNativeVal(r :NatBuf; v :INTEGER); END SetNativeVal;
+NATIVE (-9001) PROCEDURE CallNative(r :NatBuf); END CallNative;
 
 PROCEDURE TestNativeCode;
 VAR
