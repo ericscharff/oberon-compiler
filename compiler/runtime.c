@@ -204,8 +204,6 @@ void LangExtensionsTest_SetNativeVal(LangExtensionsTest_NatBuf *b, int val) {
 }
 
 void LangExtensionsTest_CallNative(LangExtensionsTest_NatBuf *b) {
-  printf("Native code called, buf was %p.\n", (void*)b);
-
   LangExtensionsTest_NatBuf_Native* nat = (LangExtensionsTest_NatBuf_Native*)b;
   printf("Native code called, buf.nativeQ = %d, nativeR = %d.\n", nat->nativeQ, nat->nativeR);
 }
