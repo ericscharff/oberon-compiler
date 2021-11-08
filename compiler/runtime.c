@@ -198,6 +198,8 @@ typedef struct LangExtensionsTest_NatBuf_Native {
 
 typedef struct LangExtensionsTest_NatBuf LangExtensionsTest_NatBuf;
 
+typedef void (*LangExtensionsTest_CallbackFuncNative)(int);
+
 void LangExtensionsTest_SetNativeVal(LangExtensionsTest_NatBuf *b, int val) {
   ((LangExtensionsTest_NatBuf_Native*)b)->nativeQ = val;
   ((LangExtensionsTest_NatBuf_Native*)b)->nativeR = val + 1;
@@ -206,4 +208,10 @@ void LangExtensionsTest_SetNativeVal(LangExtensionsTest_NatBuf *b, int val) {
 void LangExtensionsTest_CallNative(LangExtensionsTest_NatBuf *b) {
   LangExtensionsTest_NatBuf_Native* nat = (LangExtensionsTest_NatBuf_Native*)b;
   printf("Native code called, buf.nativeQ = %d, nativeR = %d.\n", nat->nativeQ, nat->nativeR);
+}
+
+void LangExtensionsTest_NativeCallback(int i, LangExtensionsTest_CallbackFuncNative f) {
+  printf("About to call callback with i=%d.\n", i+1);
+  f(i+1);
+  printf("NativeCallback completed\n");
 }
