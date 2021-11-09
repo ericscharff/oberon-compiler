@@ -24,12 +24,17 @@ TESTS=(
 )
 
 # Generate stdin for IOTest
-echo "4" >> ../build/stdin.txt
+echo "5" > ../build/stdin.txt
+
+fail() {
+  echo "Failed test $1. See above output for diff"
+  exit 1
+}
 
 for i in ${TESTS[@]}; do
   echo "Running test $i..."
   ../build/compile -cpp ${i}.ob
   ../build/out.prg < ../build/stdin.txt > ../build/$i.output
-  diff ../build/$i.output goldens/$i.output
+  diff ../build/$i.output goldens/$i.output || fail $i
 done
 echo "All tests passed!"
