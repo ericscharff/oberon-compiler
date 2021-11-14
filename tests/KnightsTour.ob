@@ -13,8 +13,8 @@ MODULE KnightsTour;
   For example, the second entry is 1 over and 2 down.
 *)
 CONST
-  W = 6;
-  H = 4;
+  W = 8;
+  H = 8;
 
 TYPE
   Point = RECORD x, y :INTEGER END;

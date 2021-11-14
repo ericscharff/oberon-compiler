@@ -35,6 +35,6 @@ for i in ${TESTS[@]}; do
   echo "Running test $i..."
   ../build/compile -cpp ${i}.ob
   ../build/out.prg < ../build/stdin.txt > ../build/$i.output
-  diff -c ../build/$i.output goldens/$i.output || fail $i
+  diff -c goldens/$i.output ../build/$i.output || fail $i
 done
 echo "All tests passed!"
