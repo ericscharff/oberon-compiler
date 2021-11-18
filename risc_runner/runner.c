@@ -480,8 +480,12 @@ void interpret(void) {
 }
 
 int main(int argc, char **argv) {
+#ifdef COVERAGE
   printf("%s(%d): %d %zd\n", argv[0], argc, PROGRAM[0].opcode,
          sizeof(PROGRAM) / sizeof(Instruction));
-  interpret();
+#endif
+  if (argc && argv) {
+    interpret();
+  }
   return 0;
 }
