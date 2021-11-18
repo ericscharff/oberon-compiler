@@ -216,6 +216,7 @@ void interpret(void) {
     visited_ip[ip] = 0;
   }
 #endif
+  zFlag = false;
   r[GB] = 0;
   r[SP] = MAX_MEM_BYTES - 4;
   for (int i = 0; i < MAX_MEM; i++) {
