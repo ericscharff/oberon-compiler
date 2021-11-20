@@ -909,6 +909,7 @@ BEGIN
   ELSIF e.typ.kind = AST.typeString THEN
     item.kind := itemVar;
     item.offset := Lex.CopyLexToPool(l, e.iVal, strings) + globalOffset;
+    Lex.PadStringPool(strings);
     item.r := rGB;
   ELSE
     ASSERT(FALSE)
@@ -955,35 +956,30 @@ PROCEDURE CopyStructure(e :AST.Expr; VAR item, rhs :Item);
 VAR
   i, structSize                   :INTEGER;
 BEGIN
-  IF (e.lhs.typ.kind = AST.typeArray) & (e.lhs.typ.base.kind = AST.typeChar) THEN
-    (* Strings should be handled differently *)
-    ASSERT(FALSE)
+  structSize := CalculateSize(e.lhs.typ);
+  IF structSize <= 30 THEN
+    (* Unrolled copy from dst to src *)
+    i := 0;
+    WHILE i < structSize DO
+      Emit(opLDW, curReg, rhs.r, 0, rhs.offset + i);
+      Emit(opSTW, curReg, item.r, 0, item.offset + i);
+      i := i + 4
+    END;
+    IF rhs.kind = itemRegI THEN DecCurReg END;
+    IF item.kind = itemRegI THEN DecCurReg END;
   ELSE
-    structSize := CalculateSize(e.lhs.typ);
-    IF structSize <= 30 THEN
-      (* Unrolled copy from dst to src *)
-      i := 0;
-      WHILE i < structSize DO
-        Emit(opLDW, curReg, rhs.r, 0, rhs.offset + i);
-        Emit(opSTW, curReg, item.r, 0, item.offset + i);
-        i := i + 4
-      END;
-      IF rhs.kind = itemRegI THEN DecCurReg END;
-      IF item.kind = itemRegI THEN DecCurReg END;
-    ELSE
-      (* Loop based copy *)
-      LoadAddress(item);
-      LoadAddress(rhs);
-      Emit(opMOVI, curReg, 0, 0, structSize);
-      IncCurReg;
-      Emit(opLDW, curReg, rhs.r, 0, rhs.offset);
-      Emit(opSTW, curReg, item.r, 0, item.offset);
-      Emit(opADDI, item.r, item.r, 0, 4);
-      Emit(opADDI, rhs.r, rhs.r, 0, 4);
-      Emit(opSUBI, curReg-1, curReg-1, 0, 4);
-      Emit(opBRA, 0, 0, opBGT, cp-5);
-      DecCurReg; DecCurReg; DecCurReg
-    END
+    (* Loop based copy *)
+    LoadAddress(item);
+    LoadAddress(rhs);
+    Emit(opMOVI, curReg, 0, 0, structSize);
+    IncCurReg;
+    Emit(opLDW, curReg, rhs.r, 0, rhs.offset);
+    Emit(opSTW, curReg, item.r, 0, item.offset);
+    Emit(opADDI, item.r, item.r, 0, 4);
+    Emit(opADDI, rhs.r, rhs.r, 0, 4);
+    Emit(opSUBI, curReg-1, curReg-1, 0, 4);
+    Emit(opBRA, 0, 0, opBGT, cp-5);
+    DecCurReg; DecCurReg; DecCurReg
   END
 END CopyStructure;
 

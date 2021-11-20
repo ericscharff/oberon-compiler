@@ -100,9 +100,7 @@ BEGIN
   Out.Int(a.y); Out.Ln;
   TestAr;
   TestTwo;
-  (* TODO: Get working with RCompiler:
   StringTest;
   ArrayOfStringTest;
-  *)
 
 END ArrayTest.
