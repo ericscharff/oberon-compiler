@@ -114,7 +114,7 @@ BEGIN
         INC(indent);
         GenI;
         GenType(l, t.base, q, FALSE, FALSE);
-        GenStr(" *buf; size_t cap; size_t len;");
+        GenStr(" *buf; INTEGER cap; INTEGER len;");
         GenLn;
         DEC(indent);
         GenI; GenStr("} ");
@@ -256,7 +256,7 @@ BEGIN
               GenType(l, t, q, FALSE, FALSE);
             END;
             IF AST.IsOpenArray(t) THEN
-              GenStr(", size_t");
+              GenStr(", INTEGER");
               IF procDecl THEN
                 GenStr(" ");
                 GenQName(l, q);
