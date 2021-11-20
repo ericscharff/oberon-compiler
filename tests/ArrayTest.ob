@@ -54,7 +54,8 @@ VAR
   i, j :INTEGER;
 BEGIN
   i := 3; j := 3;
-  ar[i, j].x := 33
+  ar[i, j].x := 33;
+  Out.Int(ar[i, j].x); Out.Ln
 END TestTwo;
 
 PROCEDURE StringTest;
