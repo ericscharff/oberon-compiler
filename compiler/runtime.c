@@ -15,7 +15,7 @@
 #define oberon_buf_push(bbuf, val, btyp) \
     if ((bbuf).len == (bbuf).cap) { \
       btyp *newBuf = new btyp[(bbuf).cap*2]; \
-      for (size_t i=0; i < (bbuf).len; i++) { \
+      for (INTEGER i=0; i < (bbuf).len; i++) { \
         newBuf[i] = (bbuf).buf[i]; \
       } \
       delete (bbuf).buf; \
@@ -31,7 +31,7 @@
 #define oberon_buf_push(bbuf, val, btyp) \
     if ((bbuf).len == (bbuf).cap) { \
       btyp *newBuf = malloc(sizeof(btyp)*(bbuf).cap*2); \
-      for (size_t i=0; i < (bbuf).len; i++) { \
+      for (INTEGER i=0; i < (bbuf).len; i++) { \
         newBuf[i] = (bbuf).buf[i]; \
       } \
       free((bbuf).buf); \
