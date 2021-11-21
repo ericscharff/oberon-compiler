@@ -993,15 +993,8 @@ BEGIN
   localTrueChain := 0; localFalseChain := 0;
   GenExpr(l, e.rhs, rhs, localTrueChain, localFalseChain);
 
-  IF e.lhs.typ.kind = AST.typeRecord THEN
+  IF e.lhs.typ.kind IN {AST.typeRecord, AST.typeArray} THEN
     CopyStructure(e, item, rhs)
-  ELSIF e.lhs.typ.kind = AST.typeArray THEN
-    IF ~AST.IsOpenArray(e.lhs.typ) & ~AST.IsOpenArray(e.rhs.typ) THEN
-      (* Two known sized structurees can be copied directly *)
-      CopyStructure(e, item, rhs)
-    ELSE
-      ASSERT(FALSE)
-    END
   ELSE
     LoadValue(rhs, localTrueChain, localFalseChain);
     ASSERT(item.kind IN {itemVar, itemRegI});
