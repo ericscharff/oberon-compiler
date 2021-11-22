@@ -127,19 +127,7 @@ END Dump;
 
 
 BEGIN
-  (*PieceNames := "IFLNPTUVWXYZ";*)
-  PieceNames[0] := "I";
-  PieceNames[1] := "F";
-  PieceNames[2] := "L";
-  PieceNames[3] := "N";
-  PieceNames[4] := "P";
-  PieceNames[5] := "T";
-  PieceNames[6] := "U";
-  PieceNames[7] := "V";
-  PieceNames[8] := "W";
-  PieceNames[9] := "X";
-  PieceNames[10] := "Y";
-  PieceNames[11] := "Z";
+  PieceNames := "IFLNPTUVWXYZ";
 
   (* 0 I [(0, 0), (0, 1), (0, 2), (0, 3), (0, 4)] *)
   (*
