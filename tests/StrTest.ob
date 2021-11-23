@@ -14,7 +14,9 @@ END ToLower;
 
 PROCEDURE Middle(s :INTEGER; VAR c :ARRAY OF CHAR; s2 :INTEGER);
 BEGIN
-  ToLower(c)
+  IF (s = 81) & (s2 = 82) THEN
+    ToLower(c)
+  END
 END Middle;
 
 PROCEDURE WriteString(s :ARRAY OF CHAR);
@@ -35,9 +37,10 @@ BEGIN
   WriteString("Hello, world!");
   ca[0] := 41X;
   ca[1] := 42X;
-  ca[2] := 43X;
+  ca[2] := 63X;
   ca[3] := 44X;
-  ca[4] := 0X;
+  ca[4] := 45X;
+  ca[5] := 0X;
   WriteString(ca);
   Middle(81, ca, 82);
   WriteString(ca);
