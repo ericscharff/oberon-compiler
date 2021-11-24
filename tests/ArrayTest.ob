@@ -82,6 +82,22 @@ BEGIN
   Out.Ln
 END ArrayOfStringTest;
 
+PROCEDURE Copier(src :ARRAY OF CHAR);
+VAR
+  dest :ARRAY 8 OF CHAR;
+BEGIN
+  dest := src;
+  Out.Str(dest); Out.Ln
+END Copier;
+
+PROCEDURE CopierTest;
+BEGIN
+  Out.Str("Copier test:"); Out.Ln;
+  Copier("Hello");
+  Copier("World");
+  Copier("ABCDEFG");
+END CopierTest;
+
 BEGIN
   flag := TRUE;
   w2[1].x := 1;
@@ -103,5 +119,5 @@ BEGIN
   TestTwo;
   StringTest;
   ArrayOfStringTest;
-
+  CopierTest;
 END ArrayTest.
