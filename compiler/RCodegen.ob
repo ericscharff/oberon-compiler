@@ -759,6 +759,26 @@ BEGIN
       Emit(opMOD, lhs.r, lhs.r, rhs.r, 0);
       DecCurReg
     END
+  ELSIF op = Lex.tBITAND THEN
+    IF rhs.kind = itemConst THEN
+      Load(lhs);
+      Emit(opANDI, lhs.r, lhs.r, 0, rhs.offset)
+    ELSE
+      Load(lhs);
+      Load(rhs);
+      Emit(opAND, lhs.r, lhs.r, rhs.r, 0);
+      DecCurReg
+    END
+  ELSIF op = Lex.tBITXOR THEN
+    IF rhs.kind = itemConst THEN
+      Load(lhs);
+      Emit(opXORI, lhs.r, lhs.r, 0, rhs.offset)
+    ELSE
+      Load(lhs);
+      Load(rhs);
+      Emit(opXOR, lhs.r, lhs.r, rhs.r, 0);
+      DecCurReg
+    END
   ELSIF op = Lex.tDOTDOT THEN
     Load(lhs);
     Load(rhs);
