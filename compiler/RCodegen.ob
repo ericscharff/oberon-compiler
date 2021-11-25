@@ -912,7 +912,7 @@ BEGIN
     ASSERT(e.decl.offset # -1);
     item.kind := itemVar;
     item.r := rSP;
-    item.offset := e.decl.offset + 4; (* The extra param for length *)
+    item.offset := stackOffset + e.decl.offset + 4; (* The extra param for length *)
     Load(item);
   END;
 END GenLengthof;

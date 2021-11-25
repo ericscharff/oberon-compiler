@@ -98,6 +98,55 @@ BEGIN
   Copier("ABCDEFG");
 END CopierTest;
 
+PROCEDURE CounterOutput(a, b, c, d :INTEGER);
+BEGIN
+  Out.Int(a); Out.Str(" ");
+  Out.Int(b); Out.Str(" ");
+  Out.Int(c); Out.Str(" ");
+  Out.Int(d); Out.Str(".");
+  Out.Ln
+END CounterOutput;
+
+PROCEDURE CounterInfo(ia :ARRAY OF INTEGER) :INTEGER;
+BEGIN
+  Out.Int(ia[0]); Out.Ln;
+  RETURN 10 * LEN(ia)
+END CounterInfo;
+
+PROCEDURE CounterHelper(a, b, c :INTEGER; ia :ARRAY OF INTEGER);
+BEGIN
+  CounterOutput(a, b, c, CounterInfo(ia))
+END CounterHelper;
+
+PROCEDURE CounterTest;
+VAR
+  ia :ARRAY 4 OF INTEGER;
+BEGIN
+  ia[0] := 1;
+  CounterHelper(10, 20, 30, ia);
+  Out.Int(ia[0]); Out.Ln
+END CounterTest;
+
+PROCEDURE VarCounterInfo(VAR ia :ARRAY OF INTEGER) :INTEGER;
+BEGIN
+  Out.Int(ia[0]); Out.Ln;
+  RETURN 10 * LEN(ia)
+END VarCounterInfo;
+
+PROCEDURE VarCounterHelper(a, b, c :INTEGER; VAR ia :ARRAY OF INTEGER);
+BEGIN
+  CounterOutput(a, b, c, VarCounterInfo(ia))
+END VarCounterHelper;
+
+PROCEDURE VarCounterTest;
+VAR
+  ia :ARRAY 4 OF INTEGER;
+BEGIN
+  ia[0] := 1;
+  VarCounterHelper(10, 20, 30, ia);
+  Out.Int(ia[0]); Out.Ln
+END VarCounterTest;
+
 BEGIN
   flag := TRUE;
   w2[1].x := 1;
@@ -120,4 +169,6 @@ BEGIN
   StringTest;
   ArrayOfStringTest;
   CopierTest;
+  CounterTest;
+  VarCounterTest;
 END ArrayTest.
