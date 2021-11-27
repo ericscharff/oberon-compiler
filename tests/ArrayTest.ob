@@ -6,6 +6,8 @@ TYPE
   R = RECORD x, y :INTEGER END;
   AR = ARRAY 3 OF R;
   AR2 = ARRAY 7, 8 OF R;
+  CharBuf = ARRAY 8 OF CHAR;
+  Pool = RECORD cb :CharBuf; last :INTEGER END;
 
 VAR
   flag :BOOLEAN;
@@ -81,6 +83,28 @@ BEGIN
   Out.Str(pool[0]);
   Out.Ln
 END ArrayOfStringTest;
+
+PROCEDURE UpdateRecord(VAR p :Pool; s :ARRAY OF CHAR);
+VAR i :INTEGER;
+BEGIN
+  i := 0;
+  WHILE s[i] # 0X DO
+    p.cb[p.last + i] := s[i];
+    INC(i)
+  END;
+  p.cb[i] := 0X;
+  p.last := i
+END UpdateRecord;
+
+PROCEDURE RecordTest;
+VAR
+  p :Pool;
+BEGIN
+  p.last := 0;
+  UpdateRecord(p, "ABC");
+  Out.Str(p.cb); Out.Char(" ");
+  Out.Int(p.last); Out.Ln
+END RecordTest;
 
 PROCEDURE Copier(src :ARRAY OF CHAR);
 VAR
@@ -168,6 +192,7 @@ BEGIN
   TestTwo;
   StringTest;
   ArrayOfStringTest;
+  RecordTest;
   CopierTest;
   CounterTest;
   VarCounterTest;

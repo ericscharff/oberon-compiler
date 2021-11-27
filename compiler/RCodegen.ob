@@ -911,6 +911,7 @@ BEGIN
     ASSERT((e.decl.kind = AST.declVarParam) OR (e.decl.kind = AST.declParam));
     ASSERT(e.decl.offset # -1);
     item.kind := itemVar;
+    item.isByte := FALSE;
     item.r := rSP;
     item.offset := stackOffset + e.decl.offset + 4; (* The extra param for length *)
     Load(item);
@@ -1093,7 +1094,12 @@ BEGIN
       item.kind := itemRegI;
       item.r := rhs.r
     ELSIF item.kind = itemRegI THEN
-      Emit(opADD, item.r, item.r, rhs.r, 0);
+      IF item.r > rhs.r THEN
+        Emit(opADD, rhs.r, item.r, rhs.r, 0);
+        item.r := rhs.r
+      ELSE
+        Emit(opADD, item.r, item.r, rhs.r, 0);
+      END;
       (* rhs.r no longer needed *)
       DecCurReg
     ELSE
