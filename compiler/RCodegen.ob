@@ -623,7 +623,9 @@ BEGIN
     IncCurReg
   ELSIF item.kind = itemRegI THEN
     IF item.offset > 0 THEN
-      Emit(opADDI, item.r, item.r, 0, item.offset)
+      Emit(opADDI, item.r, item.r, 0, item.offset);
+      (* Next commit *)
+      item.offset := 0
     END
   ELSE
     ASSERT(FALSE)
@@ -892,7 +894,7 @@ BEGIN
   END
 END GenSetOp;
 
-PROCEDURE GenLengthof(l: Lex.Lexer; VAR item :Item; e :AST.Expr);
+PROCEDURE GenLengthof(l :Lex.Lexer; VAR item :Item; e :AST.Expr);
 BEGIN
   IF e.typ.kind = AST.typeString THEN
     item.kind := itemConst;
@@ -973,12 +975,36 @@ BEGIN
 END GenIdentRef;
 
 (* Copy structs or arrays *)
-PROCEDURE CopyStructure(e :AST.Expr; VAR item, rhs :Item);
+PROCEDURE CopyStructure(l :Lex.Lexer; e :AST.Expr; VAR item, rhs :Item);
 VAR
-  i, structSize                   :INTEGER;
+  i, structSize :INTEGER;
+  lengthItem    :Item;
 BEGIN
   structSize := CalculateSize(e.lhs.typ);
-  IF structSize <= 30 THEN
+  IF (structSize > 30) OR
+     AST.IsOpenArray(e.rhs.typ) OR
+     (e.rhs.typ.kind = AST.typeString) THEN
+    (* Loop based copy *)
+    LoadAddress(item);
+    ASSERT(item.offset = 0);
+    LoadAddress(rhs);
+    IF AST.IsOpenArray(e.rhs.typ) OR (e.rhs.typ.kind = AST.typeString) THEN
+      ASSERT(e.lhs.typ.base.kind = AST.typeChar);
+      GenLengthof(l, lengthItem, e.rhs);
+      Emit(opCMPI, lengthItem.r, lengthItem.r, 0, structSize);
+      Emit(opBRA, LINK, 0, opBGT, BOUNDS_TRAP);
+    ELSE
+      Emit(opMOVI, curReg, 0, 0, structSize);
+      IncCurReg;
+    END;
+    Emit(opLDW, curReg, rhs.r, 0, rhs.offset);
+    Emit(opSTW, curReg, item.r, 0, item.offset);
+    Emit(opADDI, item.r, item.r, 0, 4);
+    Emit(opADDI, rhs.r, rhs.r, 0, 4);
+    Emit(opSUBI, curReg-1, curReg-1, 0, 4);
+    Emit(opBRA, 0, 0, opBGT, cp-5);
+    DecCurReg; DecCurReg; DecCurReg
+  ELSE
     (* Unrolled copy from dst to src *)
     i := 0;
     WHILE i < structSize DO
@@ -988,19 +1014,6 @@ BEGIN
     END;
     IF rhs.kind = itemRegI THEN DecCurReg END;
     IF item.kind = itemRegI THEN DecCurReg END;
-  ELSE
-    (* Loop based copy *)
-    LoadAddress(item);
-    LoadAddress(rhs);
-    Emit(opMOVI, curReg, 0, 0, structSize);
-    IncCurReg;
-    Emit(opLDW, curReg, rhs.r, 0, rhs.offset);
-    Emit(opSTW, curReg, item.r, 0, item.offset);
-    Emit(opADDI, item.r, item.r, 0, 4);
-    Emit(opADDI, rhs.r, rhs.r, 0, 4);
-    Emit(opSUBI, curReg-1, curReg-1, 0, 4);
-    Emit(opBRA, 0, 0, opBGT, cp-5);
-    DecCurReg; DecCurReg; DecCurReg
   END
 END CopyStructure;
 
@@ -1015,7 +1028,7 @@ BEGIN
   GenExpr(l, e.rhs, rhs, localTrueChain, localFalseChain);
 
   IF e.lhs.typ.kind IN {AST.typeRecord, AST.typeArray} THEN
-    CopyStructure(e, item, rhs)
+    CopyStructure(l, e, item, rhs)
   ELSE
     LoadValue(rhs, localTrueChain, localFalseChain);
     ASSERT(item.kind IN {itemVar, itemRegI});
