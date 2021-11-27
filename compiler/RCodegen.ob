@@ -623,7 +623,8 @@ BEGIN
     IncCurReg
   ELSIF item.kind = itemRegI THEN
     IF item.offset > 0 THEN
-      Emit(opADDI, item.r, item.r, 0, item.offset)
+      Emit(opADDI, item.r, item.r, 0, item.offset);
+      item.offset := 0
     END
   ELSE
     ASSERT(FALSE)
