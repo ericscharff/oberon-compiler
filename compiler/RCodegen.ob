@@ -623,9 +623,7 @@ BEGIN
     IncCurReg
   ELSIF item.kind = itemRegI THEN
     IF item.offset > 0 THEN
-      Emit(opADDI, item.r, item.r, 0, item.offset);
-      (* Next commit *)
-      item.offset := 0
+      Emit(opADDI, item.r, item.r, 0, item.offset)
     END
   ELSE
     ASSERT(FALSE)
