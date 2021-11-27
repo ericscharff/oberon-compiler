@@ -26,6 +26,8 @@ TYPE
 
 PROCEDURE ObjectHandler(obj :Object; VAR msg :Message);
 BEGIN
+  ASSERT(obj # NIL);
+  ASSERT(msg IS Message);
   Out.PrintLn("Unhandled Message");
 END ObjectHandler;
 

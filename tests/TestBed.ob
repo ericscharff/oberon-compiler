@@ -14,15 +14,25 @@ TYPE
 
 
 VAR i, j, k: INTEGER;
-  s: ARRAY 2 OF R1;
+  s: ARRAY 101 OF R1;
 
 BEGIN
-  i := 1000; j := 2000; k := 3000;
+  s[100].u := 3;
+  s[100].w := 4;
+  s[100].v[2].x := 5;
+  s[1].v[2].y := 6;
+  s[1].w := 7;
+  i := 100; j := 2;
   k := s[i].u;
+  WriteInt(k);
   k := s[1].w;
+  WriteInt(k);
   k := s[i].v[j].x;
+  WriteInt(k);
   k := s[1].v[2].y;
-  s[0].v[i].y := k
+  WriteInt(k);
+  s[0].v[i].y := k;
+  WriteInt(s[0].v[i].y)
 END FieldTest;
 
 PROCEDURE CondTest;
@@ -30,6 +40,7 @@ PROCEDURE CondTest;
 VAR
   a, b, c, d, e, f, g :INTEGER;
 BEGIN
+  a := 10; b := 10; c := 10; d := 10; e := 10; f := 10; g := 10;
   IF a > b THEN
     c := 100;
   END;
@@ -90,6 +101,7 @@ VAR
   END z;
 
 BEGIN
+  i := -1; j := -1; k := -1;
   f(0, 0, 0);
   i := f(1, 2, 3);
   i := f(g(1), g(2), g(g(3)));
@@ -107,8 +119,7 @@ VAR
 BEGIN
   i := 0; s := 0;
   WHILE i < 4 DO
-    (*s := s + a[i] + b + c[i]; *)
-    s := s + a[i];
+    s := s + a[i] + b + c[i];
     i := i + 1
   END;
   WriteInt(s); WriteLn
@@ -119,7 +130,7 @@ VAR
   a :A;
 BEGIN
   a[0] := 1; a[1] := 2; a[2] := 3; a[3] := 4;
-  Sum(a, 0, a)
+  Sum(a, 3, a)
 END SumTest;
 
 PROCEDURE ShortCircuitTest;
