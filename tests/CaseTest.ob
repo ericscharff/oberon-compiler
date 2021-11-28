@@ -49,7 +49,7 @@ BEGIN
   FancyRange("a");
   FancyRange("e");
   FancyRange("z");
-  FancyRange("{");
-  FancyRange("}");
-  FancyRange("^");
+  FancyRange(","); (* Smaller than 0  *)
+  FancyRange("{"); (* Larger than z   *)
+  FancyRange("^"); (* Between Z and a *)
 END CaseTest.
