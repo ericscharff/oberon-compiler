@@ -5,6 +5,16 @@ BEGIN
   WriteChar(41X)
 END Start;
 
+PROCEDURE FancyRange(ch :CHAR);
+VAR i :INTEGER;
+BEGIN
+  i := 1;
+  CASE ch OF
+    "A" .. "Z", "a" .. "z", "0" .. "9", "_": i := 2;
+  END;
+  WriteInt(i); WriteLn
+END FancyRange;
+
 PROCEDURE Trial(a :INTEGER);
 BEGIN
   CASE a OF
@@ -33,4 +43,13 @@ BEGIN
   Trial(7);
   Trial(8);
   Trial(10);
+  FancyRange("A");
+  FancyRange("E");
+  FancyRange("Z");
+  FancyRange("a");
+  FancyRange("e");
+  FancyRange("z");
+  FancyRange("{");
+  FancyRange("}");
+  FancyRange("^");
 END CaseTest.

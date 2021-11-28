@@ -1600,8 +1600,8 @@ BEGIN
   END;
   (* Fix any gaps in the case table *)
   FOR i := smallest TO largest DO
-    IF codeBuffer[caseTableStart + i].value = 0 THEN
-      codeBuffer[caseTableStart + i].value := pc
+    IF codeBuffer[caseTableStart + i - smallest].value = 0 THEN
+      codeBuffer[caseTableStart + i - smallest].value := pc
     END
   END;
   FixChain(after, cp)
