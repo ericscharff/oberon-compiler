@@ -171,6 +171,9 @@ void do_trap(int pc, int32_t *regs, int32_t *mem) {
   } else if (pc == -13) {
     /* Out.Str */
     fputs(((const char *)mem) + regs[0], stdout);
+  } else if (pc == -14) {
+    /* Out.StrI */
+    fputs(((const char *)mem) + regs[0] + regs[2], stdout);
   } else if (pc == -15) {
     /* Out.Ln */
     putchar('\n');
