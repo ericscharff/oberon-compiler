@@ -7,7 +7,7 @@
 //#define COVERAGE
 
 /* Maxiumum memory (in int32_t */
-#define MAX_MEM 8192
+#define MAX_MEM 288192
 #define MAX_MEM_BYTES (MAX_MEM * 4)
 
 typedef enum Opcode {
@@ -146,6 +146,29 @@ void dumpstate(int pc, int32_t *regs, uint8_t *mem) {
   }
 }
 
+void read_file(const char *fileName, char *buf) {
+  FILE *file = fopen(fileName, "rb");
+  if (!file) {
+    fprintf(stderr, "read_file: cannot open %s\n", fileName);
+    exit(1);
+  }
+  fseek(file, 0, SEEK_END);
+  long len = ftell(file);
+  fseek(file, 0, SEEK_SET);
+  if (len >= 65535) {
+    fprintf(stderr, "read_file: %s len %ld greater than 65535\n", fileName, len);
+    exit(1);
+  }
+  if (len && fread(buf, len, 1, file) != 1) {
+    fclose(file);
+    free(buf);
+    fprintf(stderr, "read_file: error reading from %s\n", fileName);
+    exit(1);
+  }
+  fclose(file);
+  buf[len] = 0;
+}
+
 void do_trap(int pc, int32_t *regs, int32_t *mem) {
   if (pc == -1) {
     fputs("NIL derefernce\n", stderr);
@@ -177,6 +200,8 @@ void do_trap(int pc, int32_t *regs, int32_t *mem) {
   } else if (pc == -15) {
     /* Out.Ln */
     putchar('\n');
+  } else if (pc == -23) {
+    read_file(((const char *)mem) + regs[0], ((char *)mem) + regs[2]);
   } else {
     fprintf(stderr, "Bad trap %d, %d", pc, mem[0]);
     pc = regs[LR];
