@@ -19,6 +19,20 @@ TESTS=(
   StrTest
 )
 
+RISC_TESTS=(
+  ArrayTest
+  CaseTest
+  FibFact
+  IOTest
+  KnightsTour
+  Maze
+  Pentominoes
+  SetTest
+  Shadow
+  ShortCircuit
+  StrTest
+)
+
 CPP_TESTS=(
   OopTest
   RecCopy
@@ -37,6 +51,12 @@ fail() {
 for i in ${TESTS[@]}; do
   echo "Running test $i..."
   ../build/compile ${i}.ob
+  ../build/out.prg < ../build/stdin.txt > ../build/$i.output
+  diff -c goldens/$i.output ../build/$i.output || fail $i
+done
+for i in ${RISC_TESTS[@]}; do
+  echo "Running RISC test $i..."
+  ../build/rcompile ${i}.ob
   ../build/out.prg < ../build/stdin.txt > ../build/$i.output
   diff -c goldens/$i.output ../build/$i.output || fail $i
 done
