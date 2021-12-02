@@ -1,0 +1,26 @@
+MODULE RealNumbers;
+
+IMPORT Out;
+
+PROCEDURE Test;
+VAR
+  a, b, c, d :REAL;
+BEGIN
+  a := 0.1; b := 1.0; c := 0.5; d := 0.25;
+  Out.Real(a + b + c + d); Out.Ln;
+  Out.Real(a + FLT(1) + c + d); Out.Ln;
+  Out.Real(a + b * c / d); Out.Ln;
+  Out.Real(a - b - c - d); Out.Ln;
+  Out.Real(a * b * c * d); Out.Ln;
+  Out.Real(a * b + c * d); Out.Ln;
+  ASSERT(a < b);
+  ASSERT(b > a);
+  Out.Real(a + 0.9); Out.Ln;
+  Out.Real(a - 0.1); Out.Ln;
+  Out.Real(a * 0.9); Out.Ln;
+  Out.Real(a / 0.1); Out.Ln;
+END Test;
+
+BEGIN
+  Test;
+END RealNumbers.

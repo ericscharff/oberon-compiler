@@ -1,0 +1,40 @@
+MODULE Mandelbrot;
+
+IMPORT Out;
+
+CONST
+  MaxIter = 20;
+
+PROCEDURE PrintMandelbrot;
+VAR
+  x, y, count :INTEGER;
+  cReal, cImag, zReal, zImag, zm, zn, zr2 :REAL;
+  display :ARRAY 22 OF CHAR;
+BEGIN
+  display := "..,'~!^:;[/<&?oxOX#  ";
+  FOR y := -39 TO 39 DO
+    FOR x := -39 TO 39 DO
+      cReal := FLT(x) / 20.0;
+      cImag := FLT(y) / 20.0;
+      zReal := cReal;
+      zImag := cImag;
+      count := 0;
+      zm := zReal * zReal;
+      zn := zImag * zImag;
+      WHILE (count < MaxIter) & ((zm + zn) <= 4.0) DO
+        zm := zReal * zReal;
+        zn := zImag * zImag;
+        zr2 := zm - zn + cReal;
+        zImag := zReal * zImag * 2.0 + cImag;
+        zReal := zr2;
+        INC(count)
+      END;
+      Out.Char(display[count]);
+    END;
+    Out.Ln;
+  END;
+END PrintMandelbrot;
+
+BEGIN
+  PrintMandelbrot
+END Mandelbrot.

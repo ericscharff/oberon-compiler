@@ -78,7 +78,7 @@ void Out_Int(int i) {
 
 void Out_Real(float r) {
   if (!Out_muted) {
-    printf("%g", r);
+    printf("%f", r);
   }
 }
 
@@ -171,6 +171,12 @@ void Out_ReadFile(const char *fileName, size_t q, char *buf, size_t r) {
 }
 
 void Out_Halt(void) { exit(1); }
+
+int Out_RealAsInt(float f) {
+  int i;
+  memcpy(&i, &f, sizeof(i));
+  return i;
+}
 
 int saved_argc;
 const char **saved_argv;

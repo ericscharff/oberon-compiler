@@ -27,4 +27,7 @@ NATIVE (-23) PROCEDURE ReadFile*(fileName :ARRAY OF CHAR; buf :ARRAY OF CHAR); E
 NATIVE (-24) PROCEDURE Mute*; END Mute;
 NATIVE (-25) PROCEDURE Unmute*; END Unmute;
 
+(* A highly unportable function to put the bits of a REAL into an INTEGER *)
+NATIVE (-26) PROCEDURE RealAsInt*(r :REAL) :INTEGER; BEGIN RETURN 0 END RealAsInt;
+
 END Out.

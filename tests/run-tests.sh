@@ -6,6 +6,8 @@ TESTS=(
   ArrayTest
   CaseTest
   FibFact
+  RealNumbers
+  Mandelbrot
   IOTest
   KnightsTour
   LangExtensionsTests
@@ -23,6 +25,8 @@ RISC_TESTS=(
   ArrayTest
   CaseTest
   FibFact
+  RealNumbers
+  Mandelbrot
   IOTest
   KnightsTour
   Maze

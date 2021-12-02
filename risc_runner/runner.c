@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 /* Defining COVERAGE generates an instruciton coverage report */
 //#define COVERAGE
@@ -12,42 +13,54 @@
 
 typedef enum Opcode {
   Invalid,
-  MOV,  /* ra := rb                      */
-  ADD,  /* ra := rb + rc                 */
-  SUB,  /* ra := rb - rc                 */
-  MUL,  /* ra := rb * rc                 */
-  DIV,  /* ra := rb / rc                 */
-  MOD,  /* ra := rb % rc                 */
-  LSL,  /* ra := rb << rc                */
-  ASR,  /* ra := rb >> rc                */
-  AND,  /* ra := rb & rc                 */
-  OR,   /* ra := rb | rc                 */
-  XOR,  /* ra := rb ^ rc                 */
-  ANN,  /* ra := rb & ~n                 */
-  CMP,  /* rb - rc, affects conditions   */
-  MOVI, /* ra := offset                  */
-  ADDI, /* ra := rb + offset             */
-  SUBI, /* ra := rb - offset             */
-  MULI, /* ra := rb * offset             */
-  DIVI, /* ra := rb / offset             */
-  MODI, /* ra := rb % offset             */
-  LSLI, /* ra := rb << immediate         */
-  ASRI, /* ra := rb >> immediate         */
-  ANDI, /* ra := rb & immediate          */
-  ORI,  /* ra := rb | immediate          */
-  XORI, /* ra := rb ^ immediate          */
-  ANNI, /* ra := rb & ~immediate         */
-  CMPI, /* rb - offset                   */
-  LDW,  /* ra := Mem[rb + offset] (word) */
-  LDB,  /* ra := Mem[rb + offset] (byte) */
-  STW,  /* Mem[rb + offset] := ra (word) */
-  STB,  /* Mem[rb + offset] := ra (byte) */
-  CJP,  /* Case jump (offset)            */
-  BL,   /* LR := PC + 1, PC := offset    */
-  BLr,  /* LR := PC + 1, PC := rc        */
-  Br,   /* PC := ra (usually LR)         */
-  B,    /* branch always                 */
-  BF,   /* branch never, basically NOP   */
+  MOV,   /* ra := rb                      */
+  ADD,   /* ra := rb + rc                 */
+  SUB,   /* ra := rb - rc                 */
+  MUL,   /* ra := rb * rc                 */
+  DIV,   /* ra := rb / rc                 */
+  MOD,   /* ra := rb % rc                 */
+  LSL,   /* ra := rb << rc                */
+  ASR,   /* ra := rb >> rc                */
+  AND,   /* ra := rb & rc                 */
+  OR,    /* ra := rb | rc                 */
+  XOR,   /* ra := rb ^ rc                 */
+  ANN,   /* ra := rb & ~n                 */
+  CMP,   /* rb - rc, affects conditions   */
+  MOVI,  /* ra := offset                  */
+  ADDI,  /* ra := rb + offset             */
+  SUBI,  /* ra := rb - offset             */
+  MULI,  /* ra := rb * offset             */
+  DIVI,  /* ra := rb / offset             */
+  MODI,  /* ra := rb % offset             */
+  LSLI,  /* ra := rb << immediate         */
+  ASRI,  /* ra := rb >> immediate         */
+  ANDI,  /* ra := rb & immediate          */
+  ORI,   /* ra := rb | immediate          */
+  XORI,  /* ra := rb ^ immediate          */
+  ANNI,  /* ra := rb & ~immediate         */
+  CMPI,  /* rb - offset                   */
+  RADD,  /* ra := rb + rc                 */ /* float */
+  RSUB,  /* ra := rb - rc                 */ /* float */
+  RMUL,  /* ra := rb * rc                 */ /* float */
+  RDIV,  /* ra := rb / rc                 */ /* float */
+  RCMP,  /* rb - rc, affects conditions   */ /* float */
+  RADDI, /* ra := rb + offset             */ /* float */
+  RSUBI, /* ra := rb - offset             */ /* float */
+  RMULI, /* ra := rb * offset             */ /* float */
+  RDIVI, /* ra := rb / offset             */ /* float */
+  RCMPI, /* rb - offset                   */ /* float */
+  I2R,   /* r[a] int -> float             */
+  R2I,   /* r[a] float -> int             */
+  LDW,   /* ra := Mem[rb + offset] (word) */
+  LDB,   /* ra := Mem[rb + offset] (byte) */
+  STW,   /* Mem[rb + offset] := ra (word) */
+  STB,   /* Mem[rb + offset] := ra (byte) */
+  CJP,   /* Case jump (offset)            */
+  BL,    /* LR := PC + 1, PC := offset    */
+  BLr,   /* LR := PC + 1, PC := rc        */
+  Br,    /* PC := ra (usually LR)         */
+  B,     /* branch always                 */
+  BF,    /* branch never, basically NOP   */
   BEQ,
   BNE,
   BLT,
@@ -60,11 +73,13 @@ typedef enum Opcode {
 } Opcode;
 
 const char *INSTR_NAMES[] = {
-    "Invalid", "MOV",  "ADD",  "SUB",  "MUL",  "DIV",  "MOD",  "LSL",  "ASR",
-    "AND",     "OR",   "XOR",  "ANN",  "CMP",  "MOVI", "ADDI", "SUBI", "MULI",
-    "DIVI",    "MODI", "LSLI", "ASRI", "ANDI", "ORI",  "XORI", "ANNI", "CMPI",
-    "LDW",     "LDB",  "STW",  "STB",  "CJP",  "BL",   "BLr",  "Br",   "B",
-    "BF",      "BEQ",  "BNE",  "BLT",  "BGE",  "BLE",  "BGT",  "BHI",
+    "Invalid", "MOV",   "ADD",   "SUB",   "MUL",   "DIV",  "MOD",  "LSL",
+    "ASR",     "AND",   "OR",    "XOR",   "ANN",   "CMP",  "MOVI", "ADDI",
+    "SUBI",    "MULI",  "DIVI",  "MODI",  "LSLI",  "ASRI", "ANDI", "ORI",
+    "XORI",    "ANNI",  "CMPI",  "RADD",  "RSUB",  "RMUL", "RDIV", "RCMP",
+    "RADDI",   "RSUBI", "RMULI", "RDIVI", "RCMPI", "I2R",  "R2I",  "LDW",
+    "LDB",     "STW",   "STB",   "CJP",   "BL",    "BLr",  "Br",   "B",
+    "BF",      "BEQ",   "BNE",   "BLT",   "BGE",   "BLE",  "BGT",  "BHI",
 
     "HALT",
 };
@@ -156,7 +171,8 @@ void read_file(const char *fileName, char *buf) {
   long len = ftell(file);
   fseek(file, 0, SEEK_SET);
   if (len >= 65535) {
-    fprintf(stderr, "read_file: %s len %ld greater than 65535\n", fileName, len);
+    fprintf(stderr, "read_file: %s len %ld greater than 65535\n", fileName,
+            len);
     exit(1);
   }
   if (len && fread(buf, len, 1, file) != 1) {
@@ -167,6 +183,20 @@ void read_file(const char *fileName, char *buf) {
   }
   fclose(file);
   buf[len] = 0;
+}
+
+int32_t to_int(float f) {
+  int32_t i;
+  memcpy(&i, &f, sizeof(i));
+
+  return i;
+}
+
+float to_float(int32_t i) {
+  float f;
+  memcpy(&f, &i, sizeof(f));
+
+  return f;
 }
 
 void do_trap(int pc, int32_t *regs, int32_t *mem) {
@@ -188,6 +218,9 @@ void do_trap(int pc, int32_t *regs, int32_t *mem) {
   } else if (pc == -10) {
     /* Out.Int */
     printf("%d", regs[0]);
+  } else if (pc == -11) {
+    /* Out.Real */
+    printf("%f", to_float(regs[0]));
   } else if (pc == -12) {
     /* Out.Char */
     putchar(regs[0] & 0xff);
@@ -326,6 +359,92 @@ void interpret(void) {
         right = r[c];
         zFlag = left == right;
         break;
+      case RADD:
+        r[a] = to_int(to_float(r[b]) + to_float(r[c]));
+        zFlag = to_float(r[a]) == 0.0;
+        break;
+      case RSUB:
+        r[a] = to_int(to_float(r[b]) - to_float(r[c]));
+        zFlag = to_float(r[a]) == 0.0;
+        break;
+      case RMUL:
+        r[a] = to_int(to_float(r[b]) * to_float(r[c]));
+        zFlag = to_float(r[a]) == 0.0;
+        break;
+      case RDIV:
+        r[a] = to_int(to_float(r[b]) / to_float(r[c]));
+        zFlag = to_float(r[a]) == 0.0;
+        break;
+      case RCMP: {
+        float fLeft = to_float(r[b]);
+        float fRight = to_float(r[c]);
+        /* Hack to ensure left and right are reasonable later */
+        if (fLeft < fRight) {
+          left = 100;
+          right = 101;
+        }
+        if (fLeft > fRight) {
+          left = 101;
+          right = 100;
+        }
+        if (fLeft == fRight) {
+          left = 100;
+          right = 100;
+          zFlag = true;
+        } else {
+          zFlag = false;
+        }
+        break;
+      }
+      case RADDI:
+        r[a] = to_int(to_float(r[b]) + to_float(offset));
+        zFlag = to_float(r[a]) == 0.0;
+        break;
+      case RSUBI:
+        r[a] = to_int(to_float(r[b]) - to_float(offset));
+        zFlag = to_float(r[a]) == 0.0;
+        break;
+      case RMULI:
+        r[a] = to_int(to_float(r[b]) * to_float(offset));
+        zFlag = to_float(r[a]) == 0.0;
+        break;
+      case RDIVI:
+        r[a] = to_int(to_float(r[b]) / to_float(offset));
+        zFlag = to_float(r[a]) == 0.0;
+        break;
+      case RCMPI: {
+        float fLeft = to_float(r[b]);
+        float fRight = to_float(offset);
+        /* Hack to ensure left and right are reasonable later */
+        if (fLeft < fRight) {
+          left = 100;
+          right = 101;
+        }
+        if (fLeft > fRight) {
+          left = 101;
+          right = 100;
+        }
+        if (fLeft == fRight) {
+          left = 100;
+          right = 100;
+          zFlag = true;
+        } else {
+          zFlag = false;
+        }
+        break;
+      }
+      case I2R: {
+        int i = r[a];
+        float f = i;
+        r[a] = to_int(f);
+        break;
+      }
+      case R2I: {
+        float f = to_float(r[a]);
+        int i = f;
+        r[a] = i;
+        break;
+      }
       case MOVI:
         r[a] = offset;
         break;

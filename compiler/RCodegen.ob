@@ -14,28 +14,35 @@ CONST
   LINK = 1; (* If set, branch preceded by link *)
 
   (* Opcodes *)
-  opMOV = 0;  (* ra := rb                      *)
-  opADD = 1;  (* ra := rb + rc                 *)
-  opSUB = 2;  (* ra := rb - rc                 *)
-  opMUL = 3;  (* ra := rb * rc                 *)
-  opDIV = 4;  (* ra := rb / rc                 *)
-  opMOD = 5;  (* ra := rb % rc                 *)
-  opLSL = 6;  (* ra := rb << rc                *)
-  opASR = 7;  (* ra := rb >> rc                *)
-  opAND = 8;  (* ra := rb & rc                 *)
-  opOR  = 9;  (* ra := rb | rc                 *)
-  opXOR = 10; (* ra := rb ^ rc                 *)
-  opANN = 11; (* ra := rb & ~n                 *)
-  opCMP = 12; (* rb - rc, affects conditions   *)
-  opLDW = 13; (* ra := Mem[rb + offset] (word) *)
-  opLDB = 14; (* ra := Mem[rb + offset] (byte) *)
-  opSTW = 15; (* Mem[rb + offset] := ra (word) *)
-  opSTB = 16; (* Mem[rb + offset] := ra (byte) *)
-  opCJP = 17; (* Case jump (pc offset)         *)
-  opBRA = 19; (* PC := value (see below)       *)
-  opBL  = 50; (* LR := PC + 1, PC := value     *)
-  opBLr = 51; (* LR := PC + 1, PC := rc        *)
-  opBrg = 52; (* PC := ra                      *)
+  opMOV  = 0;   (* ra := rb                        *)
+  opADD  = 1;   (* ra := rb + rc                   *)
+  opSUB  = 2;   (* ra := rb - rc                   *)
+  opMUL  = 3;   (* ra := rb * rc                   *)
+  opDIV  = 4;   (* ra := rb / rc                   *)
+  opMOD  = 5;   (* ra := rb % rc                   *)
+  opLSL  = 6;   (* ra := rb << rc                  *)
+  opASR  = 7;   (* ra := rb >> rc                  *)
+  opAND  = 8;   (* ra := rb & rc                   *)
+  opOR   = 9;   (* ra := rb | rc                   *)
+  opXOR  = 10;  (* ra := rb ^ rc                   *)
+  opANN  = 11;  (* ra := rb & ~n                   *)
+  opCMP  = 12;  (* rb - rc, affects conditions     *)
+  opLDW  = 13;  (* ra := Mem[rb + offset] (word)   *)
+  opLDB  = 14;  (* ra := Mem[rb + offset] (byte)   *)
+  opSTW  = 15;  (* Mem[rb + offset] := ra (word)   *)
+  opSTB  = 16;  (* Mem[rb + offset] := ra (byte)   *)
+  opCJP  = 17;  (* Case jump (pc offset)           *)
+  opBRA  = 19;  (* PC := value (see below)         *)
+  opBL   = 50;  (* LR := PC + 1, PC := value       *)
+  opBLr  = 51;  (* LR := PC + 1, PC := rc          *)
+  opBrg  = 52;  (* PC := ra                        *)
+  opRADD = 53;  (* ra := rb + rc                   *) (* REAL *)
+  opRSUB = 54;  (* ra := rb - rc                   *) (* REAL *)
+  opRMUL = 55;  (* ra := rb * rc                   *) (* REAL *)
+  opRDIV = 56;  (* ra := rb / rc                   *) (* REAL *)
+  opRCMP = 57;  (* rb - rc, affects conditions     *) (* REAL *)
+  opI2R  = 58;  (* convert ra from INTEGER to REAL *)
+  opR2I  = 59;  (* convert ra from REAL to INTEGER *)
 
   (* Branches have opcode opBRA, and r.c is    *)
   (* the conndition code, given below:         *)
@@ -46,19 +53,24 @@ CONST
   opBF  = 15; (* branch never, basically NOP *)
   opBHI = 12; (* Branch if high - ~(~C|Z) *)
 
-  opMOVI = 100; (* ra := immediate       *)
-  opADDI = 101; (* ra := rb + immediate  *)
-  opSUBI = 102; (* ra := rb - immediate  *)
-  opMULI = 103; (* ra := rb * immediate  *)
-  opDIVI = 104; (* ra := rb / immediate  *)
-  opMODI = 105; (* ra := rb % immediate  *)
-  opLSLI = 106; (* ra := rb << immediate *)
-  opASRI = 107; (* ra := rb >> immediate *)
-  opANDI = 108; (* ra := rb & immediate  *)
-  opORI  = 109; (* ra := rb | immediate  *)
-  opXORI = 110; (* ra := rb ^ immediate  *)
-  opANNI = 111; (* ra := rb & ~immediate *)
-  opCMPI = 112; (* rb - immediate        *)
+  opMOVI  = 100; (* ra := immediate       *)
+  opADDI  = 101; (* ra := rb + immediate  *)
+  opSUBI  = 102; (* ra := rb - immediate  *)
+  opMULI  = 103; (* ra := rb * immediate  *)
+  opDIVI  = 104; (* ra := rb / immediate  *)
+  opMODI  = 105; (* ra := rb % immediate  *)
+  opLSLI  = 106; (* ra := rb << immediate *)
+  opASRI  = 107; (* ra := rb >> immediate *)
+  opANDI  = 108; (* ra := rb & immediate  *)
+  opORI   = 109; (* ra := rb | immediate  *)
+  opXORI  = 110; (* ra := rb ^ immediate  *)
+  opANNI  = 111; (* ra := rb & ~immediate *)
+  opCMPI  = 112; (* rb - immediate        *)
+  opRADDI = 153; (* ra := rb + immediate  *) (* REAL *)
+  opRSUBI = 154; (* ra := rb - immediate  *) (* REAL *)
+  opRMULI = 155; (* ra := rb * immediate  *) (* REAL *)
+  opRDIVI = 156; (* ra := rb / immediate  *) (* REAL *)
+  opRCMPI = 157; (* rb - immediate        *) (* REAL *)
 
   opHALT = 1000;
 
@@ -307,6 +319,30 @@ BEGIN
       GenStr("BL "); GenReg(codeBuffer[i].rc)
     ELSIF op = opBrg THEN
       GenStr("B "); GenReg(codeBuffer[i].ra)
+    ELSIF op = opRADD THEN
+      Gen3("RADD", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].rc)
+    ELSIF op = opRSUB THEN
+      Gen3("RSUB", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].rc)
+    ELSIF op = opRMUL THEN
+      Gen3("RMUL", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].rc)
+    ELSIF op = opRDIV THEN
+      Gen3("RDIV", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].rc)
+    ELSIF op = opRCMP THEN
+      Gen3("RCMP", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].rc)
+    ELSIF op = opI2R THEN
+      GenStr("I2R "); GenReg(codeBuffer[i].ra);
+    ELSIF op = opR2I THEN
+      GenStr("R2I "); GenReg(codeBuffer[i].ra);
+    ELSIF op = opRADDI THEN
+      Gen2("RADD", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].value)
+    ELSIF op = opRSUBI THEN
+      Gen2("RSUB", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].value)
+    ELSIF op = opRMULI THEN
+      Gen2("RMUL", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].value)
+    ELSIF op = opRDIVI THEN
+      Gen2("RDIV", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].value)
+    ELSIF op = opRCMPI THEN
+      Gen2("RCMP", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].value)
     ELSIF op = opHALT THEN
       GenStr("HALT")
     ELSE
@@ -410,6 +446,30 @@ BEGIN
       GenStr("BLr");
     ELSIF op = opBrg THEN
       GenStr("Br");
+    ELSIF op = opRADD THEN
+      GenStr("RADD");
+    ELSIF op = opRSUB THEN
+      GenStr("RSUB");
+    ELSIF op = opRMUL THEN
+      GenStr("RMUL");
+    ELSIF op = opRDIV THEN
+      GenStr("RDIV");
+    ELSIF op = opRCMP THEN
+      GenStr("RCMP");
+    ELSIF op = opRADDI THEN
+      GenStr("RADDI");
+    ELSIF op = opRSUBI THEN
+      GenStr("RSUBI");
+    ELSIF op = opRMULI THEN
+      GenStr("RMULI");
+    ELSIF op = opRDIVI THEN
+      GenStr("RDIVI");
+    ELSIF op = opRCMPI THEN
+      GenStr("RCMPI");
+    ELSIF op = opI2R THEN
+      GenStr("I2R");
+    ELSIF op = opR2I THEN
+      GenStr("R2I");
     ELSIF op = opHALT THEN
       GenStr("HALT");
     ELSE
@@ -677,6 +737,23 @@ BEGIN
   END;
 END RestoreRegisters;
 
+PROCEDURE GenRealCompare(VAR lhs, rhs:Item; op :OpCode);
+BEGIN
+  IF rhs.kind = itemConst THEN
+    Load(lhs);
+    Emit(opRCMPI, lhs.r, lhs.r, 0, rhs.offset)
+  ELSE
+    Load(lhs);
+    Load(rhs);
+    Emit(opRCMP, lhs.r, lhs.r, rhs.r, 0);
+    DecCurReg
+  END;
+  lhs.kind := itemCond;
+  lhs.opCond := op;
+  (* We don't need or want the result of the lhs, which is always loaded *)
+  DecCurReg
+END GenRealCompare;
+
 PROCEDURE GenCompare(VAR lhs, rhs:Item; op :OpCode);
 BEGIN
   IF rhs.kind = itemConst THEN
@@ -699,6 +776,73 @@ BEGIN
   IF cond < 8 THEN cond := cond + 8 ELSE cond := cond - 8 END
   RETURN cond
 END NegateCond;
+
+PROCEDURE GenRealOp(op :Lex.TokenKind; VAR lhs, rhs :Item);
+BEGIN
+  IF op = Lex.tPLUS THEN
+    IF lhs.kind = itemConst THEN
+      Load(rhs);
+      lhs.kind := rhs.kind; lhs.r := rhs.r;
+      Emit(opRADDI, lhs.r, lhs.r, 0, lhs.offset)
+    ELSIF rhs.kind = itemConst THEN
+      Load(lhs);
+      Emit(opRADDI, lhs.r, lhs.r, 0, rhs.offset)
+    ELSE
+      Load(lhs);
+      Load(rhs);
+      Emit(opRADD, lhs.r, lhs.r, rhs.r, 0);
+      DecCurReg
+    END
+  ELSIF op = Lex.tMINUS THEN
+    IF rhs.kind = itemConst THEN
+      Load(lhs);
+      Emit(opRSUBI, lhs.r, lhs.r, 0, rhs.offset)
+    ELSE
+      Load(lhs);
+      Load(rhs);
+      Emit(opRSUB, lhs.r, lhs.r, rhs.r, 0);
+      DecCurReg
+    END
+  ELSIF op = Lex.tSTAR THEN
+    IF lhs.kind = itemConst THEN
+      Load(rhs);
+      lhs.kind := rhs.kind; lhs.r := rhs.r;
+      Emit(opRMULI, lhs.r, lhs.r, 0, lhs.offset)
+    ELSIF rhs.kind = itemConst THEN
+      Load(lhs);
+      Emit(opRMULI, lhs.r, lhs.r, 0, rhs.offset)
+    ELSE
+      Load(lhs);
+      Load(rhs);
+      Emit(opRMUL, lhs.r, lhs.r, rhs.r, 0);
+      DecCurReg
+    END
+  ELSIF op = Lex.tSLASH THEN
+    IF rhs.kind = itemConst THEN
+      Load(lhs);
+      Emit(opRDIVI, lhs.r, lhs.r, 0, rhs.offset)
+    ELSE
+      Load(lhs);
+      Load(rhs);
+      Emit(opRDIV, lhs.r, lhs.r, rhs.r, 0);
+      DecCurReg
+    END
+  ELSIF op = Lex.tEQ THEN
+    GenRealCompare(lhs, rhs, opBEQ)
+  ELSIF op = Lex.tPOUND THEN
+    GenRealCompare(lhs, rhs, opBNE)
+  ELSIF op = Lex.tLT THEN
+    GenRealCompare(lhs, rhs, opBLT)
+  ELSIF op = Lex.tGT THEN
+    GenRealCompare(lhs, rhs, opBGT)
+  ELSIF op = Lex.tLTEQ THEN
+    GenRealCompare(lhs, rhs, opBLE)
+  ELSIF op = Lex.tGTEQ THEN
+    GenRealCompare(lhs, rhs, opBGE)
+  ELSE
+    ASSERT(FALSE)
+  END
+END GenRealOp;
 
 PROCEDURE GenIntegerOp(op :Lex.TokenKind; VAR lhs, rhs :Item);
 BEGIN
@@ -933,6 +1077,8 @@ BEGIN
     item.offset := Lex.CopyLexToPool(l, e.iVal, strings) + globalOffset;
     Lex.PadStringPool(strings);
     item.r := rGB;
+  ELSIF e.typ.kind = AST.typeReal THEN
+    item.offset := Out.RealAsInt(e.rVal);
   ELSE
     ASSERT(FALSE)
   END
@@ -1197,6 +1343,8 @@ BEGIN
     GenExpr(l, e.rhs, rhs, parentTrueChain, parentFalseChain);
     IF e.rhs.typ.kind = AST.typeSet THEN
       GenSetOp(e.op, item, rhs)
+    ELSIF e.rhs.typ.kind = AST.typeReal THEN
+      GenRealOp(e.op, item, rhs)
     ELSE
       GenIntegerOp(e.op, item, rhs)
     END
@@ -1337,6 +1485,11 @@ BEGIN
     FixChain(localTrueChain, cp);
     Emit(opBL, LINK, 0, 0, ASSERT_TRAP);
     FixChain(localFalseChain, cp);
+  ELSIF e.iVal = AST.builtinFlt THEN
+    localTrueChain := 0; localFalseChain := 0;
+    GenExpr(l, e.rhs, item, localTrueChain, localFalseChain);
+    LoadValue(item, localTrueChain, localFalseChain);
+    Emit(opI2R, curReg - 1, 0, 0, 0);
   ELSE
     ASSERT(FALSE);
   END
@@ -1731,7 +1884,7 @@ BEGIN
   lastType := 0;
   mainStartPc := 0;
   genCode := FALSE;
-  genBoundsCheck := TRUE;
+  genBoundsCheck := FALSE;
   genNilCheck := TRUE;
   pc := 0;
   Lex.PoolInit(strings)
