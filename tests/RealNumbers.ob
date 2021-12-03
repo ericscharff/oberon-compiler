@@ -19,6 +19,12 @@ BEGIN
   Out.Real(a - 0.1); Out.Ln;
   Out.Real(a * 0.9); Out.Ln;
   Out.Real(a / 0.1); Out.Ln;
+  a := a - b;
+  Out.Real(a); Out.Ln;
+  a := ABS(a);
+  Out.Real(a); Out.Ln;
+  a := ABS(a);
+  Out.Real(a); Out.Ln;
 END Test;
 
 BEGIN

@@ -1490,6 +1490,18 @@ BEGIN
     GenExpr(l, e.rhs, item, localTrueChain, localFalseChain);
     LoadValue(item, localTrueChain, localFalseChain);
     Emit(opI2R, curReg - 1, 0, 0, 0);
+  ELSIF e.iVal = AST.builtinOrd THEN
+    (* ORD is a no-op, since simply evaluating returns the correct value *)
+    localTrueChain := 0; localFalseChain := 0;
+    GenExpr(l, e.rhs, item, localTrueChain, localFalseChain);
+    LoadValue(item, localTrueChain, localFalseChain);
+  ELSIF e.iVal = AST.builtinAbs THEN
+    localTrueChain := 0; localFalseChain := 0;
+    GenExpr(l, e.rhs, item, localTrueChain, localFalseChain);
+    LoadValue(item, localTrueChain, localFalseChain);
+    Emit(opRCMPI, item.r, item.r, 0, Out.RealAsInt(0.0));
+    Emit(opBRA, 0, 0, opBGT, cp+2);
+    Emit(opRMULI, item.r, item.r, 0, Out.RealAsInt(-1.0));
   ELSE
     ASSERT(FALSE);
   END
