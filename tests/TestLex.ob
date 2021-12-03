@@ -1,0 +1,7 @@
+MODULE TestLex;
+
+IMPORT Lex;
+
+BEGIN
+  Lex.RunTests
+END TestLex.
