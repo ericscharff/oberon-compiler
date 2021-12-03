@@ -332,13 +332,11 @@ END IsOneChar;
 
 PROCEDURE Mute*;
 BEGIN
-  Out.Mute;
   fatal := FALSE;
 END Mute;
 
 PROCEDURE Unmute*;
 BEGIN
-  Out.Unmute;
   fatal := TRUE;
 END Unmute;
 

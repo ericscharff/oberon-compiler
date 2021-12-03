@@ -68,87 +68,57 @@ int make_set_range(int s, int e) {
 
 float FLT(int x) { return x; }
 
-static bool Out_muted = false;
-
 void Out_Int(int i) {
-  if (!Out_muted) {
-    printf("%d", i);
-  }
+  printf("%d", i);
 }
 
 void Out_Real(float r) {
-  if (!Out_muted) {
-    printf("%f", r);
-  }
+  printf("%f", r);
 }
 
 void Out_Char(char c) {
-  if (!Out_muted) {
-    putchar(c);
-  }
+  putchar(c);
 }
 
 void Out_Str(const char *s, size_t q) {
   (void)q;
-  if (!Out_muted) {
-    fputs(s, stdout);
-  }
+  fputs(s, stdout);
 }
 
 void Out_StrI(const char *s, size_t q, int offset) {
   (void)q;
-  if (!Out_muted) {
-    fputs(s + offset, stdout);
-  }
+  fputs(s + offset, stdout);
 }
 
 void Out_Ln(void) {
-  if (!Out_muted) {
-    puts("");
-  }
+  puts("");
 }
 
 void Out_ErrInt(int i) {
-  if (!Out_muted) {
-    fprintf(stderr, "%d", i);
-  }
+  fprintf(stderr, "%d", i);
 }
 
 void Out_ErrReal(float r) {
-  if (!Out_muted) {
-    fprintf(stderr, "%g", r);
-  }
+  fprintf(stderr, "%g", r);
 }
 
 void Out_ErrChar(char c) {
-  if (!Out_muted) {
-    fputc(c, stderr);
-  }
+  fputc(c, stderr);
 }
 
 void Out_ErrStr(const char *s, size_t q) {
   (void)q;
-  if (!Out_muted) {
-    fputs(s, stderr);
-  }
+  fputs(s, stderr);
 }
 
 void Out_ErrStrI(const char *s, size_t q, int offset) {
   (void)q;
-  if (!Out_muted) {
-    fputs(s + offset, stderr);
-  }
+  fputs(s + offset, stderr);
 }
 
 void Out_ErrLn(void) {
-  if (!Out_muted) {
-    fputs("", stderr);
-  }
+  fputs("", stderr);
 }
-
-void Out_Mute(void) { Out_muted = true; }
-
-void Out_Unmute(void) { Out_muted = false; }
 
 void Out_ReadFile(const char *fileName, size_t q, char *buf, size_t r) {
   (void)q;
