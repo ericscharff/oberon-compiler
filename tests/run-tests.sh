@@ -57,17 +57,13 @@ fail() {
 for i in ${TESTS[@]}; do
   echo "Running test $i..."
   ../build/compile ${i}.ob
-  pushd ../build > /dev/null
   ../build/out.prg < ../build/stdin.txt > ../build/$i.output
-  popd > /dev/null
   diff -c goldens/$i.output ../build/$i.output || fail $i
 done
 for i in ${RISC_TESTS[@]}; do
   echo "Running RISC test $i..."
   ../build/rcompile ${i}.ob
-  pushd ../build > /dev/null
   ../build/out.prg < ../build/stdin.txt > ../build/$i.output
-  popd > /dev/null
   diff -c goldens/$i.output ../build/$i.output || fail $i
 done
 for i in ${CPP_TESTS[@]}; do
