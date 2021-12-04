@@ -8,7 +8,7 @@
 //#define COVERAGE
 
 /* Maxiumum memory (in int32_t */
-#define MAX_MEM 288192
+#define MAX_MEM 8192
 #define MAX_MEM_BYTES (MAX_MEM * 4)
 
 typedef enum Opcode {
