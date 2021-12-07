@@ -1,0 +1,55 @@
+MODULE PtrTest;
+
+TYPE
+  P = POINTER TO R;
+  R = RECORD
+        a, b :INTEGER;
+        next :P
+      END;
+
+PROCEDURE SimpleTest;
+VAR
+  start :P;
+BEGIN
+  NEW(start);
+  start.a := 1;
+  start.b := 2;
+  NEW(start.next);
+  start.next.a := 3;
+  start.next.b := 4;
+  WriteInt(start.a);
+  WriteInt(start.b);
+  WriteInt(start.next.a);
+  WriteInt(start.next.b);
+  WriteLn
+END SimpleTest;
+
+PROCEDURE BuildList(i :INTEGER) :P;
+VAR
+  p :P;
+BEGIN
+  IF i = 0 THEN
+    p := NIL
+  ELSE
+    NEW(p);
+    p.a := i * 10;
+    p.next := BuildList(i - 1)
+  END
+  RETURN p
+END BuildList;
+
+PROCEDURE LinkList;
+VAR
+  p :P;
+BEGIN
+  p := BuildList(10);
+  WHILE p # NIL DO
+    WriteInt(p.a); WriteLn;
+    p := p.next
+  END
+END LinkList;
+
+BEGIN
+  SimpleTest;
+  LinkList
+END PtrTest.

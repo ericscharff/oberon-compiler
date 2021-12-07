@@ -155,6 +155,9 @@ void dumpstate(int pc, int32_t *regs, uint8_t *mem) {
       Register b = PROGRAM[instr].rb;
       Register c = PROGRAM[instr].rc;
       int offset = PROGRAM[instr].offset;
+      if (instr == pc) {
+        printf("NEXT>>>\t");
+      }
       printf("%5d: %s %s, %s, %s, #%d\n", instr, INSTR_NAMES[op], REG_NAMES[a],
              REG_NAMES[b], REG_NAMES[c], offset);
     }
@@ -284,6 +287,7 @@ void interpret(void) {
     mem[i] = 0;
   }
   copy_strings_to_mem((uint8_t *)mem);
+  mem[0] = (STRING_POOL_START + sizeof(STRING_POOL) + 4) & ~0x3;
   int left = 0; /* previous compare */
   int right = 0;
   while (1) {

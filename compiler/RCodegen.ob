@@ -1423,6 +1423,7 @@ PROCEDURE GenBuiltin(l :Lex.Lexer; e :AST.Expr; VAR item :Item);
 VAR
   actualParam :AST.Expr;
   localTrueChain, localFalseChain :INTEGER;
+  allocSize :INTEGER;
 BEGIN
   IF e.iVal = AST.builtinReadInt THEN
     localTrueChain := 0; localFalseChain := 0;
@@ -1497,6 +1498,18 @@ BEGIN
     Emit(opRCMPI, item.r, item.r, 0, Out.RealAsInt(0.0));
     Emit(opBRA, 0, 0, opBGT, cp+2);
     Emit(opRMULI, item.r, item.r, 0, Out.RealAsInt(-1.0));
+  ELSIF e.iVal = AST.builtinNew THEN
+    ASSERT(~AST.NeedsTypeInfo(e.rhs.typ.base));
+    allocSize := CalculateSize(e.rhs.typ.base);
+    localTrueChain := 0; localFalseChain := 0;
+    GenExpr(l, e.rhs, item, localTrueChain, localFalseChain);
+    LoadAddress(item); (* R0 = destination of pointer *)
+    ASSERT(curReg = 1);
+    Emit(opLDW, 1, rGB, 0, 0); (* R1 = [GB+0] = next address of heap *)
+    Emit(opSTW, 1, 0, 0, 0); (* mem[R0] = R1 = store pointer to heap *)
+    Emit(opADDI, 1, 1, 0, allocSize); (* R1 += new RECORD size *)
+    Emit(opSTW, 1, rGB, 0, 0); (* mem[GB+0] = R1 = new top of heap *)
+    DecCurReg;
   ELSE
     ASSERT(FALSE);
   END
@@ -1886,7 +1899,7 @@ END EnableDumpCode;
 BEGIN
   GenExpr := GenExpr0;
   GenCase := GenCase0;
-  globalOffset := 0;
+  globalOffset := 4; (* Leave room for NEW heap pointer *)
   stackOffset := 0;
   lastType := 0;
   mainStartPc := 0;

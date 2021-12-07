@@ -6,6 +6,7 @@ TESTS=(
   ArrayTest
   CaseTest
   FibFact
+  PtrTest
   RealNumbers
   Mandelbrot
   IOTest
@@ -26,6 +27,7 @@ RISC_TESTS=(
   ArrayTest
   CaseTest
   FibFact
+  PtrTest
   RealNumbers
   Mandelbrot
   IOTest
