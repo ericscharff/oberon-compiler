@@ -16,6 +16,7 @@ TYPE
   END;
 
 VAR
+  inTests :BOOLEAN;
   nilType*, integerType*, realType*, booleanType*,
     charType*, setType*, stringType* :AST.Type;
   modInitName* :StringId;
@@ -45,6 +46,8 @@ BEGIN
     Lex.Error(l, "");
     Lex.OutStr(l, name);
     Lex.PrintLn(" undefined");
+  ELSE
+    IF inTests THEN Lex.OutStr(l, p.qname.name); Lex.InfoPrintLn(" lookup"); END
   END;
   RETURN p
 END LookupDecl;
@@ -775,6 +778,7 @@ VAR
   d :AST.Decl;
   t :AST.Type;
 BEGIN
+  inTests := TRUE;
   Lex.LexerInitFromString(l, "");
   d := NIL;
   AddDecl(l, d, 10);
@@ -811,6 +815,7 @@ BEGIN
 END RunTests;
 
 BEGIN
+  inTests := FALSE;
   VisitDecl := VisitDecl0;
   genSymNum := 0;
   reachableDecls := NIL;
