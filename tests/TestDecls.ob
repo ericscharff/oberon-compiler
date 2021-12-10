@@ -1,0 +1,7 @@
+MODULE TestDecls;
+
+IMPORT Decls;
+
+BEGIN
+  Decls.RunTests
+END TestDecls.

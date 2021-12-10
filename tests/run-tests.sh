@@ -15,6 +15,7 @@ TESTS=(
   Maze
   Pentominoes
   TestLex
+  TestDecls
   Recurse2
   Recurse
   SetTest
@@ -35,6 +36,7 @@ RISC_TESTS=(
   Maze
   Pentominoes
   TestLex
+  TestDecls
   SetTest
   Shadow
   ShortCircuit
