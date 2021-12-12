@@ -47,7 +47,7 @@ BEGIN
     Lex.Error(l, "Expected ");
     Lex.Str(Lex.TokenNames[kind]);
     Lex.Str(", got ");
-    Lex.PrintLn(Lex.TokenNames[l.t.kind]);
+    Lex.PrintLnAndHalt(Lex.TokenNames[l.t.kind]);
   END;
 END ExpectToken;
 
@@ -98,7 +98,7 @@ BEGIN
     IF d.kind # AST.declType THEN
       Lex.Error(l, "");
       Lex.OutStr(l, d.qname.name);
-      Lex.PrintLn(" is not a TYPE");
+      Lex.PrintLnAndHalt(" is not a TYPE");
     END;
   END;
   RETURN t
@@ -874,7 +874,7 @@ BEGIN
     Lex.OutStr(l, endName);
     Lex.Str("] must match start name [");
     Lex.OutStr(l, d.qname.name);
-    Lex.PrintLn("]");
+    Lex.PrintLnAndHalt("]");
   END;
 END ParseProcedureDeclaration;
 
@@ -979,7 +979,7 @@ BEGIN
     Lex.OutStr(l, e);
     Lex.Str("] must match start name [");
     Lex.OutStr(l, s);
-    Lex.PrintLn("]");
+    Lex.PrintLnAndHalt("]");
   END;
   ExpectToken(Lex.tDOT);
   lastModuleDecls := Decls.CurrentScope();

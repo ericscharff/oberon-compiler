@@ -457,7 +457,7 @@ BEGIN
       IF IsImported(d) & ~d.exported THEN
         Lex.Error(l, "Field ");
         Lex.OutStr(l, name);
-        Lex.PrintLn(" is private");
+        Lex.PrintLnAndHalt(" is private");
       END;
       NewExpr(e, exprFieldRef, d.typ);
       e.lhs := base;
@@ -467,7 +467,7 @@ BEGIN
     ELSE
       Lex.Error(l, "Field ");
       Lex.OutStr(l, name);
-      Lex.PrintLn(" not found");
+      Lex.PrintLnAndHalt(" not found");
     END;
   ELSE
     Lex.ErrorLn(l, "Not a RECORD");
@@ -557,7 +557,7 @@ BEGIN
   ELSE
     Lex.Error(l, "Declaration ");
     Lex.OutStr(l, newType.qname.name);
-    Lex.PrintLn(" must be a POINTER or RECORD type");
+    Lex.PrintLnAndHalt(" must be a POINTER or RECORD type");
   END;
   RETURN e
 END NewExprTypeGuard;
@@ -645,7 +645,7 @@ BEGIN
     IF (elt.iVal < 0) OR (elt.iVal > 31) THEN
       Lex.Error(l, "Value ");
       Lex.Int(elt.iVal);
-      Lex.PrintLn(" out OF range of SET 0..31");
+      Lex.PrintLnAndHalt(" out OF range of SET 0..31");
     ELSE
       e := NewExprSet(setType);
       e.setVal := {elt.iVal};
@@ -872,7 +872,7 @@ BEGIN
   ELSIF (formal.kind = declVarParam) & ~actual.assignable THEN
     Lex.Error(l, "For argument ");
     Lex.Int(arg);
-    Lex.PrintLn(", param is not assignable (expected VAR param)");
+    Lex.PrintLnAndHalt(", param is not assignable (expected VAR param)");
   ELSIF ~AssignmentCompatable(
       l, actual.typ, formal.typ, actual.iVal, actual.iVal) THEN
     Lex.Error(l, "For argument ");

@@ -356,11 +356,11 @@ BEGIN
   IF fatal THEN Out.Halt END;
 END Ln;
 
-PROCEDURE PrintLn*(s :ARRAY OF CHAR);
+PROCEDURE PrintLnAndHalt*(s :ARRAY OF CHAR);
 BEGIN
   Out.Str(s);
   Ln;
-END PrintLn;
+END PrintLnAndHalt;
 
 PROCEDURE InfoPrintLn*(s :ARRAY OF CHAR);
 BEGIN

@@ -45,7 +45,7 @@ BEGIN
   IF p = NIL THEN
     Lex.Error(l, "");
     Lex.OutStr(l, name);
-    Lex.PrintLn(" undefined");
+    Lex.PrintLnAndHalt(" undefined");
   ELSE
     IF inTests THEN Lex.OutStr(l, p.qname.name); Lex.InfoPrintLn(" lookup"); END
   END;
@@ -67,13 +67,13 @@ BEGIN
     Lex.OutStr(l, moduleName);
     Lex.Str(".");
     Lex.OutStr(l, name);
-    Lex.PrintLn(" undefined");
+    Lex.PrintLnAndHalt(" undefined");
   ELSIF ~p.exported THEN
     Lex.Error(l, "");
     Lex.OutStr(l, moduleName);
     Lex.Str(".");
     Lex.OutStr(l, name);
-    Lex.PrintLn(" is not exported");
+    Lex.PrintLnAndHalt(" is not exported");
   END;
   RETURN p
 END LookupImport;
@@ -116,7 +116,7 @@ BEGIN
     IF p.qname.name = name THEN
       Lex.Error(l, "");
       Lex.OutStr(l, name);
-      Lex.PrintLn(" already defined");
+      Lex.PrintLnAndHalt(" already defined");
     ELSE
       d.next := p.next;
       p.next := d;
@@ -224,7 +224,7 @@ BEGIN
     IF d.kind # AST.declType THEN
       Lex.Error(l, "");
       Lex.OutStr(l, d.qname.name);
-      Lex.PrintLn(" is not a TYPE");
+      Lex.PrintLnAndHalt(" is not a TYPE");
     END;
     t := NewPointerType(l, d.typ);
   END;
