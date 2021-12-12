@@ -2,10 +2,5 @@ Err!<string>!0!BEGIN already defined
 Err!<string>!0!BITAND already defined
 Err!<string>!0!BITOR already defined
 Err!<string>!0!BITXOR already defined
-BITAND lookup
 Err!<string>!0!ELSE undefined
-NIL lookup
-NIL lookup
-INTEGER lookup
-BYTE lookup
 PASS: Decls test
