@@ -14,8 +14,7 @@ TESTS=(
   LangExtensionsTests
   Maze
   Pentominoes
-  TestLex
-  TestDecls
+  TestCompiler
   Recurse2
   Recurse
   SetTest
@@ -35,8 +34,7 @@ RISC_TESTS=(
   KnightsTour
   Maze
   Pentominoes
-  TestLex
-  TestDecls
+  TestCompiler
   SetTest
   Shadow
   ShortCircuit

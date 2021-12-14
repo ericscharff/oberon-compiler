@@ -1,0 +1,13 @@
+MODULE TestCompiler;
+
+IMPORT Decls, Lex;
+
+PROCEDURE Test;
+BEGIN
+  Lex.RunTests;
+  Decls.RunTests
+END Test;
+
+BEGIN
+  Test
+END TestCompiler.

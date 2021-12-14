@@ -6,3 +6,9 @@ Err!<string>!0!Unterminated string
 Err!<string>!0!Invalid character
 Err!<string>!0!Unterminated comment
 PASS: Lexer test
+Err!<string>!0!BEGIN already defined
+Err!<string>!0!BITAND already defined
+Err!<string>!0!BITOR already defined
+Err!<string>!0!BITXOR already defined
+Err!<string>!0!ELSE undefined
+PASS: Decls test
