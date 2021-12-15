@@ -33,6 +33,9 @@ $ ../build/compile FibFact.ob
 $ ../build/out.prg
 5040
 10946
+
+# or run all the tests
+$ ./run-tests.sh
 ```
 
 The compiler will read and compile all modules upon which the main class
