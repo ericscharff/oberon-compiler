@@ -109,7 +109,7 @@ TYPE
   END;
   TokenKind*  = INTEGER;
   Token*      = RECORD
-    kind* :INTEGER;
+    kind* :TokenKind;
     sVal* :PoolIndex;
     iVal* :INTEGER;
     rVal* :REAL;
