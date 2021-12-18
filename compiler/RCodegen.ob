@@ -884,7 +884,7 @@ BEGIN
       Emit(opMUL, lhs.r, lhs.r, rhs.r, 0);
       DecCurReg
     END
-  ELSIF op = Lex.tDIV THEN
+  ELSIF (op = Lex.tDIV) OR (op = Lex.tSLASH) THEN
     IF rhs.kind = itemConst THEN
       Load(lhs);
       Emit(opDIVI, lhs.r, lhs.r, 0, rhs.offset)
@@ -912,6 +912,16 @@ BEGIN
       Load(lhs);
       Load(rhs);
       Emit(opAND, lhs.r, lhs.r, rhs.r, 0);
+      DecCurReg
+    END
+  ELSIF op = Lex.tBITOR THEN
+    IF rhs.kind = itemConst THEN
+      Load(lhs);
+      Emit(opORI, lhs.r, lhs.r, 0, rhs.offset)
+    ELSE
+      Load(lhs);
+      Load(rhs);
+      Emit(opOR, lhs.r, lhs.r, rhs.r, 0);
       DecCurReg
     END
   ELSIF op = Lex.tBITXOR THEN
@@ -1282,6 +1292,15 @@ BEGIN
       Load(item);
       Emit(opMOVI, curReg, 0, 0, 1);
       Emit(opLSL, item.r, curReg, item.r, 0);
+    ELSE
+      ASSERT(FALSE)
+    END
+  ELSIF e.lhs.typ.kind = AST.typeReal THEN
+    IF e.op = Lex.tMINUS THEN
+      GenExpr(l, e.lhs, item, parentTrueChain, parentFalseChain);
+      Load(item);
+      Emit(opMOVI, curReg, 0, 0, Out.RealAsInt(0.0));
+      Emit(opRSUB, item.r, curReg, item.r, 0)
     ELSE
       ASSERT(FALSE)
     END
