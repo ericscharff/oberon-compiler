@@ -236,6 +236,9 @@ void do_trap(int pc, int32_t *regs, int32_t *mem) {
   } else if (pc == -15) {
     /* Out.Ln */
     putchar('\n');
+  } else if (pc == -16) {
+    /* Out.Halt */
+    exit(1);
   } else if (pc == -23) {
     read_file(((const char *)mem) + regs[0], ((char *)mem) + regs[2]);
   } else {
