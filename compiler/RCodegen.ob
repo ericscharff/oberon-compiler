@@ -1571,6 +1571,12 @@ BEGIN
   ASSERT(curReg = 0);
   trueChain := 0; falseChain := 0;
   GenExpr(l, e, item, trueChain, falseChain);
+  IF (e.typ.kind = AST.typeBoolean) &
+     (item.kind # itemCond) THEN
+    (* This fixes the problem where the cond condition is on the *)
+    (* stack, e.g., after a boolean procedure call.              *)
+    LoadCond(item)
+  END;
   LoadValue(item, trueChain, falseChain);
   ASSERT(curReg = 1);
   ASSERT(item.kind = itemReg);

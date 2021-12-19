@@ -184,8 +184,8 @@ BEGIN
   IF BoolTest(3) THEN WriteInt(1) ELSE WriteInt(2) END; WriteLn;
   IF BoolTest(4) THEN WriteInt(1) ELSE WriteInt(2) END; WriteLn;
 END BoolReturnValTest;
+
 BEGIN
-(*
   IF FALSE THEN
     FieldTest;
     CondTest;
@@ -193,6 +193,5 @@ BEGIN
   END;
   SumTest;
   ShortCircuitTest;
-*)
   BoolReturnValTest;
 END TestBed.
