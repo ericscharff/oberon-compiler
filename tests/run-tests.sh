@@ -31,6 +31,7 @@ RISC_TESTS=(
   RealNumbers
   Mandelbrot
   IOTest
+  TestBed
   KnightsTour
   Maze
   Pentominoes
