@@ -156,7 +156,36 @@ BEGIN
   C2(30, 40);
 END ShortCircuitTest;
 
+PROCEDURE IsIOne(i :INTEGER) :BOOLEAN;
 BEGIN
+  RETURN i = 1
+END IsIOne;
+
+PROCEDURE IsITwo(i :INTEGER) :BOOLEAN;
+BEGIN
+  RETURN i = 2
+END IsITwo;
+
+PROCEDURE IsIThree(i :INTEGER) :BOOLEAN;
+BEGIN
+  RETURN i = 3
+END IsIThree;
+
+PROCEDURE BoolTest(i :INTEGER) :BOOLEAN;
+BEGIN
+  RETURN IsIOne(i) OR IsITwo(i) OR IsIThree(i)
+END BoolTest;
+
+PROCEDURE BoolReturnValTest;
+BEGIN
+  IF BoolTest(0) THEN WriteInt(1) ELSE WriteInt(2) END; WriteLn;
+  IF BoolTest(1) THEN WriteInt(1) ELSE WriteInt(2) END; WriteLn;
+  IF BoolTest(2) THEN WriteInt(1) ELSE WriteInt(2) END; WriteLn;
+  IF BoolTest(3) THEN WriteInt(1) ELSE WriteInt(2) END; WriteLn;
+  IF BoolTest(4) THEN WriteInt(1) ELSE WriteInt(2) END; WriteLn;
+END BoolReturnValTest;
+BEGIN
+(*
   IF FALSE THEN
     FieldTest;
     CondTest;
@@ -164,4 +193,6 @@ BEGIN
   END;
   SumTest;
   ShortCircuitTest;
+*)
+  BoolReturnValTest;
 END TestBed.
