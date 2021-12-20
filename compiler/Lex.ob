@@ -915,7 +915,7 @@ BEGIN
   NextToken(l); ASSERT(l.t.kind = tEOF);
   NextToken(l); ASSERT(l.t.kind = tEOF);
 
-  LexerInitFromFile(l, "../compiler/Lex.ob");
+  LexerInitFromFile(l, "Lex.ob");
   REPEAT
     NextToken(l);
   UNTIL l.t.kind = tEOF;

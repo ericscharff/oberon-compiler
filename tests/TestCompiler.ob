@@ -1,11 +1,12 @@
 MODULE TestCompiler;
 
-IMPORT Decls, Lex;
+IMPORT Decls, Lex, Parse;
 
 PROCEDURE Test;
 BEGIN
   Lex.RunTests;
-  Decls.RunTests
+  Decls.RunTests;
+  Parse.RunTests
 END Test;
 
 BEGIN

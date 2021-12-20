@@ -12,3 +12,4 @@ Err!<string>!0!BITOR already defined
 Err!<string>!0!BITXOR already defined
 Err!<string>!0!ELSE undefined
 PASS: Decls test
+PASS: Parser test
