@@ -121,6 +121,8 @@ typedef struct Instruction {
 #ifdef COVERAGE
 uint32_t visited_ip[(sizeof(PROGRAM) / sizeof(Instruction)) / 32 + 1];
 #endif
+int saved_argc;
+char **saved_argv;
 
 void line(const char *reg0, int32_t r0, const char *reg1, int32_t r1,
           int32_t mem, uint8_t *contents) {
@@ -240,7 +242,14 @@ void do_trap(int pc, int32_t *regs, int32_t *mem) {
     /* Out.Halt */
     exit(1);
   } else if (pc == -23) {
+    /* Out.ReadFile */
     read_file(((const char *)mem) + regs[0], ((char *)mem) + regs[2]);
+  } else if (pc == -30) {
+    /* Args.Count */
+    regs[0] = saved_argc;
+  } else if (pc == -31) {
+    /* Args.GetArg */
+    strncpy(((char *)mem) + regs[0], saved_argv[regs[2]], regs[1]);
   } else {
     fprintf(stderr, "Bad trap %d, %d", pc, mem[0]);
     pc = regs[LR];
@@ -635,12 +644,12 @@ void interpret(void) {
 }
 
 int main(int argc, char **argv) {
+  saved_argc = argc;
+  saved_argv = argv;
   /*
   printf("%s(%d): %d %zd\n", argv[0], argc, PROGRAM[0].opcode,
          sizeof(PROGRAM) / sizeof(Instruction));
   */
-  if (argc && argv) {
-    interpret();
-  }
+  interpret();
   return 0;
 }
