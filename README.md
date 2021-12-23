@@ -1,9 +1,11 @@
 # Simple Oberon compiler
 
 This is a simple compiler for the Oberon-07 programming language. In its current
-state, it translates Oberon to C, so technically it is a transpiler. The
-eventual goal is for the compiler to emit code for some (probably virtual)
-machine.
+state, it translates Oberon to C, so technically it is a transpiler.
+Addtionally, there is a second compiler that compiles Oberon to the instruction
+set of a simple RISC machine. A C based emulator for this virtual machine is
+able to compile itself, so the compiler is self hosting. Since the virtual
+machine is not particularly fast, the native binary is typically what is used.
 
 There are actually two compilers in this repository. The first is a
 bootstrapping compiler (in the `c_bootstrap` directory), which is written in C.
