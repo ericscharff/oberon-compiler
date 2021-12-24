@@ -33,7 +33,7 @@ The number in parenthesis is required, but is ignored by the C code generator.
 It is important for the RISC code generator, because it allows generation of
 "trap" instructions. Effectively, it allows the RISC code generator to emit
 calls as if they were real procedures, e.g.,
-  <push args on stack>
+  <args passed in registers, first arg in R0>
   BL -101
 
 Then, the RISC interpreter can treat jumps to negative PC values as functions
@@ -44,6 +44,9 @@ Note that the compiler does no checking of the value, but it is implied that
 the trap numbers are negative, and that they are essentially globally unique
 (this makes sense in the RISC implementation, but is not enforced by the
 compiler.)
+
+If a native procedure needs to return a value, the value should be placed in
+R0.
 
 Inline variables
 
