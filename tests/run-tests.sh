@@ -67,7 +67,11 @@ for i in ${TESTS[@]}; do
 done
 for i in ${RISC_TESTS[@]}; do
   echo "Running RISC test $i..."
-  MEM_SIZE=262144 ../build/rcompile ${i}.ob
+  if [ $i == "TestCompiler" ]; then
+    MEM_SIZE=262144 ../build/rcompile ${i}.ob
+  else
+    ../build/rcompile ${i}.ob
+  fi
   pushd ../build > /dev/null
   ../build/out.prg < ../build/stdin.txt > ../build/$i.output
   popd > /dev/null
