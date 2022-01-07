@@ -2,7 +2,7 @@ MODULE ShortCircuit;
 
 IMPORT Out;
 
-PROCEDURE TestShortCircuit(a :INTEGER);
+PROCEDURE TestShortCircuit(a: INTEGER);
 BEGIN
   IF (a < 10) OR (a < 20) OR (a < 30) OR (a < 40) THEN
     Out.Str("Yes")

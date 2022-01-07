@@ -5,9 +5,9 @@ IMPORT Out;
 CONST
   Seven = 7;
 
-PROCEDURE FactIter*(n :INTEGER) :INTEGER;
+PROCEDURE FactIter*(n: INTEGER): INTEGER;
 VAR
-  i, r :INTEGER;
+  i, r: INTEGER;
 BEGIN
   i := 1;
   r := 1;
@@ -18,8 +18,8 @@ BEGIN
   RETURN r
 END FactIter;
 
-PROCEDURE FactRec*(n :INTEGER) :INTEGER;
-VAR r :INTEGER;
+PROCEDURE FactRec*(n: INTEGER): INTEGER;
+VAR r: INTEGER;
 BEGIN
   IF n <= 1 THEN
     r := 1
@@ -29,9 +29,9 @@ BEGIN
   RETURN r
 END FactRec;
 
-PROCEDURE FibIter*(n :INTEGER) :INTEGER;
+PROCEDURE FibIter*(n: INTEGER): INTEGER;
 VAR
-  prev, newPrev, fib :INTEGER;
+  prev, newPrev, fib: INTEGER;
 BEGIN
   prev := 1;
   fib := 1;
@@ -44,8 +44,8 @@ BEGIN
   RETURN fib
 END FibIter;
 
-PROCEDURE FibRec*(n :INTEGER) :INTEGER;
-VAR r :INTEGER;
+PROCEDURE FibRec*(n: INTEGER): INTEGER;
+VAR r: INTEGER;
 BEGIN
   IF n < 2 THEN
     r := 1
@@ -57,7 +57,7 @@ END FibRec;
 
 PROCEDURE TestFib;
 VAR
-  n :INTEGER;
+  n: INTEGER;
 BEGIN
   n := 7;
   ASSERT(FactRec(n) = FactIter(n));

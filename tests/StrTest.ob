@@ -1,7 +1,7 @@
 MODULE StrTest;
 
-PROCEDURE ToLower(VAR c :ARRAY OF CHAR);
-VAR i :INTEGER;
+PROCEDURE ToLower(VAR c: ARRAY OF CHAR);
+VAR i: INTEGER;
 BEGIN
   i := 0;
   WHILE i < LEN(c) DO
@@ -12,15 +12,15 @@ BEGIN
   END
 END ToLower;
 
-PROCEDURE Middle(s :INTEGER; VAR c :ARRAY OF CHAR; s2 :INTEGER);
+PROCEDURE Middle(s: INTEGER; VAR c: ARRAY OF CHAR; s2: INTEGER);
 BEGIN
   IF (s = 81) & (s2 = 82) THEN
     ToLower(c)
   END
 END Middle;
 
-PROCEDURE WriteString(s :ARRAY OF CHAR);
-VAR i :INTEGER;
+PROCEDURE WriteString(s: ARRAY OF CHAR);
+VAR i: INTEGER;
 BEGIN
   i := 0;
   WHILE s[i] # 0X DO
@@ -32,7 +32,7 @@ END WriteString;
 
 PROCEDURE Test;
 VAR
-  ca :ARRAY 10 OF CHAR;
+  ca: ARRAY 10 OF CHAR;
 BEGIN
   WriteString("Hello, world!");
   ca[0] := 41X;

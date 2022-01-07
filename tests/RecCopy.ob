@@ -2,14 +2,14 @@ MODULE RecCopy;
 
 TYPE
   D = ARRAY 500 OF INTEGER;
-  R = RECORD d :D; a, b, c :INTEGER END;
-  R2 = RECORD (R) x :INTEGER END;
+  R = RECORD d: D; a, b, c: INTEGER END;
+  R2 = RECORD (R) x: INTEGER END;
 
 VAR
-  r1 :R;
-  r2 :R2;
+  r1: R;
+  r2: R2;
 
-PROCEDURE DoCopy(VAR aa1, aa2 :R);
+PROCEDURE DoCopy(VAR aa1, aa2: R);
 BEGIN
   aa1 := aa2
 END DoCopy;

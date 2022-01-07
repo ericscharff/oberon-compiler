@@ -5,8 +5,8 @@ BEGIN
   WriteChar(41X)
 END Start;
 
-PROCEDURE FancyRange(ch :CHAR);
-VAR i :INTEGER;
+PROCEDURE FancyRange(ch: CHAR);
+VAR i: INTEGER;
 BEGIN
   i := 1;
   CASE ch OF
@@ -15,16 +15,16 @@ BEGIN
   WriteInt(i); WriteLn
 END FancyRange;
 
-PROCEDURE Trial(a :INTEGER);
+PROCEDURE Trial(a: INTEGER);
 BEGIN
   CASE a OF
-    0 :WriteInt(1000)
-  | 1 :WriteInt(1001)
-  | 2 :WriteInt(1002)
-  | 3 :WriteInt(1003)
-  | 4 :WriteInt(1004)
-  | 5 :WriteInt(1005)
-  | 8 .. 10 :WriteInt(3333)
+    0: WriteInt(1000)
+  | 1: WriteInt(1001)
+  | 2: WriteInt(1002)
+  | 3: WriteInt(1003)
+  | 4: WriteInt(1004)
+  | 5: WriteInt(1005)
+  | 8 .. 10: WriteInt(3333)
   END;
   WriteLn
 END Trial;

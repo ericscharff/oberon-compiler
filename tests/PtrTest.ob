@@ -3,13 +3,13 @@ MODULE PtrTest;
 TYPE
   P = POINTER TO R;
   R = RECORD
-        a, b :INTEGER;
-        next :P
+        a, b: INTEGER;
+        next: P
       END;
 
 PROCEDURE SimpleTest;
 VAR
-  start :P;
+  start: P;
 BEGIN
   NEW(start);
   start.a := 1;
@@ -24,9 +24,9 @@ BEGIN
   WriteLn
 END SimpleTest;
 
-PROCEDURE BuildList(i :INTEGER) :P;
+PROCEDURE BuildList(i: INTEGER): P;
 VAR
-  p :P;
+  p: P;
 BEGIN
   IF i = 0 THEN
     p := NIL
@@ -40,7 +40,7 @@ END BuildList;
 
 PROCEDURE LinkList;
 VAR
-  p :P;
+  p: P;
 BEGIN
   p := BuildList(10);
   WHILE p # NIL DO

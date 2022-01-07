@@ -9,19 +9,19 @@ CONST
   BoardHeight = 6;
 
 TYPE
-  Point = RECORD x, y :INTEGER END;
+  Point = RECORD x, y: INTEGER END;
 
 VAR
-  iter :INTEGER;
-  PieceNames :ARRAY NumPieces + 1 OF CHAR;
+  iter: INTEGER;
+  PieceNames: ARRAY NumPieces + 1 OF CHAR;
   (* Key is variant, value is index into PieceNames *)
-  pieceId :ARRAY NumVariants OF INTEGER;
-  variants :ARRAY NumVariants, 5 OF Point;
-  board :ARRAY BoardWidth * BoardHeight OF CHAR;
+  pieceId: ARRAY NumVariants OF INTEGER;
+  variants: ARRAY NumVariants, 5 OF Point;
+  board: ARRAY BoardWidth * BoardHeight OF CHAR;
 
 PROCEDURE PrintBoard;
 VAR
-  x, y :INTEGER;
+  x, y: INTEGER;
 BEGIN
   FOR y := 0 TO BoardHeight - 1 DO
     FOR x := 0 TO BoardWidth - 1 DO
@@ -32,8 +32,8 @@ BEGIN
 Out.Ln;
 END PrintBoard;
 
-PROCEDURE PlacePiece(pieceId, variantId, x, y :INTEGER);
-VAR i, boardX, boardY :INTEGER;
+PROCEDURE PlacePiece(pieceId, variantId, x, y: INTEGER);
+VAR i, boardX, boardY: INTEGER;
 BEGIN
   FOR i := 0 TO 4 DO
     boardX := x + variants[variantId, i].x;
@@ -42,8 +42,8 @@ BEGIN
   END;
 END PlacePiece;
 
-PROCEDURE RemovePiece(variantId, x, y :INTEGER);
-VAR i, boardX, boardY :INTEGER;
+PROCEDURE RemovePiece(variantId, x, y: INTEGER);
+VAR i, boardX, boardY: INTEGER;
 BEGIN
   FOR i := 0 TO 4 DO
     boardX := x + variants[variantId, i].x;
@@ -52,8 +52,8 @@ BEGIN
   END;
 END RemovePiece;
 
-PROCEDURE CanPlace(variantId, x, y :INTEGER) :BOOLEAN;
-VAR i, boardX, boardY :INTEGER; placed :BOOLEAN;
+PROCEDURE CanPlace(variantId, x, y: INTEGER): BOOLEAN;
+VAR i, boardX, boardY: INTEGER; placed: BOOLEAN;
 BEGIN
   i := 0;
   placed := TRUE;
@@ -72,20 +72,20 @@ BEGIN
   RETURN placed
 END CanPlace;
 
-PROCEDURE FirstEmptySquare() :INTEGER;
+PROCEDURE FirstEmptySquare(): INTEGER;
 VAR
-  i :INTEGER;
+  i: INTEGER;
 BEGIN
   i := 0;
   WHILE (i < BoardWidth * BoardHeight) & (board[i] # ".") DO INC(i) END;
   RETURN i
 END FirstEmptySquare;
 
-PROCEDURE Solve(pieces :SET) :BOOLEAN;
+PROCEDURE Solve(pieces: SET): BOOLEAN;
 VAR
-  found :BOOLEAN;
-  variant :INTEGER;
-  x, y :INTEGER;
+  found: BOOLEAN;
+  variant: INTEGER;
+  x, y: INTEGER;
 BEGIN
   found := pieces = {};
   variant := 0;
@@ -109,7 +109,7 @@ BEGIN
 END Solve;
 
 PROCEDURE Dump;
-VAR i :INTEGER;
+VAR i: INTEGER;
 BEGIN
   FOR i := 0 TO BoardWidth*BoardHeight - 1 DO
     board[i] := ".";

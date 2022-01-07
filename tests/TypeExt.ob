@@ -8,13 +8,13 @@ TYPE
   PR3 = POINTER TO R3;
   PR4 = POINTER TO R4;
   PS1 = POINTER TO S1;
-  R1 = RECORD a :INTEGER END;
-  S1 = RECORD s :INTEGER; END;
-  R2 = RECORD (R1) b :INTEGER END;
-  R3 = RECORD (R2) c :INTEGER END;
-  R4 = RECORD (R3) d :INTEGER END;
+  R1 = RECORD a: INTEGER END;
+  S1 = RECORD s: INTEGER; END;
+  R2 = RECORD (R1) b: INTEGER END;
+  R3 = RECORD (R2) c: INTEGER END;
+  R4 = RECORD (R3) d: INTEGER END;
 
-PROCEDURE tf(b :BOOLEAN);
+PROCEDURE tf(b: BOOLEAN);
 BEGIN
   IF b THEN
     Out.PrintLn("TRUE");
@@ -23,7 +23,7 @@ BEGIN
   END;
 END tf;
 
-PROCEDURE BasePtrTypes(a, b, c, d :PR1);
+PROCEDURE BasePtrTypes(a, b, c, d: PR1);
 BEGIN
   Out.PrintLn("R1");
   tf(a IS PR1);
@@ -47,7 +47,7 @@ BEGIN
   tf(d IS PR4);
 END BasePtrTypes;
 
-PROCEDURE BaseTypes(VAR a, b, c, d :R1; s :S1);
+PROCEDURE BaseTypes(VAR a, b, c, d: R1; s: S1);
 BEGIN
   Out.PrintLn("R1");
   tf(a IS R1);
@@ -74,15 +74,15 @@ END BaseTypes;
 
 PROCEDURE TypeExtTest;
 VAR
-  vr1 :R1;
-  vr2 :R2;
-  vr3 :R3;
-  vr4 :R4;
-  s1  :S1;
-  pvr1 :PR1;
-  pvr2 :PR2;
-  pvr3 :PR3;
-  pvr4 :PR4;
+  vr1: R1;
+  vr2: R2;
+  vr3: R3;
+  vr4: R4;
+  s1:  S1;
+  pvr1: PR1;
+  pvr2: PR2;
+  pvr3: PR3;
+  pvr4: PR4;
 BEGIN
   BaseTypes(vr1, vr2, vr3, vr4, s1);
   NEW(pvr1); NEW(pvr2); NEW(pvr3); NEW(pvr4);

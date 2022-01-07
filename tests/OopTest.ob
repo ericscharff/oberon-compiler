@@ -9,31 +9,31 @@ TYPE
   TickMessage = RECORD (Message) END;
 
   Object = POINTER TO ObjectDesc;
-  Handler = PROCEDURE (obj :Object; VAR msg :Message);
+  Handler = PROCEDURE (obj: Object; VAR msg: Message);
 
-  ObjectDesc = RECORD handler :Handler END;
+  ObjectDesc = RECORD handler: Handler END;
 
   Shape = POINTER TO ShapeDesc;
   ShapeDesc = RECORD (ObjectDesc) END;
-  Square = POINTER TO RECORD (ShapeDesc) sideLen :INTEGER END;
-  Circle = POINTER TO RECORD (ShapeDesc) radius :REAL END;
-  Triangle = POINTER TO RECORD (ShapeDesc) base, height :INTEGER END;
+  Square = POINTER TO RECORD (ShapeDesc) sideLen: INTEGER END;
+  Circle = POINTER TO RECORD (ShapeDesc) radius: REAL END;
+  Triangle = POINTER TO RECORD (ShapeDesc) base, height: INTEGER END;
 
-  Actor = POINTER TO RECORD (ObjectDesc) position, velocity :INTEGER END;
+  Actor = POINTER TO RECORD (ObjectDesc) position, velocity: INTEGER END;
 
   ListPtr = POINTER TO ObjList;
-  ObjList = RECORD o :Object; next :ListPtr END;
+  ObjList = RECORD o: Object; next: ListPtr END;
 
-PROCEDURE ObjectHandler(obj :Object; VAR msg :Message);
+PROCEDURE ObjectHandler(obj: Object; VAR msg: Message);
 BEGIN
   ASSERT(obj # NIL);
   ASSERT(msg IS Message);
   Out.PrintLn("Unhandled Message");
 END ObjectHandler;
 
-PROCEDURE ActorHandler(obj :Object; VAR msg :Message);
+PROCEDURE ActorHandler(obj: Object; VAR msg: Message);
 VAR
-  a :Actor;
+  a: Actor;
 BEGIN
   a := obj(Actor);
   IF msg IS DrawMessage THEN
@@ -47,9 +47,9 @@ BEGIN
   END
 END ActorHandler;
 
-PROCEDURE NewActor(p, v :INTEGER) :Actor;
+PROCEDURE NewActor(p, v: INTEGER): Actor;
 VAR
-  a :Actor;
+  a: Actor;
 BEGIN
   NEW(a);
   a.position := p;
@@ -58,7 +58,7 @@ BEGIN
   RETURN a
 END NewActor;
 
-PROCEDURE SquareHandler(obj :Object; VAR msg :Message);
+PROCEDURE SquareHandler(obj: Object; VAR msg: Message);
 BEGIN
   IF msg IS DrawMessage THEN
     Out.Str("Drawing square OF size ");
@@ -69,9 +69,9 @@ BEGIN
   END;
 END SquareHandler;
 
-PROCEDURE NewSquare(sideLen :INTEGER) :Square;
+PROCEDURE NewSquare(sideLen: INTEGER): Square;
 VAR
-  s :Square;
+  s: Square;
 BEGIN
   NEW(s);
   s.sideLen := sideLen;
@@ -79,7 +79,7 @@ BEGIN
   RETURN s
 END NewSquare;
 
-PROCEDURE CircleHandler(obj :Object; VAR msg :Message);
+PROCEDURE CircleHandler(obj: Object; VAR msg: Message);
 BEGIN
   IF msg IS DrawMessage THEN
     Out.Str("Drawing circle OF radius ");
@@ -90,9 +90,9 @@ BEGIN
   END;
 END CircleHandler;
 
-PROCEDURE NewCircle(r :REAL) :Circle;
+PROCEDURE NewCircle(r: REAL): Circle;
 VAR
-  c :Circle;
+  c: Circle;
 BEGIN
   NEW(c);
   c.radius := r;
@@ -100,9 +100,9 @@ BEGIN
   RETURN c
 END NewCircle;
 
-PROCEDURE TriangleHandler(obj :Object; VAR msg :Message);
+PROCEDURE TriangleHandler(obj: Object; VAR msg: Message);
 VAR
-  t :Triangle;
+  t: Triangle;
 BEGIN
   t := obj(Triangle);
   IF msg IS DrawMessage THEN
@@ -116,9 +116,9 @@ BEGIN
   END;
 END TriangleHandler;
 
-PROCEDURE NewTriangle(b, h :INTEGER) :Triangle;
+PROCEDURE NewTriangle(b, h: INTEGER): Triangle;
 VAR
-  t :Triangle;
+  t: Triangle;
 BEGIN
   NEW(t);
   t.base := b;
@@ -127,7 +127,7 @@ BEGIN
   RETURN t
 END NewTriangle;
 
-PROCEDURE Broadcast(VAR m :Message; l :ListPtr);
+PROCEDURE Broadcast(VAR m: Message; l: ListPtr);
 BEGIN
   WHILE l # NIL DO
     l.o.handler(l.o, m);
@@ -137,9 +137,9 @@ END Broadcast;
 
 PROCEDURE Driver;
 VAR
-  head, l :ListPtr;
-  dm :DrawMessage;
-  tm :TickMessage;
+  head, l: ListPtr;
+  dm: DrawMessage;
+  tm: TickMessage;
 BEGIN
   head := NIL;
   NEW(l);

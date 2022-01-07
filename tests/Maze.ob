@@ -18,13 +18,13 @@ TYPE
   Offset = ARRAY 2 OF INTEGER;
 
 VAR
-  offsets :ARRAY 4 OF Offset;
-  maze :ARRAY WIDTH*HEIGHT OF BOOLEAN;
-  randomSeed :INTEGER;
+  offsets: ARRAY 4 OF Offset;
+  maze: ARRAY WIDTH*HEIGHT OF BOOLEAN;
+  randomSeed: INTEGER;
 
 PROCEDURE PrintMaze;
 VAR
-  x, y :INTEGER;
+  x, y: INTEGER;
 BEGIN
   FOR x := 0 TO WIDTH+1 DO
     Out.Char("#");
@@ -48,14 +48,14 @@ BEGIN
   Out.Ln;
 END PrintMaze;
 
-PROCEDURE Abs(n :INTEGER) :INTEGER;
+PROCEDURE Abs(n: INTEGER): INTEGER;
 BEGIN
   IF n < 0 THEN n := n * (-1) END;
   RETURN n
 END Abs;
 
 (* Return a random numger in the range [0, n) *)
-PROCEDURE Rand(n :INTEGER) :INTEGER;
+PROCEDURE Rand(n: INTEGER): INTEGER;
 BEGIN
   randomSeed := randomSeed * 1103515245 + 12345;
   RETURN Abs((randomSeed DIV 65536) MOD n)
@@ -64,10 +64,10 @@ END Rand;
 (* Shuffle the elements of an array *)
 PROCEDURE Shuffle(VAR array: ARRAY OF INTEGER);
 VAR
-  i    :INTEGER;
-  swap :INTEGER;
-  t    :INTEGER;
-  len  :INTEGER;
+  i:    INTEGER;
+  swap: INTEGER;
+  t:    INTEGER;
+  len:  INTEGER;
 BEGIN
   len := LEN(array);
   FOR i := 0 TO len-1 DO
@@ -78,16 +78,16 @@ BEGIN
   END;
 END Shuffle;
 
-PROCEDURE OutOfBounds(x, y :INTEGER) :BOOLEAN;
+PROCEDURE OutOfBounds(x, y: INTEGER): BOOLEAN;
 BEGIN
   RETURN (x < 0) OR (x*2 > WIDTH) OR (y < 0) OR (y*2 > HEIGHT)
 END OutOfBounds;
 
-PROCEDURE Visit(x, y :INTEGER);
+PROCEDURE Visit(x, y: INTEGER);
 VAR
-  neighbors :ARRAY 4 OF INTEGER;
-  i :INTEGER;
-  newX, newY, hallX, hallY :INTEGER;
+  neighbors: ARRAY 4 OF INTEGER;
+  i: INTEGER;
+  newX, newY, hallX, hallY: INTEGER;
 BEGIN
   neighbors[0] := UP; neighbors[1] := DOWN; neighbors[2] := LEFT; neighbors[3] := RIGHT;
   maze[2*y*WIDTH + 2*x] := TRUE;
@@ -106,7 +106,7 @@ END Visit;
 
 PROCEDURE MakeMaze;
 VAR
-  i :INTEGER;
+  i: INTEGER;
 BEGIN
   i := 0;
   WHILE i < WIDTH*HEIGHT DO

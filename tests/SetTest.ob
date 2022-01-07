@@ -2,8 +2,8 @@ MODULE SetTest;
 
 PROCEDURE Test;
 VAR
-  s, s2 :SET;
-  i, j, k :INTEGER;
+  s, s2: SET;
+  i, j, k: INTEGER;
 BEGIN
   s := {};
   WriteInt(s); WriteLn;

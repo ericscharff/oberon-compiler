@@ -38,7 +38,7 @@ END FieldTest;
 PROCEDURE CondTest;
 
 VAR
-  a, b, c, d, e, f, g :INTEGER;
+  a, b, c, d, e, f, g: INTEGER;
 BEGIN
   a := 10; b := 10; c := 10; d := 10; e := 10; f := 10; g := 10;
   IF a > b THEN
@@ -65,29 +65,29 @@ END CondTest;
 
 PROCEDURE FuncTest;
 VAR
-  i, j, k :INTEGER;
-  a :ARRAY 10 OF INTEGER;
-  b :ARRAY 10 OF RECORD l :INTEGER; m :ARRAY 10 OF INTEGER END;
+  i, j, k: INTEGER;
+  a: ARRAY 10 OF INTEGER;
+  b: ARRAY 10 OF RECORD l: INTEGER; m: ARRAY 10 OF INTEGER END;
 
-  PROCEDURE h(a :INTEGER; VAR x :INTEGER; b :INTEGER);
+  PROCEDURE h(a: INTEGER; VAR x: INTEGER; b: INTEGER);
   BEGIN
     x := x * b + 10 + a
   END h;
 
-  PROCEDURE g(x :INTEGER) :INTEGER;
+  PROCEDURE g(x: INTEGER): INTEGER;
   BEGIN
     RETURN x*7
   END g;
 
-  PROCEDURE f(a, b, c :INTEGER) :INTEGER;
+  PROCEDURE f(a, b, c: INTEGER): INTEGER;
   VAR
-    r :INTEGER;
+    r: INTEGER;
   BEGIN
     r := g(a) + g(b) * g(c)
     RETURN r
   END f;
 
-  PROCEDURE p(x :INTEGER; VAR y :INTEGER);
+  PROCEDURE p(x: INTEGER; VAR y: INTEGER);
   BEGIN
     x := y;
     y := x;
@@ -95,7 +95,7 @@ VAR
     p(y, x);
   END p;
 
-  PROCEDURE z(a :INTEGER; VAR b, c :INTEGER);
+  PROCEDURE z(a: INTEGER; VAR b, c: INTEGER);
   BEGIN
     c := b + a
   END z;
@@ -113,9 +113,9 @@ BEGIN
   z(i, b[j].m[j], k);
 END FuncTest;
 
-PROCEDURE Sum(a :A; b :INTEGER; c :A);
+PROCEDURE Sum(a: A; b: INTEGER; c: A);
 VAR
-  i, s :INTEGER;
+  i, s: INTEGER;
 BEGIN
   i := 0; s := 0;
   WHILE i < 4 DO
@@ -127,19 +127,19 @@ END Sum;
 
 PROCEDURE SumTest;
 VAR
-  a :A;
+  a: A;
 BEGIN
   a[0] := 1; a[1] := 2; a[2] := 3; a[3] := 4;
   Sum(a, 3, a)
 END SumTest;
 
 PROCEDURE ShortCircuitTest;
-PROCEDURE C1(a, b :INTEGER);
+PROCEDURE C1(a, b: INTEGER);
 BEGIN
   IF ((a > 10) & (b > 20)) THEN WriteInt(1) ELSE WriteInt(0) END;
   WriteLn;
 END C1;
-PROCEDURE C2(a, b :INTEGER);
+PROCEDURE C2(a, b: INTEGER);
 BEGIN
   IF (~((a > 10) & (b > 20))) THEN WriteInt(1) ELSE WriteInt(0) END;
   WriteLn;
@@ -156,22 +156,22 @@ BEGIN
   C2(30, 40);
 END ShortCircuitTest;
 
-PROCEDURE IsIOne(i :INTEGER) :BOOLEAN;
+PROCEDURE IsIOne(i: INTEGER): BOOLEAN;
 BEGIN
   RETURN i = 1
 END IsIOne;
 
-PROCEDURE IsITwo(i :INTEGER) :BOOLEAN;
+PROCEDURE IsITwo(i: INTEGER): BOOLEAN;
 BEGIN
   RETURN i = 2
 END IsITwo;
 
-PROCEDURE IsIThree(i :INTEGER) :BOOLEAN;
+PROCEDURE IsIThree(i: INTEGER): BOOLEAN;
 BEGIN
   RETURN i = 3
 END IsIThree;
 
-PROCEDURE BoolTest(i :INTEGER) :BOOLEAN;
+PROCEDURE BoolTest(i: INTEGER): BOOLEAN;
 BEGIN
   RETURN IsIOne(i) OR IsITwo(i) OR IsIThree(i)
 END BoolTest;

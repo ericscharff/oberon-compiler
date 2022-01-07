@@ -4,7 +4,7 @@ IMPORT Out;
 
 PROCEDURE Test;
 VAR
-  a, b, c, d :REAL;
+  a, b, c, d: REAL;
 BEGIN
   a := 0.1; b := 1.0; c := 0.5; d := 0.25;
   Out.Real(a + b + c + d); Out.Ln;

@@ -9,11 +9,11 @@ CONST
 
 TYPE
   IntBuf = ARRAY * OF INTEGER;
-  RecBuf = RECORD z :INTEGER; b :ARRAY * OF INTEGER END;
-  NatBuf = RECORD _nat :NATIVE INTEGER END;
-  CallbackFunc = PROCEDURE (i :INTEGER);
+  RecBuf = RECORD z: INTEGER; b: ARRAY * OF INTEGER END;
+  NatBuf = RECORD _nat: NATIVE INTEGER END;
+  CallbackFunc = PROCEDURE (i: INTEGER);
 
-PROCEDURE FactIter*(n :INTEGER) :INTEGER;
+PROCEDURE FactIter*(n: INTEGER): INTEGER;
 BEGIN
   VAR i := 1;
   VAR r := 1;
@@ -24,8 +24,8 @@ BEGIN
   RETURN r
 END FactIter;
 
-PROCEDURE FactRec*(n :INTEGER) :INTEGER;
-VAR r :INTEGER;
+PROCEDURE FactRec*(n: INTEGER): INTEGER;
+VAR r: INTEGER;
 BEGIN
   IF n <= 1 THEN
     r := 1
@@ -35,7 +35,7 @@ BEGIN
   RETURN r
 END FactRec;
 
-PROCEDURE FibIter*(n :INTEGER) :INTEGER;
+PROCEDURE FibIter*(n: INTEGER): INTEGER;
 BEGIN
   VAR prev := 1;
   VAR fib := 1;
@@ -49,8 +49,8 @@ BEGIN
   RETURN fib
 END FibIter;
 
-PROCEDURE FibRec*(n :INTEGER) :INTEGER;
-VAR r :INTEGER;
+PROCEDURE FibRec*(n: INTEGER): INTEGER;
+VAR r: INTEGER;
 BEGIN
   IF n < 2 THEN
     r := 1
@@ -62,7 +62,7 @@ END FibRec;
 
 PROCEDURE TestFib;
 VAR
-  n :INTEGER;
+  n: INTEGER;
 BEGIN
   n := 7;
   ASSERT(FactRec(n) = FactIter(n));
@@ -74,9 +74,9 @@ BEGIN
   Out.Int(FibIter(20)); Out.Ln;
 END TestFib;
 
-PROCEDURE DumpBuffer(b :ARRAY OF INTEGER);
+PROCEDURE DumpBuffer(b: ARRAY OF INTEGER);
 VAR
-  i :INTEGER;
+  i: INTEGER;
 BEGIN
   i := 0;
   WHILE i < LEN(b) DO
@@ -86,23 +86,23 @@ BEGIN
   Out.Ln
 END DumpBuffer;
 
-PROCEDURE AddToBuf(VAR b :IntBuf; val :INTEGER);
+PROCEDURE AddToBuf(VAR b: IntBuf; val: INTEGER);
 BEGIN
   PUSH(b, val)
 END AddToBuf;
 
-NATIVE (-9000) PROCEDURE SetNativeVal(r :NatBuf; v :INTEGER); END SetNativeVal;
-NATIVE (-9001) PROCEDURE CallNative(r :NatBuf); END CallNative;
-NATIVE (-9002) PROCEDURE NativeCallback(i :INTEGER; func :CallbackFunc); END NativeCallback;
+NATIVE (-9000) PROCEDURE SetNativeVal(r: NatBuf; v: INTEGER); END SetNativeVal;
+NATIVE (-9001) PROCEDURE CallNative(r: NatBuf); END CallNative;
+NATIVE (-9002) PROCEDURE NativeCallback(i: INTEGER; func: CallbackFunc); END NativeCallback;
 
-PROCEDURE MyCallback(i :INTEGER);
+PROCEDURE MyCallback(i: INTEGER);
 BEGIN
   Out.Str("Called back from native with i="); Out.Int(i); Out.Ln
 END MyCallback;
 
 PROCEDURE TestNativeCode;
 VAR
-  r :NatBuf;
+  r: NatBuf;
 BEGIN
   NativeCallback(10, MyCallback);
   SetNativeVal(r, 81);
@@ -111,10 +111,10 @@ END TestNativeCode;
 
 PROCEDURE TestBuffers;
 VAR
-  b  :ARRAY * OF INTEGER;
-  b2 :IntBuf;
-  i  :INTEGER;
-  r  :RecBuf;
+  b:  ARRAY * OF INTEGER;
+  b2: IntBuf;
+  i:  INTEGER;
+  r:  RecBuf;
 BEGIN
   INIT(b, 4);
   FOR i := 1 TO 20 DO
@@ -140,7 +140,7 @@ END TestBuffers;
 
 PROCEDURE TestBitops;
 VAR
-  i, j :INTEGER;
+  i, j: INTEGER;
 BEGIN
   i := 2;
   j := 3;

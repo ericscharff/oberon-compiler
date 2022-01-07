@@ -7,9 +7,9 @@ CONST
 
 PROCEDURE PrintMandelbrot;
 VAR
-  x, y, count :INTEGER;
-  cReal, cImag, zReal, zImag, zm, zn, zr2 :REAL;
-  display :ARRAY 22 OF CHAR;
+  x, y, count: INTEGER;
+  cReal, cImag, zReal, zImag, zm, zn, zr2: REAL;
+  display: ARRAY 22 OF CHAR;
 BEGIN
   display := "..,'~!^:;[/<&?oxOX#  ";
   FOR y := -39 TO 39 DO

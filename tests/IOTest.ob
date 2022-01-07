@@ -5,9 +5,9 @@ IMPORT Out;
 CONST
   Hi = "Hello 🂤 🂥 🂦 World";
 VAR
-  a, i :INTEGER;
+  a, i: INTEGER;
 
-PROCEDURE Neat(x :INTEGER);
+PROCEDURE Neat(x: INTEGER);
 BEGIN
   Out.Char(CHR(x))
 END Neat;

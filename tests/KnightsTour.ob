@@ -17,14 +17,14 @@ CONST
   H = 8;
 
 TYPE
-  Point = RECORD x, y :INTEGER END;
+  Point = RECORD x, y: INTEGER END;
 
 VAR
-  board :ARRAY H, W OF INTEGER;
-  moves :ARRAY 8 OF Point;
+  board: ARRAY H, W OF INTEGER;
+  moves: ARRAY 8 OF Point;
 
 PROCEDURE Setup;
-VAR i, j :INTEGER;
+VAR i, j: INTEGER;
 BEGIN
   FOR i := 0 TO H-1 DO
     FOR j := 0 TO W-1 DO
@@ -37,10 +37,10 @@ BEGIN
   moves[6].x := 1; moves[6].y := -2; moves[7].x := 2; moves[7].y := -1;
 END Setup;
 
-PROCEDURE Solve(curX, curY, curMove :INTEGER) :BOOLEAN;
+PROCEDURE Solve(curX, curY, curMove: INTEGER): BOOLEAN;
 VAR
-  done :BOOLEAN;
-  move, newX, newY :INTEGER;
+  done: BOOLEAN;
+  move, newX, newY: INTEGER;
 BEGIN
   IF curMove = W*H THEN
     done := TRUE
@@ -66,7 +66,7 @@ BEGIN
 END Solve;
 
 PROCEDURE PrintBoard;
-VAR x, y :INTEGER;
+VAR x, y: INTEGER;
 BEGIN
   FOR y := 0 TO H-1 DO
     FOR x := 0 TO W-1 DO

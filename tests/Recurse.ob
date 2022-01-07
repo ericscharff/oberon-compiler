@@ -3,7 +3,7 @@ MODULE Recurse;
 IMPORT Out;
 
 VAR
-  i :INTEGER;
+  i: INTEGER;
 
 PROCEDURE A;
 

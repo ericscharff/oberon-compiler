@@ -3,23 +3,23 @@ MODULE ArrayTest;
 IMPORT Out;
 
 TYPE
-  R = RECORD x, y :INTEGER END;
+  R = RECORD x, y: INTEGER END;
   AR = ARRAY 3 OF R;
   AR2 = ARRAY 7, 8 OF R;
   CharBuf = ARRAY 8 OF CHAR;
-  Pool = RECORD cb :CharBuf; last :INTEGER END;
+  Pool = RECORD cb: CharBuf; last: INTEGER END;
 
 VAR
-  flag :BOOLEAN;
-  a :R;
-  w1, w2 :ARRAY 3 OF R;
+  flag: BOOLEAN;
+  a: R;
+  w1, w2: ARRAY 3 OF R;
 
-PROCEDURE P(VAR b :BOOLEAN);
+PROCEDURE P(VAR b: BOOLEAN);
 BEGIN
   WriteInt(b); WriteLn;
 END P;
 
-PROCEDURE RefTest(VAR a :INTEGER; z, z2 :BOOLEAN; VAR z3 :BOOLEAN; b :R);
+PROCEDURE RefTest(VAR a: INTEGER; z, z2: BOOLEAN; VAR z3: BOOLEAN; b: R);
 BEGIN
   P(z);
   P(z2);
@@ -28,9 +28,9 @@ BEGIN
   Out.Int(b.y); Out.Ln
 END RefTest;
 
-PROCEDURE Sum(as :ARRAY OF R);
+PROCEDURE Sum(as: ARRAY OF R);
 VAR
-  i, s :INTEGER;
+  i, s: INTEGER;
 BEGIN
   i := 0; s := 0;
   WHILE i < LEN(as) DO
@@ -42,7 +42,7 @@ END Sum;
 
 PROCEDURE TestAr;
 VAR
-  ar :AR;
+  ar: AR;
 BEGIN
   ar[0].x := 20;
   ar[1].x := 40;
@@ -52,8 +52,8 @@ END TestAr;
 
 PROCEDURE TestTwo;
 VAR
-  ar :AR2;
-  i, j :INTEGER;
+  ar: AR2;
+  i, j: INTEGER;
 BEGIN
   i := 3; j := 3;
   ar[i, j].x := 33;
@@ -62,7 +62,7 @@ END TestTwo;
 
 PROCEDURE StringTest;
 VAR
-  h1, h2 :ARRAY 8 OF CHAR;
+  h1, h2: ARRAY 8 OF CHAR;
 BEGIN
   h1 := "Hello";
   h2 := "World";
@@ -73,7 +73,7 @@ END StringTest;
 
 PROCEDURE ArrayOfStringTest;
 VAR
-  pool :ARRAY 4, 5 OF CHAR;
+  pool: ARRAY 4, 5 OF CHAR;
 BEGIN
   pool[0] := "EF";
   pool[1] := "CD";
@@ -84,8 +84,8 @@ BEGIN
   Out.Ln
 END ArrayOfStringTest;
 
-PROCEDURE UpdateRecord(VAR p :Pool; s :ARRAY OF CHAR);
-VAR i :INTEGER;
+PROCEDURE UpdateRecord(VAR p: Pool; s: ARRAY OF CHAR);
+VAR i: INTEGER;
 BEGIN
   i := 0;
   WHILE s[i] # 0X DO
@@ -98,7 +98,7 @@ END UpdateRecord;
 
 PROCEDURE RecordTest;
 VAR
-  p :Pool;
+  p: Pool;
 BEGIN
   p.last := 0;
   UpdateRecord(p, "ABC");
@@ -106,9 +106,9 @@ BEGIN
   Out.Int(p.last); Out.Ln
 END RecordTest;
 
-PROCEDURE Copier(src :ARRAY OF CHAR);
+PROCEDURE Copier(src: ARRAY OF CHAR);
 VAR
-  dest :ARRAY 8 OF CHAR;
+  dest: ARRAY 8 OF CHAR;
 BEGIN
   dest := src;
   Out.Str(dest); Out.Ln
@@ -122,7 +122,7 @@ BEGIN
   Copier("ABCDEFG");
 END CopierTest;
 
-PROCEDURE CounterOutput(a, b, c, d :INTEGER);
+PROCEDURE CounterOutput(a, b, c, d: INTEGER);
 BEGIN
   Out.Int(a); Out.Str(" ");
   Out.Int(b); Out.Str(" ");
@@ -131,40 +131,40 @@ BEGIN
   Out.Ln
 END CounterOutput;
 
-PROCEDURE CounterInfo(ia :ARRAY OF INTEGER) :INTEGER;
+PROCEDURE CounterInfo(ia: ARRAY OF INTEGER): INTEGER;
 BEGIN
   Out.Int(ia[0]); Out.Ln;
   RETURN 10 * LEN(ia)
 END CounterInfo;
 
-PROCEDURE CounterHelper(a, b, c :INTEGER; ia :ARRAY OF INTEGER);
+PROCEDURE CounterHelper(a, b, c: INTEGER; ia: ARRAY OF INTEGER);
 BEGIN
   CounterOutput(a, b, c, CounterInfo(ia))
 END CounterHelper;
 
 PROCEDURE CounterTest;
 VAR
-  ia :ARRAY 4 OF INTEGER;
+  ia: ARRAY 4 OF INTEGER;
 BEGIN
   ia[0] := 1;
   CounterHelper(10, 20, 30, ia);
   Out.Int(ia[0]); Out.Ln
 END CounterTest;
 
-PROCEDURE VarCounterInfo(VAR ia :ARRAY OF INTEGER) :INTEGER;
+PROCEDURE VarCounterInfo(VAR ia: ARRAY OF INTEGER): INTEGER;
 BEGIN
   Out.Int(ia[0]); Out.Ln;
   RETURN 10 * LEN(ia)
 END VarCounterInfo;
 
-PROCEDURE VarCounterHelper(a, b, c :INTEGER; VAR ia :ARRAY OF INTEGER);
+PROCEDURE VarCounterHelper(a, b, c: INTEGER; VAR ia: ARRAY OF INTEGER);
 BEGIN
   CounterOutput(a, b, c, VarCounterInfo(ia))
 END VarCounterHelper;
 
 PROCEDURE VarCounterTest;
 VAR
-  ia :ARRAY 4 OF INTEGER;
+  ia: ARRAY 4 OF INTEGER;
 BEGIN
   ia[0] := 1;
   VarCounterHelper(10, 20, 30, ia);
