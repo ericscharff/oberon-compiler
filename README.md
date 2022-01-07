@@ -38,6 +38,10 @@ $ ../build/out.prg
 
 # or run all the tests
 $ ./run-tests.sh
+
+# Self hosting test: Use the compiler to build a RISC binary of the compiler,
+# and then use the RISC binary / interpreter to compile itself
+$ ./compiler-test.sh
 ```
 
 The compiler will read and compile all modules upon which the main class
