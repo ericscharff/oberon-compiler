@@ -103,33 +103,33 @@ CONST
 TYPE
   PoolIndex*  = INTEGER;
   StringPool* = RECORD
-    buf     :ARRAY PoolSize OF CHAR;
-    last    :PoolIndex;
-    buckets :ARRAY NumBuckets OF PoolIndex;
+    buf:     ARRAY PoolSize OF CHAR;
+    last:    PoolIndex;
+    buckets: ARRAY NumBuckets OF PoolIndex;
   END;
   TokenKind*  = INTEGER;
   Token*      = RECORD
-    kind* :TokenKind;
-    sVal* :PoolIndex;
-    iVal* :INTEGER;
-    rVal* :REAL;
+    kind*: TokenKind;
+    sVal*: PoolIndex;
+    iVal*: INTEGER;
+    rVal*: REAL;
   END;
   Lexer*      = RECORD
-    sp       :StringPool;
-    buf      :ARRAY BufSize OF CHAR;
-    fileName :PoolIndex;
-    pos      :INTEGER;
-    t*       :Token;
+    sp:       StringPool;
+    buf:      ARRAY BufSize OF CHAR;
+    fileName: PoolIndex;
+    pos:      INTEGER;
+    t*:       Token;
   END;
   LexCallback* = PROCEDURE;
 
 VAR
-  TokenNames* :ARRAY tEOF+1, KwdSize OF CHAR;
-  fatal :BOOLEAN;
+  TokenNames*: ARRAY tEOF+1, KwdSize OF CHAR;
+  fatal: BOOLEAN;
 
-PROCEDURE PoolInit*(VAR sp :StringPool);
+PROCEDURE PoolInit*(VAR sp: StringPool);
 VAR
-  i :INTEGER;
+  i: INTEGER;
 BEGIN
   FOR i := 0 TO PoolSize-1 DO
     sp.buf[i] := 0X
@@ -140,16 +140,16 @@ BEGIN
   END
 END PoolInit;
 
-PROCEDURE StringLen(s :ARRAY OF CHAR) :INTEGER;
+PROCEDURE StringLen(s: ARRAY OF CHAR): INTEGER;
 VAR
-  l :INTEGER;
+  l: INTEGER;
 BEGIN
   l := 0;
   WHILE s[l] # 0X DO INC(l) END
   RETURN l
 END StringLen;
 
-PROCEDURE StrEq(a :ARRAY OF CHAR; ai :INTEGER; b :ARRAY OF CHAR; bi :INTEGER; len :INTEGER) :BOOLEAN;
+PROCEDURE StrEq(a: ARRAY OF CHAR; ai: INTEGER; b: ARRAY OF CHAR; bi: INTEGER; len: INTEGER): BOOLEAN;
 BEGIN
   WHILE (len > 0) & (a[ai] = b[bi]) DO
     INC(ai);
@@ -159,11 +159,11 @@ BEGIN
   RETURN len = 0
 END StrEq;
 
-PROCEDURE StringInternRange(VAR sp :StringPool; s :ARRAY OF CHAR; offset, length :INTEGER) :PoolIndex;
+PROCEDURE StringInternRange(VAR sp: StringPool; s: ARRAY OF CHAR; offset, length: INTEGER): PoolIndex;
 VAR
-  i    :INTEGER;
-  hash :INTEGER;
-  b    :INTEGER;
+  i:    INTEGER;
+  hash: INTEGER;
+  b:    INTEGER;
 BEGIN
   ASSERT(sp.last + length < PoolSize);
   (* Copy and compute hash at the same time *)
@@ -192,12 +192,12 @@ BEGIN
   RETURN sp.buckets[b]
 END StringInternRange;
 
-PROCEDURE StringIntern(VAR sp :StringPool; s :ARRAY OF CHAR) :PoolIndex;
+PROCEDURE StringIntern(VAR sp: StringPool; s: ARRAY OF CHAR): PoolIndex;
 BEGIN
   RETURN StringInternRange(sp, s, 0, StringLen(s))
 END StringIntern;
 
-PROCEDURE MakeDummy*(i :INTEGER; VAR s :ARRAY OF CHAR);
+PROCEDURE MakeDummy*(i: INTEGER; VAR s: ARRAY OF CHAR);
 BEGIN
   s[0] := "i";
   s[4] := CHR((i MOD 10) + 48);
@@ -210,7 +210,7 @@ BEGIN
   s[5] := 0X;
 END MakeDummy;
 
-PROCEDURE AddKeywords(VAR sp :StringPool);
+PROCEDURE AddKeywords(VAR sp: StringPool);
 BEGIN
   StringInternRange(sp, "ARRAY", 0, 9);
   StringInternRange(sp, "BEGIN", 0, 9);
@@ -251,21 +251,21 @@ BEGIN
   StringInternRange(sp, "WHILE", 0, 9);
 END AddKeywords;
 
-PROCEDURE Intern*(VAR l :Lexer; s :ARRAY OF CHAR) :PoolIndex;
+PROCEDURE Intern*(VAR l: Lexer; s: ARRAY OF CHAR): PoolIndex;
 BEGIN
   RETURN StringIntern(l.sp, s)
 END Intern;
 
-PROCEDURE StringLenI*(l :Lexer; s :PoolIndex) :INTEGER;
+PROCEDURE StringLenI*(l: Lexer; s: PoolIndex): INTEGER;
 VAR
-  len :INTEGER;
+  len: INTEGER;
 BEGIN
   len := 0;
   WHILE l.sp.buf[s] # 0X DO INC(s); INC(len) END
   RETURN len
 END StringLenI;
 
-PROCEDURE CopyLexToPool*(l :Lexer; s :PoolIndex; VAR destPool :StringPool) :PoolIndex;
+PROCEDURE CopyLexToPool*(l: Lexer; s: PoolIndex; VAR destPool: StringPool): PoolIndex;
 BEGIN
   RETURN StringInternRange(destPool, l.sp.buf, s, StringLenI(l, s))
 END CopyLexToPool;
@@ -273,26 +273,26 @@ END CopyLexToPool;
 (* Ensure the string pool index is a multiple of 4. This ensures that the *)
 (* start of a string is on a word boundary, useful for copying strings a  *)
 (* word at a time.                                                        *)
-PROCEDURE PadStringPool*(VAR sp :StringPool);
+PROCEDURE PadStringPool*(VAR sp: StringPool);
 BEGIN
   WHILE (sp.last MOD 4) # 0 DO
     INC(sp.last)
   END
 END PadStringPool;
 
-PROCEDURE FirstChar*(l :Lexer; s :PoolIndex) :INTEGER;
+PROCEDURE FirstChar*(l: Lexer; s: PoolIndex): INTEGER;
 BEGIN
   RETURN ORD(l.sp.buf[s])
 END FirstChar;
 
-PROCEDURE OutStr*(l :Lexer; s :PoolIndex);
+PROCEDURE OutStr*(l: Lexer; s: PoolIndex);
 BEGIN
   Out.StrI(l.sp.buf, s);
 END OutStr;
 
-PROCEDURE OutStrEscaped*(l :Lexer; s :PoolIndex);
+PROCEDURE OutStrEscaped*(l: Lexer; s: PoolIndex);
 VAR
-  c :CHAR;
+  c: CHAR;
 BEGIN
   Out.Str(22X);
   WHILE l.sp.buf[s] # 0X DO
@@ -314,9 +314,9 @@ BEGIN
   Out.Str(22X);
 END OutStrEscaped;
 
-PROCEDURE OutPool*(sp :StringPool);
+PROCEDURE OutPool*(sp: StringPool);
 VAR
-  i :INTEGER;
+  i: INTEGER;
 BEGIN
   FOR i := 0 TO sp.last DO
     Out.Int(ORD(sp.buf[i]));
@@ -325,7 +325,7 @@ BEGIN
   END
 END OutPool;
 
-PROCEDURE IsOneChar*(l :Lexer; s :PoolIndex) :BOOLEAN;
+PROCEDURE IsOneChar*(l: Lexer; s: PoolIndex): BOOLEAN;
 BEGIN
   RETURN (l.sp.buf[s] = 0X) OR (l.sp.buf[s+1] = 0X)
 END IsOneChar;
@@ -340,12 +340,12 @@ BEGIN
   fatal := TRUE;
 END Unmute;
 
-PROCEDURE Str*(s :ARRAY OF CHAR);
+PROCEDURE Str*(s: ARRAY OF CHAR);
 BEGIN
   Out.Str(s);
 END Str;
 
-PROCEDURE Int*(i :INTEGER);
+PROCEDURE Int*(i: INTEGER);
 BEGIN
   Out.Int(i);
 END Int;
@@ -356,19 +356,19 @@ BEGIN
   IF fatal THEN Out.Halt END;
 END Ln;
 
-PROCEDURE PrintLnAndHalt*(s :ARRAY OF CHAR);
+PROCEDURE PrintLnAndHalt*(s: ARRAY OF CHAR);
 BEGIN
   Out.Str(s);
   Ln;
 END PrintLnAndHalt;
 
-PROCEDURE InfoPrintLn*(s :ARRAY OF CHAR);
+PROCEDURE InfoPrintLn*(s: ARRAY OF CHAR);
 BEGIN
   Out.Str(s);
   Out.Ln;
 END InfoPrintLn;
 
-PROCEDURE Error*(l :Lexer; s :ARRAY OF CHAR);
+PROCEDURE Error*(l: Lexer; s: ARRAY OF CHAR);
 BEGIN
   Out.Str("Err!");
   OutStr(l, l.fileName);
@@ -378,19 +378,19 @@ BEGIN
   Out.Str(s);
 END Error;
 
-PROCEDURE ErrorLn*(l :Lexer; s :ARRAY OF CHAR);
+PROCEDURE ErrorLn*(l: Lexer; s: ARRAY OF CHAR);
 BEGIN
   Error(l, s);
   Ln;
 END ErrorLn;
 
-PROCEDURE Next(VAR l :Lexer; VAR c :CHAR);
+PROCEDURE Next(VAR l: Lexer; VAR c: CHAR);
 BEGIN
   INC(l.pos);
   c := l.buf[l.pos];
 END Next;
 
-PROCEDURE LexerInitFromFile*(VAR l :Lexer; fileName :ARRAY OF CHAR);
+PROCEDURE LexerInitFromFile*(VAR l: Lexer; fileName: ARRAY OF CHAR);
 BEGIN
   PoolInit(l.sp);
   AddKeywords(l.sp);
@@ -399,7 +399,7 @@ BEGIN
   l.pos := 0;
 END LexerInitFromFile;
 
-PROCEDURE LexerInitFromString*(VAR l :Lexer; s :ARRAY OF CHAR);
+PROCEDURE LexerInitFromString*(VAR l: Lexer; s: ARRAY OF CHAR);
 BEGIN
   PoolInit(l.sp);
   AddKeywords(l.sp);
@@ -417,13 +417,13 @@ the lexer. Once complete, the state of the lexer is restored. This allows
 temporarily lexing a new file (an imported MODULE) and THEN returning back
 to the original MODULE.
 *)
-PROCEDURE ImportHelper*(VAR l :Lexer; moduleName :PoolIndex; callback :LexCallback);
+PROCEDURE ImportHelper*(VAR l: Lexer; moduleName: PoolIndex; callback: LexCallback);
 VAR
-  savedBuf      :ARRAY BufSize OF CHAR;
-  savedFileName :PoolIndex;
-  fileName      :ARRAY 128 OF CHAR;
-  savedPos, i   :INTEGER;
-  savedToken    :Token;
+  savedBuf:      ARRAY BufSize OF CHAR;
+  savedFileName: PoolIndex;
+  fileName:      ARRAY 128 OF CHAR;
+  savedPos, i:   INTEGER;
+  savedToken:    Token;
 BEGIN
   savedBuf := l.buf;
   savedFileName := l.fileName;
@@ -449,11 +449,11 @@ BEGIN
   l.buf := savedBuf;
 END ImportHelper;
 
-PROCEDURE ScanIdent(VAR l :Lexer);
+PROCEDURE ScanIdent(VAR l: Lexer);
 VAR
-  start   :INTEGER;
-  scan    :BOOLEAN;
-  idx     :INTEGER;
+  start:   INTEGER;
+  scan:    BOOLEAN;
+  idx:     INTEGER;
 BEGIN
   start := l.pos;
   scan := TRUE;
@@ -472,9 +472,9 @@ BEGIN
   END;
 END ScanIdent;
 
-PROCEDURE Ten(e :INTEGER) :REAL;
+PROCEDURE Ten(e: INTEGER): REAL;
 VAR
-  r :REAL;
+  r: REAL;
 BEGIN
   ASSERT(e >= 0);
   r := 1.0;
@@ -485,10 +485,10 @@ BEGIN
   RETURN r
 END Ten;
 
-PROCEDURE StrToReal(s :ARRAY OF CHAR; idx :INTEGER) :REAL;
+PROCEDURE StrToReal(s: ARRAY OF CHAR; idx: INTEGER): REAL;
 VAR
-  digits, e, exp, sgn :INTEGER;
-  r :REAL;
+  digits, e, exp, sgn: INTEGER;
+  r: REAL;
 BEGIN
   digits := 0;
   e := 0;
@@ -525,12 +525,12 @@ BEGIN
   RETURN r
 END StrToReal;
 
-PROCEDURE ScanNumber(VAR l :Lexer);
+PROCEDURE ScanNumber(VAR l: Lexer);
 VAR
-  ch          :CHAR;
-  start, base :INTEGER;
-  needHorX    :BOOLEAN;
-  s           :ARRAY 2 OF CHAR;
+  ch:          CHAR;
+  start, base: INTEGER;
+  needHorX:    BOOLEAN;
+  s:           ARRAY 2 OF CHAR;
 BEGIN
   start := l.pos;
   l.t.kind := tINT;
@@ -607,12 +607,12 @@ BEGIN
   END;
 END ScanNumber;
 
-PROCEDURE ScanString(VAR l :Lexer);
+PROCEDURE ScanString(VAR l: Lexer);
 CONST
   quote = 022X;
 VAR
-  ch :CHAR;
-  start :INTEGER;
+  ch: CHAR;
+  start: INTEGER;
 BEGIN
   start := l.pos;
   REPEAT
@@ -629,9 +629,9 @@ BEGIN
   END;
 END ScanString;
 
-PROCEDURE ScanComment(VAR l :Lexer);
+PROCEDURE ScanComment(VAR l: Lexer);
 VAR
-  start :INTEGER;
+  start: INTEGER;
 BEGIN
   start := l.pos;
   ASSERT((l.buf[l.pos] = "(") & (l.buf[l.pos+1] = "*"));
@@ -653,7 +653,7 @@ BEGIN
   END;
 END ScanComment;
 
-PROCEDURE NextToken*(VAR l :Lexer);
+PROCEDURE NextToken*(VAR l: Lexer);
 BEGIN
   l.t.kind := tINVALIDCHAR;
   REPEAT
@@ -801,9 +801,9 @@ END InitTokenNames;
 
 PROCEDURE TestPool;
 VAR
-  sp   :StringPool;
-  s    :ARRAY 25 OF CHAR;
-  i,j  :PoolIndex;
+  sp:   StringPool;
+  s:    ARRAY 25 OF CHAR;
+  i,j:  PoolIndex;
 BEGIN
   PoolInit(sp);
   ASSERT(11 = StringLen("Hello world"));
@@ -847,8 +847,8 @@ END TestPool;
 
 PROCEDURE TestLexer;
 VAR
-  l :Lexer;
-  k :INTEGER;
+  l: Lexer;
+  k: INTEGER;
 BEGIN
   (* Error cases *)
   fatal := FALSE;

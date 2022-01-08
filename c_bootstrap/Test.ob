@@ -16,12 +16,12 @@ TYPE
   A2 = ARRAY 1, 2+3, 4*5 OF CHAR;
 
 VAR
-  a :INTEGER;
-  s :SET;
-  r1 :RECORD a :INTEGER END;
-  r2 :Base1.Base1Rec;
+  a: INTEGER;
+  s: SET;
+  r1: RECORD a: INTEGER END;
+  r2: Base1.Base1Rec;
 
-PROCEDURE DoIt*(a, b, c :INTEGER);
+PROCEDURE DoIt*(a, b, c: INTEGER);
 BEGIN
   a := b + c
 END DoIt;

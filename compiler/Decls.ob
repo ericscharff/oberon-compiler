@@ -6,28 +6,28 @@ TYPE
   StringId  = Lex.PoolIndex;
   Forward   = POINTER TO FwdDecl;
   FwdDecl   = RECORD
-    t    :AST.Type;
-    next :Forward;
+    t:    AST.Type;
+    next: Forward;
   END;
   ReachableDecl* = POINTER TO ReachableDesc;
   ReachableDesc  = RECORD
-    d*    :AST.Decl;
-    next* :ReachableDecl;
+    d*:    AST.Decl;
+    next*: ReachableDecl;
   END;
 
 VAR
   nilType*, integerType*, realType*, booleanType*,
-    charType*, setType*, stringType* :AST.Type;
-  modInitName* :StringId;
-  scope, globalScope :AST.Decl;
-  reachableDecls*, tailReachable :ReachableDecl;
-  fwds  :Forward;
-  genSymNum :INTEGER;
-  VisitDecl* :PROCEDURE (d :AST.Decl);
+    charType*, setType*, stringType*: AST.Type;
+  modInitName*: StringId;
+  scope, globalScope: AST.Decl;
+  reachableDecls*, tailReachable: ReachableDecl;
+  fwds:  Forward;
+  genSymNum: INTEGER;
+  VisitDecl*: PROCEDURE (d: AST.Decl);
 
-PROCEDURE LookupDecl0(name :StringId) :AST.Decl;
+PROCEDURE LookupDecl0(name: StringId): AST.Decl;
 VAR
-  p :AST.Decl;
+  p: AST.Decl;
 BEGIN
   p := scope;
   WHILE (p # NIL) & (p.qname.name # name) DO
@@ -36,9 +36,9 @@ BEGIN
   RETURN p
 END LookupDecl0;
 
-PROCEDURE LookupDecl*(l :Lex.Lexer; name :StringId) :AST.Decl;
+PROCEDURE LookupDecl*(l: Lex.Lexer; name: StringId): AST.Decl;
 VAR
-  p :AST.Decl;
+  p: AST.Decl;
 BEGIN
   p := LookupDecl0(name);
   IF p = NIL THEN
@@ -49,9 +49,9 @@ BEGIN
   RETURN p
 END LookupDecl;
 
-PROCEDURE LookupImport*(l :Lex.Lexer; moduleName, name :StringId) :AST.Decl;
+PROCEDURE LookupImport*(l: Lex.Lexer; moduleName, name: StringId): AST.Decl;
 VAR
-  p, d :AST.Decl;
+  p, d: AST.Decl;
 BEGIN
   d := LookupDecl(l, moduleName);
   ASSERT(d.kind = AST.declImport);
@@ -75,7 +75,7 @@ BEGIN
   RETURN p
 END LookupImport;
 
-PROCEDURE NewDecl(VAR d :AST.Decl; name :StringId);
+PROCEDURE NewDecl(VAR d: AST.Decl; name: StringId);
 BEGIN
   NEW(d);
   d.qname.name := name;
@@ -93,9 +93,9 @@ BEGIN
   d.offset := -1;
 END NewDecl;
 
-PROCEDURE AddDecl*(l :Lex.Lexer; VAR chain :AST.Decl; name :StringId) :AST.Decl;
+PROCEDURE AddDecl*(l: Lex.Lexer; VAR chain: AST.Decl; name: StringId): AST.Decl;
 VAR
-  p, d :AST.Decl;
+  p, d: AST.Decl;
 BEGIN
   NewDecl(d, name);
   IF chain = NIL THEN
@@ -122,12 +122,12 @@ BEGIN
   RETURN d
 END AddDecl;
 
-PROCEDURE AddScopeDecl*(l :Lex.Lexer; name :StringId) :AST.Decl;
+PROCEDURE AddScopeDecl*(l: Lex.Lexer; name: StringId): AST.Decl;
 BEGIN
   RETURN AddDecl(l, scope, name)
 END AddScopeDecl;
 
-PROCEDURE NewType(VAR t :AST.Type; kind :AST.TypeKind);
+PROCEDURE NewType(VAR t: AST.Type; kind: AST.TypeKind);
 BEGIN
   NEW(t);
   t.kind := kind;
@@ -139,9 +139,9 @@ BEGIN
   t.reachable := FALSE;
 END NewType;
 
-PROCEDURE AddImportDecl*(l :Lex.Lexer; name :StringId; decls :AST.Decl);
+PROCEDURE AddImportDecl*(l: Lex.Lexer; name: StringId; decls: AST.Decl);
 VAR
-  d :AST.Decl;
+  d: AST.Decl;
 BEGIN
   d := AddScopeDecl(l, name);
   d.kind := AST.declImport;
@@ -149,9 +149,9 @@ BEGIN
   d.typ.fields := decls;
 END AddImportDecl;
 
-PROCEDURE NewBufferType*(base :AST.Type) :AST.Type;
+PROCEDURE NewBufferType*(base: AST.Type): AST.Type;
 VAR
-  t :AST.Type;
+  t: AST.Type;
 BEGIN
   NewType(t, AST.typeBuffer);
   t.length := -1;
@@ -159,9 +159,9 @@ BEGIN
   RETURN t
 END NewBufferType;
 
-PROCEDURE NewArrayType*(l :Lex.Lexer; length :AST.Expr) :AST.Type;
+PROCEDURE NewArrayType*(l: Lex.Lexer; length: AST.Expr): AST.Type;
 VAR
-  t :AST.Type;
+  t: AST.Type;
 BEGIN
   NewType(t, AST.typeArray);
   IF AST.IsConst(length) & (length.typ.kind = AST.typeInteger) THEN
@@ -172,9 +172,9 @@ BEGIN
   RETURN t
 END NewArrayType;
 
-PROCEDURE MakeSyntheticDecl(VAR l :Lex.Lexer; base :AST.Type);
+PROCEDURE MakeSyntheticDecl(VAR l: Lex.Lexer; base: AST.Type);
 VAR
-  name :ARRAY 10 OF CHAR;
+  name: ARRAY 10 OF CHAR;
 BEGIN
   ASSERT(base.kind = AST.typeRecord);
   IF base.decl = NIL THEN
@@ -186,9 +186,9 @@ BEGIN
   END;
 END MakeSyntheticDecl;
 
-PROCEDURE NewPointerType*(VAR l :Lex.Lexer; base :AST.Type) :AST.Type;
+PROCEDURE NewPointerType*(VAR l: Lex.Lexer; base: AST.Type): AST.Type;
 VAR
-  t :AST.Type;
+  t: AST.Type;
 BEGIN
   t := NIL;
   IF (base # NIL) & (base.kind # AST.typeRecord) THEN
@@ -201,11 +201,11 @@ BEGIN
   RETURN t
 END NewPointerType;
 
-PROCEDURE NewPointerTypeByName*(VAR l :Lex.Lexer; name :StringId) :AST.Type;
+PROCEDURE NewPointerTypeByName*(VAR l: Lex.Lexer; name: StringId): AST.Type;
 VAR
-  d :AST.Decl;
-  f :Forward;
-  t :AST.Type;
+  d: AST.Decl;
+  f: Forward;
+  t: AST.Type;
 BEGIN
   t := NIL;
   d := LookupDecl0(name);
@@ -228,19 +228,19 @@ BEGIN
   RETURN t
 END NewPointerTypeByName;
 
-PROCEDURE NewProcedureType*() :AST.Type;
+PROCEDURE NewProcedureType*(): AST.Type;
 VAR
-  t :AST.Type;
+  t: AST.Type;
 BEGIN
   NewType(t, AST.typeProcedure);
   t.base := nilType;
   RETURN t
 END NewProcedureType;
 
-PROCEDURE CountProcedureArgs*(t :AST.Type);
+PROCEDURE CountProcedureArgs*(t: AST.Type);
 VAR
-  i :INTEGER;
-  p :AST.Decl;
+  i: INTEGER;
+  p: AST.Decl;
 BEGIN
   i := 0;
   p := t.fields;
@@ -251,10 +251,10 @@ BEGIN
   t.length := i;
 END CountProcedureArgs;
 
-PROCEDURE NewRecordType*(l :Lex.Lexer; base :AST.Type) :AST.Type;
+PROCEDURE NewRecordType*(l: Lex.Lexer; base: AST.Type): AST.Type;
 VAR
-  t        :AST.Type;
-  d, dCopy :AST.Decl;
+  t:        AST.Type;
+  d, dCopy: AST.Decl;
 BEGIN
   NewType(t, AST.typeRecord);
   t.base := base;
@@ -282,9 +282,9 @@ BEGIN
   RETURN t
 END NewRecordType;
 
-PROCEDURE NewModuleInitDecl*(body :AST.Stmt);
+PROCEDURE NewModuleInitDecl*(body: AST.Stmt);
 VAR
-  d :AST.Decl;
+  d: AST.Decl;
 BEGIN
   NewDecl(d, modInitName);
   d.kind := AST.declProcedure;
@@ -294,9 +294,9 @@ BEGIN
   scope := d;
 END NewModuleInitDecl;
 
-PROCEDURE AddTypeDecl(VAR l :Lex.Lexer; name :StringId; t :AST.Type);
+PROCEDURE AddTypeDecl(VAR l: Lex.Lexer; name: StringId; t: AST.Type);
 VAR
-  d :AST.Decl;
+  d: AST.Decl;
 BEGIN
   d := AddDecl(l, scope, name);
   d.kind := AST.declType;
@@ -304,9 +304,9 @@ BEGIN
   IF d.typ.decl = NIL THEN d.typ.decl := d END;
 END AddTypeDecl;
 
-PROCEDURE AddBuiltin(VAR l :Lex.Lexer; name :StringId; callback :AST.BuiltinResolver);
+PROCEDURE AddBuiltin(VAR l: Lex.Lexer; name: StringId; callback: AST.BuiltinResolver);
 VAR
-  d :AST.Decl;
+  d: AST.Decl;
 BEGIN
   d := AddDecl(l, scope, name);
   d.kind := AST.declBuiltin;
@@ -316,9 +316,9 @@ END AddBuiltin;
 
 (* Native procedure declarations. *)
 (* Lowercase names because they are private callbacks *)
-PROCEDURE builtinAbs(l :Lex.Lexer; args :AST.Expr) :AST.Expr;
+PROCEDURE builtinAbs(l: Lex.Lexer; args: AST.Expr): AST.Expr;
 VAR
-  e :AST.Expr;
+  e: AST.Expr;
 BEGIN
   AST.NewExpr(e, AST.exprBuiltin, nilType);
   e.iVal := AST.builtinAbs;
@@ -334,9 +334,9 @@ BEGIN
   RETURN e
 END builtinAbs;
 
-PROCEDURE builtinInc(l :Lex.Lexer; args :AST.Expr) :AST.Expr;
+PROCEDURE builtinInc(l: Lex.Lexer; args: AST.Expr): AST.Expr;
 VAR
-  e :AST.Expr;
+  e: AST.Expr;
 BEGIN
   AST.NewExpr(e, AST.exprBuiltin, nilType);
   e.iVal := AST.builtinInc;
@@ -353,9 +353,9 @@ BEGIN
   RETURN e
 END builtinInc;
 
-PROCEDURE builtinDec(l :Lex.Lexer; args :AST.Expr) :AST.Expr;
+PROCEDURE builtinDec(l: Lex.Lexer; args: AST.Expr): AST.Expr;
 VAR
-  e :AST.Expr;
+  e: AST.Expr;
 BEGIN
   AST.NewExpr(e, AST.exprBuiltin, nilType);
   e.iVal := AST.builtinDec;
@@ -372,9 +372,9 @@ BEGIN
   RETURN e
 END builtinDec;
 
-PROCEDURE builtinAssert(l :Lex.Lexer; args :AST.Expr) :AST.Expr;
+PROCEDURE builtinAssert(l: Lex.Lexer; args: AST.Expr): AST.Expr;
 VAR
-  e :AST.Expr;
+  e: AST.Expr;
 BEGIN
   AST.NewExpr(e, AST.exprBuiltin, nilType);
   e.iVal := AST.builtinAssert;
@@ -390,9 +390,9 @@ BEGIN
   RETURN e
 END builtinAssert;
 
-PROCEDURE builtinOrd(l :Lex.Lexer; args :AST.Expr) :AST.Expr;
+PROCEDURE builtinOrd(l: Lex.Lexer; args: AST.Expr): AST.Expr;
 VAR
-  e :AST.Expr;
+  e: AST.Expr;
 BEGIN
   AST.NewExpr(e, AST.exprBuiltin, nilType);
   e.iVal := AST.builtinOrd;
@@ -410,9 +410,9 @@ BEGIN
   RETURN e
 END builtinOrd;
 
-PROCEDURE builtinChr(l :Lex.Lexer; args :AST.Expr) :AST.Expr;
+PROCEDURE builtinChr(l: Lex.Lexer; args: AST.Expr): AST.Expr;
 VAR
-  e :AST.Expr;
+  e: AST.Expr;
 BEGIN
   AST.NewExpr(e, AST.exprBuiltin, nilType);
   e.iVal := AST.builtinChr;
@@ -428,9 +428,9 @@ BEGIN
   RETURN e
 END builtinChr;
 
-PROCEDURE builtinFlt(l :Lex.Lexer; args :AST.Expr) :AST.Expr;
+PROCEDURE builtinFlt(l: Lex.Lexer; args: AST.Expr): AST.Expr;
 VAR
-  e :AST.Expr;
+  e: AST.Expr;
 BEGIN
   AST.NewExpr(e, AST.exprBuiltin, nilType);
   e.iVal := AST.builtinFlt;
@@ -446,9 +446,9 @@ BEGIN
   RETURN e
 END builtinFlt;
 
-PROCEDURE builtinLen(l :Lex.Lexer; args :AST.Expr) :AST.Expr;
+PROCEDURE builtinLen(l: Lex.Lexer; args: AST.Expr): AST.Expr;
 VAR
-  e :AST.Expr;
+  e: AST.Expr;
 BEGIN
   AST.NewExpr(e, AST.exprBuiltin, nilType);
   e.iVal := AST.builtinLen;
@@ -464,9 +464,9 @@ BEGIN
   RETURN e
 END builtinLen;
 
-PROCEDURE builtinInit(l :Lex.Lexer; args :AST.Expr) :AST.Expr;
+PROCEDURE builtinInit(l: Lex.Lexer; args: AST.Expr): AST.Expr;
 VAR
-  e :AST.Expr;
+  e: AST.Expr;
 BEGIN
   AST.NewExpr(e, AST.exprBuiltin, nilType);
   e.iVal := AST.builtinInit;
@@ -485,9 +485,9 @@ BEGIN
   RETURN e
 END builtinInit;
 
-PROCEDURE builtinPush(l :Lex.Lexer; args :AST.Expr) :AST.Expr;
+PROCEDURE builtinPush(l: Lex.Lexer; args: AST.Expr): AST.Expr;
 VAR
-  e :AST.Expr;
+  e: AST.Expr;
 BEGIN
   AST.NewExpr(e, AST.exprBuiltin, nilType);
   e.iVal := AST.builtinPush;
@@ -509,9 +509,9 @@ BEGIN
   RETURN e
 END builtinPush;
 
-PROCEDURE builtinNew(l :Lex.Lexer; args :AST.Expr) :AST.Expr;
+PROCEDURE builtinNew(l: Lex.Lexer; args: AST.Expr): AST.Expr;
 VAR
-  e :AST.Expr;
+  e: AST.Expr;
 BEGIN
   AST.NewExpr(e, AST.exprBuiltin, nilType);
   e.iVal := AST.builtinNew;
@@ -530,9 +530,9 @@ BEGIN
   RETURN e
 END builtinNew;
 
-PROCEDURE builtinReadInt(l :Lex.Lexer; args :AST.Expr) :AST.Expr;
+PROCEDURE builtinReadInt(l: Lex.Lexer; args: AST.Expr): AST.Expr;
 VAR
-  e :AST.Expr;
+  e: AST.Expr;
 BEGIN
   AST.NewExpr(e, AST.exprBuiltin, nilType);
   e.iVal := AST.builtinReadInt;
@@ -546,9 +546,9 @@ BEGIN
   RETURN e
 END builtinReadInt;
 
-PROCEDURE builtinWriteInt(l :Lex.Lexer; args :AST.Expr) :AST.Expr;
+PROCEDURE builtinWriteInt(l: Lex.Lexer; args: AST.Expr): AST.Expr;
 VAR
-  e :AST.Expr;
+  e: AST.Expr;
 BEGIN
   AST.NewExpr(e, AST.exprBuiltin, nilType);
   e.iVal := AST.builtinWriteInt;
@@ -559,9 +559,9 @@ BEGIN
   RETURN e
 END builtinWriteInt;
 
-PROCEDURE builtinWriteChar(l :Lex.Lexer; args :AST.Expr) :AST.Expr;
+PROCEDURE builtinWriteChar(l: Lex.Lexer; args: AST.Expr): AST.Expr;
 VAR
-  e :AST.Expr;
+  e: AST.Expr;
 BEGIN
   AST.NewExpr(e, AST.exprBuiltin, nilType);
   e.iVal := AST.builtinWriteChar;
@@ -573,9 +573,9 @@ BEGIN
   RETURN e
 END builtinWriteChar;
 
-PROCEDURE builtinWriteLn(l :Lex.Lexer; args :AST.Expr) :AST.Expr;
+PROCEDURE builtinWriteLn(l: Lex.Lexer; args: AST.Expr): AST.Expr;
 VAR
-  e :AST.Expr;
+  e: AST.Expr;
 BEGIN
   AST.NewExpr(e, AST.exprBuiltin, nilType);
   e.iVal := AST.builtinWriteLn;
@@ -586,7 +586,7 @@ BEGIN
   RETURN e
 END builtinWriteLn;
 
-PROCEDURE InitGlobalScope*(VAR l :Lex.Lexer);
+PROCEDURE InitGlobalScope*(VAR l: Lex.Lexer);
 BEGIN
   fwds := NIL;
   IF globalScope = NIL THEN
@@ -629,9 +629,9 @@ BEGIN
   scope := globalScope;
 END InitGlobalScope;
 
-PROCEDURE ResolveForwards*(l :Lex.Lexer);
+PROCEDURE ResolveForwards*(l: Lex.Lexer);
 VAR
-  d :AST.Decl;
+  d: AST.Decl;
 BEGIN
   WHILE fwds # NIL DO
     ASSERT(fwds.t.kind = AST.typePointer);
@@ -648,9 +648,9 @@ BEGIN
   END;
 END ResolveForwards;
 
-PROCEDURE AddFormalParamsToScope*(l :Lex.Lexer; procDecl :AST.Decl);
+PROCEDURE AddFormalParamsToScope*(l: Lex.Lexer; procDecl: AST.Decl);
 VAR
-  formal, actual :AST.Decl;
+  formal, actual: AST.Decl;
 BEGIN
   ASSERT(procDecl.kind = AST.declProcedure);
   ASSERT(procDecl.typ.kind = AST.typeProcedure);
@@ -668,9 +668,9 @@ BEGIN
   RETURN scope
 END CurrentScope;
 
-PROCEDURE OpenScope*() :AST.Decl;
+PROCEDURE OpenScope*(): AST.Decl;
 VAR
-  d, oldScope :AST.Decl;
+  d, oldScope: AST.Decl;
 BEGIN
   NewDecl(d, 0);
   d.kind := AST.declEND;
@@ -680,14 +680,14 @@ BEGIN
   RETURN oldScope
 END OpenScope;
 
-PROCEDURE CloseScope*(s :AST.Decl);
+PROCEDURE CloseScope*(s: AST.Decl);
 BEGIN
   scope := s;
 END CloseScope;
 
-PROCEDURE VisitType(t :AST.Type);
+PROCEDURE VisitType(t: AST.Type);
 VAR
-  f :AST.Decl;
+  f: AST.Decl;
 BEGIN
   IF (t # NIL) & ~t.reachable THEN
     t.reachable := TRUE;
@@ -701,7 +701,7 @@ BEGIN
   END;
 END VisitType;
 
-PROCEDURE VisitExpr(e :AST.Expr);
+PROCEDURE VisitExpr(e: AST.Expr);
 BEGIN
   WHILE e # NIL DO
     VisitExpr(e.lhs);
@@ -712,7 +712,7 @@ BEGIN
   END;
 END VisitExpr;
 
-PROCEDURE VisitStatement(s :AST.Stmt);
+PROCEDURE VisitStatement(s: AST.Stmt);
 BEGIN
   WHILE s # NIL DO
     VisitExpr(s.cond);
@@ -722,10 +722,10 @@ BEGIN
   END;
 END VisitStatement;
 
-PROCEDURE VisitDecl0(d :AST.Decl);
+PROCEDURE VisitDecl0(d: AST.Decl);
 VAR
-  p         :AST.Decl;
-  reachable :ReachableDecl;
+  p:         AST.Decl;
+  reachable: ReachableDecl;
 BEGIN
   IF d.state = AST.stateUnresolved THEN
     d.state := AST.stateResolving;
@@ -771,9 +771,9 @@ END TestCleanup;
 
 PROCEDURE TestDecls;
 VAR
-  l :Lex.Lexer;
-  d :AST.Decl;
-  t :AST.Type;
+  l: Lex.Lexer;
+  d: AST.Decl;
+  t: AST.Type;
 BEGIN
   Lex.LexerInitFromString(l, "");
   d := NIL;

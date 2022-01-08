@@ -79,51 +79,51 @@ CONST
 
 TYPE
   StringId         = Lex.PoolIndex;
-  QName*           = RECORD moduleName*, name* :StringId END;
+  QName*           = RECORD moduleName*, name*: StringId END;
   TypeKind*        = INTEGER;
   Type*            = POINTER TO TypeDesc;
   Decl*            = POINTER TO DeclDesc;
   Expr*            = POINTER TO ExprDesc;
   Stmt*            = POINTER TO StmtDesc;
   TypeDesc         = RECORD
-    kind*         :TypeKind;
-    base*         :Type;    (* POINTER type,                             *)
+    kind*:         TypeKind;
+    base*:         Type;    (* POINTER type,                             *)
                             (* ARRAY element,                            *)
                             (* RECORD base,                              *)
                             (* PROCEDURE return type                     *)
-    fields*       :Decl;    (* RECORD fields                             *)
+    fields*:       Decl;    (* RECORD fields                             *)
                             (* PROCEDURE formal parameters               *)
                             (* IMPORT decls                              *)
                             (* Name of forward decl                      *)
-    length*       :INTEGER; (* ARRAY length                              *)
+    length*:       INTEGER; (* ARRAY length                              *)
                             (* PROCEDURE number of parameters            *)
-    needTypeInfo* :BOOLEAN; (* Type uses IS or typeguard, and thus needs *)
+    needTypeInfo*: BOOLEAN; (* Type uses IS or typeguard, and thus needs *)
                             (* runtime info                              *)
-    decl*         :Decl;    (* Optional. If defined as a TYPE, points to *)
+    decl*:         Decl;    (* Optional. If defined as a TYPE, points to *)
                             (* the declaration (name), NIL otherwise     *)
-    typeId*       :INTEGER; (* RECORD types get a unique identifier,     *)
+    typeId*:       INTEGER; (* RECORD types get a unique identifier,     *)
                             (* used for type extensions.                 *)
-    reachable*    :BOOLEAN; (* This type is reachable and used.          *)
+    reachable*:    BOOLEAN; (* This type is reachable and used.          *)
   END;
-  BuiltinResolver* = PROCEDURE (l :Lex.Lexer; args :Expr) :Expr;
+  BuiltinResolver* = PROCEDURE (l: Lex.Lexer; args: Expr): Expr;
   DeclKind         = INTEGER;
   DeclState        = INTEGER;
   DeclDesc         = RECORD
-    kind*     :DeclKind;
-    next*     :Decl;
-    qname*    :QName;
-    typ*      :Type;
-    expr*     :Expr;             (* for CONST declarations            *)
+    kind*:     DeclKind;
+    next*:     Decl;
+    qname*:    QName;
+    typ*:      Type;
+    expr*:     Expr;             (* for CONST declarations            *)
                                  (* PROCEDURE RETURN value            *)
-    body*     :Stmt;             (* PROCEDURE or MODULE body          *)
-    exported* :BOOLEAN;
-    nesting*  :INTEGER;          (* 0=global, 1=proc, 2=nested...     *)
-    procVars* :Decl;             (* for PROCEDURE decls, local scope  *)
-    isNative* :BOOLEAN;          (* Native procedures do not generate *)
+    body*:     Stmt;             (* PROCEDURE or MODULE body          *)
+    exported*: BOOLEAN;
+    nesting*:  INTEGER;          (* 0=global, 1=proc, 2=nested...     *)
+    procVars*: Decl;             (* for PROCEDURE decls, local scope  *)
+    isNative*: BOOLEAN;          (* Native procedures do not generate *)
                                  (* code                              *)
-    resolver* :BuiltinResolver;  (* Handles native procedure calls    *)
-    state*    :DeclState;
-    offset*   :INTEGER;          (* Only used by codegen - offset of  *)
+    resolver*: BuiltinResolver;  (* Handles native procedure calls    *)
+    state*:    DeclState;
+    offset*:   INTEGER;          (* Only used by codegen - offset of  *)
                                  (* this decl from something.         *)
                                  (* Global var - offset from GP       *)
                                  (* Local var - offset from FP        *)
@@ -170,73 +170,73 @@ TYPE
   the rhs is the first arg, and then follows the next chain OF those args.
   *)
   ExprDesc  = RECORD
-    kind*   :ExprKind;
-    typ*    :Type;
-    op*     :Lex.TokenKind; (* for unary, binary                            *)
-    lhs*    :Expr;          (* for unary, binary, the base expr for         *)
+    kind*:   ExprKind;
+    typ*:    Type;
+    op*:     Lex.TokenKind; (* for unary, binary                            *)
+    lhs*:    Expr;          (* for unary, binary, the base expr for         *)
                             (* arrayRef, pointerDeref, fieldRef, typeGuard, *)
                             (* PROCEDURE call designator                    *)
                             (* for assignnemt, lvalue                       *)
-    rhs*    :Expr;          (* for binary, also first arg PROCEDURE call    *)
+    rhs*:    Expr;          (* for binary, also first arg PROCEDURE call    *)
                             (* for arrayRef, expr OF ARRAY index            *)
                             (* for assignment, rvalue                       *)
-    next*   :Expr;          (* for PROCEDURE call,next arg in list          *)
-    decl*   :Decl;          (* for identRef and typeguard                   *)
+    next*:   Expr;          (* for PROCEDURE call,next arg in list          *)
+    decl*:   Decl;          (* for identRef and typeguard                   *)
                             (* for fieldRef, refernce to the field's decl   *)
-    iVal*   :INTEGER;       (* for INTEGER, BOOLEAN, STRING (StringId)      *)
+    iVal*:   INTEGER;       (* for INTEGER, BOOLEAN, STRING (StringId)      *)
                             (* for fieldref, StringId OF field name         *)
                             (* for CHAR, the character itself               *)
                             (* for PROCEDURE call, number OF actual params  *)
                             (* for builtin procedure, unique identifier     *)
-    rVal*   :REAL;
-    setVal* :SET;
-    assignable* :BOOLEAN;
+    rVal*:   REAL;
+    setVal*: SET;
+    assignable*: BOOLEAN;
   END;
 
   StmtKind* = INTEGER;
   StmtDesc  = RECORD
-    kind*   :StmtKind;
-    cond*   :Expr;     (* For assignment, this is an exprAssign        *)
+    kind*:   StmtKind;
+    cond*:   Expr;     (* For assignment, this is an exprAssign        *)
                        (* For WHILE and REPEAT, this is loop condition *)
                        (* For ELSIF, this is a single ELSIF condition  *)
                        (* For caseItem, this is a list of cases, using *)
                        (* expr.next for each case                      *)
                        (* For ELSE, this is ignored                    *)
-    body*   :Stmt;     (* Body of a clause, the StatementSequence for  *)
+    body*:   Stmt;     (* Body of a clause, the StatementSequence for  *)
                        (* that node, chained together with next        *)
-    elsifs* :Stmt;     (* Optional chain of ELSIF (and ELSE) for IF    *)
+    elsifs*: Stmt;     (* Optional chain of ELSIF (and ELSE) for IF    *)
                        (* and WHILE statements, for CASE, this is the  *)
                        (* first caseItem                               *)
-    next*   :Stmt;     (* next statement in the StatementSequence      *)
+    next*:   Stmt;     (* next statement in the StatementSequence      *)
   END;
 
 VAR
-  currentModuleName* :StringId;
-  TypeKindNames :ARRAY typeEND, 10 OF CHAR;
-  nextTypeId* :INTEGER;
-  recordToParent* :ARRAY maxTypeId OF INTEGER;
+  currentModuleName*: StringId;
+  TypeKindNames: ARRAY typeEND, 10 OF CHAR;
+  nextTypeId*: INTEGER;
+  recordToParent*: ARRAY maxTypeId OF INTEGER;
 
-PROCEDURE GetNextTypeId*() :INTEGER;
+PROCEDURE GetNextTypeId*(): INTEGER;
 BEGIN
   INC(nextTypeId);
   RETURN nextTypeId
 END GetNextTypeId;
 
-PROCEDURE SetRecordToParent*(tid, base :INTEGER);
+PROCEDURE SetRecordToParent*(tid, base: INTEGER);
 BEGIN
   recordToParent[tid] := base;
 END SetRecordToParent;
 
-PROCEDURE SetModuleName*(name :StringId) :StringId;
+PROCEDURE SetModuleName*(name: StringId): StringId;
 VAR
-  oldModuleName :StringId;
+  oldModuleName: StringId;
 BEGIN
   oldModuleName := currentModuleName;
   currentModuleName := name;
   RETURN oldModuleName
 END SetModuleName;
 
-PROCEDURE IsImported(d :Decl) :BOOLEAN;
+PROCEDURE IsImported(d: Decl): BOOLEAN;
 BEGIN
   ASSERT(d # NIL);
   WHILE (d # NIL) & (d.kind # declEND) DO
@@ -247,7 +247,7 @@ BEGIN
   RETURN d.qname.moduleName # currentModuleName
 END IsImported;
 
-PROCEDURE OutTypeName(l :Lex.Lexer; t :Type);
+PROCEDURE OutTypeName(l: Lex.Lexer; t: Type);
 BEGIN
   IF t.decl = NIL THEN
     Lex.Str(TypeKindNames[t.kind]);
@@ -261,7 +261,7 @@ BEGIN
   END;
 END OutTypeName;
 
-PROCEDURE ExpectType(l :Lex.Lexer; e :Expr; kind :TypeKind);
+PROCEDURE ExpectType(l: Lex.Lexer; e: Expr; kind: TypeKind);
 BEGIN
   ASSERT(e # NIL);
   ASSERT(e.typ # NIL);
@@ -274,14 +274,14 @@ BEGIN
   END;
 END ExpectType;
 
-PROCEDURE IsStringType(t :Type) :BOOLEAN;
+PROCEDURE IsStringType(t: Type): BOOLEAN;
 BEGIN
   RETURN (t.kind = typeString) OR
       ((t.kind = typeArray) & (t.base.kind = typeChar))
 END IsStringType;
 
 (* does a extend b *)
-PROCEDURE Extends(a, b :Type) :BOOLEAN;
+PROCEDURE Extends(a, b: Type): BOOLEAN;
 BEGIN
   IF (a # NIL) & (b # NIL) & (a.kind = typeRecord) & (b.kind = typeRecord) THEN
     WHILE (a # NIL) & (a # b) DO
@@ -291,7 +291,7 @@ BEGIN
   RETURN (a # NIL) & (b # NIL) & (a = b)
 END Extends;
 
-PROCEDURE IsOpenArray*(t :Type) :BOOLEAN;
+PROCEDURE IsOpenArray*(t: Type): BOOLEAN;
 BEGIN
   RETURN (t.kind = typeArray) & (t.length = 0)
 END IsOpenArray;
@@ -300,11 +300,11 @@ END IsOpenArray;
 (* b := "hello"; is legal if b is an array of char, but           *)
 (* "hello" := b would not be legal. When doing comparasons (e.g., *)
 (* for boolean =, it is necessar to comapre a to b OR b to a      *)
-PROCEDURE AssignmentCompatable(l :Lex.Lexer; a, b :Type; aSval, bSval :StringId) :BOOLEAN;
+PROCEDURE AssignmentCompatable(l: Lex.Lexer; a, b: Type; aSval, bSval: StringId): BOOLEAN;
 VAR
-  procCompatable :BOOLEAN;
-  aParam, bParam :Decl;
-  len            :INTEGER;
+  procCompatable: BOOLEAN;
+  aParam, bParam: Decl;
+  len:            INTEGER;
 BEGIN
   procCompatable := FALSE;
   IF (a.kind = typeProcedure) & (b.kind = typeProcedure) THEN
@@ -348,9 +348,9 @@ BEGIN
     (* cannot be assigned to because is_assignable is FALSE, and arrays     *)
 END AssignmentCompatable;
 
-PROCEDURE ExprCompatable(l :Lex.Lexer; op :Lex.TokenKind; lhs, rhs :Expr) :BOOLEAN;
+PROCEDURE ExprCompatable(l: Lex.Lexer; op: Lex.TokenKind; lhs, rhs: Expr): BOOLEAN;
 VAR
-  good :BOOLEAN;
+  good: BOOLEAN;
 BEGIN
   IF AssignmentCompatable(l, lhs.typ, rhs.typ, lhs.iVal, rhs.iVal) OR
      AssignmentCompatable(l, rhs.typ, lhs.typ, rhs.iVal, lhs.iVal) THEN
@@ -369,13 +369,13 @@ BEGIN
 END ExprCompatable;
 
 
-PROCEDURE IsConst*(e :Expr) :BOOLEAN;
+PROCEDURE IsConst*(e: Expr): BOOLEAN;
 BEGIN
   RETURN e.kind = exprVal
 END IsConst;
 
 (* Convert a string constant into a character constant *)
-PROCEDURE CoerceToChar*(l :Lex.Lexer; e :Expr; charType :Type);
+PROCEDURE CoerceToChar*(l: Lex.Lexer; e: Expr; charType: Type);
 BEGIN
   ASSERT(IsConst(e));
   ASSERT(e.typ.kind = typeString);
@@ -385,7 +385,7 @@ BEGIN
 END CoerceToChar;
 
 
-PROCEDURE NewExpr*(VAR e :Expr; kind :ExprKind; typ :Type);
+PROCEDURE NewExpr*(VAR e: Expr; kind: ExprKind; typ: Type);
 BEGIN
   NEW(e);
   e.kind := kind;
@@ -397,9 +397,9 @@ BEGIN
   e.assignable := FALSE;
 END NewExpr;
 
-PROCEDURE NewExprIdentRef*(d :Decl) :Expr;
+PROCEDURE NewExprIdentRef*(d: Decl): Expr;
 VAR
-  e :Expr;
+  e: Expr;
 BEGIN
   ASSERT(d # NIL);
   ASSERT(d.typ # NIL);
@@ -424,9 +424,9 @@ BEGIN
   RETURN e
 END NewExprIdentRef;
 
-PROCEDURE NewExprPointerDeref*(l :Lex.Lexer; base :Expr) :Expr;
+PROCEDURE NewExprPointerDeref*(l: Lex.Lexer; base: Expr): Expr;
 VAR
-  e :Expr;
+  e: Expr;
 BEGIN
   NewExpr(e, exprPointerDeref, base.typ);
   e.lhs := base;
@@ -439,10 +439,10 @@ BEGIN
   RETURN e
 END NewExprPointerDeref;
 
-PROCEDURE NewExprFieldRef*(l :Lex.Lexer; base :Expr; name :StringId) :Expr;
+PROCEDURE NewExprFieldRef*(l: Lex.Lexer; base: Expr; name: StringId): Expr;
 VAR
-  e :Expr;
-  d :Decl;
+  e: Expr;
+  d: Decl;
 BEGIN
   e := base;
   IF base.typ.kind = typePointer THEN
@@ -475,9 +475,9 @@ BEGIN
   RETURN e
 END NewExprFieldRef;
 
-PROCEDURE NewExprArrayRef*(l :Lex.Lexer; base, index :Expr) :Expr;
+PROCEDURE NewExprArrayRef*(l: Lex.Lexer; base, index: Expr): Expr;
 VAR
-  e :Expr;
+  e: Expr;
 BEGIN
   e := base;
   IF base.typ.kind IN {typeArray, typeBuffer} THEN
@@ -510,7 +510,7 @@ BEGIN
   RETURN e
 END NewExprArrayRef;
 
-PROCEDURE SetGenTypeInfo(t :Type);
+PROCEDURE SetGenTypeInfo(t: Type);
 BEGIN
   IF t.kind = typePointer THEN
     t := t.base;
@@ -521,9 +521,9 @@ BEGIN
   END;
 END SetGenTypeInfo;
 
-PROCEDURE NeedsTypeInfo*(t :Type) :BOOLEAN;
+PROCEDURE NeedsTypeInfo*(t: Type): BOOLEAN;
 VAR
-  ti :BOOLEAN;
+  ti: BOOLEAN;
 BEGIN
   ti := FALSE;
   REPEAT
@@ -533,9 +533,9 @@ BEGIN
   RETURN ti
 END NeedsTypeInfo;
 
-PROCEDURE NewExprTypeGuard*(l :Lex.Lexer; base :Expr; newType :Decl) :Expr;
+PROCEDURE NewExprTypeGuard*(l: Lex.Lexer; base: Expr; newType: Decl): Expr;
 VAR
-  e :Expr;
+  e: Expr;
 BEGIN
   e := base;
   IF (newType.kind = declType) &
@@ -562,63 +562,63 @@ BEGIN
   RETURN e
 END NewExprTypeGuard;
 
-PROCEDURE NewExprInteger*(iVal :INTEGER; typ :Type) :Expr;
+PROCEDURE NewExprInteger*(iVal: INTEGER; typ: Type): Expr;
 VAR
-  e :Expr;
+  e: Expr;
 BEGIN
   NewExpr(e, exprVal, typ);
   e.iVal := iVal;
   RETURN e
 END NewExprInteger;
 
-PROCEDURE NewExprReal*(rVal :REAL; typ :Type) :Expr;
+PROCEDURE NewExprReal*(rVal: REAL; typ: Type): Expr;
 VAR
-  e :Expr;
+  e: Expr;
 BEGIN
   NewExpr(e, exprVal, typ);
   e.rVal := rVal;
   RETURN e
 END NewExprReal;
 
-PROCEDURE NewExprString*(sVal :StringId; typ :Type) :Expr;
+PROCEDURE NewExprString*(sVal: StringId; typ: Type): Expr;
 VAR
-  e :Expr;
+  e: Expr;
 BEGIN
   NewExpr(e, exprVal, typ);
   e.iVal := sVal;
   RETURN e
 END NewExprString;
 
-PROCEDURE NewExprNil*(typ :Type) :Expr;
+PROCEDURE NewExprNil*(typ: Type): Expr;
 VAR
-  e :Expr;
+  e: Expr;
 BEGIN
   NewExpr(e, exprVal, typ);
   e.iVal := 0;
   RETURN e
 END NewExprNil;
 
-PROCEDURE NewExprBoolean*(bVal :INTEGER; typ :Type) :Expr;
+PROCEDURE NewExprBoolean*(bVal: INTEGER; typ: Type): Expr;
 VAR
-  e :Expr;
+  e: Expr;
 BEGIN
   NewExpr(e, exprVal, typ);
   e.iVal := bVal;
   RETURN e
 END NewExprBoolean;
 
-PROCEDURE NewExprSet*(typ :Type) :Expr;
+PROCEDURE NewExprSet*(typ: Type): Expr;
 VAR
-  e :Expr;
+  e: Expr;
 BEGIN
   NewExpr(e, exprVal, typ);
   e.setVal := {};
   RETURN e
 END NewExprSet;
 
-PROCEDURE NewExprSetUnion*(l :Lex.Lexer; lhs, rhs :Expr) :Expr;
+PROCEDURE NewExprSetUnion*(l: Lex.Lexer; lhs, rhs: Expr): Expr;
 VAR
-  e :Expr;
+  e: Expr;
 BEGIN
   ExpectType(l, lhs, typeSet);
   ExpectType(l, rhs, typeSet);
@@ -634,9 +634,9 @@ BEGIN
   RETURN e
 END NewExprSetUnion;
 
-PROCEDURE NewExprSetElement*(l :Lex.Lexer; elt :Expr; setType :Type) :Expr;
+PROCEDURE NewExprSetElement*(l: Lex.Lexer; elt: Expr; setType: Type): Expr;
 VAR
-  e :Expr;
+  e: Expr;
 BEGIN
   e := NewExprSet(setType);
   e.setVal := {};
@@ -658,9 +658,9 @@ BEGIN
   RETURN e
 END NewExprSetElement;
 
-PROCEDURE NewExprSetRange*(l :Lex.Lexer; lhs, rhs :Expr; setType :Type) :Expr;
+PROCEDURE NewExprSetRange*(l: Lex.Lexer; lhs, rhs: Expr; setType: Type): Expr;
 VAR
-  e :Expr;
+  e: Expr;
 BEGIN
   ExpectType(l, lhs, typeInteger);
   ExpectType(l, rhs, typeInteger);
@@ -676,9 +676,9 @@ BEGIN
   RETURN e
 END NewExprSetRange;
 
-PROCEDURE NewExprUnary*(l :Lex.Lexer; op :Lex.TokenKind; lhs :Expr) :Expr;
+PROCEDURE NewExprUnary*(l: Lex.Lexer; op: Lex.TokenKind; lhs: Expr): Expr;
 VAR
-  e :Expr;
+  e: Expr;
 BEGIN
   NewExpr(e, exprUnary, lhs.typ);
   e.op := op;
@@ -714,9 +714,9 @@ BEGIN
   RETURN e
 END NewExprUnary;
 
-PROCEDURE NewExprBinary*(l :Lex.Lexer; op :Lex.TokenKind; lhs, rhs :Expr; booleanType :Type) :Expr;
+PROCEDURE NewExprBinary*(l: Lex.Lexer; op: Lex.TokenKind; lhs, rhs: Expr; booleanType: Type): Expr;
 VAR
-  e :Expr;
+  e: Expr;
 BEGIN
   NewExpr(e, exprBinary, lhs.typ);
   e.op := op;
@@ -861,7 +861,7 @@ BEGIN
   RETURN e
 END NewExprBinary;
 
-PROCEDURE ExpectArgMatch(l :Lex.Lexer; arg :INTEGER; actual :Expr; formal :Decl);
+PROCEDURE ExpectArgMatch(l: Lex.Lexer; arg: INTEGER; actual: Expr; formal: Decl);
 BEGIN
   IF IsOpenArray(formal.typ) & (actual.typ.kind = typeArray) &
      (actual.typ.base = formal.typ.base) THEN
@@ -885,9 +885,9 @@ BEGIN
   END;
 END ExpectArgMatch;
 
-PROCEDURE NewExprAssign*(l :Lex.Lexer; lValue, rValue :Expr) :Expr;
+PROCEDURE NewExprAssign*(l: Lex.Lexer; lValue, rValue: Expr): Expr;
 VAR
-  e :Expr;
+  e: Expr;
 BEGIN
   NewExpr(e, exprAssign, lValue.typ);
   IF ~lValue.assignable THEN
@@ -903,11 +903,11 @@ BEGIN
   RETURN e
 END NewExprAssign;
 
-PROCEDURE NewExprProcCall*(l :Lex.Lexer; proc, args :Expr) :Expr;
+PROCEDURE NewExprProcCall*(l: Lex.Lexer; proc, args: Expr): Expr;
 VAR
-  e, arg   :Expr;
-  i, count :INTEGER;
-  formal   :Decl;
+  e, arg:   Expr;
+  i, count: INTEGER;
+  formal:   Decl;
 BEGIN
   e := proc;
   IF proc.typ.kind = typeProcedure THEN
@@ -950,7 +950,7 @@ BEGIN
   RETURN e
 END NewExprProcCall;
 
-PROCEDURE NewStmt(VAR s :Stmt; kind :StmtKind);
+PROCEDURE NewStmt(VAR s: Stmt; kind: StmtKind);
 BEGIN
   NEW(s);
   s.kind := kind;
@@ -960,7 +960,7 @@ BEGIN
   s.next := NIL;
 END NewStmt;
 
-PROCEDURE NewStmtAssign*(e :Expr) :Stmt;
+PROCEDURE NewStmtAssign*(e: Expr): Stmt;
 VAR
   s: Stmt;
 BEGIN
@@ -970,7 +970,7 @@ BEGIN
   RETURN s
 END NewStmtAssign;
 
-PROCEDURE NewStmtProcCall*(e :Expr) :Stmt;
+PROCEDURE NewStmtProcCall*(e: Expr): Stmt;
 VAR
   s: Stmt;
 BEGIN
@@ -980,9 +980,9 @@ BEGIN
   RETURN s
 END NewStmtProcCall;
 
-PROCEDURE NewStmtIf*(cond :Expr; body :Stmt) :Stmt;
+PROCEDURE NewStmtIf*(cond: Expr; body: Stmt): Stmt;
 VAR
-  s :Stmt;
+  s: Stmt;
 BEGIN
   ASSERT(cond.typ.kind = typeBoolean);
   NewStmt(s, stmtIf);
@@ -991,9 +991,9 @@ BEGIN
   RETURN s
 END NewStmtIf;
 
-PROCEDURE NewStmtElsIf*(cond :Expr; body :Stmt) :Stmt;
+PROCEDURE NewStmtElsIf*(cond: Expr; body: Stmt): Stmt;
 VAR
-  s :Stmt;
+  s: Stmt;
 BEGIN
   ASSERT(cond.typ.kind = typeBoolean);
   NewStmt(s, stmtElsIf);
@@ -1002,18 +1002,18 @@ BEGIN
   RETURN s
 END NewStmtElsIf;
 
-PROCEDURE NewStmtElse*(body :Stmt) :Stmt;
+PROCEDURE NewStmtElse*(body: Stmt): Stmt;
 VAR
-  s :Stmt;
+  s: Stmt;
 BEGIN
   NewStmt(s, stmtElse);
   s.body := body;
   RETURN s
 END NewStmtElse;
 
-PROCEDURE NewStmtFor*(cond :Expr; body :Stmt) :Stmt;
+PROCEDURE NewStmtFor*(cond: Expr; body: Stmt): Stmt;
 VAR
-  s :Stmt;
+  s: Stmt;
 BEGIN
   ASSERT(cond.kind = exprAssign);
   ASSERT(cond.typ.kind IN {typeInteger, typeReal});
@@ -1023,9 +1023,9 @@ BEGIN
   RETURN s
 END NewStmtFor;
 
-PROCEDURE NewStmtWhile*(cond :Expr; body :Stmt) :Stmt;
+PROCEDURE NewStmtWhile*(cond: Expr; body: Stmt): Stmt;
 VAR
-  s :Stmt;
+  s: Stmt;
 BEGIN
   ASSERT(cond.typ.kind = typeBoolean);
   NewStmt(s, stmtWhile);
@@ -1034,9 +1034,9 @@ BEGIN
   RETURN s
 END NewStmtWhile;
 
-PROCEDURE NewStmtRepeat*(cond :Expr; body :Stmt) :Stmt;
+PROCEDURE NewStmtRepeat*(cond: Expr; body: Stmt): Stmt;
 VAR
-  s :Stmt;
+  s: Stmt;
 BEGIN
   ASSERT(cond.typ.kind = typeBoolean);
   NewStmt(s, stmtRepeat);
@@ -1045,9 +1045,9 @@ BEGIN
   RETURN s
 END NewStmtRepeat;
 
-PROCEDURE NewStmtCaseItem*(cond :Expr; body :Stmt) :Stmt;
+PROCEDURE NewStmtCaseItem*(cond: Expr; body: Stmt): Stmt;
 VAR
-  s :Stmt;
+  s: Stmt;
 BEGIN
   ASSERT(cond.typ.kind = typeBoolean);
   NewStmt(s, stmtCaseItem);
@@ -1056,9 +1056,9 @@ BEGIN
   RETURN s
 END NewStmtCaseItem;
 
-PROCEDURE NewStmtCase*(cond :Expr; body :Stmt) :Stmt;
+PROCEDURE NewStmtCase*(cond: Expr; body: Stmt): Stmt;
 VAR
-  s :Stmt;
+  s: Stmt;
 BEGIN
   IF body # NIL THEN
     ASSERT(body.kind = stmtCaseItem);
@@ -1069,15 +1069,15 @@ BEGIN
   RETURN s
 END NewStmtCase;
 
-PROCEDURE NewStmtEmpty*() :Stmt;
+PROCEDURE NewStmtEmpty*(): Stmt;
 VAR
-  s :Stmt;
+  s: Stmt;
 BEGIN
   NewStmt(s, stmtEmpty);
   RETURN s
 END NewStmtEmpty;
 
-PROCEDURE ValidateReturnStatement*(l :Lex.Lexer; procDecl :Decl; e :Expr) :Expr;
+PROCEDURE ValidateReturnStatement*(l: Lex.Lexer; procDecl: Decl; e: Expr): Expr;
 BEGIN
   ASSERT(procDecl.kind = declProcedure);
   ASSERT(procDecl.typ.kind = typeProcedure);

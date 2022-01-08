@@ -1,31 +1,31 @@
 MODULE Out;
 
 (* Send textual output to stdout *)
-NATIVE (-10) PROCEDURE Int*(i :INTEGER); END Int;
-NATIVE (-11) PROCEDURE Real*(r :REAL); END Real;
-NATIVE (-12) PROCEDURE Char*(c :CHAR); END Char;
-NATIVE (-13) PROCEDURE Str*(s :ARRAY OF CHAR); END Str;
-NATIVE (-14) PROCEDURE StrI*(s :ARRAY OF CHAR; offset :INTEGER); END StrI;
+NATIVE (-10) PROCEDURE Int*(i: INTEGER); END Int;
+NATIVE (-11) PROCEDURE Real*(r: REAL); END Real;
+NATIVE (-12) PROCEDURE Char*(c: CHAR); END Char;
+NATIVE (-13) PROCEDURE Str*(s: ARRAY OF CHAR); END Str;
+NATIVE (-14) PROCEDURE StrI*(s: ARRAY OF CHAR; offset: INTEGER); END StrI;
 NATIVE (-15) PROCEDURE Ln*; END Ln;
 NATIVE (-16) PROCEDURE Halt*; END Halt;
 
 (* Same as above, but sends textual output to stderr *)
-NATIVE (-17) PROCEDURE ErrInt*(i :INTEGER); END ErrInt;
-NATIVE (-18) PROCEDURE ErrReal*(r :REAL); END ErrReal;
-NATIVE (-19) PROCEDURE ErrChar*(c :CHAR); END ErrChar;
-NATIVE (-20) PROCEDURE ErrStr*(s :ARRAY OF CHAR); END ErrStr;
-NATIVE (-21) PROCEDURE ErrStrI*(s :ARRAY OF CHAR; offset :INTEGER); END ErrStrI;
+NATIVE (-17) PROCEDURE ErrInt*(i: INTEGER); END ErrInt;
+NATIVE (-18) PROCEDURE ErrReal*(r: REAL); END ErrReal;
+NATIVE (-19) PROCEDURE ErrChar*(c: CHAR); END ErrChar;
+NATIVE (-20) PROCEDURE ErrStr*(s: ARRAY OF CHAR); END ErrStr;
+NATIVE (-21) PROCEDURE ErrStrI*(s: ARRAY OF CHAR; offset: INTEGER); END ErrStrI;
 NATIVE (-22) PROCEDURE ErrLn*; END ErrLn;
 
-PROCEDURE PrintLn*(s :ARRAY OF CHAR);
+PROCEDURE PrintLn*(s: ARRAY OF CHAR);
 BEGIN
   Str(s);
   Ln
 END PrintLn;
 
-NATIVE (-23) PROCEDURE ReadFile*(fileName :ARRAY OF CHAR; buf :ARRAY OF CHAR); END ReadFile;
+NATIVE (-23) PROCEDURE ReadFile*(fileName: ARRAY OF CHAR; buf: ARRAY OF CHAR); END ReadFile;
 
 (* A highly unportable function to put the bits of a REAL into an INTEGER *)
-NATIVE (-24) PROCEDURE RealAsInt*(r :REAL) :INTEGER; BEGIN RETURN 0 END RealAsInt;
+NATIVE (-24) PROCEDURE RealAsInt*(r: REAL): INTEGER; BEGIN RETURN 0 END RealAsInt;
 
 END Out.

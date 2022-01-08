@@ -7,19 +7,19 @@ CONST
   TYPE_SIZE = 5000;
 
 VAR
-  indent          :INTEGER;
-  decls           :ARRAY DECL_SIZE OF AST.Decl;
-  types           :ARRAY TYPE_SIZE OF AST.Type;
-  lastDecl        :INTEGER;
-  lastType        :INTEGER;
-  GenDecl         :PROCEDURE (l :Lex.Lexer; e :AST.Decl);
+  indent:          INTEGER;
+  decls:           ARRAY DECL_SIZE OF AST.Decl;
+  types:           ARRAY TYPE_SIZE OF AST.Type;
+  lastDecl:        INTEGER;
+  lastType:        INTEGER;
+  GenDecl:         PROCEDURE (l: Lex.Lexer; e: AST.Decl);
 
-PROCEDURE GenStr(s :ARRAY OF CHAR);
+PROCEDURE GenStr(s: ARRAY OF CHAR);
 BEGIN
   Out.Str(s);
 END GenStr;
 
-PROCEDURE GenInt(i :INTEGER);
+PROCEDURE GenInt(i: INTEGER);
 BEGIN
   Out.Int(i);
 END GenInt;
@@ -31,12 +31,12 @@ END GenLn;
 
 PROCEDURE GenI;
 VAR
-  i :INTEGER;
+  i: INTEGER;
 BEGIN
   FOR i := 1 TO indent DO GenStr("  ") END
 END GenI;
 
-PROCEDURE GenDeclKind(kind :INTEGER);
+PROCEDURE GenDeclKind(kind: INTEGER);
 BEGIN
   IF kind = AST.declEND THEN
     GenStr("declEND");
@@ -58,7 +58,7 @@ BEGIN
   GenLn;
 END GenDeclKind;
 
-PROCEDURE GenQName(l :Lex.Lexer; name :AST.QName);
+PROCEDURE GenQName(l: Lex.Lexer; name: AST.QName);
 BEGIN
   IF name.moduleName > 0 THEN
     Lex.OutStr(l, name.moduleName);
@@ -69,11 +69,11 @@ BEGIN
   END;
 END GenQName;
 
-PROCEDURE GenType(l :Lex.Lexer; t :AST.Type);
+PROCEDURE GenType(l: Lex.Lexer; t: AST.Type);
 VAR
-  i :INTEGER;
-  found :BOOLEAN;
-  f :AST.Decl;
+  i: INTEGER;
+  found: BOOLEAN;
+  f: AST.Decl;
 BEGIN
   i := 0; found := FALSE;
   GenI;
@@ -147,7 +147,7 @@ BEGIN
   END
 END GenType;
 
-PROCEDURE GenExpr(l :Lex.Lexer; e :AST.Expr);
+PROCEDURE GenExpr(l: Lex.Lexer; e: AST.Expr);
 BEGIN
   GenI; GenStr("kind: ");
   IF (e.kind < AST.exprVal) OR (e.kind > AST.exprAssign) THEN
@@ -208,10 +208,10 @@ BEGIN
   IF e.iVal > 0 THEN GenI; GenStr("iVal: "); GenInt(e.iVal); GenLn END
 END GenExpr;
 
-PROCEDURE GenStmt(l :Lex.Lexer; s :AST.Stmt);
+PROCEDURE GenStmt(l: Lex.Lexer; s: AST.Stmt);
 VAR
-  i :INTEGER;
-  c :AST.Stmt;
+  i: INTEGER;
+  c: AST.Stmt;
 BEGIN
   i := 0; c := s;
   WHILE c # NIL DO
@@ -250,11 +250,11 @@ BEGIN
   END
 END GenStmt;
 
-PROCEDURE Generate*(l :Lex.Lexer; d :AST.Decl);
+PROCEDURE Generate*(l: Lex.Lexer; d: AST.Decl);
 VAR
-  i :INTEGER;
-  found :BOOLEAN;
-  pv :AST.Decl;
+  i: INTEGER;
+  found: BOOLEAN;
+  pv: AST.Decl;
 BEGIN
   i := 0; found := FALSE;
   GenI;

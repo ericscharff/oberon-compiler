@@ -3,24 +3,24 @@ MODULE CCodegen;
 IMPORT AST, Lex, Out, DumpDecl;
 
 VAR
-  indent          :INTEGER;
-  innerProcCount  :INTEGER;
-  addBoundsChecks :BOOLEAN;
-  genCPlusPlus    :BOOLEAN;
-  dumpDecls       :BOOLEAN;
-  GenExpr         :PROCEDURE (l :Lex.Lexer; e :AST.Expr);
+  indent:          INTEGER;
+  innerProcCount:  INTEGER;
+  addBoundsChecks: BOOLEAN;
+  genCPlusPlus:    BOOLEAN;
+  dumpDecls:       BOOLEAN;
+  GenExpr:         PROCEDURE (l: Lex.Lexer; e: AST.Expr);
 
-PROCEDURE GenStr(s :ARRAY OF CHAR);
+PROCEDURE GenStr(s: ARRAY OF CHAR);
 BEGIN
   Out.Str(s);
 END GenStr;
 
-PROCEDURE GenInt(i :INTEGER);
+PROCEDURE GenInt(i: INTEGER);
 BEGIN
   Out.Int(i);
 END GenInt;
 
-PROCEDURE GenReal(r :REAL);
+PROCEDURE GenReal(r: REAL);
 BEGIN
   Out.Real(r);
 END GenReal;
@@ -32,14 +32,14 @@ END GenLn;
 
 PROCEDURE GenI;
 VAR
-  i :INTEGER;
+  i: INTEGER;
 BEGIN
   FOR i := 1 TO indent DO GenStr("  ") END
 END GenI;
 
 PROCEDURE GenTypeinfos*;
 VAR
-  i :INTEGER;
+  i: INTEGER;
 BEGIN
   GenStr("typedef int oberon_typeid;"); GenLn;
   GenStr("oberon_typeid oberon_typeinfos[] = {");
@@ -51,7 +51,7 @@ BEGIN
   GenStr("#include "); GenStr(22X); GenStr("runtime.c"); GenStr(22X); GenLn;
 END GenTypeinfos;
 
-PROCEDURE GenQName(l :Lex.Lexer; name :AST.QName);
+PROCEDURE GenQName(l: Lex.Lexer; name: AST.QName);
 BEGIN
   IF name.moduleName > 0 THEN
     Lex.OutStr(l, name.moduleName);
@@ -62,11 +62,11 @@ BEGIN
   END;
 END GenQName;
 
-PROCEDURE GenType(l :Lex.Lexer; t :AST.Type; name :AST.QName; skipDecl, procDecl :BOOLEAN);
+PROCEDURE GenType(l: Lex.Lexer; t: AST.Type; name: AST.QName; skipDecl, procDecl: BOOLEAN);
 VAR
-  f, pf :AST.Decl;
-  q     :AST.QName;
-  p     :AST.Type;
+  f, pf: AST.Decl;
+  q:     AST.QName;
+  p:     AST.Type;
 BEGIN
   q.moduleName := 0;
   q.name := 0;
@@ -278,9 +278,9 @@ BEGIN
   END;
 END GenType;
 
-PROCEDURE GenChar(i :INTEGER);
+PROCEDURE GenChar(i: INTEGER);
 VAR
-  c2 :ARRAY 2 OF CHAR;
+  c2: ARRAY 2 OF CHAR;
 BEGIN
   (* apostrophe, backslash, or non-printable *)
   IF (i = 39) OR (i = 92) OR (i < 32) OR (i > 126) THEN
@@ -294,7 +294,7 @@ BEGIN
   END;
 END GenChar;
 
-PROCEDURE GenVal(l :Lex.Lexer; e :AST.Expr);
+PROCEDURE GenVal(l: Lex.Lexer; e: AST.Expr);
 BEGIN
   ASSERT(e.typ # NIL);
   IF e.typ.kind = AST.typeNil THEN
@@ -314,9 +314,9 @@ BEGIN
   END;
 END GenVal;
 
-PROCEDURE GenLengthof(l :Lex.Lexer; e :AST.Expr);
+PROCEDURE GenLengthof(l: Lex.Lexer; e: AST.Expr);
 VAR
-  q :AST.QName;
+  q: AST.QName;
 BEGIN
   q.moduleName := 0;
   IF e.typ.kind = AST.typeString THEN
@@ -334,7 +334,7 @@ BEGIN
   END;
 END GenLengthof;
 
-PROCEDURE GenUnaryExpr(l :Lex.Lexer; e :AST.Expr);
+PROCEDURE GenUnaryExpr(l: Lex.Lexer; e: AST.Expr);
 BEGIN
   IF e.lhs.typ.kind = AST.typeSet THEN
     (* Set ops *)
@@ -354,7 +354,7 @@ BEGIN
   END;
 END GenUnaryExpr;
 
-PROCEDURE GenBinaryExpr(l :Lex.Lexer; e :AST.Expr);
+PROCEDURE GenBinaryExpr(l: Lex.Lexer; e: AST.Expr);
 BEGIN
   GenStr("(");
   IF e.lhs.typ.kind IN {AST.typeArray, AST.typeString} THEN
@@ -461,9 +461,9 @@ Lex.tLT, Lex.tGT, Lex.tLTEQ, Lex.tGTEQ, Lex.tIN, Lex.tIS, Lex.tDOTDOT:
   GenStr(")");
 END GenBinaryExpr;
 
-PROCEDURE GenIdentRefExpr(l :Lex.Lexer; e :AST.Expr);
+PROCEDURE GenIdentRefExpr(l: Lex.Lexer; e: AST.Expr);
 VAR
-  q :AST.QName;
+  q: AST.QName;
 BEGIN
   IF (e.decl.kind = AST.declProcedure) OR
      ((e.decl.kind = AST.declVar) & (e.decl.nesting = 0)) THEN
@@ -483,9 +483,9 @@ BEGIN
   END;
 END GenIdentRefExpr;
 
-PROCEDURE GenProcCallExpr(l :Lex.Lexer; e :AST.Expr);
+PROCEDURE GenProcCallExpr(l: Lex.Lexer; e: AST.Expr);
 VAR
-  formal :AST.Decl;
+  formal: AST.Decl;
 BEGIN
   GenExpr(l, e.lhs);
   GenStr("(");
@@ -523,21 +523,21 @@ BEGIN
   GenStr(")");
 END GenProcCallExpr;
 
-PROCEDURE GenFieldRefExpr(l :Lex.Lexer; e :AST.Expr);
+PROCEDURE GenFieldRefExpr(l: Lex.Lexer; e: AST.Expr);
 BEGIN
   GenExpr(l, e.lhs);
   GenStr(".");
   Lex.OutStr(l, e.iVal);
 END GenFieldRefExpr;
 
-PROCEDURE GenPointerDerefExpr(l :Lex.Lexer; e :AST.Expr);
+PROCEDURE GenPointerDerefExpr(l: Lex.Lexer; e: AST.Expr);
 BEGIN
   GenStr("(*");
   GenExpr(l, e.lhs);
   GenStr(")");
 END GenPointerDerefExpr;
 
-PROCEDURE GenBufferRefExpr(l :Lex.Lexer; e :AST.Expr);
+PROCEDURE GenBufferRefExpr(l: Lex.Lexer; e: AST.Expr);
 BEGIN
   GenExpr(l, e.lhs);
   GenStr(".buf[");
@@ -553,7 +553,7 @@ BEGIN
   GenStr("]");
 END GenBufferRefExpr;
 
-PROCEDURE GenArrayRefExpr(l :Lex.Lexer; e :AST.Expr);
+PROCEDURE GenArrayRefExpr(l: Lex.Lexer; e: AST.Expr);
 BEGIN
   GenExpr(l, e.lhs);
   GenStr("[");
@@ -569,9 +569,9 @@ BEGIN
   GenStr("]");
 END GenArrayRefExpr;
 
-PROCEDURE GenTypeGuardExpr(l :Lex.Lexer; e :AST.Expr);
+PROCEDURE GenTypeGuardExpr(l: Lex.Lexer; e: AST.Expr);
 VAR
-  q :AST.QName;
+  q: AST.QName;
 BEGIN
   IF e.lhs.typ.kind = AST.typePointer THEN
     GenStr("dynamic_cast<");
@@ -593,9 +593,9 @@ BEGIN
   END;
 END GenTypeGuardExpr;
 
-PROCEDURE GenBuiltinExpr(l :Lex.Lexer; e :AST.Expr);
+PROCEDURE GenBuiltinExpr(l: Lex.Lexer; e: AST.Expr);
 VAR
-  q :AST.QName;
+  q: AST.QName;
 BEGIN
   q.moduleName := 0;
   q.name := 0;
@@ -665,7 +665,7 @@ BEGIN
   END;
 END GenBuiltinExpr;
 
-PROCEDURE GenAssignExpr(l :Lex.Lexer; e :AST.Expr);
+PROCEDURE GenAssignExpr(l: Lex.Lexer; e: AST.Expr);
 BEGIN
   IF e.lhs.typ.kind = AST.typeArray THEN
     ASSERT(e.lhs.typ.base.kind = AST.typeChar);
@@ -683,7 +683,7 @@ BEGIN
   END;
 END GenAssignExpr;
 
-PROCEDURE GenExpr0(l :Lex.Lexer; e :AST.Expr);
+PROCEDURE GenExpr0(l: Lex.Lexer; e: AST.Expr);
 BEGIN
   ASSERT(e # NIL);
   ASSERT(e.kind >= AST.exprVal);
@@ -704,7 +704,7 @@ BEGIN
   END;
 END GenExpr0;
 
-PROCEDURE GenParenExpr(l :Lex.Lexer; e :AST.Expr);
+PROCEDURE GenParenExpr(l: Lex.Lexer; e: AST.Expr);
 BEGIN
   IF e.kind = AST.exprBinary THEN
     GenExpr(l, e);
@@ -715,18 +715,18 @@ BEGIN
   END;
 END GenParenExpr;
 
-PROCEDURE ForForwards(e :AST.Expr) :BOOLEAN;
+PROCEDURE ForForwards(e: AST.Expr): BOOLEAN;
 BEGIN
   RETURN (e = NIL) OR
          ((e.typ.kind = AST.typeInteger) & (e.iVal > 0)) OR
          ((e.typ.kind = AST.typeReal) & (e.rVal > 0.0))
 END ForForwards;
 
-PROCEDURE GenStatements(l :Lex.Lexer; s :AST.Stmt);
+PROCEDURE GenStatements(l: Lex.Lexer; s: AST.Stmt);
 VAR
-  e              :AST.Expr;
-  fromVal, toVal :INTEGER;
-  useChar        :BOOLEAN;
+  e:              AST.Expr;
+  fromVal, toVal: INTEGER;
+  useChar:        BOOLEAN;
 BEGIN
   WHILE s # NIL DO
     ASSERT(s.kind >= AST.stmtAssign);
@@ -889,7 +889,7 @@ BEGIN
   END;
 END GenStatements;
 
-PROCEDURE GenTypedef(l :Lex.Lexer; d :AST.Decl);
+PROCEDURE GenTypedef(l: Lex.Lexer; d: AST.Decl);
 BEGIN
   IF d.typ.kind # AST.typeNil THEN
     GenI;
@@ -900,23 +900,23 @@ BEGIN
   END;
 END GenTypedef;
 
-PROCEDURE GenVar(l :Lex.Lexer; d :AST.Decl);
+PROCEDURE GenVar(l: Lex.Lexer; d: AST.Decl);
 BEGIN
   GenType(l, d.typ, d.qname, FALSE, FALSE);
   GenStr(";");
   GenLn;
 END GenVar;
 
-PROCEDURE RenameInnerProc(d :AST.Decl);
+PROCEDURE RenameInnerProc(d: AST.Decl);
 BEGIN
   d.qname.name := d.qname.name + innerProcCount;
   INC(innerProcCount)
 END RenameInnerProc;
 
-PROCEDURE GenProc(l :Lex.Lexer; d :AST.Decl);
+PROCEDURE GenProc(l: Lex.Lexer; d: AST.Decl);
 VAR
-  p :AST.Decl;
-  q :AST.QName;
+  p: AST.Decl;
+  q: AST.QName;
 BEGIN
   q.moduleName := 0;
   GenType(l, d.typ, d.qname, FALSE, TRUE);
@@ -985,7 +985,7 @@ BEGIN
   GenLn;
 END GenProc;
 
-PROCEDURE Generate*(l :Lex.Lexer; d :AST.Decl);
+PROCEDURE Generate*(l: Lex.Lexer; d: AST.Decl);
 BEGIN
   IF d.nesting = 0 THEN
     IF dumpDecls THEN
@@ -1011,7 +1011,7 @@ BEGIN
   GenI; GenStr("InitArgs(argc, argv);"); GenLn;
 END GenStartMain;
 
-PROCEDURE GenCall*(l :Lex.Lexer; name :AST.QName);
+PROCEDURE GenCall*(l: Lex.Lexer; name: AST.QName);
 BEGIN
   GenI;
   GenQName(l, name);

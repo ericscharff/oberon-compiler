@@ -4,11 +4,11 @@ IMPORT Args, AST, RCodegen, Decls, Lex, Parse;
 
 PROCEDURE CompileFile;
 VAR
-  fileName :ARRAY 256 OF CHAR;
-  l        :Lex.Lexer;
-  p        :Decls.ReachableDecl;
-  i        :INTEGER;
-  gotFile  :BOOLEAN;
+  fileName: ARRAY 256 OF CHAR;
+  l:        Lex.Lexer;
+  p:        Decls.ReachableDecl;
+  i:        INTEGER;
+  gotFile:  BOOLEAN;
 BEGIN
   (* Parse command line args *)
   i := 1;
