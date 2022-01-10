@@ -28,3 +28,6 @@ $(BUILDDIR)/oberon0: $(BOOTSTRAP_SRCS) $(COMPILER_SRCS)
 
 clean:
 	rm -rf build
+
+test: $(BUILDDIR)/oberonr
+	cd tests && ./run-tests.sh
