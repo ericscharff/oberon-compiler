@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# This can be run from the top-level makefile as "make test"
+
 set -e
 
 TESTS=(

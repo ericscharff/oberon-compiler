@@ -31,3 +31,6 @@ clean:
 
 test: $(BUILDDIR)/oberonr
 	cd tests && ./run-tests.sh
+
+compiler-test: $(BUILDDIR)/oberonr
+	cd tests && ./compiler-test.sh
