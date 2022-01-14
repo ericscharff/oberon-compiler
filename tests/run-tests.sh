@@ -44,6 +44,10 @@ RISC_TESTS=(
   StrTest
 )
 
+# Some RISC tests need more than the default 65536 words of RAM
+declare -A RISC_MEMSIZE
+RISC_MEMSIZE[TestCompiler]=262144
+
 CPP_TESTS=(
   OopTest
   RecCopy
@@ -69,8 +73,8 @@ for i in ${TESTS[@]}; do
 done
 for i in ${RISC_TESTS[@]}; do
   echo "Running RISC test $i..."
-  if [ $i == "TestCompiler" ]; then
-    MEM_SIZE=262144 ../build/rcompile ${i}.ob
+  if [ -v RISC_MEMSIZE[$i] ]; then
+    MEM_SIZE=${RISC_MEMSIZE[$i]} ../build/rcompile ${i}.ob
   else
     ../build/rcompile ${i}.ob
   fi
