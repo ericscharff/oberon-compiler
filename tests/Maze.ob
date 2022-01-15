@@ -62,19 +62,19 @@ BEGIN
 END Rand;
 
 (* Shuffle the elements of an array *)
-PROCEDURE Shuffle(VAR array: ARRAY OF INTEGER);
+PROCEDURE Shuffle(VAR arr: ARRAY OF INTEGER);
 VAR
   i:    INTEGER;
   swap: INTEGER;
   t:    INTEGER;
   len:  INTEGER;
 BEGIN
-  len := LEN(array);
+  len := LEN(arr);
   FOR i := 0 TO len-1 DO
     swap := Rand(len);
-     t := array[i];
-     array[i] := array[swap];
-     array[swap] := t;
+     t := arr[i];
+     arr[i] := arr[swap];
+     arr[swap] := t;
   END;
 END Shuffle;
 
