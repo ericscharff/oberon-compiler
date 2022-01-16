@@ -126,7 +126,7 @@ TYPE
 VAR
   TokenNames*: ARRAY tEOF+1, KwdSize OF CHAR;
   fatal: BOOLEAN;
-  ignoreKeywordCase: BOOLEAN;
+  ignoreKeywordCase*: BOOLEAN;
 
 PROCEDURE PoolInit*(VAR sp: StringPool);
 VAR

@@ -8,6 +8,7 @@ TESTS=(
   ArrayTest
   CaseTest
   FibFact
+  FibFact2
   PtrTest
   RealNumbers
   Mandelbrot
@@ -29,6 +30,7 @@ RISC_TESTS=(
   ArrayTest
   CaseTest
   FibFact
+  FibFact2
   PtrTest
   RealNumbers
   Mandelbrot
