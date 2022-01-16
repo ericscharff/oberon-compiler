@@ -9,6 +9,9 @@ in lower case.  Note, however, that identifiers are still case sensitive, so
 Is valid code. This can be controlled by the ignoreKeywordCase global variable
 in Lex.ob.
 
+When enabled, the builin types and identifiers "nil", "integer", "real",
+"boolean", "char", and "set" are also allowed,
+
 Native record fields.
 
 A record field may be marked with the NATIVE keyword, e.g.
