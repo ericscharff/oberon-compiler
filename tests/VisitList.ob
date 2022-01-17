@@ -1,0 +1,57 @@
+MODULE VisitTest;
+
+TYPE
+  List = POINTER TO Cell;
+  Cell = RECORD
+           val: INTEGER;
+           prev: List;
+         END;
+  VisitorState = RECORD END;
+  ListVisitor = PROCEDURE(VAR state: VisitorState; val: INTEGER);
+
+PROCEDURE AddVal(VAR cell: List; val: INTEGER);
+VAR
+  c :List;
+BEGIN
+  NEW(c);
+  c.val := val;
+  c.prev := cell;
+  cell := c;
+END AddVal;
+
+PROCEDURE VisitAll(VAR c: List; v: ListVisitor; VAR s: VisitorState);
+BEGIN
+  WHILE c # NIL DO
+    v(s, c.val);
+    c := c.prev;
+  END
+END VisitAll;
+
+PROCEDURE VisitTest;
+  TYPE
+    TestState = RECORD (VisitorState)  sum: INTEGER END;
+  VAR
+    c: List;
+    s: TestState;
+  PROCEDURE V(VAR state: VisitorState; val: INTEGER);
+  BEGIN
+    state(TestState).sum := state(TestState).sum + val
+  END V;
+
+BEGIN
+  c := NIL;
+  s.sum := 0;
+  AddVal(c, 101);
+  AddVal(c, 201);
+  AddVal(c, 301);
+  AddVal(c, 401);
+  AddVal(c, 501);
+  AddVal(c, 601);
+  VisitAll(c, V, s);
+  WriteInt(s.sum);
+  WriteLn
+END VisitTest;
+
+BEGIN
+  VisitTest
+END VisitTest.

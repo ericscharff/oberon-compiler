@@ -930,6 +930,9 @@ BEGIN
         (* defined at top level. Ensure they are distinct.               *)
         RenameInnerProc(p);
         GenProc(l, p);
+      ELSIF p.kind = AST.declType THEN
+        GenTypedef(l, p);
+        GenLn
       END;
       p := p.next;
     END;
@@ -957,9 +960,6 @@ BEGIN
         GenType(l, p.typ, q, FALSE, FALSE);
         GenStr(";");
         GenLn;
-      ELSIF p.kind = AST.declType THEN
-        GenTypedef(l, p);
-        GenLn
       ELSIF AST.IsOpenArray(p.typ) THEN
         (* Generate code to avoid unused variable warnings *)
         GenI;

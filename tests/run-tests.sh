@@ -55,6 +55,7 @@ CPP_TESTS=(
   RecCopy
   TestBed
   TypeExt
+  VisitList
 )
 
 # Generate stdin for IOTest
