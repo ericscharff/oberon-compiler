@@ -1,4 +1,4 @@
-module FibFact;
+module FibFact2;
 (* Same as FibFact.ob but with lower case identifiers. *)
 
 import Out;
@@ -77,4 +77,4 @@ end RunTests;
 
 begin
   RunTests
-end FibFact.
+end FibFact2.
