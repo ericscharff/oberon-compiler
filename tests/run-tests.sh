@@ -44,6 +44,7 @@ RISC_TESTS=(
   Shadow
   ShortCircuit
   StrTest
+  VisitList
 )
 
 # Some RISC tests need more than the default 65536 words of RAM
