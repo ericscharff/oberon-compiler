@@ -1200,7 +1200,6 @@ END GenAssign;
 PROCEDURE GenFieldRef(l: Lex.Lexer; e: AST.Expr; VAR item: Item;
                       VAR parentTrueChain, parentFalseChain: INTEGER);
 BEGIN
-  CalculateSize(e.lhs.typ);
   GenExpr(l, e.lhs, item, parentTrueChain, parentFalseChain);
   ASSERT(item.kind IN {itemVar, itemRegI});
   ASSERT(e.decl.offset >= 0);
@@ -1538,6 +1537,8 @@ END GenBuiltin;
 PROCEDURE GenTypeGuard(l: Lex.Lexer; e: AST.Expr; VAR item: Item;
                        VAR parentTrueChain, parentFalseChain: INTEGER);
 BEGIN
+  CalculateSize(e.lhs.typ);
+  CalculateSize(e.decl.typ);
   (* TODO: assert type guard of pointer and VAR param *)
   GenExpr(l, e.lhs, item, parentTrueChain, parentFalseChain)
 END GenTypeGuard;
