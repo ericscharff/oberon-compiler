@@ -273,7 +273,7 @@ BEGIN
     GenLn;
     GenI;
     INC(lastDecl);
-    (* New decl, so diplay it *)
+    (* New decl, so display it *)
     GenStr("kind: ");
     GenDeclKind(d.kind);
     IF d.offset >= 0 THEN
