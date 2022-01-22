@@ -185,24 +185,32 @@ BEGIN
           GenStr(" {");
           GenLn;
           INC(indent);
+          IF t.base # NIL THEN
+            GenI;
+            GenQName(l, t.base.decl.qname);
+            GenStr(" _base;");
+            GenLn
+          END;
           IF AST.NeedsTypeInfo(t) THEN
-            Lex.ErrorLn(l, "C++ required when using IS or typeguard");
+(*            Lex.ErrorLn(l, "C++ required when using IS or typeguard"); *) 
           END;
           f := t.fields;
           WHILE (f # NIL) & (f.kind # AST.declEND) DO
-            (* Drop package from field name *)
-            q.name := f.qname.name;
-            GenI;
-            IF f.isNative THEN
-              (* Special opaque native type - RecordName_Native *)
-              GenQName(l, t.decl.qname);
-              GenStr("_Native ");
-              GenQName(l, q);
-            ELSE
-              GenType(l, f.typ, q, FALSE, FALSE);
+            IF f.nesting = 0 THEN
+              (* Drop package from field name *)
+              q.name := f.qname.name;
+              GenI;
+              IF f.isNative THEN
+                (* Special opaque native type - RecordName_Native *)
+                GenQName(l, t.decl.qname);
+                GenStr("_Native ");
+                GenQName(l, q);
+              ELSE
+                GenType(l, f.typ, q, FALSE, FALSE);
+              END;
+              GenStr(";");
+              GenLn;
             END;
-            GenStr(";");
-            GenLn;
             f := f.next;
           END;
           DEC(indent);
@@ -498,6 +506,17 @@ BEGIN
     ELSIF (e.typ.kind = AST.typeRecord) OR
           (formal.kind = AST.declVarParam) THEN
       (* Record (and VAR parameters) are always passed by reference *)
+      IF (e.typ # formal.typ) & ~genCPlusPlus THEN
+        (* The formal parameter extends the actual parameter, so it is safe *)
+        (* to cast the actual to the formal parameter, since the first      *)
+        (* first of the actual parameter is the structure expected by the   *)
+        (* formal parameter. This cast is not strictly necessary, but       *)
+        (* avoids compiler  warnings. In C++, this case isn't necessary     *)
+        (* becasue assigning a subtype to a supertype is permitted.         *)
+        GenStr("(");
+        GenQName(l, formal.typ.decl.qname);
+        GenStr("*)");
+      END;
       GenStr("&(");
       GenExpr(l, e);
       GenStr(")");
@@ -524,8 +543,17 @@ BEGIN
 END GenProcCallExpr;
 
 PROCEDURE GenFieldRefExpr(l: Lex.Lexer; e: AST.Expr);
+VAR
+  i: INTEGER;
 BEGIN
   GenExpr(l, e.lhs);
+  i := e.decl.nesting;
+  IF ~genCPlusPlus THEN
+    WHILE i > 0 DO
+      GenStr("._base");
+      DEC(i)
+    END;
+  END;
   GenStr(".");
   Lex.OutStr(l, e.iVal);
 END GenFieldRefExpr;
@@ -666,6 +694,8 @@ BEGIN
 END GenBuiltinExpr;
 
 PROCEDURE GenAssignExpr(l: Lex.Lexer; e: AST.Expr);
+VAR
+  t :AST.Type;
 BEGIN
   IF e.lhs.typ.kind = AST.typeArray THEN
     ASSERT(e.lhs.typ.base.kind = AST.typeChar);
@@ -676,6 +706,18 @@ BEGIN
     GenStr(", ");
     GenLengthof(l, e.lhs);
     GenStr(")");
+  ELSIF ~genCPlusPlus &
+        (e.lhs.typ.kind = AST.typeRecord) &
+        (e.rhs.typ.kind = AST.typeRecord) &
+        (e.lhs.typ # e.rhs.typ) THEN
+    GenExpr(l, e.lhs);
+    GenStr(" = ");
+    GenExpr(l, e.rhs);
+    t := e.rhs.typ;
+    WHILE t # e.lhs.typ DO
+      GenStr("._base");
+      t := t.base;
+    END;
   ELSE
     GenExpr(l, e.lhs);
     GenStr(" = ");

@@ -273,6 +273,7 @@ BEGIN
         dCopy.kind := d.kind;
         dCopy.typ := d.typ;
         dCopy.exported := d.exported;
+        dCopy.nesting := d.nesting + 1;
         d := d.next;
       END;
     ELSE
