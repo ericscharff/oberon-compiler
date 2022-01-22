@@ -32,6 +32,7 @@ RISC_TESTS=(
   FibFact
   FibFact2
   PtrTest
+  RecCopy
   RealNumbers
   Mandelbrot
   IOTest
