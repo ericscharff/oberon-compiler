@@ -192,7 +192,7 @@ BEGIN
             GenLn
           END;
           IF AST.NeedsTypeInfo(t) THEN
-(*            Lex.ErrorLn(l, "C++ required when using IS or typeguard"); *) 
+            Lex.ErrorLn(l, "C++ required when using IS or typeguard");
           END;
           f := t.fields;
           WHILE (f # NIL) & (f.kind # AST.declEND) DO
