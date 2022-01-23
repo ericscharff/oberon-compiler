@@ -64,9 +64,9 @@ END GenQName;
 
 PROCEDURE GenType(l: Lex.Lexer; t: AST.Type; name: AST.QName; skipDecl, procDecl: BOOLEAN);
 VAR
-  f, pf: AST.Decl;
-  q:     AST.QName;
-  p:     AST.Type;
+  f: AST.Decl;
+  q: AST.QName;
+  p: AST.Type;
 BEGIN
   q.moduleName := 0;
   q.name := 0;
@@ -120,48 +120,43 @@ BEGIN
         GenI; GenStr("} ");
         GenQName(l, name);
     | AST.typeRecord:
-        IF genCPlusPlus THEN
-          GenStr("struct ");
-          GenQName(l, name);
-          IF t.base # NIL THEN
-            ASSERT(t.base.decl # NIL);
-            GenStr(": public ");
-            GenQName(l, t.base.decl.qname);
-          END;
+        GenStr("struct ");
+        GenQName(l, name);
+        IF t.base = NIL THEN
           GenStr(" {");
           GenLn;
           INC(indent);
-          IF AST.NeedsTypeInfo(t) THEN
-            (* constructor sets typeid *)
+          IF genCPlusPlus THEN
             GenI;
+            GenStr("virtual ~");
             GenQName(l, name);
-            GenStr("() { _tid = ");
-            GenInt(t.typeId); GenStr("; }");
+            GenStr("() {}");
             GenLn;
-            (* virtual destructor to get RTTI *)
-            IF t.base = NIL THEN
-              GenI; GenStr("oberon_typeid _tid;"); GenLn;
-              GenI;
-              GenStr("virtual ~");
-              GenQName(l, name);
-              GenStr("() = default;");
-              GenLn;
-            END;
           END;
-          f := t.fields;
-          (* Drop fields common to parent *)
-          IF t.base = NIL THEN
-            pf := NIL;
+        ELSE
+          ASSERT(t.base.decl # NIL);
+          IF genCPlusPlus THEN
+            GenStr(": public ");
+            GenQName(l, t.base.decl.qname);
+            GenStr(" {");
+            GenLn;
+            INC(indent)
           ELSE
-            pf := t.base.decl.typ.fields;
-          END;
-          WHILE (f # NIL) & (f.kind # AST.declEND) &
-                (pf # NIL) & (pf.kind # AST.declEND) &
-                (f.qname.name = pf.qname.name) DO
-            f := f.next;
-            pf := pf.next;
-          END;
-          WHILE (f # NIL) & (f.kind # AST.declEND) DO
+            GenStr(" {");
+            GenLn;
+            INC(indent);
+            GenI;
+            GenQName(l, t.base.decl.qname);
+            GenStr(" _base;");
+            GenLn
+          END
+        END;
+        IF AST.NeedsTypeInfo(t) & ~genCPlusPlus THEN
+          Lex.ErrorLn(l, "C++ required when using IS or typeguard");
+        END;
+        f := t.fields;
+        WHILE (f # NIL) & (f.kind # AST.declEND) DO
+          IF f.nesting = 0 THEN
             (* Drop package from field name *)
             q.name := f.qname.name;
             GenI;
@@ -175,47 +170,11 @@ BEGIN
             END;
             GenStr(";");
             GenLn;
-            f := f.next;
           END;
-          DEC(indent);
-          GenI; GenStr("} "); GenQName(l, name);
-        ELSE
-          GenStr("struct ");
-          GenQName(l, name);
-          GenStr(" {");
-          GenLn;
-          INC(indent);
-          IF t.base # NIL THEN
-            GenI;
-            GenQName(l, t.base.decl.qname);
-            GenStr(" _base;");
-            GenLn
-          END;
-          IF AST.NeedsTypeInfo(t) THEN
-            Lex.ErrorLn(l, "C++ required when using IS or typeguard");
-          END;
-          f := t.fields;
-          WHILE (f # NIL) & (f.kind # AST.declEND) DO
-            IF f.nesting = 0 THEN
-              (* Drop package from field name *)
-              q.name := f.qname.name;
-              GenI;
-              IF f.isNative THEN
-                (* Special opaque native type - RecordName_Native *)
-                GenQName(l, t.decl.qname);
-                GenStr("_Native ");
-                GenQName(l, q);
-              ELSE
-                GenType(l, f.typ, q, FALSE, FALSE);
-              END;
-              GenStr(";");
-              GenLn;
-            END;
-            f := f.next;
-          END;
-          DEC(indent);
-          GenI; GenStr("} "); GenQName(l, name);
+          f := f.next;
         END;
+        DEC(indent);
+        GenI; GenStr("} "); GenQName(l, name);
     | AST.typeProcedure:
         IF t.base.kind = AST.typeNil THEN
           GenStr("void ")
@@ -446,20 +405,19 @@ Lex.tLT, Lex.tGT, Lex.tLTEQ, Lex.tGTEQ, Lex.tIN, Lex.tIS, Lex.tDOTDOT:
         GenStr(") & ");
         GenExpr(l, e.rhs);
     | Lex.tIS:
-        GenStr("does_type_extend(");
+        GenStr("dynamic_cast<");
         IF e.lhs.typ.kind = AST.typePointer THEN
           ASSERT(e.rhs.typ.kind = AST.typePointer);
-          GenExpr(l, e.lhs);
-          GenStr("->_tid, ");
-          GenInt(e.rhs.typ.base.typeId);
+          GenQName(l, e.rhs.typ.decl.qname);
+          GenStr(">((");
         ELSE
           ASSERT(e.lhs.typ.kind = AST.typeRecord);
           ASSERT(e.rhs.typ.kind = AST.typeRecord);
-          GenExpr(l, e.lhs);
-          GenStr("._tid, ");
-          GenInt(e.rhs.typ.typeId);
+          GenQName(l, e.rhs.typ.decl.qname);
+          GenStr("*>(&(");
         END;
-        GenStr(")");
+        GenExpr(l, e.lhs);
+        GenStr(")) != nullptr");
     | Lex.tDOTDOT:
         GenStr("make_set_range(");
         GenExpr(l, e.lhs); GenStr(", "); GenExpr(l, e.rhs);
