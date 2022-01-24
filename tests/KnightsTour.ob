@@ -13,8 +13,8 @@ MODULE KnightsTour;
   For example, the second entry is 1 over and 2 down.
 *)
 CONST
-  W = 8;
-  H = 8;
+  W = 6; (* Change to 8 for a real chessboard, but slower *)
+  H = 6; (* Change to 8 for a real chessboard, but slower *)
 
 TYPE
   Point = RECORD x, y: INTEGER END;
