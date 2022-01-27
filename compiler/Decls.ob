@@ -134,6 +134,7 @@ BEGIN
   t.base := NIL;
   t.fields := NIL;
   t.length := 0;
+  t.nesting := 0;
   t.needTypeInfo := FALSE;
   t.decl := NIL;
   t.reachable := FALSE;
@@ -263,6 +264,7 @@ BEGIN
     AST.SetRecordToParent(t.typeId, 0);
   ELSE
     AST.SetRecordToParent(t.typeId, base.typeId);
+    t.nesting := base.nesting + 1;
   END;
   IF base # NIL THEN
     IF base.kind = AST.typeRecord THEN
