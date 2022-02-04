@@ -43,7 +43,7 @@ PROCEDURE ExpectToken(kind: Lex.TokenKind);
 BEGIN
   IF IsToken(kind) THEN
     Lex.NextToken(l);
-  ELSE
+  ELSIF kind # Lex.tSEMI THEN
     Lex.Error(l, "Expected ");
     Lex.Str(Lex.TokenNames[kind]);
     Lex.Str(", got ");
@@ -473,7 +473,7 @@ BEGIN
   endExpr := endExpr.rhs;
   byExpr := NIL;
   IF MatchToken(Lex.tBY) THEN
-    byExpr := AST.NewExprAssign(l, startExpr.lhs, ParseExpression());;
+    byExpr := AST.NewExprAssign(l, startExpr.lhs, ParseExpression());
     byExpr := byExpr.rhs;
   END;
   startExpr.next := endExpr;
@@ -553,10 +553,11 @@ VAR
 BEGIN
   head := ParseStatement();
   tail := head;
-  WHILE MatchToken(Lex.tSEMI) DO
-    tail.next := ParseStatement();
-    tail := tail.next;
-  END;
+  REPEAT
+     MatchToken(Lex.tSEMI);
+     tail.next := ParseStatement();
+     tail := tail.next;
+  UNTIL tail.kind = AST.stmtEmpty;
   RETURN head
 END ParseStatementSequence0;
 
@@ -730,7 +731,8 @@ BEGIN
     IF IsToken(Lex.tVAR) OR IsToken(Lex.tIDENT) THEN
       ParseFPSection(t);
     END;
-    WHILE MatchToken(Lex.tSEMI) DO
+    WHILE ~IsToken(Lex.tRPAREN) DO
+      MatchToken(Lex.tSEMI);
       ParseFPSection(t);
     END;
     ExpectToken(Lex.tRPAREN);

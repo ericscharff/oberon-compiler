@@ -1,0 +1,80 @@
+module FibFact2
+(* Same as FibFact.ob but with lower case identifiers. *)
+
+import Out
+
+const
+  Seven = 7
+
+procedure FactIter*(n: integer): integer
+var
+  i, r: integer
+begin
+  i := 1
+  r := 1
+  while i <= n do
+    r := r * i
+    INC(i)
+  end
+  return r
+end FactIter
+
+procedure FactRec*(n: integer): integer
+var r: integer
+begin
+  if n <= 1 then
+    r := 1
+  else
+    r := n * FactRec(n-1)
+  end
+  return r
+end FactRec
+
+procedure FibIter*(n: integer): integer
+var
+  prev, newPrev, fib: integer
+begin
+  prev := 1
+  fib := 1
+  while n > 1 do
+    newPrev := fib
+    fib := fib + prev
+    prev := newPrev
+    DEC(n)
+  end
+  return fib
+end FibIter
+
+procedure FibRec*(n: integer): integer
+var r: integer
+begin
+  if n < 2 then
+    r := 1
+  else
+    r := FibRec(n-1) + FibRec(n-2)
+  end
+  return r
+end FibRec
+
+procedure TestFib
+var
+  n: integer
+begin
+  n := 7
+  ASSERT(FactRec(n) = FactIter(n))
+  ASSERT(FactIter(Seven) = FactIter(n))
+  ASSERT(FactIter(7) = 5040)
+  Out.Int(FactRec(n)) Out.Ln
+  ASSERT(FibIter(20) = FibRec(20))
+  ASSERT(FibRec(20) = 10946)
+  Out.Int(FibIter(20)) Out.Ln
+end TestFib
+
+procedure RunTests*
+begin
+  TestFib
+end RunTests
+
+begin
+  RunTests
+end FibFact2.
