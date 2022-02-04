@@ -586,33 +586,33 @@ BEGIN
     IF (ch >= "A") & (ch <= "F") OR (ch >= "a") & (ch <= "f") THEN
       needHorX := TRUE;
     END;
-    Next(l, ch);;
+    Next(l, ch);
   END;
   (* Got letters and hex digits. Could be hex, char, or floating point *)
   IF (ch = "X") OR (ch = "x") THEN
     l.t.kind := tSTRING;
     base := 16;
     needHorX := FALSE;
-    Next(l, ch);;
+    Next(l, ch);
   ELSIF (ch = "H") OR (ch = "h") THEN
     base := 16;
     needHorX := FALSE;
-    Next(l, ch);;
+    Next(l, ch);
   ELSIF (ch = ".") & (l.buf[l.pos+1] # ".") THEN
     (* Special case - 10..20 is 10 TOKEN_DOTDOT 20 *)
-    Next(l, ch);;
+    Next(l, ch);
     (* mantissa *)
     WHILE (ch >= "0") & (ch <= "9") DO
-      Next(l, ch);;
+      Next(l, ch);
     END;
     IF (ch = "e") OR (ch = "E") THEN
-      Next(l, ch);;
+      Next(l, ch);
     END;
     IF ch = "-" THEN
-      Next(l, ch);;
+      Next(l, ch);
     END;
     WHILE (ch >= "0") & (ch <= "9") DO
-      Next(l, ch);;
+      Next(l, ch);
     END;
     l.t.kind := tREAL;
   ELSIF needHorX THEN
