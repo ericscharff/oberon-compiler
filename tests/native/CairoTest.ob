@@ -1,0 +1,16 @@
+MODULE CairoTest;
+
+IMPORT Cairo;
+
+VAR
+  c: Cairo.Context;
+
+BEGIN
+  Cairo.InitContext(c, 240, 80);
+  Cairo.MoveTo(c, 10.0, 10.0);
+  Cairo.LineTo(c, 150.0, 15.0);
+  Cairo.LineTo(c, 75.0, 60.0);
+  Cairo.Stroke(c);
+  Cairo.WriteToPNG(c, "hello.png");
+  Cairo.DestroyContext(c);
+END CairoTest.
