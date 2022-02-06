@@ -1,5 +1,5 @@
 out.prg: out.c runtime.c
-	$(CC) $(shell pkg-config --cflags --libs cairo) -o out.prg out.c
+	$(CC) -o out.prg out.c $(shell pkg-config --cflags --libs cairo)
 
 runtime.c: ../../compiler/runtime.c cairo.c
 	cat ../../compiler/runtime.c cairo.c > runtime.c
