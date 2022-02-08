@@ -9,4 +9,4 @@ out.c: Cairo.ob CairoTest.ob
 	../build/oberon CairoTest.ob > out.c
 
 clean:
-	rm -f runtime.c out.c out.prg *.png
+	rm -f runtime.c out.c out.prg

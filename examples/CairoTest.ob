@@ -26,6 +26,6 @@ BEGIN
     Cairo.LineTo(c, FLT((Y_STEPS - i) * X_PIXELS_PER_STEP), FLT(CANVAS_HEIGHT));
   END;
   Cairo.Stroke(c);
-  Cairo.WriteToPNG(c, "hello.png");
+  Cairo.WriteToPNG(c, "cairo_test.png");
   Cairo.DestroyContext(c);
 END CairoTest.
