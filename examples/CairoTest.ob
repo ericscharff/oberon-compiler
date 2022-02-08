@@ -2,14 +2,29 @@ MODULE CairoTest;
 
 IMPORT Cairo;
 
+CONST
+  CanvasWidth = 640;
+  CanvasHeight = 480;
+  YSteps = CanvasHeight / 15;
+  XPixelsPerStep = CanvasWidth / YSteps;
+  YPixelsPerStep = CanvasHeight / YSteps;
+
 VAR
   c: Cairo.Context;
+  i, j: INTEGER;
 
 BEGIN
-  Cairo.InitContext(c, 240, 80);
-  Cairo.MoveTo(c, 10.0, 10.0);
-  Cairo.LineTo(c, 150.0, 15.0);
-  Cairo.LineTo(c, 75.0, 60.0);
+  Cairo.InitContext(c, CanvasWidth, CanvasHeight);
+  FOR i := 0 TO YSteps DO
+    Cairo.MoveTo(c, 0.0, FLT(i * YPixelsPerStep));
+    Cairo.LineTo(c, FLT((YSteps - i) * XPixelsPerStep), 0.0);
+    Cairo.MoveTo(c, FLT(CanvasWidth), FLT(i * YPixelsPerStep));
+    Cairo.LineTo(c, FLT(i * XPixelsPerStep), 0.0);
+    Cairo.MoveTo(c, 0.0, FLT(i * YPixelsPerStep));
+    Cairo.LineTo(c, FLT(i * XPixelsPerStep), FLT(CanvasHeight));
+    Cairo.MoveTo(c, FLT(CanvasWidth), FLT(i * YPixelsPerStep));
+    Cairo.LineTo(c, FLT((YSteps - i) * XPixelsPerStep), FLT(CanvasHeight));
+  END;
   Cairo.Stroke(c);
   Cairo.WriteToPNG(c, "hello.png");
   Cairo.DestroyContext(c);
