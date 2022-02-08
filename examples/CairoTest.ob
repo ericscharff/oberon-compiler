@@ -3,27 +3,27 @@ MODULE CairoTest;
 IMPORT Cairo;
 
 CONST
-  CanvasWidth = 640;
-  CanvasHeight = 480;
-  YSteps = CanvasHeight / 15;
-  XPixelsPerStep = CanvasWidth / YSteps;
-  YPixelsPerStep = CanvasHeight / YSteps;
+  CANVAS_WIDTH = 640;
+  CANVAS_HEIGHT = 480;
+  Y_STEPS = CANVAS_HEIGHT / 15;
+  X_PIXELS_PER_STEP = CANVAS_WIDTH / Y_STEPS;
+  Y_PIXELS_PER_STEP = CANVAS_HEIGHT / Y_STEPS;
 
 VAR
   c: Cairo.Context;
   i, j: INTEGER;
 
 BEGIN
-  Cairo.InitContext(c, CanvasWidth, CanvasHeight);
-  FOR i := 0 TO YSteps DO
-    Cairo.MoveTo(c, 0.0, FLT(i * YPixelsPerStep));
-    Cairo.LineTo(c, FLT((YSteps - i) * XPixelsPerStep), 0.0);
-    Cairo.MoveTo(c, FLT(CanvasWidth), FLT(i * YPixelsPerStep));
-    Cairo.LineTo(c, FLT(i * XPixelsPerStep), 0.0);
-    Cairo.MoveTo(c, 0.0, FLT(i * YPixelsPerStep));
-    Cairo.LineTo(c, FLT(i * XPixelsPerStep), FLT(CanvasHeight));
-    Cairo.MoveTo(c, FLT(CanvasWidth), FLT(i * YPixelsPerStep));
-    Cairo.LineTo(c, FLT((YSteps - i) * XPixelsPerStep), FLT(CanvasHeight));
+  Cairo.InitContext(c, CANVAS_WIDTH, CANVAS_HEIGHT);
+  FOR i := 0 TO Y_STEPS DO
+    Cairo.MoveTo(c, 0.0, FLT(i * Y_PIXELS_PER_STEP));
+    Cairo.LineTo(c, FLT((Y_STEPS - i) * X_PIXELS_PER_STEP), 0.0);
+    Cairo.MoveTo(c, FLT(CANVAS_WIDTH), FLT(i * Y_PIXELS_PER_STEP));
+    Cairo.LineTo(c, FLT(i * X_PIXELS_PER_STEP), 0.0);
+    Cairo.MoveTo(c, 0.0, FLT(i * Y_PIXELS_PER_STEP));
+    Cairo.LineTo(c, FLT(i * X_PIXELS_PER_STEP), FLT(CANVAS_HEIGHT));
+    Cairo.MoveTo(c, FLT(CANVAS_WIDTH), FLT(i * Y_PIXELS_PER_STEP));
+    Cairo.LineTo(c, FLT((Y_STEPS - i) * X_PIXELS_PER_STEP), FLT(CANVAS_HEIGHT));
   END;
   Cairo.Stroke(c);
   Cairo.WriteToPNG(c, "hello.png");
