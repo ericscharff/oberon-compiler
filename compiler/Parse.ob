@@ -473,7 +473,7 @@ BEGIN
   endExpr := endExpr.rhs;
   byExpr := NIL;
   IF MatchToken(Lex.tBY) THEN
-    byExpr := AST.NewExprAssign(l, startExpr.lhs, ParseExpression());;
+    byExpr := AST.NewExprAssign(l, startExpr.lhs, ParseExpression());
     byExpr := byExpr.rhs;
   END;
   startExpr.next := endExpr;
