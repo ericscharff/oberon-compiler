@@ -211,7 +211,7 @@ BEGIN
                 q.name := f.qname.name;
                 GenQName(l, q);
               END;
-            ELSIF (t.kind = AST.typeRecord) OR AST.IsOpenArray(t) THEN
+            ELSIF AST.IsOpenArray(t) THEN
               q.name := 0;
               GenType(l, t.base, q, FALSE, FALSE);
               GenStr(" *");
