@@ -72,6 +72,11 @@ BEGIN
   a.a := s.s;
 END BaseTypes;
 
+PROCEDURE BaseTypes1(VAR a, b, c, d: R1; s: S1);
+BEGIN
+  BaseTypes(a, b, c, d, s)
+END BaseTypes1;
+
 PROCEDURE TypeExtTest;
 VAR
   vr1: R1;
@@ -84,7 +89,7 @@ VAR
   pvr3: PR3;
   pvr4: PR4;
 BEGIN
-  BaseTypes(vr1, vr2, vr3, vr4, s1);
+  BaseTypes1(vr1, vr2, vr3, vr4, s1);
   NEW(pvr1); NEW(pvr2); NEW(pvr3); NEW(pvr4);
   BasePtrTypes(pvr1, pvr2, pvr3, pvr4);
 END TypeExtTest;

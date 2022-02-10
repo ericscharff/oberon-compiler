@@ -37,16 +37,38 @@ BEGIN
   FOR i := 1 TO indent DO GenStr("  ") END
 END GenI;
 
+PROCEDURE GenTypeinfoEntry(tid, count: INTEGER): INTEGER;
+BEGIN
+  IF AST.recordToParent[tid] # 0 THEN
+    count := GenTypeinfoEntry(AST.recordToParent[tid], count + 1);
+    GenInt(AST.recordToParent[tid]); GenStr(", ");
+  END
+  RETURN count
+END GenTypeinfoEntry;
+
 PROCEDURE GenTypeinfos*;
 VAR
-  i: INTEGER;
+  i, c: INTEGER;
 BEGIN
-  GenStr("typedef int oberon_typeid;"); GenLn;
-  GenStr("oberon_typeid oberon_typeinfos[] = {");
+  GenStr("typedef int oberon_typeid;"); GenLn; (* No longer used *)
+  GenStr("oberon_typeid oberon_typeinfos[1];"); GenLn; (* No longer used *)
+  GenStr("typedef struct oberon_typedesc { int parent[6]; } oberon_typedesc;");
+  GenLn;
+  GenStr("oberon_typedesc oberon_typedescs[] = {"); GenLn;
+  INC(indent);
   FOR i := 0 TO AST.nextTypeId DO
-    GenInt(AST.recordToParent[i]);
+    GenI; GenStr("{ {");
+    c := GenTypeinfoEntry(i, 0);
+    GenInt(i);
     GenStr(", ");
+    WHILE c < 5 DO
+      GenStr("-1, ");
+      INC(c)
+    END;
+    GenStr("} },");
+    GenLn;
   END;
+  DEC(indent);
   GenStr("};"); GenLn;
   GenStr("#include "); GenStr(22X); GenStr("runtime.c"); GenStr(22X); GenLn;
 END GenTypeinfos;
@@ -151,9 +173,6 @@ BEGIN
             GenLn
           END
         END;
-        IF AST.NeedsTypeInfo(t) & ~genCPlusPlus THEN
-          Lex.ErrorLn(l, "C++ required when using IS or typeguard");
-        END;
         f := t.fields;
         WHILE (f # NIL) & (f.kind # AST.declEND) DO
           IF f.nesting = 0 THEN
@@ -210,6 +229,14 @@ BEGIN
               IF procDecl THEN
                 q.name := f.qname.name;
                 GenQName(l, q);
+              END;
+              IF AST.NeedsTypeInfo(t) THEN
+                GenStr(", oberon_typeid ");
+                IF procDecl THEN
+                  q.name := f.qname.name;
+                  GenQName(l, q);
+                  GenStr("__typeid");
+                END;
               END;
             ELSIF AST.IsOpenArray(t) THEN
               q.name := 0;
@@ -300,6 +327,23 @@ BEGIN
     GenStr("__len");
   END;
 END GenLengthof;
+
+PROCEDURE GenTypeId(l: Lex.Lexer; e: AST.Expr);
+VAR
+  q: AST.QName;
+BEGIN
+  IF e.decl.kind = AST.declVar THEN
+    GenInt(e.typ.typeId);
+    (* Statically allocated records have a type id *)
+  ELSE
+    ASSERT((e.decl.kind = AST.declVarParam) OR (e.decl.kind = AST.declParam));
+    (* Parameters already have a __typeid parameter that came along with them *)
+    q.moduleName := 0;
+    q.name := e.decl.qname.name;
+    GenQName(l, q);
+    GenStr("__typeid");
+  END;
+END GenTypeId;
 
 PROCEDURE GenUnaryExpr(l: Lex.Lexer; e: AST.Expr);
 BEGIN
@@ -405,19 +449,31 @@ Lex.tLT, Lex.tGT, Lex.tLTEQ, Lex.tGTEQ, Lex.tIN, Lex.tIS, Lex.tDOTDOT:
         GenStr(") & ");
         GenExpr(l, e.rhs);
     | Lex.tIS:
-        GenStr("dynamic_cast<");
         IF e.lhs.typ.kind = AST.typePointer THEN
-          ASSERT(e.rhs.typ.kind = AST.typePointer);
-          GenQName(l, e.rhs.typ.decl.qname);
-          GenStr(">((");
+          IF e.lhs.typ.base.typeId = e.rhs.typ.base.typeId THEN
+            GenStr("1");
+          ELSE
+            GenStr("oberon_typedescs[*(((oberon_typeid*)");
+            GenExpr(l, e.lhs);
+            GenStr(")-1)].parent[");
+            GenInt(e.rhs.typ.base.nesting);
+            GenStr("] == ");
+            GenInt(e.rhs.typ.base.typeId);
+          END;
         ELSE
           ASSERT(e.lhs.typ.kind = AST.typeRecord);
           ASSERT(e.rhs.typ.kind = AST.typeRecord);
-          GenQName(l, e.rhs.typ.decl.qname);
-          GenStr("*>(&(");
+          IF e.lhs.typ.typeId = e.rhs.typ.typeId THEN
+            GenStr("1");
+          ELSE
+            GenStr("oberon_typedescs[");
+            GenTypeId(l, e.lhs);
+            GenStr("].parent[");
+            GenInt(e.rhs.typ.nesting);
+            GenStr("] == ");
+            GenInt(e.rhs.typ.typeId);
+          END;
         END;
-        GenExpr(l, e.lhs);
-        GenStr(")) != nullptr");
     | Lex.tDOTDOT:
         GenStr("make_set_range(");
         GenExpr(l, e.lhs); GenStr(", "); GenExpr(l, e.rhs);
@@ -431,6 +487,7 @@ PROCEDURE GenIdentRefExpr(l: Lex.Lexer; e: AST.Expr);
 VAR
   q: AST.QName;
 BEGIN
+  ASSERT(e.kind = AST.exprIdentRef);
   IF (e.decl.kind = AST.declProcedure) OR
      ((e.decl.kind = AST.declVar) & (e.decl.nesting = 0)) THEN
     q.moduleName := e.decl.qname.moduleName;
@@ -490,6 +547,10 @@ BEGIN
     IF AST.IsOpenArray(formal.typ) THEN
       GenStr(", ");
       GenLengthof(l, e);
+    END;
+    IF (e.typ.kind = AST.typeRecord) & AST.NeedsTypeInfo(formal.typ) THEN
+      GenStr(", ");
+      GenTypeId(l, e);
     END;
     IF e.next # NIL THEN
       GenStr(", ");
@@ -625,14 +686,41 @@ BEGIN
       GenStr(")");
   | AST.builtinLen: GenLengthof(l, e.rhs)
   | AST.builtinNew:
-      GenExpr(l, e.rhs);
-      IF genCPlusPlus THEN
-        GenStr(" = new ");
-        GenQName(l, e.rhs.typ.base.decl.qname);
+      IF AST.NeedsTypeInfo(e.rhs.typ) THEN
+        (* The pointer to a type that needs a typeinfo is at least 4 bytes  *)
+        (* larger than needed. The 4 bytes before the pointer then get used *)
+        (* to store the typeid (dynamic type) of the thing pointed to.      *)
+        GenExpr(l, e.rhs);
+        IF genCPlusPlus THEN
+          GenStr(" = new ");
+          GenQName(l, e.rhs.typ.base.decl.qname);
+          GenStr("[2]");
+        ELSE
+          GenStr(" = malloc(2*sizeof(");
+          GenQName(l, e.rhs.typ.base.decl.qname);
+          GenStr("))");
+        END;
+        GenStr(";");
+        GenLn;
+        GenI;
+        GenExpr(l, e.rhs);
+        GenStr("++;");
+        GenLn;
+        GenI;
+        GenStr("*(((oberon_typeid*)");
+        GenExpr(l, e.rhs);
+        GenStr(")-1) = ");
+        GenInt(e.rhs.typ.base.typeId);
       ELSE
-        GenStr(" = malloc(sizeof(");
-        GenQName(l, e.rhs.typ.base.decl.qname);
-        GenStr("))");
+        GenExpr(l, e.rhs);
+        IF genCPlusPlus THEN
+          GenStr(" = new ");
+          GenQName(l, e.rhs.typ.base.decl.qname);
+        ELSE
+          GenStr(" = malloc(sizeof(");
+          GenQName(l, e.rhs.typ.base.decl.qname);
+          GenStr("))");
+        END;
       END;
   | AST.builtinReadInt:
     GenStr("scanf("); GenStr(22X); GenStr("%d"); GenStr(22X); GenStr(", &(");
@@ -959,6 +1047,15 @@ BEGIN
         GenI;
         GenType(l, p.typ, q, FALSE, FALSE);
         GenStr(";");
+        GenLn;
+      ELSIF AST.NeedsTypeInfo(p.typ) &
+            (p.typ.kind = AST.typeRecord) &
+            ((p.kind = AST.declVarParam) OR (p.kind = AST.declParam)) THEN
+        (* Generate code to avoid unused variable warnings *)
+        GenI;
+        GenStr("(void)");
+        GenQName(l, q);
+        GenStr("__typeid;");
         GenLn;
       ELSIF AST.IsOpenArray(p.typ) THEN
         (* Generate code to avoid unused variable warnings *)

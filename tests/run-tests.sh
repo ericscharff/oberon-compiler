@@ -25,6 +25,7 @@ TESTS=(
   Shadow
   ShortCircuit
   StrTest
+  TypeExt
 )
 
 RISC_TESTS=(
