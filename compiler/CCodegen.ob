@@ -536,7 +536,7 @@ BEGIN
       IF (e.typ # formal.typ) & ~genCPlusPlus THEN
         (* The formal parameter extends the actual parameter, so it is safe *)
         (* to cast the actual to the formal parameter, since the first      *)
-        (* first of the actual parameter is the structure expected by the   *)
+        (* field of the actual parameter is the structure expected by the   *)
         (* formal parameter. This cast is not strictly necessary, but       *)
         (* avoids compiler  warnings. In C++, this case isn't necessary     *)
         (* becasue assigning a subtype to a supertype is permitted.         *)
@@ -552,6 +552,22 @@ BEGIN
       (* Convert buffer to an open array *)
       GenExpr(l, e);
       GenStr(".buf");
+    ELSIF e.typ.kind = AST.typePointer THEN
+      IF (e.typ # formal.typ) & ~genCPlusPlus THEN
+        (* The formal parameter extends the actual parameter, so it is safe *)
+        (* to cast the actual to the formal parameter, since the first      *)
+        (* field of the actual parameter is the structure expected by the   *)
+        (* formal parameter. This cast is not strictly necessary, but       *)
+        (* avoids compiler  warnings. In C++, this case isn't necessary     *)
+        (* becasue assigning a subtype to a supertype is permitted.         *)
+        GenStr("((");
+        GenQName(l, formal.typ.decl.qname);
+        GenStr(")");
+        GenExpr(l, e);
+        GenStr(")");
+      ELSE
+        GenExpr(l, e);
+      END;
     ELSE
       (* Everything else is passed by value.                        *)
       GenExpr(l, e);
