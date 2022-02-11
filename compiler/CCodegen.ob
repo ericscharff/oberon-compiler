@@ -365,6 +365,42 @@ BEGIN
   END;
 END GenUnaryExpr;
 
+PROCEDURE GenTypeTest(l: Lex.Lexer; e: AST.Expr);
+VAR
+  q: AST.QName;
+BEGIN
+  IF e.lhs.typ.kind = AST.typePointer THEN
+    GenExpr(l, e.lhs);
+    IF e.lhs.typ.base.typeId = e.rhs.typ.base.typeId THEN
+      GenStr(" && 1");
+    ELSE
+      GenStr(" && oberon_typedescs[*(((oberon_typeid*)");
+      GenExpr(l, e.lhs);
+      GenStr(")-1)].parent[");
+      GenInt(e.rhs.typ.base.nesting);
+      GenStr("] == ");
+      GenInt(e.rhs.typ.base.typeId);
+    END;
+  ELSE
+    ASSERT(e.lhs.typ.kind = AST.typeRecord);
+    ASSERT(e.rhs.typ.kind = AST.typeRecord);
+    ASSERT((e.lhs.decl.kind = AST.declVarParam) OR (e.lhs.decl.kind = AST.declParam));
+    q.moduleName := 0;
+    q.name := e.lhs.decl.qname.name;
+    GenQName(l, q);
+    IF e.lhs.typ.typeId = e.rhs.typ.typeId THEN
+      GenStr(" && 1");
+    ELSE
+      GenStr(" && oberon_typedescs[");
+      GenTypeId(l, e.lhs);
+      GenStr("].parent[");
+      GenInt(e.rhs.typ.nesting);
+      GenStr("] == ");
+      GenInt(e.rhs.typ.typeId);
+    END;
+  END;
+END GenTypeTest;
+
 PROCEDURE GenBinaryExpr(l: Lex.Lexer; e: AST.Expr);
 BEGIN
   GenStr("(");
@@ -449,31 +485,7 @@ Lex.tLT, Lex.tGT, Lex.tLTEQ, Lex.tGTEQ, Lex.tIN, Lex.tIS, Lex.tDOTDOT:
         GenStr(") & ");
         GenExpr(l, e.rhs);
     | Lex.tIS:
-        IF e.lhs.typ.kind = AST.typePointer THEN
-          IF e.lhs.typ.base.typeId = e.rhs.typ.base.typeId THEN
-            GenStr("1");
-          ELSE
-            GenStr("oberon_typedescs[*(((oberon_typeid*)");
-            GenExpr(l, e.lhs);
-            GenStr(")-1)].parent[");
-            GenInt(e.rhs.typ.base.nesting);
-            GenStr("] == ");
-            GenInt(e.rhs.typ.base.typeId);
-          END;
-        ELSE
-          ASSERT(e.lhs.typ.kind = AST.typeRecord);
-          ASSERT(e.rhs.typ.kind = AST.typeRecord);
-          IF e.lhs.typ.typeId = e.rhs.typ.typeId THEN
-            GenStr("1");
-          ELSE
-            GenStr("oberon_typedescs[");
-            GenTypeId(l, e.lhs);
-            GenStr("].parent[");
-            GenInt(e.rhs.typ.nesting);
-            GenStr("] == ");
-            GenInt(e.rhs.typ.typeId);
-          END;
-        END;
+        GenTypeTest(l, e);
     | Lex.tDOTDOT:
         GenStr("make_set_range(");
         GenExpr(l, e.lhs); GenStr(", "); GenExpr(l, e.rhs);

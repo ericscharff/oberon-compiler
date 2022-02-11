@@ -48,11 +48,7 @@ BEGIN
 END BasePtrTypes;
 
 PROCEDURE BaseTypes(VAR a, b, c, d: R1; s: S1);
-VAR
-  sum: INTEGER;
 BEGIN
-  sum := a.a + b.a + c.a + d.a;
-  Out.Int(sum); Out.Ln;
   Out.PrintLn("R1");
   tf(a IS R1);
   tf(a IS R2);
@@ -93,7 +89,6 @@ VAR
   pvr3: PR3;
   pvr4: PR4;
 BEGIN
-  vr1.a := 10; vr2.a := 10; vr3.a := 10; vr4.a := 10;
   BaseTypes1(vr1, vr2, vr3, vr4, s1);
   NEW(pvr1); NEW(pvr2); NEW(pvr3); NEW(pvr4);
   BasePtrTypes(pvr1, pvr2, pvr3, pvr4);
