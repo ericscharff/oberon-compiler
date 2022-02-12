@@ -817,6 +817,18 @@ BEGIN
       GenStr("._base");
       t := t.base;
     END;
+  ELSIF ~genCPlusPlus &
+        (e.lhs.typ.kind = AST.typePointer) &
+        (e.lhs.typ # e.rhs.typ) THEN
+    (* The compiler has already ensured that it is safe to cast one pointer *)
+    (* to another (downcasting), so simply place the cast here.             *)
+    GenExpr(l, e.lhs);
+    GenStr(" = ");
+    GenStr("((");
+    GenQName(l, e.lhs.typ.decl.qname);
+    GenStr(")");
+    GenExpr(l, e.rhs);
+    GenStr(")");
   ELSE
     GenExpr(l, e.lhs);
     GenStr(" = ");

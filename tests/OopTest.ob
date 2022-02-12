@@ -3,7 +3,7 @@ MODULE OopTest;
 IMPORT Out;
 
 TYPE
-  Message = RECORD END;
+  Message = RECORD dummy: INTEGER END;
 
   DrawMessage = RECORD (Message) END;
   TickMessage = RECORD (Message) END;

@@ -6,7 +6,7 @@ TYPE
            val: INTEGER;
            prev: List;
          END;
-  VisitorState = RECORD END;
+  VisitorState = RECORD dummy: INTEGER END;
   ListVisitor = PROCEDURE(VAR state: VisitorState; val: INTEGER);
 
 PROCEDURE AddVal(VAR cell: List; val: INTEGER);
