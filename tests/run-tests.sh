@@ -26,6 +26,8 @@ TESTS=(
   ShortCircuit
   StrTest
   TypeExt
+  OopTest
+  VisitList
 )
 
 RISC_TESTS=(
@@ -91,7 +93,7 @@ for i in ${RISC_TESTS[@]}; do
   diff -c goldens/$i.output ../build/$i.output || fail $i
 done
 for i in ${CPP_TESTS[@]}; do
-  echo "Running test $i..."
+  echo "Running C++ test $i..."
   ../build/compile -cpp ${i}.ob
   pushd ../build > /dev/null
   ../build/out.prg < ../build/stdin.txt > ../build/$i.output

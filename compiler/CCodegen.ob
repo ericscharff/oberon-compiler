@@ -365,38 +365,38 @@ BEGIN
   END;
 END GenUnaryExpr;
 
-PROCEDURE GenTypeTest(l: Lex.Lexer; e: AST.Expr);
+PROCEDURE GenTypeTest(l: Lex.Lexer; base: AST.Expr; t: AST.Type);
 VAR
   q: AST.QName;
 BEGIN
-  IF e.lhs.typ.kind = AST.typePointer THEN
-    GenExpr(l, e.lhs);
-    IF e.lhs.typ.base.typeId = e.rhs.typ.base.typeId THEN
+  IF base.typ.kind = AST.typePointer THEN
+    GenExpr(l, base);
+    IF base.typ.base.typeId = t.base.typeId THEN
       GenStr(" && 1");
     ELSE
       GenStr(" && oberon_typedescs[*(((oberon_typeid*)");
-      GenExpr(l, e.lhs);
+      GenExpr(l, base);
       GenStr(")-1)].parent[");
-      GenInt(e.rhs.typ.base.nesting);
+      GenInt(t.base.nesting);
       GenStr("] == ");
-      GenInt(e.rhs.typ.base.typeId);
+      GenInt(t.base.typeId);
     END;
   ELSE
-    ASSERT(e.lhs.typ.kind = AST.typeRecord);
-    ASSERT(e.rhs.typ.kind = AST.typeRecord);
-    ASSERT((e.lhs.decl.kind = AST.declVarParam) OR (e.lhs.decl.kind = AST.declParam));
+    ASSERT(base.typ.kind = AST.typeRecord);
+    ASSERT(t.kind = AST.typeRecord);
+    ASSERT((base.decl.kind = AST.declVarParam) OR (base.decl.kind = AST.declParam));
     q.moduleName := 0;
-    q.name := e.lhs.decl.qname.name;
+    q.name := base.decl.qname.name;
     GenQName(l, q);
-    IF e.lhs.typ.typeId = e.rhs.typ.typeId THEN
+    IF base.typ.typeId = t.typeId THEN
       GenStr(" && 1");
     ELSE
       GenStr(" && oberon_typedescs[");
-      GenTypeId(l, e.lhs);
+      GenTypeId(l, base);
       GenStr("].parent[");
-      GenInt(e.rhs.typ.nesting);
+      GenInt(t.nesting);
       GenStr("] == ");
-      GenInt(e.rhs.typ.typeId);
+      GenInt(t.typeId);
     END;
   END;
 END GenTypeTest;
@@ -485,7 +485,7 @@ Lex.tLT, Lex.tGT, Lex.tLTEQ, Lex.tGTEQ, Lex.tIN, Lex.tIS, Lex.tDOTDOT:
         GenStr(") & ");
         GenExpr(l, e.rhs);
     | Lex.tIS:
-        GenTypeTest(l, e);
+        GenTypeTest(l, e.lhs, e.rhs.typ);
     | Lex.tDOTDOT:
         GenStr("make_set_range(");
         GenExpr(l, e.lhs); GenStr(", "); GenExpr(l, e.rhs);
@@ -648,23 +648,48 @@ PROCEDURE GenTypeGuardExpr(l: Lex.Lexer; e: AST.Expr);
 VAR
   q: AST.QName;
 BEGIN
-  IF e.lhs.typ.kind = AST.typePointer THEN
-    GenStr("dynamic_cast<");
-    GenQName(l, e.decl.qname);
-    GenStr(">(");
-    GenExpr(l, e.lhs);
-    GenStr(")");
+  IF genCPlusPlus THEN
+    IF e.lhs.typ.kind = AST.typePointer THEN
+      GenStr("dynamic_cast<");
+      GenQName(l, e.decl.qname);
+      GenStr(">(");
+      GenExpr(l, e.lhs);
+      GenStr(")");
+    ELSE
+      ASSERT(e.lhs.typ.kind = AST.typeRecord);
+      ASSERT(e.lhs.kind = AST.exprIdentRef);
+      ASSERT(e.lhs.decl.kind = AST.declVarParam);
+      GenStr("(*dynamic_cast<");
+      GenQName(l, e.decl.qname);
+      GenStr("*>(");
+      q.moduleName := 0;
+      q.name := e.lhs.decl.qname.name;
+      GenQName(l, q);
+      GenStr("))");
+    END;
   ELSE
-    ASSERT(e.lhs.typ.kind = AST.typeRecord);
-    ASSERT(e.lhs.kind = AST.exprIdentRef);
-    ASSERT(e.lhs.decl.kind = AST.declVarParam);
-    GenStr("(*dynamic_cast<");
-    GenQName(l, e.decl.qname);
-    GenStr("*>(");
-    q.moduleName := 0;
-    q.name := e.lhs.decl.qname.name;
-    GenQName(l, q);
-    GenStr("))");
+    IF e.lhs.typ.kind = AST.typePointer THEN
+      GenStr("(assert(");
+      GenTypeTest(l, e.lhs, e.typ);
+      GenStr("), ((");
+      GenQName(l, e.decl.qname);
+      GenStr(")(");
+      GenExpr(l, e.lhs);
+      GenStr(")))");
+    ELSE
+      ASSERT(e.lhs.typ.kind = AST.typeRecord);
+      ASSERT(e.lhs.kind = AST.exprIdentRef);
+      ASSERT(e.lhs.decl.kind = AST.declVarParam);
+      GenStr("(*(assert(");
+      GenTypeTest(l, e.lhs, e.typ);
+      GenStr("), ((");
+      GenQName(l, e.decl.qname);
+      GenStr("*)");
+      q.moduleName := 0;
+      q.name := e.lhs.decl.qname.name;
+      GenQName(l, q);
+      GenStr(")))");
+    END;
   END;
 END GenTypeGuardExpr;
 
