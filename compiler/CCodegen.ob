@@ -588,7 +588,11 @@ BEGIN
     END;
     IF (e.typ.kind = AST.typeRecord) & AST.NeedsTypeInfo(formal.typ) THEN
       GenStr(", ");
-      GenTypeId(l, e);
+      IF e.kind = AST.exprPointerDeref THEN
+        GenInt(e.typ.typeId);
+      ELSE
+        GenTypeId(l, e)
+      END
     END;
     IF e.next # NIL THEN
       GenStr(", ");

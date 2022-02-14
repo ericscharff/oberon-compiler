@@ -1,0 +1,163 @@
+MODULE OopTest;
+
+(*
+ * This is a variant of OopTest that doesn't use pointers.
+ * It is an example of dynamic dispatch without needing dynamic memory allocation.
+ *)
+IMPORT Out;
+
+TYPE
+  Message = RECORD END;
+
+  DrawMessage = RECORD (Message) END;
+  TickMessage = RECORD (Message) END;
+
+  Object0 = RECORD END;
+  Handler = PROCEDURE (VAR obj: Object0; VAR msg: Message);
+  Object = RECORD (Object0) handler: PROCEDURE (VAR obj: Object0; VAR msg: Message) END;
+
+  Shape = RECORD (Object) END;
+  Square = RECORD (Shape) sideLen: INTEGER END;
+  Circle = RECORD (Shape) radius: REAL END;
+  Triangle = RECORD (Shape) base, height: INTEGER END;
+
+  Actor = RECORD (Object) position, velocity: INTEGER END;
+  ActorPtr = POINTER TO Actor;
+
+
+PROCEDURE ObjectHandler(VAR obj: Object0; VAR msg: Message);
+BEGIN
+  ASSERT(obj IS Object);
+  ASSERT(msg IS Message);
+  Out.PrintLn("Unhandled Message");
+END ObjectHandler;
+
+PROCEDURE ActorHandler(VAR obj: Object0; VAR msg: Message);
+BEGIN
+  IF msg IS DrawMessage THEN
+    Out.Str("Drawing actor at position ");
+    Out.Int(obj(Actor).position);
+    Out.Ln;
+  ELSIF msg IS TickMessage THEN
+    obj(Actor).position := obj(Actor).position + obj(Actor).velocity
+  ELSE
+    ObjectHandler(obj, msg)
+  END
+END ActorHandler;
+
+PROCEDURE NewActor(p, v: INTEGER; VAR a: Actor);
+BEGIN
+  a.position := p;
+  a.velocity := v;
+  a.handler := ActorHandler;
+END NewActor;
+
+PROCEDURE SquareHandler(VAR obj: Object0; VAR msg: Message);
+BEGIN
+  IF msg IS DrawMessage THEN
+    Out.Str("Drawing square OF size ");
+    Out.Int(obj(Square).sideLen);
+    Out.Ln;
+  ELSE
+    ObjectHandler(obj, msg);
+  END;
+END SquareHandler;
+
+PROCEDURE NewSquare(sideLen: INTEGER; VAR s: Square);
+BEGIN
+  s.sideLen := sideLen;
+  s.handler := SquareHandler;
+END NewSquare;
+
+PROCEDURE CircleHandler(VAR obj: Object0; VAR msg: Message);
+BEGIN
+  IF msg IS DrawMessage THEN
+    Out.Str("Drawing circle OF radius ");
+    Out.Real(obj(Circle).radius);
+    Out.Ln;
+  ELSE
+    ObjectHandler(obj, msg);
+  END;
+END CircleHandler;
+
+PROCEDURE NewCircle(r: REAL; VAR c: Circle);
+BEGIN
+  c.radius := r;
+  c.handler := CircleHandler;
+END NewCircle;
+
+PROCEDURE TriangleHandler(VAR obj: Object0; VAR msg: Message);
+VAR
+  t: Triangle;
+BEGIN
+  t := obj(Triangle);
+  IF msg IS DrawMessage THEN
+    Out.Str("Drawing triangle WITH base ");
+    Out.Int(t.base);
+    Out.Str(" and height ");
+    Out.Int(t.height);
+    Out.Ln;
+  ELSE
+    ObjectHandler(obj, msg);
+  END;
+END TriangleHandler;
+
+PROCEDURE NewTriangle(b, h: INTEGER; VAR t: Triangle);
+BEGIN
+  t.base := b;
+  t.height := h;
+  t.handler := TriangleHandler;
+END NewTriangle;
+
+PROCEDURE SendMessage(VAR m: Message; VAR o: Object);
+BEGIN
+  o.handler(o, m)
+END SendMessage;
+
+PROCEDURE Driver;
+VAR
+  dm: DrawMessage;
+  tm: TickMessage;
+  ss: Square;
+  cc: Circle;
+  tt: Triangle;
+  aa: Actor;
+  ap: ActorPtr;
+BEGIN
+  NewSquare(25, ss);
+  SendMessage(dm, ss);
+  SendMessage(tm, ss);
+  SendMessage(dm, ss);
+
+  NewSquare(15, ss);
+  SendMessage(dm, ss);
+  SendMessage(tm, ss);
+  SendMessage(dm, ss);
+
+  NewCircle(2.2, cc);
+  SendMessage(dm, cc);
+  SendMessage(tm, cc);
+  SendMessage(dm, cc);
+
+  NewTriangle(3, 2, tt);
+  SendMessage(dm, tt);
+  SendMessage(tm, tt);
+  SendMessage(dm, tt);
+
+  NewActor(5, 1, aa);
+  SendMessage(dm, aa);
+  SendMessage(tm, aa);
+  SendMessage(tm, aa);
+  SendMessage(dm, aa);
+
+  NEW(ap);
+  NewActor(5, 1, ap^);
+  SendMessage(dm, ap^);
+  SendMessage(tm, ap^);
+  SendMessage(tm, ap^);
+  SendMessage(dm, ap^);
+END Driver;
+
+BEGIN
+  Driver
+END OopTest.

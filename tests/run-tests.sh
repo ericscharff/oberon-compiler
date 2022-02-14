@@ -27,6 +27,7 @@ TESTS=(
   StrTest
   TypeExt
   OopTest
+  OopTest2
   VisitList
 )
 
@@ -58,6 +59,7 @@ RISC_MEMSIZE[TestCompiler]=262144
 
 CPP_TESTS=(
   OopTest
+  OopTest2
   RecCopy
   TestBed
   TypeExt
