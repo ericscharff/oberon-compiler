@@ -260,6 +260,12 @@ void do_trap(int pc, int32_t *regs, int32_t *mem) {
   }
 }
 
+void copy_type_table_to_mem(int32_t *mem) {
+  for (size_t i = 0; i < (sizeof(TYPE_TABLE)/sizeof(int32_t)); i++) {
+    mem[i + 1] = TYPE_TABLE[i];
+  }
+}
+
 void copy_strings_to_mem(uint8_t *mem) {
   for (size_t i = 0; i < sizeof(STRING_POOL); i++) {
     mem[i + STRING_POOL_START] = STRING_POOL[i];
@@ -300,6 +306,7 @@ void interpret(void) {
   for (int i = 0; i < MAX_MEM; i++) {
     mem[i] = 0;
   }
+  copy_type_table_to_mem(mem);
   copy_strings_to_mem((uint8_t *)mem);
   mem[0] = (STRING_POOL_START + sizeof(STRING_POOL) + 4) & ~0x3;
   int left = 0; /* previous compare */

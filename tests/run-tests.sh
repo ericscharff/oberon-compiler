@@ -50,6 +50,8 @@ RISC_TESTS=(
   Shadow
   ShortCircuit
   StrTest
+  TypeExt
+  OopTest
   VisitList
 )
 

@@ -79,6 +79,8 @@ CONST
   rSP = 14; (* r14 = Stack pointer *)
   rLR = 15; (* r15 = Link register *)
 
+  TypeInfoEntrySize = 24; (* 6 * size of integer *)
+
   (* Item kinds *)
   itemReg   = 1; (* Item is in register r                         *)
   itemVar   = 2; (* Item is a variable whose address is r+offset. *)
@@ -211,6 +213,16 @@ BEGIN
   GenStr(", ");
   GenReg(rc)
 END Gen3;
+
+PROCEDURE ReserveTypeinfos*;
+BEGIN
+  globalOffset := globalOffset + TypeInfoEntrySize * (AST.nextTypeId + 1)
+END ReserveTypeinfos;
+
+PROCEDURE ConvertTypeIdToPointer(typeId: INTEGER): INTEGER;
+BEGIN
+  RETURN typeId * TypeInfoEntrySize + 4
+END ConvertTypeIdToPointer;
 
 PROCEDURE GenQName(l: Lex.Lexer; name: AST.QName);
 BEGIN
@@ -1073,6 +1085,27 @@ BEGIN
   END;
 END GenLengthof;
 
+PROCEDURE GenTypeId(VAR item: Item; e: AST.Expr);
+BEGIN
+  IF e.decl.kind = AST.declVar THEN
+    (* Statically allocated records have a type id *)
+    item.kind := itemConst;
+    item.offset := ConvertTypeIdToPointer(e.typ.typeId);
+    Load(item);
+  ELSE
+    ASSERT((e.decl.kind = AST.declVarParam) OR (e.decl.kind = AST.declParam));
+    ASSERT(e.kind = AST.exprIdentRef);
+    ASSERT(e.decl # NIL);
+    ASSERT(e.decl.offset # -1);
+    (* Parameters already have a typeid parameter that came along with them *)
+    item.kind := itemVar;
+    item.isByte := FALSE;
+    item.r := rSP;
+    item.offset := stackOffset + e.decl.offset + 4; (* The extra param for typeid *)
+    Load(item);
+  END;
+END GenTypeId;
+
 PROCEDURE GenVal(l: Lex.Lexer; e: AST.Expr; VAR item: Item);
 BEGIN
   item.kind := itemConst;
@@ -1326,6 +1359,59 @@ BEGIN
   END
 END GenUnaryOp;
 
+PROCEDURE GenTypeTest(l: Lex.Lexer; base: AST.Expr; t: AST.Type; VAR item: Item;
+                      VAR parentTrueChain, parentFalseChain: INTEGER);
+VAR
+  offset: INTEGER;
+  target: INTEGER;
+BEGIN
+  IF base.typ.kind = AST.typePointer THEN
+    offset := t.base.nesting;
+    target := ConvertTypeIdToPointer(t.base.typeId);
+    GenExpr(l, base, item, parentTrueChain, parentFalseChain);
+    Load(item);
+    (* If nil, the condition is false *)
+    Emit(opCMPI, item.r, item.r, 0, 0);
+    Emit(opBRA, 0, 0, opBEQ, 0);
+    AddToChain(parentFalseChain);
+    IF base.typ.base.typeId = t.base.typeId THEN
+      offset := -1;
+      item.opCond := opB
+    ELSE
+      (* The type pointer is four bytes behind the record pointer *)
+      Emit(opLDW, item.r, item.r, 0, -4);
+    END
+  ELSE
+    ASSERT(base.kind = AST.exprIdentRef);
+    ASSERT(base.decl # NIL);
+    ASSERT((base.decl.kind = AST.declVarParam) OR (base.decl.kind = AST.declParam));
+    ASSERT(base.decl.offset # -1);
+    offset := t.nesting;
+    target := ConvertTypeIdToPointer(t.typeId);
+    IF base.typ.typeId = t.typeId THEN
+      offset := -1;
+      item.opCond := opB
+    ELSE
+      (* Parameters already have a typeid parameter that came along with them *)
+      item.kind := itemVar;
+      item.isByte := FALSE;
+      item.r := rSP;
+      item.offset := stackOffset + base.decl.offset + 4; (* The extra param for typeid *)
+      Load(item);
+    END;
+  END;
+  item.kind := itemCond;
+  IF offset > 0 THEN
+    (* item.r now has a type id, which is a pointer to the beginning of a *)
+    (* type table entry.  So item.r + 4*t.nesting is the entry in that    *)
+    (* table look up for comparison.                                      *)
+    Emit(opLDW, item.r, item.r, 0, offset*4);
+    Emit(opCMPI, item.r, item.r, 0, target);
+    DecCurReg;
+    item.opCond := opBEQ
+  END
+END GenTypeTest;
+
 PROCEDURE GenBinaryOp(l: Lex.Lexer; e: AST.Expr; VAR item: Item;
                       VAR parentTrueChain, parentFalseChain: INTEGER);
 VAR
@@ -1356,6 +1442,8 @@ BEGIN
     (* lhs was false, so run rhs *)
     FixChain(localFalseChain, cp);
     GenExpr(l, e.rhs, item, parentTrueChain, parentFalseChain);
+  ELSIF e.op = Lex.tIS THEN
+    GenTypeTest(l, e.lhs, e.rhs.typ, item, parentTrueChain, parentFalseChain)
   ELSE
     GenExpr(l, e.lhs, item, parentTrueChain, parentFalseChain);
     IF item.kind # itemConst THEN Load(item) END;
@@ -1405,6 +1493,14 @@ BEGIN
         (* Open arrays must also pass their length *)
         GenLengthof(l, item, actualParam);
       END;
+      IF (formalParam.typ.kind = AST.typeRecord) & AST.NeedsTypeInfo(formalParam.typ) THEN
+        IF actualParam.kind = AST.exprPointerDeref THEN
+          ASSERT(FALSE);
+          (* load the static type id item: GenInt(e.typ.typeId); *)
+        ELSE
+          GenTypeId(item, actualParam)
+        END
+      END
     ELSE
       ASSERT(FALSE)
     END;
@@ -1518,13 +1614,21 @@ BEGIN
     Emit(opBRA, 0, 0, opBGT, cp+2);
     Emit(opRMULI, item.r, item.r, 0, Out.RealAsInt(-1.0));
   ELSIF e.iVal = AST.builtinNew THEN
-    ASSERT(~AST.NeedsTypeInfo(e.rhs.typ.base));
     allocSize := CalculateSize(e.rhs.typ.base);
+    IF AST.NeedsTypeInfo(e.rhs.typ.base) THEN
+      allocSize := allocSize + 4
+    END;
     localTrueChain := 0; localFalseChain := 0;
     GenExpr(l, e.rhs, item, localTrueChain, localFalseChain);
     LoadAddress(item); (* R0 = destination of pointer *)
     ASSERT(curReg = 1);
     Emit(opLDW, 1, rGB, 0, 0); (* R1 = [GB+0] = next address of heap *)
+    IF AST.NeedsTypeInfo(e.rhs.typ.base) THEN
+      (* R2 = typeinfo entry for pointer *)
+      Emit(opMOVI, 2, 0, 0, ConvertTypeIdToPointer(e.rhs.typ.base.typeId));
+      Emit(opSTW, 2, 1, 0, 0); (* mem[R1] = R2 = type id *)
+      Emit(opADDI, 1, 1, 0, 4); (* R1 = R1+4 pointer to start of struct *)
+    END;
     Emit(opSTW, 1, 0, 0, 0); (* mem[R0] = R1 = store pointer to heap *)
     Emit(opADDI, 1, 1, 0, allocSize); (* R1 += new RECORD size *)
     Emit(opSTW, 1, rGB, 0, 0); (* mem[GB+0] = R1 = new top of heap *)
@@ -1840,15 +1944,24 @@ BEGIN
       GenStr(" offset "); Out.Int(fp); GenLn;
     END;
     (*
-     * All parameters except arrays are 4 bytes, because they are either
+     * All parameters are 4 bytes, because they are either
      * primitives, records (passed by reference), var parameters (also
-     * passed by reference) or pointers.
+     * passed by reference) or pointers. Arrays and records that need
+     * type identifiers carry a supplemental parameter.
      *)
     INC(registersInUse);
     fp := fp + 4;
     IF AST.IsOpenArray(vars.typ) THEN
       IF ~genCode THEN
         Tab; GenStr("; "); Lex.OutStr(l, vars.qname.name); GenStr("__len");
+        GenStr(" offset "); Out.Int(fp); GenLn;
+      END;
+      INC(registersInUse);
+      fp := fp + 4
+    END;
+    IF AST.NeedsTypeInfo(vars.typ) & (vars.typ.kind = AST.typeRecord) THEN
+      IF ~genCode THEN
+        Tab; GenStr("; "); Lex.OutStr(l, vars.qname.name); GenStr("__typeid");
         GenStr(" offset "); Out.Int(fp); GenLn;
       END;
       INC(registersInUse);
@@ -1903,6 +2016,34 @@ BEGIN
   END
 END GenStartMain;
 
+PROCEDURE GenTypeinfoEntry(tid, count: INTEGER): INTEGER;
+BEGIN
+  IF AST.recordToParent[tid] # 0 THEN
+    count := GenTypeinfoEntry(AST.recordToParent[tid], count + 1);
+    Out.Int(ConvertTypeIdToPointer(AST.recordToParent[tid])); GenStr(", ");
+  END
+  RETURN count
+END GenTypeinfoEntry;
+
+PROCEDURE GenTypeInfoTable;
+VAR
+  i, c: INTEGER;
+BEGIN
+  GenStr("const int32_t TYPE_TABLE[] = {"); GenLn;
+  FOR i := 0 TO AST.nextTypeId DO
+    GenStr("  ");
+    c := GenTypeinfoEntry(i, 0);
+    Out.Int(ConvertTypeIdToPointer(i));
+    GenStr(", ");
+    WHILE c < 5 DO
+      GenStr("-1, ");
+      INC(c)
+    END;
+    GenLn;
+  END;
+  GenStr("};"); GenLn;
+END GenTypeInfoTable;
+
 PROCEDURE GenStringPool;
 BEGIN
   GenStr("const uint8_t STRING_POOL[] = {"); GenLn;
@@ -1920,6 +2061,7 @@ BEGIN
     Out.Int(mainStartPc); GenLn;
     GenStr("#define STRING_POOL_START ");
     Out.Int(globalOffset); GenLn;
+    GenTypeInfoTable;
     GenStringPool
   ELSE
     DumpAssembly(l, mainStartPc)

@@ -28,6 +28,7 @@ BEGIN
 
   Decls.VisitDecl(Parse.lastModuleDecls);
   p := Decls.reachableDecls;
+  RCodegen.ReserveTypeinfos();
   WHILE p # NIL DO
     IF (p.d.kind = AST.declVar) & (p.d.nesting = 0) THEN
       RCodegen.AllocateGlobals(l, p.d);
