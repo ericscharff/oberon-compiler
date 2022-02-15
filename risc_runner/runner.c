@@ -148,7 +148,7 @@ void dumpstate(int pc, int32_t *regs, uint8_t *mem) {
        mem + MAX_MEM_BYTES - 3 * 16);
   line("R6", regs[6], " SP", regs[SP], MAX_MEM_BYTES - 2 * 16,
        mem + MAX_MEM_BYTES - 2 * 16);
-  line("R7", regs[8], " LR", regs[LR], MAX_MEM_BYTES - 1 * 16,
+  line("R7", regs[7], " LR", regs[LR], MAX_MEM_BYTES - 1 * 16,
        mem + MAX_MEM_BYTES - 1 * 16);
   if (pc < 0) {
     printf("TRAP %d\n", pc);
