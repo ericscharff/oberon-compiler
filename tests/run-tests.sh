@@ -9,50 +9,26 @@ TESTS=(
   CaseTest
   FibFact
   FibFact2
-  PtrTest
-  RecCopy
-  RealNumbers
-  Mandelbrot
   IOTest
   KnightsTour
   LangExtensionsTests
-  Maze
-  Pentominoes
-  TestCompiler
-  Recurse2
-  Recurse
-  SetTest
-  Shadow
-  ShortCircuit
-  StrTest
-  TypeExt
-  OopTest
-  OopTest2
-  VisitList
-)
-
-RISC_TESTS=(
-  ArrayTest
-  CaseTest
-  FibFact
-  FibFact2
-  PtrTest
-  RecCopy
-  RealNumbers
   Mandelbrot
-  IOTest
-  TestBed
-  KnightsTour
   Maze
+  OopTest
+  OopTest2
   Pentominoes
-  TestCompiler
+  PtrTest
+  RealNumbers
+  RecCopy
+  Recurse
+  Recurse2
   SetTest
   Shadow
   ShortCircuit
   StrTest
+  TestBed
+  TestCompiler
   TypeExt
-  OopTest
-  OopTest2
   VisitList
 )
 
@@ -60,14 +36,15 @@ RISC_TESTS=(
 declare -A RISC_MEMSIZE
 RISC_MEMSIZE[TestCompiler]=262144
 
-CPP_TESTS=(
-  OopTest
-  OopTest2
-  RecCopy
-  TestBed
-  TypeExt
-  VisitList
-)
+# Some tests may need to be excluded because C doesn't support them
+declare -A C_EXCLUSIONS
+C_EXCLUSIONS[TestBed]=1                # Bug in nested renaming
+
+# Some tests may need to be excluded because RISC doesn't support them
+declare -A RISC_EXCLUSIONS
+RISC_EXCLUSIONS[LangExtensionsTests]=1 # Buffers, native functions
+RISC_EXCLUSIONS[Recurse]=1             # Nested functions
+RISC_EXCLUSIONS[Recurse2]=1            # Nested functions
 
 # Generate stdin for IOTest
 echo "19" > ../build/stdin.txt
@@ -78,6 +55,10 @@ fail() {
 }
 
 for i in ${TESTS[@]}; do
+  if [ -v C_EXCLUSIONS[$i] ]; then
+    echo "Running test $i... (Skipped)"
+    continue
+  fi
   echo "Running test $i..."
   ../build/compile ${i}.ob
   pushd ../build > /dev/null
@@ -85,7 +66,11 @@ for i in ${TESTS[@]}; do
   popd > /dev/null
   diff -c goldens/$i.output ../build/$i.output || fail $i
 done
-for i in ${RISC_TESTS[@]}; do
+for i in ${TESTS[@]}; do
+  if [ -v RISC_EXCLUSIONS[$i] ]; then
+    echo "Running RISC test $i... (Skipped)"
+    continue
+  fi
   echo "Running RISC test $i..."
   if [ -v RISC_MEMSIZE[$i] ]; then
     MEM_SIZE=${RISC_MEMSIZE[$i]} ../build/rcompile ${i}.ob
@@ -97,7 +82,7 @@ for i in ${RISC_TESTS[@]}; do
   popd > /dev/null
   diff -c goldens/$i.output ../build/$i.output || fail $i
 done
-for i in ${CPP_TESTS[@]}; do
+for i in ${TESTS[@]}; do
   echo "Running C++ test $i..."
   ../build/compile -cpp ${i}.ob
   pushd ../build > /dev/null
