@@ -52,6 +52,7 @@ RISC_TESTS=(
   StrTest
   TypeExt
   OopTest
+  OopTest2
   VisitList
 )
 

@@ -1087,7 +1087,12 @@ END GenLengthof;
 
 PROCEDURE GenTypeId(VAR item: Item; e: AST.Expr);
 BEGIN
-  IF e.decl.kind = AST.declVar THEN
+  IF e.kind = AST.exprPointerDeref THEN
+    (* The static type of the pointer *)
+    item.kind := itemConst;
+    item.offset := ConvertTypeIdToPointer(e.typ.typeId);
+    Load(item);
+  ELSIF e.decl.kind = AST.declVar THEN
     (* Statically allocated records have a type id *)
     item.kind := itemConst;
     item.offset := ConvertTypeIdToPointer(e.typ.typeId);
@@ -1494,12 +1499,7 @@ BEGIN
         GenLengthof(l, item, actualParam);
       END;
       IF (formalParam.typ.kind = AST.typeRecord) & AST.NeedsTypeInfo(formalParam.typ) THEN
-        IF actualParam.kind = AST.exprPointerDeref THEN
-          ASSERT(FALSE);
-          (* load the static type id item: GenInt(e.typ.typeId); *)
-        ELSE
-          GenTypeId(item, actualParam)
-        END
+        GenTypeId(item, actualParam)
       END
     ELSE
       ASSERT(FALSE)
