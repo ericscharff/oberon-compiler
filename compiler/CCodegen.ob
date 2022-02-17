@@ -1074,13 +1074,16 @@ BEGIN
   GenLn;
 END GenVar;
 
-PROCEDURE RenameInnerProc(d: AST.Decl);
+PROCEDURE RenameInnerProc(VAR l: Lex.Lexer; d: AST.Decl);
+VAR
+  name: ARRAY 10 OF CHAR;
 BEGIN
-  d.qname.name := d.qname.name + innerProcCount;
+  Lex.MakeDummy(innerProcCount, name);
+  d.qname.name := Lex.Intern(l, name);
   INC(innerProcCount)
 END RenameInnerProc;
 
-PROCEDURE GenProc(l: Lex.Lexer; d: AST.Decl);
+PROCEDURE GenProc(VAR l: Lex.Lexer; d: AST.Decl);
 VAR
   p: AST.Decl;
   q: AST.QName;
@@ -1095,7 +1098,7 @@ BEGIN
       IF p.kind = AST.declProcedure THEN
         (* Give nested procedures a unique name, because they need to be *)
         (* defined at top level. Ensure they are distinct.               *)
-        RenameInnerProc(p);
+        RenameInnerProc(l, p);
         GenProc(l, p);
       ELSIF p.kind = AST.declType THEN
         GenTypedef(l, p);
@@ -1161,7 +1164,7 @@ BEGIN
   GenLn;
 END GenProc;
 
-PROCEDURE Generate*(l: Lex.Lexer; d: AST.Decl);
+PROCEDURE Generate*(VAR l: Lex.Lexer; d: AST.Decl);
 BEGIN
   IF d.nesting = 0 THEN
     IF dumpDecls THEN

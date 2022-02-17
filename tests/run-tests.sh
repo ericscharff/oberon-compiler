@@ -36,10 +36,6 @@ TESTS=(
 declare -A RISC_MEMSIZE
 RISC_MEMSIZE[TestCompiler]=262144
 
-# Some tests may need to be excluded because C doesn't support them
-declare -A C_EXCLUSIONS
-C_EXCLUSIONS[TestBed]=1                # Bug in nested renaming
-
 # Some tests may need to be excluded because RISC doesn't support them
 declare -A RISC_EXCLUSIONS
 RISC_EXCLUSIONS[LangExtensionsTests]=1 # Buffers, native functions
@@ -55,10 +51,6 @@ fail() {
 }
 
 for i in ${TESTS[@]}; do
-  if [ -v C_EXCLUSIONS[$i] ]; then
-    echo "Running test $i... (Skipped)"
-    continue
-  fi
   echo "Running test $i..."
   ../build/compile ${i}.ob
   pushd ../build > /dev/null
