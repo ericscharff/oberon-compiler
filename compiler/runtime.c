@@ -167,26 +167,26 @@ void Args_GetArg(char *s, size_t sLen, int arg) {
   strncpy(s, saved_argv[arg], sLen);
 }
 
-typedef struct LangExtensionsTest_NatBuf_Native {
+typedef struct LangExtensions_NatBuf_Native {
   int nativeQ;
   int nativeR;
-} LangExtensionsTest_NatBuf_Native;
+} LangExtensions_NatBuf_Native;
 
-typedef struct LangExtensionsTest_NatBuf LangExtensionsTest_NatBuf;
+typedef struct LangExtensions_NatBuf LangExtensions_NatBuf;
 
-typedef void (*LangExtensionsTest_CallbackFuncNative)(int);
+typedef void (*LangExtensions_CallbackFuncNative)(int);
 
-void LangExtensionsTest_SetNativeVal(LangExtensionsTest_NatBuf *b, int val) {
-  ((LangExtensionsTest_NatBuf_Native*)b)->nativeQ = val;
-  ((LangExtensionsTest_NatBuf_Native*)b)->nativeR = val + 1;
+void LangExtensions_SetNativeVal(LangExtensions_NatBuf *b, int val) {
+  ((LangExtensions_NatBuf_Native*)b)->nativeQ = val;
+  ((LangExtensions_NatBuf_Native*)b)->nativeR = val + 1;
 }
 
-void LangExtensionsTest_CallNative(LangExtensionsTest_NatBuf *b) {
-  LangExtensionsTest_NatBuf_Native* nat = (LangExtensionsTest_NatBuf_Native*)b;
+void LangExtensions_CallNative(LangExtensions_NatBuf *b) {
+  LangExtensions_NatBuf_Native* nat = (LangExtensions_NatBuf_Native*)b;
   printf("Native code called, buf.nativeQ = %d, nativeR = %d.\n", nat->nativeQ, nat->nativeR);
 }
 
-void LangExtensionsTest_NativeCallback(int i, LangExtensionsTest_CallbackFuncNative f) {
+void LangExtensions_NativeCallback(int i, LangExtensions_CallbackFuncNative f) {
   printf("About to call callback with i=%d.\n", i+1);
   f(i+1);
   printf("NativeCallback completed\n");

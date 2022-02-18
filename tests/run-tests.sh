@@ -11,7 +11,7 @@ TESTS=(
   FibFact2
   IOTest
   KnightsTour
-  LangExtensionsTests
+  LangExtensions
   Mandelbrot
   Maze
   OopTest
@@ -38,7 +38,7 @@ RISC_MEMSIZE[TestCompiler]=262144
 
 # Some tests may need to be excluded because RISC doesn't support them
 declare -A RISC_EXCLUSIONS
-RISC_EXCLUSIONS[LangExtensionsTests]=1 # Buffers, native functions
+RISC_EXCLUSIONS[LangExtensions]=1 # Buffers, native functions
 RISC_EXCLUSIONS[Recurse]=1             # Nested functions
 RISC_EXCLUSIONS[Recurse2]=1            # Nested functions
 

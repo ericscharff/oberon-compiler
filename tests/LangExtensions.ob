@@ -1,4 +1,4 @@
-MODULE LangExtensionsTest;
+MODULE LangExtensions;
 
 (* Examples using laguage extensions *)
 
@@ -159,4 +159,4 @@ END RunTests;
 
 BEGIN
   RunTests
-END LangExtensionsTest.
+END LangExtensions.
