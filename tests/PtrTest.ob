@@ -7,6 +7,11 @@ TYPE
         next: P
       END;
 
+PROCEDURE SetA(VAR r: R; aVal: INTEGER);
+BEGIN
+  r.a := aVal
+END SetA;
+
 PROCEDURE SimpleTest;
 VAR
   start: P;
@@ -15,7 +20,7 @@ BEGIN
   start.a := 1;
   start.b := 2;
   NEW(start.next);
-  start.next.a := 3;
+  SetA(start.next^, 3);
   start.next.b := 4;
   WriteInt(start.a);
   WriteInt(start.b);
@@ -32,7 +37,7 @@ BEGIN
     p := NIL
   ELSE
     NEW(p);
-    p.a := i * 10;
+    SetA(p^, i * 10);
     p.next := BuildList(i - 1)
   END
   RETURN p
