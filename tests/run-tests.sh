@@ -39,7 +39,6 @@ RISC_MEMSIZE[TestCompiler]=262144
 # Some tests may need to be excluded because RISC doesn't support them
 declare -A RISC_EXCLUSIONS
 RISC_EXCLUSIONS[LangExtensions]=1 # Buffers, native functions
-RISC_EXCLUSIONS[StrTest]=1        # String comparisons
 
 # Generate stdin for IOTest
 echo "19" > ../build/stdin.txt

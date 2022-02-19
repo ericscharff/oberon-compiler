@@ -749,7 +749,7 @@ BEGIN
   END;
 END RestoreRegisters;
 
-PROCEDURE GenRealCompare(VAR lhs, rhs:Item; op: OpCode);
+PROCEDURE GenRealCompare(VAR lhs, rhs: Item; op: OpCode);
 BEGIN
   IF rhs.kind = itemConst THEN
     Load(lhs);
@@ -766,7 +766,7 @@ BEGIN
   DecCurReg
 END GenRealCompare;
 
-PROCEDURE GenCompare(VAR lhs, rhs:Item; op: OpCode);
+PROCEDURE GenCompare(VAR lhs, rhs: Item; op: OpCode);
 BEGIN
   IF rhs.kind = itemConst THEN
     Load(lhs);
@@ -788,6 +788,44 @@ BEGIN
   IF cond < 8 THEN cond := cond + 8 ELSE cond := cond - 8 END
   RETURN cond
 END NegateCond;
+
+PROCEDURE GenStringCompare(VAR lhs, rhs: Item; op: OpCode);
+BEGIN
+  LoadAddress(lhs);
+  LoadAddress(rhs);
+  ASSERT(curReg = 2);
+  Emit(opLDB, 2, lhs.r, 0, 0);
+  Emit(opLDB, 3, rhs.r, 0, 0);
+  Emit(opADDI, lhs.r, lhs.r, 0, 1);
+  Emit(opADDI, rhs.r, rhs.r, 0, 1);
+  Emit(opCMP, 2, 2, 3, 0);
+  Emit(opBRA, 0, 0, opBNE, cp+3);
+  Emit(opCMPI, 2, 2, 0, 0);
+  Emit(opBRA, 0, 0, opBNE, cp-7);
+  lhs.kind := itemCond;
+  lhs.opCond := op;
+  (* We don't need or want the result of the strings *)
+  DecCurReg; DecCurReg
+END GenStringCompare;
+
+PROCEDURE GenStringOp(op: Lex.TokenKind; VAR lhs, rhs: Item);
+BEGIN
+  IF op = Lex.tEQ THEN
+    GenStringCompare(lhs, rhs, opBEQ)
+  ELSIF op = Lex.tPOUND THEN
+    GenStringCompare(lhs, rhs, opBNE)
+  ELSIF op = Lex.tLT THEN
+    GenStringCompare(lhs, rhs, opBLT)
+  ELSIF op = Lex.tGT THEN
+    GenStringCompare(lhs, rhs, opBGT)
+  ELSIF op = Lex.tLTEQ THEN
+    GenStringCompare(lhs, rhs, opBLE)
+  ELSIF op = Lex.tGTEQ THEN
+    GenStringCompare(lhs, rhs, opBGE)
+  ELSE
+    ASSERT(FALSE)
+  END
+END GenStringOp;
 
 PROCEDURE GenRealOp(op: Lex.TokenKind; VAR lhs, rhs: Item);
 BEGIN
@@ -1451,10 +1489,13 @@ BEGIN
     GenTypeTest(l, e.lhs, e.rhs.typ, item, parentTrueChain, parentFalseChain)
   ELSE
     GenExpr(l, e.lhs, item, parentTrueChain, parentFalseChain);
-    IF item.kind # itemConst THEN Load(item) END;
+    IF (item.kind # itemConst) & ~AST.IsStringType(e.lhs.typ) THEN Load(item) END;
     GenExpr(l, e.rhs, rhs, parentTrueChain, parentFalseChain);
     IF e.rhs.typ.kind = AST.typeSet THEN
       GenSetOp(e.op, item, rhs)
+    ELSIF AST.IsStringType(e.lhs.typ) THEN
+      ASSERT(AST.IsStringType(e.rhs.typ));
+      GenStringOp(e.op, item, rhs)
     ELSIF e.rhs.typ.kind = AST.typeReal THEN
       GenRealOp(e.op, item, rhs)
     ELSE

@@ -414,7 +414,8 @@ END GenTypeTest;
 PROCEDURE GenBinaryExpr(l: Lex.Lexer; e: AST.Expr);
 BEGIN
   GenStr("(");
-  IF e.lhs.typ.kind IN {AST.typeArray, AST.typeString} THEN
+  IF AST.IsStringType(e.lhs.typ) THEN
+    ASSERT(AST.IsStringType(e.rhs.typ));
     (* String ops *)
     GenStr("strcmp(");
     GenExpr(l, e.lhs);

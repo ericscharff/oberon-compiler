@@ -286,7 +286,7 @@ BEGIN
   END;
 END ExpectType;
 
-PROCEDURE IsStringType(t: Type): BOOLEAN;
+PROCEDURE IsStringType*(t: Type): BOOLEAN;
 BEGIN
   RETURN (t.kind = typeString) OR
       ((t.kind = typeArray) & (t.base.kind = typeChar))
