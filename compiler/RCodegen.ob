@@ -1684,7 +1684,9 @@ PROCEDURE GenTypeGuard(l: Lex.Lexer; e: AST.Expr; VAR item: Item;
 BEGIN
   CalculateSize(e.lhs.typ);
   CalculateSize(e.decl.typ);
-  (* TODO: assert type guard of pointer and VAR param *)
+  GenTypeTest(l, e.lhs, e.typ, item, parentTrueChain, parentFalseChain);
+  Emit(opBRA, 0, 0, item.opCond, cp + 2);
+  Emit(opBL, LINK, 0, 0, ASSERT_TRAP);
   GenExpr(l, e.lhs, item, parentTrueChain, parentFalseChain)
 END GenTypeGuard;
 
