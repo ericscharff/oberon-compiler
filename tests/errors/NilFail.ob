@@ -1,0 +1,14 @@
+(* This test causes a runtime failure because the pointer is NIL. *)
+
+MODULE NilFail;
+
+TYPE
+  R = RECORD a: INTEGER END;
+  PR = POINTER TO R;
+
+VAR
+  pr: PR;
+BEGIN
+  pr := NIL;
+  pr.a := 1
+END NilFail.

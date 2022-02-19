@@ -1,0 +1,23 @@
+(* This test causes a runtime failure because the typeguard isn't valid. *)
+
+MODULE CastFail;
+
+TYPE
+  R1 = RECORD a: INTEGER END;
+  Ra = RECORD (R1) b: INTEGER END;
+  Rb = RECORD (R1) c: INTEGER END;
+
+PROCEDURE Test(VAR r: R1);
+BEGIN
+  r(Rb).c := 10
+END Test;
+
+PROCEDURE T;
+VAR r1: R1; ra: Ra; rb: Rb;
+BEGIN
+  r1.a := 1; ra.a := 1; rb.a := 1;
+  WriteInt(r1.a); WriteInt(ra.a); WriteInt(rb.a); WriteLn;
+  Test(ra)  (* This would succeed for Test(rb) *)
+END T;
+
+BEGIN T END CastFail.

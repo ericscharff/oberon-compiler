@@ -30,6 +30,7 @@ clean:
 	rm -rf build
 
 test: $(BUILDDIR)/oberonr
+	cd tests/errors && ./run-fail-tests.sh
 	cd tests && ./run-tests.sh
 
 compiler-test: $(BUILDDIR)/oberonr
