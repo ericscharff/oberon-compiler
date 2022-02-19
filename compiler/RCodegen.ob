@@ -1927,7 +1927,10 @@ VAR
   i, registersInUse: INTEGER;
 BEGIN
   ASSERT(d.kind = AST.declProcedure);
-  cp := 0;
+  IF d.nesting = 0 THEN
+    cp := 0;
+  END;
+  i := -1;
   registersInUse := 0;
   d.offset := pc;
   IF ~genCode THEN
@@ -1976,8 +1979,18 @@ BEGIN
         Tab; GenStr("; "); Lex.OutStr(l, vars.qname.name); GenStr(" offset "); Out.Int(fp); GenLn;
       END;
       fp := fp + CalculateSize(vars.typ);
+    ELSIF vars.kind = AST.declProcedure THEN
+      IF i < 0 THEN
+        i := cp;
+        Emit(opBRA, 0, 0, opB, 0); (* Branch past nested procedures *)
+      END;
+      GenerateProc(l, vars);
     END;
     vars := vars.next
+  END;
+  IF i >= 0 THEN
+    (* Fix branch past nested procedures *)
+    codeBuffer[i].value := cp;
   END;
   (* Preamble *)
   Emit(opSUBI, rSP, rSP, 0, fp);
@@ -1994,10 +2007,12 @@ BEGIN
   Emit(opLDW, rLR, rSP, 0, 0);
   Emit(opADDI, rSP, rSP, 0, fp);
   Emit(opBrg, rLR, 0, 0, 0);
-  IF genCode THEN
-    DumpCode(d.offset)
-  ELSE
-    DumpAssembly(l, d.offset)
+  IF d.nesting = 0 THEN
+    IF genCode THEN
+      DumpCode(d.offset)
+    ELSE
+      DumpAssembly(l, d.offset)
+    END
   END
 END GenerateProc;
 

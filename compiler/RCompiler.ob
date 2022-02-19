@@ -37,7 +37,7 @@ BEGIN
   END;
   p := Decls.reachableDecls;
   WHILE p # NIL DO
-    IF (p.d.kind = AST.declProcedure) & ~p.d.isNative THEN
+    IF (p.d.kind = AST.declProcedure) & (p.d.nesting = 0) & ~p.d.isNative THEN
       RCodegen.GenerateProc(l, p.d);
     END;
     p := p.next
