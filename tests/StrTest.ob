@@ -1,5 +1,7 @@
 MODULE StrTest;
 
+IMPORT Out;
+
 PROCEDURE ToLower(VAR c: ARRAY OF CHAR);
 VAR i: INTEGER;
 BEGIN
@@ -30,6 +32,39 @@ BEGIN
   WriteLn
 END WriteString;
 
+PROCEDURE Compare(a, b: ARRAY OF CHAR);
+PROCEDURE Tab; BEGIN Out.Char(9X) END Tab;
+BEGIN
+  Out.Str("a=[");
+  Out.Str(a);
+  Out.Str("]"); Tab; IF LEN(a) < 3 THEN Tab END; Out.Str("b=[");
+  Out.Str(b);
+  Out.Str("]");
+  Tab; IF LEN(b) < 3 THEN Tab END;
+  IF a < b  THEN Out.Str("<  ") ELSE Out.Str("   ") END;
+  IF a <= b THEN Out.Str("<= ") ELSE Out.Str("   ") END;
+  IF a = b  THEN Out.Str("=  ") ELSE Out.Str("   ") END;
+  IF a # b  THEN Out.Str("#  ") ELSE Out.Str("   ") END;
+  IF a >= b THEN Out.Str(">= ") ELSE Out.Str("   ") END;
+  IF a > b  THEN Out.Str(">  ") ELSE Out.Str("   ") END;
+  Out.Ln
+END Compare;
+
+PROCEDURE Comparisons;
+BEGIN
+  Compare("ABCDEF", "ABCDEF");
+  Compare("bBCDEF", "aBCDEF");
+  Compare("aBCDEF", "bBCDEF");
+  Compare("AbCDEF", "AaCDEF");
+  Compare("AaCDEF", "AbCDEF");
+  Compare("ABCDEb", "ABCDEa");
+  Compare("ABCDEa", "ABCDEb");
+  Compare("ABCDE", "ABCD");
+  Compare("ABCD", "ABCDE");
+  Compare("", "ABCDEF");
+  Compare("ABCDEF", "");
+END Comparisons;
+
 PROCEDURE Test;
 VAR
   ca: ARRAY 10 OF CHAR;
@@ -47,5 +82,6 @@ BEGIN
 END Test;
 
 BEGIN
+  Comparisons;
   Test
 END StrTest.

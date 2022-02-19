@@ -1,3 +1,14 @@
+a=[ABCDEF]	b=[ABCDEF]	   <= =     >=    
+a=[bBCDEF]	b=[aBCDEF]	         #  >= >  
+a=[aBCDEF]	b=[bBCDEF]	<  <=    #        
+a=[AbCDEF]	b=[AaCDEF]	         #  >= >  
+a=[AaCDEF]	b=[AbCDEF]	<  <=    #        
+a=[ABCDEb]	b=[ABCDEa]	         #  >= >  
+a=[ABCDEa]	b=[ABCDEb]	<  <=    #        
+a=[ABCDE]	b=[ABCD]	         #  >= >  
+a=[ABCD]	b=[ABCDE]	<  <=    #        
+a=[]		b=[ABCDEF]	<  <=    #        
+a=[ABCDEF]	b=[]		         #  >= >  
 Hello, world!
 ABcDE
 abcde
