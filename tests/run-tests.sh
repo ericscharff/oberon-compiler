@@ -80,4 +80,12 @@ for i in ${TESTS[@]}; do
   popd > /dev/null
   diff -c goldens/$i.output ../build/$i.output || fail $i
 done
+for i in ${TESTS[@]}; do
+  echo "Running test $i with bounds checking..."
+  ../build/compile -bounds ${i}.ob
+  pushd ../build > /dev/null
+  ../build/out.prg < ../build/stdin.txt > ../build/$i.output
+  popd > /dev/null
+  diff -c goldens/$i.output ../build/$i.output || fail $i
+done
 echo "All tests passed!"

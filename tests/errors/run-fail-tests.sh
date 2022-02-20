@@ -30,4 +30,13 @@ for i in ${TESTS[@]}; do
   fi
   popd > /dev/null
 done
+for i in ${TESTS[@]}; do
+  echo "Running C++ test $i..."
+  ../../build/compile -bounds -cpp ${i}.ob
+  pushd ../../build > /dev/null
+  if ( ./out.prg || false ) >/dev/null 2>&1; then
+    fail $i
+  fi
+  popd > /dev/null
+done
 echo "All tests passed!"

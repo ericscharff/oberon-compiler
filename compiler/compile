@@ -21,7 +21,7 @@ while [ $inSwitches -eq 1 ]; do
   if [ $1 = "-cpp" ]; then
     CC=$CXX
     EXT=.cpp
-    OCFLAGS=-cpp
+    OCFLAGS="$OCFLAGS -cpp"
     CSTDFLAGS=
     shift
   elif [ $1 = "-bounds" ]; then
