@@ -162,6 +162,9 @@ BEGIN
   l.o := NewActor(5, 1);
   l.next := head;
   head := l;
+  Out.Str("Actor velocity is ");
+  Out.Int(l.o(Actor).velocity);
+  Out.Ln;
   Broadcast(dm, head);
   Broadcast(tm, head);
   Broadcast(dm, head);
