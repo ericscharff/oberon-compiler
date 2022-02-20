@@ -2,6 +2,7 @@
 
 TESTS=(
   ArrayFail
+  ArrayFail2
   CastFail
   NilFail
 )

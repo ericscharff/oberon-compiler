@@ -1321,6 +1321,12 @@ BEGIN
     item.isByte := FALSE;
   END;
   IF rhs.kind = itemConst THEN
+    IF genBoundsCheck & (e.lhs.typ.length <= 0) THEN
+      GenLengthof(l, arrayItem, e.lhs);
+      Emit(opCMPI, arrayItem.r, arrayItem.r, 0, rhs.offset);
+      Emit(opBRA, LINK, 0, opBHI, BOUNDS_TRAP);
+      DecCurReg;
+    END;
     item.offset := item.offset + size*rhs.offset
   ELSE
     Load(rhs);

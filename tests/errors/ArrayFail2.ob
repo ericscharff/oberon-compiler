@@ -1,0 +1,20 @@
+(* This test causes a runtime failure because the array index is out of bounds. *)
+
+MODULE ArrayFail2;
+
+TYPE
+  A5 = ARRAY 5 OF INTEGER;
+
+VAR
+  a5:  A5;
+
+PROCEDURE Test(a: ARRAY OF INTEGER);
+BEGIN
+  WriteInt(a[7]); WriteLn
+END Test;
+
+BEGIN
+  a5[2] := 30;
+  (* a5[7] := 30;   -- This fails at compile time, but the open array above does not*)
+  Test(a5); (* This fails *)
+END ArrayFail2.
