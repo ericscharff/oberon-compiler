@@ -809,7 +809,7 @@ END GenBuiltinExpr;
 
 PROCEDURE GenAssignExpr(l: Lex.Lexer; e: AST.Expr);
 VAR
-  t :AST.Type;
+  t: AST.Type;
 BEGIN
   IF e.lhs.typ.kind = AST.typeArray THEN
     ASSERT(e.lhs.typ.base.kind = AST.typeChar);

@@ -11,7 +11,7 @@ TYPE
 
 PROCEDURE AddVal(VAR cell: List; val: INTEGER);
 VAR
-  c :List;
+  c: List;
 BEGIN
   NEW(c);
   c.val := val;
