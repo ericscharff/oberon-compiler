@@ -1,23 +1,47 @@
 # Simple Oberon compiler
 
-This is a simple compiler for the Oberon-07 programming language. In its current
-state, it translates Oberon to C, so technically it is a transpiler.
-Addtionally, there is a second compiler that compiles Oberon to the instruction
-set of a simple RISC machine. A C based emulator for this virtual machine is
-able to compile itself, so the compiler is self hosting. Since the virtual
-machine is not particularly fast, the native binary is typically what is used.
+This is a collection of compilers for the Oberon-07 programming language. It is
+actually three different compilers:
 
-There are actually two compilers in this repository. The first is a
-bootstrapping compiler (in the `c_bootstrap` directory), which is written in C.
-This is actively maintained (if there are bugs) but mostly exists to compile the
-main compiler, which is written in Oberon. This compiler is self-hosting (it can
-compile itself).
+*   A *bootstrapping compiler,* written in C. This C program takes Oberon source
+    and transpiles it to C.
+*   A *C code generator,* written in Oberon. The bootstrapping compiler was used
+    to get the Oberon compiler up and running. This C transpiler takes Oberon
+    code and translates it into C or C++. The generated code is fairly readable,
+    and can interface seamlessly with C code.
+*   A *RISC code generator,* written in Oberon. This is a "true" compiler in the
+    sense that it takes Oberon source and produces a binary for a simple RISC
+    machine. The binary can be used in conjunction with a C based emulator for
+    this RISC processor.
+
+The two Oberon compilers share most of their code, with the major difference
+being the code generators (either producing C or producting RISC code.)
+
+The compilers written in Oberon are self hosting - the Oberon compiler can
+compile itself, and produce either C code (or a RISC) binary for a compiler that
+can also compile itself. Theoretically, the C bootstrap compiler is no longer
+necessary, since it would be possible to start "from scratch" from the generated
+C code produced by Oberon of itself. The C bootstrap compiler isn't nearly as
+well tested, and probably lacks features. It remains though to bootstrap the
+Oberon compiler, as well as a hitorical artifact that was critical in getting a
+self-hosting compiler. Most new features are added only to the Oberon
+implementation.
+
+Though the RISC binary could exclusively be used, the C virtual machine is not
+particularly fast, and the RISC code is not optimized. Thus, typically the C
+transpiled compiler is what is used for development.
+
+The two Oberon compilers should adhere to and implement all of the features of
+the Oberon-07 language. Both also contain some optional extensions to Oberon,
+described in [doc/language-extensions.txt](doc/language-extensions.txt). Some
+experimental new features include lower case keywords and buffers (variable
+sized arrays, like Vectors/ArrayLists in other languages.)
 
 # Usage
 
 Running `make` will build the bootstrap compiler, and then the main compiler,
 which is placed in the `build` directory. Once created, this compiler can be
-used to compile the oberon-based compiler. The oberon compiler then compiles
+used to compile the Oberon-based compiler. The Oberon compiler then compiles
 itself, so as a form of a "triple test" one can compare the generated C code to
 ensure that the compiler is still generating correct code.
 
@@ -45,14 +69,17 @@ $ ./compiler-test.sh
 ```
 
 The compiler will read and compile all modules upon which the main class
-depends. It then performs tree-shaking, so that the resulting C file will
-contain only functions used, and necessary pieces of imported modules. The
-resulting C code should be relatively clean and portable. If the code uses the
-type inclusion feature (e.g. `p IS Circle`), then the compiler generates C++
-code because it uses RTTI to do the type inclusion test. If type tests are
-never used in the code, straight C may be used. C++ code may be desirable
-in some contexts anyway, in case you want to interface with other C++ code
-(the type extenstions in Oberon correspond directly to C++ subclasses).
+depends. It then performs tree-shaking, so that the resulting generated code
+contain only functions and global variables that are actually reference. This
+means that code can depend on arbitrarily large modules, but only used
+functionality will be included in the resulting output.
+
+When generating C code, the resulting code should be relatively clean and
+portable. C++ generated code utilizes C++ features (RECORDS become classes, RTTI
+is used to perform tests like type inclusion (e.g., "p IS Circle"). When
+generating C code, the object oriented features are simulated through
+appropriately inserted C code, and type descriptors that represent the type
+hierarchy.
 
 The compile shell script accepts two flags, `-cpp` to generate C++ code (see
 above), and `-bounds` to generate bounds checks (to assert that any array
