@@ -43,7 +43,8 @@ Running `make` will build the bootstrap compiler, and then the main compiler,
 which is placed in the `build` directory. Once created, this compiler can be
 used to compile the Oberon-based compiler. The Oberon compiler then compiles
 itself, so as a form of a "triple test" one can compare the generated C code to
-ensure that the compiler is still generating correct code.
+ensure that the compiler is still generating correct code. The test suite can be
+run with `make test` and the triple-test with `make compiler-test`.
 
 Once bootstrapped, the `build` directory contains a shell script called
 `compile`. This shell script can be used to compile examples. For example:

@@ -246,6 +246,8 @@ void do_trap(int pc, int32_t *regs, int32_t *mem) {
   } else if (pc == -23) {
     /* Out.ReadFile */
     read_file(((const char *)mem) + regs[0], ((char *)mem) + regs[2]);
+  } else if (pc == -24) {
+    /* Out.RealAsInt */
   } else if (pc == -30) {
     /* Args.Count */
     regs[0] = saved_argc;
