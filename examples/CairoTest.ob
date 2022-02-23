@@ -11,6 +11,9 @@ CONST
   X_PIXELS_PER_STEP = CANVAS_WIDTH / Y_STEPS;
   Y_PIXELS_PER_STEP = CANVAS_HEIGHT / Y_STEPS;
 
+TYPE
+  Runner = PROCEDURE;
+
 VAR
   c: Cairo.Context;
   i: REAL;
@@ -399,7 +402,6 @@ END MakeSineTable;
 PROCEDURE LineArt;
 BEGIN
   i := 0.0;
-  Cairo.InitContext(c, CANVAS_WIDTH_INT, CANVAS_HEIGHT_INT);
   WHILE i <= Y_STEPS DO
     Cairo.MoveTo(c, 0.0, i * Y_PIXELS_PER_STEP);
     Cairo.LineTo(c, (Y_STEPS - i) * X_PIXELS_PER_STEP, 0.0);
@@ -411,17 +413,12 @@ BEGIN
     Cairo.LineTo(c, (Y_STEPS - i) * X_PIXELS_PER_STEP, CANVAS_HEIGHT);
     i := i + 1.0
   END;
-  Cairo.Stroke(c);
-  Cairo.WriteToPNG(c, "line_art.png");
-  Cairo.DestroyContext(c);
 END LineArt;
 
 PROCEDURE Circle;
 VAR
   i: INTEGER;
 BEGIN
-  Cairo.InitContext(c, CANVAS_WIDTH_INT, CANVAS_HEIGHT_INT);
-  MakeSineTable;
   Cairo.MoveTo(c, CANVAS_WIDTH-20.0, CANVAS_HEIGHT/2.0);
   FOR i := 0 TO 360 DO
     Cairo.LineTo(
@@ -429,12 +426,19 @@ BEGIN
       (CANVAS_WIDTH-20.0)/2.0 * Cosine(i) + CANVAS_WIDTH/2.0,
       (CANVAS_HEIGHT-20.0)/2.0 * Sine(i) + CANVAS_HEIGHT/2.0)
   END;
-  Cairo.Stroke(c);
-  Cairo.WriteToPNG(c, "circle.png");
-  Cairo.DestroyContext(c);
 END Circle;
 
+PROCEDURE RunExample(runner: Runner; outputFile: ARRAY OF CHAR);
 BEGIN
-  LineArt;
-  Circle;
+  Cairo.InitContext(c, CANVAS_WIDTH_INT, CANVAS_HEIGHT_INT);
+  MakeSineTable;
+  runner;
+  Cairo.Stroke(c);
+  Cairo.WriteToPNG(c, outputFile);
+  Cairo.DestroyContext(c);
+END RunExample;
+
+BEGIN
+  RunExample(LineArt, "line_art.png");
+  RunExample(Circle, "circle.png");
 END CairoTest.
