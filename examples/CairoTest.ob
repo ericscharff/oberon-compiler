@@ -18,6 +18,8 @@ VAR
   c: Cairo.Context;
   i: REAL;
   table: ARRAY 360 OF REAL;
+  turtleX, turtleY: REAL;
+  turtleHeading: INTEGER;
 
 PROCEDURE Sine(angleInDegrees: INTEGER): REAL;
 BEGIN
@@ -428,6 +430,45 @@ BEGIN
   END;
 END Circle;
 
+PROCEDURE Forward(size: REAL);
+BEGIN
+  turtleX := turtleX + (size * Cosine(turtleHeading));
+  turtleY := turtleY + (size * Sine(turtleHeading));
+  Cairo.LineTo(c, turtleX, turtleY)
+END Forward;
+
+PROCEDURE Right(angle: INTEGER);
+BEGIN
+  turtleHeading := turtleHeading + angle;
+END Right;
+
+PROCEDURE Square;
+VAR i: INTEGER;
+BEGIN
+  FOR i := 1 TO 4 DO
+    Forward(80.0);
+    Right(90)
+  END
+END Square;
+
+PROCEDURE Flower;
+VAR i: INTEGER;
+BEGIN
+  FOR i := 1 TO 20 DO
+    Square;
+    Right(18)
+  END
+END Flower;
+
+PROCEDURE TurtleGeometry;
+BEGIN
+  Cairo.MoveTo(c, CANVAS_WIDTH/2.0, CANVAS_HEIGHT/2.0);
+  turtleHeading := 90;
+  turtleX := CANVAS_WIDTH/2.0;
+  turtleY := CANVAS_HEIGHT/2.0;
+  Flower;
+END TurtleGeometry;
+
 PROCEDURE RunExample(runner: Runner; outputFile: ARRAY OF CHAR);
 BEGIN
   Cairo.InitContext(c, CANVAS_WIDTH_INT, CANVAS_HEIGHT_INT);
@@ -441,4 +482,5 @@ END RunExample;
 BEGIN
   RunExample(LineArt, "line_art.png");
   RunExample(Circle, "circle.png");
+  RunExample(TurtleGeometry, "turtle_flower.png");
 END CairoTest.
