@@ -7,6 +7,8 @@ CONST
   CANVAS_HEIGHT_INT = 480;
   CANVAS_WIDTH = 640.0;
   CANVAS_HEIGHT = 480.0;
+  HALF_CANVAS_WIDTH =  CANVAS_WIDTH / 2.0;
+  HALF_CANVAS_HEIGHT = CANVAS_HEIGHT / 2.0;
   Y_STEPS = CANVAS_HEIGHT / 15.0;
   X_PIXELS_PER_STEP = CANVAS_WIDTH / Y_STEPS;
   Y_PIXELS_PER_STEP = CANVAS_HEIGHT / Y_STEPS;
@@ -421,12 +423,12 @@ PROCEDURE Circle;
 VAR
   i: INTEGER;
 BEGIN
-  Cairo.MoveTo(c, CANVAS_WIDTH-20.0, CANVAS_HEIGHT/2.0);
+  Cairo.MoveTo(c, CANVAS_WIDTH-20.0, HALF_CANVAS_HEIGHT);
   FOR i := 0 TO 360 DO
     Cairo.LineTo(
       c,
-      (CANVAS_WIDTH-20.0)/2.0 * Cosine(i) + CANVAS_WIDTH/2.0,
-      (CANVAS_HEIGHT-20.0)/2.0 * Sine(i) + CANVAS_HEIGHT/2.0)
+      (CANVAS_WIDTH-20.0)/2.0 * Cosine(i) + HALF_CANVAS_WIDTH,
+      (CANVAS_HEIGHT-20.0)/2.0 * Sine(i) + HALF_CANVAS_HEIGHT)
   END;
 END Circle;
 
@@ -462,12 +464,38 @@ END Flower;
 
 PROCEDURE TurtleGeometry;
 BEGIN
-  Cairo.MoveTo(c, CANVAS_WIDTH/2.0, CANVAS_HEIGHT/2.0);
+  Cairo.MoveTo(c, HALF_CANVAS_WIDTH, HALF_CANVAS_HEIGHT);
   turtleHeading := 90;
-  turtleX := CANVAS_WIDTH/2.0;
-  turtleY := CANVAS_HEIGHT/2.0;
+  turtleX := HALF_CANVAS_WIDTH;
+  turtleY := HALF_CANVAS_HEIGHT;
   Flower;
 END TurtleGeometry;
+
+PROCEDURE TimesTable;
+CONST
+  times = 120;
+
+VAR
+  i: INTEGER;
+
+  PROCEDURE XCoord(num: INTEGER): REAL;
+  BEGIN
+    num := num MOD 180;
+    RETURN HALF_CANVAS_WIDTH + Cosine(num*2) * HALF_CANVAS_HEIGHT
+  END XCoord;
+
+  PROCEDURE YCoord(num: INTEGER): REAL;
+  BEGIN
+    num := num MOD 180;
+    RETURN HALF_CANVAS_HEIGHT + Sine(num*2) * HALF_CANVAS_HEIGHT
+  END YCoord;
+
+BEGIN
+  FOR i := 0 TO 179 DO
+    Cairo.MoveTo(c, XCoord(i), YCoord(i));
+    Cairo.LineTo(c, XCoord(i*times), YCoord(i*times));
+  END;
+END TimesTable;
 
 PROCEDURE RunExample(runner: Runner; outputFile: ARRAY OF CHAR);
 BEGIN
@@ -483,4 +511,5 @@ BEGIN
   RunExample(LineArt, "line_art.png");
   RunExample(Circle, "circle.png");
   RunExample(TurtleGeometry, "turtle_flower.png");
+  RunExample(TimesTable, "times_table.png");
 END CairoTest.
