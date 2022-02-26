@@ -25,6 +25,7 @@ BEGIN
   Out.Real(a); Out.Ln;
   a := ABS(a);
   Out.Real(a); Out.Ln;
+  Out.Int(FLOOR(3.1 + 2.1)); Out.Ln
 END Test;
 
 BEGIN

@@ -48,18 +48,19 @@ CONST
   builtinAssert* = 2;
   builtinChr*    = 3;
   builtinDec*    = 4;
-  builtinFlt*    = 5;
-  builtinInit*   = 6;
-  builtinInc*    = 7;
-  builtinLen*    = 8;
-  builtinNew*    = 9;
-  builtinOrd*    = 10;
-  builtinPush*   = 11;
+  builtinFloor*  = 5;
+  builtinFlt*    = 6;
+  builtinInit*   = 7;
+  builtinInc*    = 8;
+  builtinLen*    = 9;
+  builtinNew*    = 10;
+  builtinOrd*    = 11;
+  builtinPush*   = 12;
 
-  builtinReadInt* = 12;
-  builtinWriteInt* = 13;
-  builtinWriteChar* = 14;
-  builtinWriteLn* = 15;
+  builtinReadInt* = 13;
+  builtinWriteInt* = 14;
+  builtinWriteChar* = 15;
+  builtinWriteLn* = 16;
 
   stmtAssign*   = 1;
   stmtProcCall* = 2;

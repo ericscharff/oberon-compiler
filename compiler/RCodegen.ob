@@ -1648,6 +1648,11 @@ BEGIN
     FixChain(localTrueChain, cp);
     Emit(opBL, LINK, 0, 0, ASSERT_TRAP);
     FixChain(localFalseChain, cp);
+  ELSIF e.iVal = AST.builtinFloor THEN
+    localTrueChain := 0; localFalseChain := 0;
+    GenExpr(l, e.rhs, item, localTrueChain, localFalseChain);
+    LoadValue(item, localTrueChain, localFalseChain);
+    Emit(opR2I, curReg - 1, 0, 0, 0);
   ELSIF e.iVal = AST.builtinFlt THEN
     localTrueChain := 0; localFalseChain := 0;
     GenExpr(l, e.rhs, item, localTrueChain, localFalseChain);

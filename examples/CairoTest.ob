@@ -3,8 +3,6 @@ MODULE CairoTest;
 IMPORT Cairo;
 
 CONST
-  CANVAS_WIDTH_INT = 640;
-  CANVAS_HEIGHT_INT = 480;
   CANVAS_WIDTH = 640.0;
   CANVAS_HEIGHT = 480.0;
   Y_STEPS = CANVAS_HEIGHT / 15.0;
@@ -497,7 +495,7 @@ END TimesTable;
 
 PROCEDURE RunExample(runner: Runner; outputFile: ARRAY OF CHAR);
 BEGIN
-  Cairo.InitContext(c, CANVAS_WIDTH_INT, CANVAS_HEIGHT_INT);
+  Cairo.InitContext(c, FLOOR(CANVAS_WIDTH), FLOOR(CANVAS_HEIGHT));
   MakeSineTable;
   runner;
   Cairo.Stroke(c);

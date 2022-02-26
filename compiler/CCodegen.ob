@@ -720,6 +720,7 @@ BEGIN
     AST.builtinAbs: GenStr("oberon_abs("); GenExpr(l, e.rhs); GenStr(")");
   | AST.builtinAssert: GenStr("assert("); GenExpr(l, e.rhs); GenStr(")");
   | AST.builtinChr, AST.builtinOrd, AST.builtinFlt: GenExpr(l, e.rhs);
+  | AST.builtinFloor: GenStr("((INTEGER)"); GenExpr(l, e.rhs); GenStr(")");
   | AST.builtinDec:
       GenExpr(l, e.rhs);
       IF e.rhs.next = NIL THEN

@@ -431,6 +431,24 @@ BEGIN
   RETURN e
 END builtinChr;
 
+PROCEDURE builtinFloor(l: Lex.Lexer; args: AST.Expr): AST.Expr;
+VAR
+  e: AST.Expr;
+BEGIN
+  AST.NewExpr(e, AST.exprBuiltin, nilType);
+  e.iVal := AST.builtinFloor;
+  e.rhs := args;
+  IF (args = NIL) OR (args.next # NIL) THEN
+    Lex.ErrorLn(l, "FLOOR expects 1 argument");
+  END;
+  IF args.typ.kind = AST.typeReal THEN
+    e.typ := integerType;
+  ELSE
+    Lex.ErrorLn(l, "FLOOR expects a REAL");
+  END;
+  RETURN e
+END builtinFloor;
+
 PROCEDURE builtinFlt(l: Lex.Lexer; args: AST.Expr): AST.Expr;
 VAR
   e: AST.Expr;
@@ -615,6 +633,7 @@ BEGIN
     AddBuiltin(l, Lex.Intern(l, "ASSERT"), builtinAssert);
     AddBuiltin(l, Lex.Intern(l, "ORD"), builtinOrd);
     AddBuiltin(l, Lex.Intern(l, "CHR"), builtinChr);
+    AddBuiltin(l, Lex.Intern(l, "FLOOR"), builtinFloor);
     AddBuiltin(l, Lex.Intern(l, "FLT"), builtinFlt);
     AddBuiltin(l, Lex.Intern(l, "LEN"), builtinLen);
     AddBuiltin(l, Lex.Intern(l, "NEW"), builtinNew);
