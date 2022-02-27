@@ -1,0 +1,40 @@
+MODULE Test6502;
+
+IMPORT M6502;
+
+CONST
+  MemSize = 4 * 256;
+
+VAR
+  mem: ARRAY MemSize OF CHAR;
+  cpu: M6502.CPU;
+  i: INTEGER;
+
+PROCEDURE ReadMem(where: INTEGER): INTEGER;
+BEGIN RETURN ORD(mem[where]) END ReadMem;
+
+PROCEDURE WriteMem(where, what: INTEGER);
+BEGIN mem[where] := CHR(what) END WriteMem;
+
+BEGIN
+  cpu.a := 0; cpu.x := 0; cpu.y := 0; cpu.sp := 255;
+  cpu.pc := 0; cpu.flags := {M6502.reserveD};
+  cpu.readProc := ReadMem; cpu.writeProc := WriteMem;
+
+  FOR i := 0 TO MemSize-1 DO mem[i] := CHR(0) END;
+  (* Poke simple program into memory *)
+  mem[00] := 0A9X; mem[01] := 000X;  (* LDA #$00 *)
+  mem[02] := 018X; mem[03] := 0AAX;  (* CLC; TAX *)
+  mem[04] := 09DX; mem[05] := 000X; mem[06] := 003X; (* loop: STA $0300, X *)
+  mem[07] := 069X; mem[08] := 002X;  (* ADC #$02 *)
+  mem[09] := 0E8X;                   (* INX *)
+  mem[10] := 0D0X; mem[11] := 0F8X;  (* BNE loop *) 
+   
+  (* Run until BRK statement *)
+  WHILE mem[cpu.pc] # 0X DO M6502.Step(cpu) END;
+  (* Page 3 of RAM should be filled with even numbers, then odd numbers *)
+  FOR i := 0 TO 255 DO
+    WriteInt(mem[0300H + i]);
+    IF ((i+1) MOD 16) = 0 THEN WriteLn END
+  END;
+END Test6502.:

@@ -26,6 +26,7 @@ TESTS=(
   Shadow
   ShortCircuit
   StrTest
+  Test6502
   TestBed
   TestCompiler
   TypeExt
