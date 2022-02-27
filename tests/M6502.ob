@@ -27,14 +27,12 @@ CONST
 	(* Condition codes *)
 
 TYPE
-	LONGINT = INTEGER;
-	SHORTINT = INTEGER;
-	ReadProc = PROCEDURE (where: LONGINT) :INTEGER;
-	WriteProc = PROCEDURE (where: LONGINT; what: INTEGER);
+	ReadProc = PROCEDURE (where: INTEGER) :INTEGER;
+	WriteProc = PROCEDURE (where: INTEGER; what: INTEGER);
 	CPU* = RECORD
 		a*, x*, y*: INTEGER;
 		flags*: SET;
-		pc*: LONGINT;
+		pc*: INTEGER;
 		sp*: INTEGER;
 		readProc*: ReadProc;
 		writeProc*: WriteProc;
@@ -44,7 +42,7 @@ TYPE
 
 VAR
 	dispatch: ARRAY 256 OF Opcode;
-	addrMode: ARRAY 256 OF SHORTINT;
+	addrMode: ARRAY 256 OF INTEGER;
 	
 PROCEDURE DoBITAND(a, b: INTEGER): INTEGER;
 BEGIN RETURN a BITAND b END DoBITAND;
@@ -97,7 +95,7 @@ BEGIN
 	p.writeProc(p.sp + 256, what); DEC(p.sp)
 END PushByte;
 
-PROCEDURE PushWord(VAR p: CPU; what: LONGINT);
+PROCEDURE PushWord(VAR p: CPU; what: INTEGER);
 BEGIN
 	p.writeProc(p.sp + 256, what DIV 256); DEC(p.sp);
 	p.writeProc(p.sp + 256, DoBITAND(what,255)); DEC(p.sp)
@@ -108,8 +106,8 @@ BEGIN
 	INC(p.sp); RETURN p.readProc(p.sp + 256)
 END PopByte;
 
-PROCEDURE PopWord(VAR p: CPU) :LONGINT;
-VAR x, b: LONGINT;
+PROCEDURE PopWord(VAR p: CPU) :INTEGER;
+VAR x, b: INTEGER;
 BEGIN
 	x := PopByte(p);
 	b := PopByte(p);
@@ -125,8 +123,8 @@ BEGIN
 	RETURN a
 END Fetch;
 
-PROCEDURE FetchWord(VAR p: CPU) :LONGINT;
-VAR r, b: LONGINT;
+PROCEDURE FetchWord(VAR p: CPU) :INTEGER;
+VAR r, b: INTEGER;
 BEGIN
 	r := Fetch(p);
 	b := Fetch(p);
@@ -134,16 +132,16 @@ BEGIN
 	RETURN b + r
 END FetchWord;
 
-PROCEDURE WordAt(VAR p: CPU; where: LONGINT) :LONGINT;
-VAR t: LONGINT;
+PROCEDURE WordAt(VAR p: CPU; where: INTEGER) :INTEGER;
+VAR t: INTEGER;
 BEGIN
 	t := 256;
 	RETURN p.readProc(where+1) * t + p.readProc(where)
 END WordAt;
 
 (* Get the effective address indicated by the addressing mode indicated. *)
-PROCEDURE EA(VAR p: CPU; mode: INTEGER) :LONGINT;
-VAR a: LONGINT;
+PROCEDURE EA(VAR p: CPU; mode: INTEGER) :INTEGER;
+VAR a: INTEGER;
 BEGIN
 	CASE mode OF
 		mIndirectX:
@@ -176,7 +174,7 @@ END EA;
 
 (* Get the contents of the effective address *)
 PROCEDURE CEA(VAR p: CPU; mode: INTEGER) :INTEGER;
-VAR a: LONGINT;
+VAR a: INTEGER;
 BEGIN
 	a := EA(p, mode);
 	IF mode # mImmediate THEN a := p.readProc(a) END
@@ -208,7 +206,7 @@ END DoAND;
 
 (* ASL   Shift Left One Bit (Memory or Accumulator) *)
 PROCEDURE DoASL(VAR p: CPU; mode: INTEGER);
-VAR m: LONGINT; v: INTEGER;
+VAR m: INTEGER; v: INTEGER;
 BEGIN
 	IF mode = mAccum THEN
 		p.a := p.a * 2;
@@ -223,7 +221,7 @@ END DoASL;
 
 (* BCC   Branch on Carry Clear *)
 PROCEDURE DoBCC(VAR p: CPU; mode: INTEGER);
-VAR dst: LONGINT;
+VAR dst: INTEGER;
 BEGIN
 	dst := EA(p, mode);
 	IF carrY IN p.flags THEN p.pc := dst; END
@@ -231,7 +229,7 @@ END DoBCC;
 
 (* BCS   Branch on Carry Set *)
 PROCEDURE DoBCS(VAR p: CPU; mode: INTEGER);
-VAR dst: LONGINT;
+VAR dst: INTEGER;
 BEGIN
 	dst := EA(p, mode);
 	IF ~(carrY IN p.flags) THEN p.pc := dst; END
@@ -239,7 +237,7 @@ END DoBCS;
 
 (* BEQ   Branch on Result Zero *)
 PROCEDURE DoBEQ(VAR p: CPU; mode: INTEGER);
-VAR dst: LONGINT;
+VAR dst: INTEGER;
 BEGIN
 	dst := EA(p, mode);
 	IF zerO IN p.flags THEN p.pc := dst; END
@@ -257,7 +255,7 @@ END DoBIT;
 
 (* BMI   Branch on Result Minus *)
 PROCEDURE DoBMI(VAR p: CPU; mode: INTEGER);
-VAR dst: LONGINT;
+VAR dst: INTEGER;
 BEGIN
 	dst := EA(p, mode);
 	IF negativE IN p.flags THEN p.pc := dst; END
@@ -265,7 +263,7 @@ END DoBMI;
 
 (* BNE   Branch on Result not Zero *)
 PROCEDURE DoBNE(VAR p: CPU; mode: INTEGER);
-VAR dst: LONGINT;
+VAR dst: INTEGER;
 BEGIN
 	dst := EA(p, mode);
 	IF ~(zerO IN p.flags) THEN p.pc := dst; END
@@ -273,7 +271,7 @@ END DoBNE;
 
 (* BPL   Branch on Result Plus *)
 PROCEDURE DoBPL(VAR p: CPU; mode: INTEGER);
-VAR dst: LONGINT;
+VAR dst: INTEGER;
 BEGIN
 	dst := EA(p, mode);
 	IF ~(negativE IN p.flags) THEN p.pc := dst; END
@@ -281,7 +279,7 @@ END DoBPL;
 
 (* BVC   Branch on Overflow Clear *)
 PROCEDURE DoBVC(VAR p: CPU; mode: INTEGER);
-VAR dst: LONGINT;
+VAR dst: INTEGER;
 BEGIN
 	dst := EA(p, mode);
 	IF ~(overfloW IN p.flags) THEN p.pc := dst; END
@@ -289,7 +287,7 @@ END DoBVC;
 
 (* BVS   Branch on Overflow Set *)
 PROCEDURE DoBVS(VAR p: CPU; mode: INTEGER);
-VAR dst: LONGINT;
+VAR dst: INTEGER;
 BEGIN
 	dst := EA(p, mode);
 	IF overfloW IN p.flags THEN p.pc := dst; END
@@ -351,7 +349,7 @@ END DoCPY;
 
 (* DEC   Decrement Memory by One *)
 PROCEDURE DoDEC(VAR p: CPU; mode: INTEGER);
-VAR m: LONGINT;
+VAR m: INTEGER;
 BEGIN
 	m := EA(p, mode);
 	p.writeProc(m, DoBITAND(255, p.readProc(m) - 1));
@@ -383,7 +381,7 @@ END DoEOR;
 
 (* INC   Increment Memory by One *)
 PROCEDURE DoINC(VAR p: CPU; mode: INTEGER);
-VAR m: LONGINT;
+VAR m: INTEGER;
 BEGIN
 	m := EA(p, mode);
 	p.writeProc(m, DoBITAND(255, p.readProc(m) + 1));
@@ -412,7 +410,7 @@ END DoJMP;
 
 (* JSR   Jump to New Location Saving Return Address *)
 PROCEDURE DoJSR(VAR p: CPU; mode: INTEGER);
-VAR m: LONGINT;
+VAR m: INTEGER;
 BEGIN
 	m := EA(p, mode);
 	PushWord(p, p.pc - 1);
@@ -442,7 +440,7 @@ END DoLDY;
 
 (* LSR   Shift Right One Bit (Memory or Accumulator) *)
 PROCEDURE DoLSR(VAR p: CPU; mode: INTEGER);
-VAR m: LONGINT; v: INTEGER;
+VAR m: INTEGER; v: INTEGER;
 BEGIN
 	IF mode = mAccum THEN
 		SetC(p, ODD(p.a)); p.a := p.a DIV 2;  IF carrY IN p.flags THEN p.a := DoBITOR(p.a, 128) END
@@ -502,7 +500,7 @@ END DoPLP;
 
 (* ROL   Rotate One Bit Left (Memory or Accumulator) *)
 PROCEDURE DoROL(VAR p: CPU; mode: INTEGER);
-VAR m: LONGINT;  v: INTEGER;
+VAR m: INTEGER;  v: INTEGER;
 BEGIN
 	IF mode = mAccum THEN
 		p.a := p.a * 2;
@@ -519,7 +517,7 @@ END DoROL;
 
 (* ROR   Rotate One Bit Right (Memory or Accumulator) *)
 PROCEDURE DoROR(VAR p: CPU; mode: INTEGER);
-VAR m: LONGINT; v: INTEGER;
+VAR m: INTEGER; v: INTEGER;
 BEGIN
 	IF mode = mAccum THEN
 		SetC(p, ODD(p.a)); p.a := p.a DIV 2;  IF carrY IN p.flags THEN p.a := DoBITOR(p.a, 128) END
