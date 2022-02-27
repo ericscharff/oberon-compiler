@@ -37,4 +37,4 @@ done
 
 cd $BUILDDIR
 ./oberon $OCFLAGS $1 | $PERR
-./oberon $OCFLAGS $1 > out$EXT && $CC -g $CSTDFLAGS -Wall -Wextra -Wpedantic -o out.prg out$EXT
+./oberon $OCFLAGS $1 > out$EXT && $CC -g $CSTDFLAGS -Wall -Wextra -Wpedantic -Wno-unused-parameter -o out.prg out$EXT
