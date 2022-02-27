@@ -1,7 +1,5 @@
 MODULE M6502;
 
-IMPORT BIT, SYSTEM;
-
 CONST
 	carrY* = 0;
 	zerO* = 1;
@@ -29,6 +27,8 @@ CONST
 	(* Condition codes *)
 
 TYPE
+	LONGINT = INTEGER;
+	SHORTINT = INTEGER;
 	ReadProc = PROCEDURE (where: LONGINT) :INTEGER;
 	WriteProc = PROCEDURE (where: LONGINT; what: INTEGER);
 	CPU* = RECORD
@@ -46,30 +46,50 @@ VAR
 	dispatch: ARRAY 256 OF Opcode;
 	addrMode: ARRAY 256 OF SHORTINT;
 	
+PROCEDURE DoBITAND(a, b: INTEGER): INTEGER;
+BEGIN RETURN a BITAND b END DoBITAND;
+	
+PROCEDURE DoBITOR(a, b: INTEGER): INTEGER;
+BEGIN RETURN a BITOR b END DoBITOR;
+	
+PROCEDURE DoBITXOR(a, b: INTEGER): INTEGER;
+BEGIN RETURN a BITXOR b END DoBITXOR;
+	
+PROCEDURE DoBITBIT(a, whichBit: INTEGER): INTEGER;
+BEGIN RETURN a BITAND ORD({whichBit}) END DoBITBIT;
+
+PROCEDURE DoINCL(VAR a: SET; i: INTEGER);
+BEGIN a := a + {i} END DoINCL;
+
+PROCEDURE DoEXCL(VAR a: SET; i: INTEGER);
+BEGIN a := a - {i} END DoEXCL;
+
+PROCEDURE ODD(a: INTEGER): BOOLEAN;
+BEGIN RETURN (a BITAND 1) = 1 END ODD;
+
 (* Convert a number in two's coplement to a signed integer *)
 PROCEDURE Comp(x: INTEGER) :INTEGER;
 BEGIN
-	IF x < 128 THEN
-		RETURN x;
-	ELSE
-		RETURN -1 * (BIT.IXOR(x, 255)  + 1);
+	IF x >= 128 THEN
+		x := -1 * (DoBITXOR(x, 255)  + 1);
 	END
+	RETURN x
 END Comp;
 
 PROCEDURE SetNZ(VAR p: CPU; v: INTEGER);
 BEGIN
-	IF v = 0 THEN INCL(p.flags, zerO) ELSE EXCL(p.flags, zerO) END;
-	IF v > 127 THEN INCL(p.flags, negativE) ELSE EXCL(p.flags, negativE) END;
+	IF v = 0 THEN DoINCL(p.flags, zerO) ELSE DoEXCL(p.flags, zerO) END;
+	IF v > 127 THEN DoINCL(p.flags, negativE) ELSE DoEXCL(p.flags, negativE) END;
 END SetNZ;
 
 PROCEDURE SetC(VAR p: CPU; v: BOOLEAN);
 BEGIN
-	IF v THEN INCL(p.flags, carrY) ELSE EXCL(p.flags, carrY) END;
+	IF v THEN DoINCL(p.flags, carrY) ELSE DoEXCL(p.flags, carrY) END;
 END SetC;
 
 PROCEDURE SetV(VAR p: CPU; v: BOOLEAN);
 BEGIN
-	IF v THEN INCL(p.flags, overfloW) ELSE EXCL(p.flags, overfloW) END;
+	IF v THEN DoINCL(p.flags, overfloW) ELSE DoEXCL(p.flags, overfloW) END;
 END SetV;
 
 PROCEDURE PushByte(VAR p: CPU; what: INTEGER);
@@ -79,8 +99,8 @@ END PushByte;
 
 PROCEDURE PushWord(VAR p: CPU; what: LONGINT);
 BEGIN
-	p.writeProc(p.sp + 256, SHORT(what DIV 256)); DEC(p.sp);
-	p.writeProc(p.sp + 256, SHORT(BIT.LAND(what,255))); DEC(p.sp)
+	p.writeProc(p.sp + 256, what DIV 256); DEC(p.sp);
+	p.writeProc(p.sp + 256, DoBITAND(what,255)); DEC(p.sp)
 END PushWord;
 
 PROCEDURE PopByte(VAR p: CPU) :INTEGER;
@@ -111,7 +131,7 @@ BEGIN
 	r := Fetch(p);
 	b := Fetch(p);
 	b := b * 256;
-	RETURN b + r;
+	RETURN b + r
 END FetchWord;
 
 PROCEDURE WordAt(VAR p: CPU; where: LONGINT) :LONGINT;
@@ -159,7 +179,8 @@ PROCEDURE CEA(VAR p: CPU; mode: INTEGER) :INTEGER;
 VAR a: LONGINT;
 BEGIN
 	a := EA(p, mode);
-	IF mode # mImmediate THEN RETURN p.readProc(a) ELSE RETURN SHORT(a) END
+	IF mode # mImmediate THEN a := p.readProc(a) END
+	RETURN a
 END CEA;
 
 (* ================================================================ *)
@@ -172,16 +193,16 @@ VAR m, r: INTEGER;
 BEGIN
 	m := CEA(p, mode); r := p.a + m;
 	IF carrY IN p.flags THEN INC(r) END;
-	SetC(p, r > 255); r := BIT.IAND(r, 255);
+	SetC(p, r > 255); r := DoBITAND(r, 255);
 	SetNZ(p, r);
-	SetV(p, (BIT.BIT(p.a,7) = BIT.BIT(m,7)) & (BIT.BIT(r,7) # BIT.BIT(p.a,7)));
+	SetV(p, (DoBITBIT(p.a,7) = DoBITBIT(m,7)) & (DoBITBIT(r,7) # DoBITBIT(p.a,7)));
 	p.a := r;
 END DoADC;
 
 (* AND   "AND" Memory with Accumulator *)
 PROCEDURE DoAND(VAR p: CPU; mode: INTEGER);
 BEGIN
-	p.a := BIT.IAND(CEA(p, mode), p.a);
+	p.a := DoBITAND(CEA(p, mode), p.a);
 	SetNZ(p, p.a)
 END DoAND;
 
@@ -191,11 +212,11 @@ VAR m: LONGINT; v: INTEGER;
 BEGIN
 	IF mode = mAccum THEN
 		p.a := p.a * 2;
-		IF p.a > 255 THEN SetC(p, TRUE); p.a := BIT.IAND(p.a, 255); END;
+		IF p.a > 255 THEN SetC(p, TRUE); p.a := DoBITAND(p.a, 255); END;
 		SetNZ(p, p.a)
 	ELSE
 		m := EA(p, mode); v := p.readProc(m); v := v * 2;
-		IF v > 255 THEN SetC(p, TRUE); v := BIT.IAND(v, 255); END;
+		IF v > 255 THEN SetC(p, TRUE); v := DoBITAND(v, 255); END;
 		p.writeProc(m, v); SetNZ(p, v)
 	END
 END DoASL;
@@ -229,9 +250,9 @@ PROCEDURE DoBIT(VAR p: CPU; mode: INTEGER);
 VAR a: INTEGER;
 BEGIN
 	a := CEA(p, mode);
-	SetV(p, BIT.BIT(a, 6));
-	IF BIT.BIT(a, 7) THEN INCL(p.flags, negativE) ELSE EXCL(p.flags, negativE) END;
-	IF BIT.IAND(p.a, a) = 0 THEN INCL(p.flags, zerO) ELSE EXCL(p.flags, zerO) END;
+	SetV(p, DoBITBIT(a, 6) # 0);
+	IF DoBITBIT(a, 7) # 0 THEN DoINCL(p.flags, negativE) ELSE DoEXCL(p.flags, negativE) END;
+	IF DoBITAND(p.a, a) = 0 THEN DoINCL(p.flags, zerO) ELSE DoEXCL(p.flags, zerO) END;
 END DoBIT;
 
 (* BMI   Branch on Result Minus *)
@@ -277,25 +298,25 @@ END DoBVS;
 (* CLC   Clear Carry Flag *)
 PROCEDURE DoCLC(VAR p: CPU; mode: INTEGER);
 BEGIN
-	EXCL(p.flags, carrY)
+	DoEXCL(p.flags, carrY)
 END DoCLC;
 
 (* CLD   Clear Decimal Mode *)
 PROCEDURE DoCLD(VAR p: CPU; mode: INTEGER);
 BEGIN
-	EXCL(p.flags, decimaL)
+	DoEXCL(p.flags, decimaL)
 END DoCLD;
 
 (* CLI   Clear interrupt Disable Bit *)
 PROCEDURE DoCLI(VAR p: CPU; mode: INTEGER);
 BEGIN
-	EXCL(p.flags, interrupT)
+	DoEXCL(p.flags, interrupT)
 END DoCLI;
 
 (* CLV   Clear Overflow Flag *)
 PROCEDURE DoCLV(VAR p: CPU; mode: INTEGER);
 BEGIN
-	EXCL(p.flags, overfloW)
+	DoEXCL(p.flags, overfloW)
 END DoCLV;
 
 (* CMP   Compare Memory and Accumulator *)
@@ -333,21 +354,21 @@ PROCEDURE DoDEC(VAR p: CPU; mode: INTEGER);
 VAR m: LONGINT;
 BEGIN
 	m := EA(p, mode);
-	p.writeProc(m, BIT.IAND(255, p.readProc(m) - 1));
+	p.writeProc(m, DoBITAND(255, p.readProc(m) - 1));
 	SetNZ(p, p.readProc(m))
 END DoDEC;
 
 (* DEX   Decrement Index X by One *)
 PROCEDURE DoDEX(VAR p: CPU; mode: INTEGER);
 BEGIN
-	p.x := BIT.IAND(p.x - 1, 255);
+	p.x := DoBITAND(p.x - 1, 255);
 	SetNZ(p, p.x)
 END DoDEX;
 
 (* DEY   Decrement Index Y by One *)
 PROCEDURE DoDEY(VAR p: CPU; mode: INTEGER);
 BEGIN
-	p.x := BIT.IAND(p.x - 1, 255);
+	p.x := DoBITAND(p.x - 1, 255);
 	SetNZ(p, p.x)
 END DoDEY;
 
@@ -356,7 +377,7 @@ PROCEDURE DoEOR(VAR p: CPU; mode: INTEGER);
 VAR m: INTEGER;
 BEGIN
 	m := CEA(p, mode);
-	p.a := BIT.IAND(255, BIT.IXOR(p.x, m));
+	p.a := DoBITAND(255, DoBITXOR(p.x, m));
 	SetNZ(p, p.a);
 END DoEOR;
 
@@ -365,21 +386,21 @@ PROCEDURE DoINC(VAR p: CPU; mode: INTEGER);
 VAR m: LONGINT;
 BEGIN
 	m := EA(p, mode);
-	p.writeProc(m, BIT.IAND(255, p.readProc(m) + 1));
+	p.writeProc(m, DoBITAND(255, p.readProc(m) + 1));
 	SetNZ(p, p.readProc(m))
 END DoINC;
 
 (* INX   Increment Index X by One *)
 PROCEDURE DoINX(VAR p: CPU; mode: INTEGER);
 BEGIN
-	p.x := BIT.IAND(p.x + 1, 255);
+	p.x := DoBITAND(p.x + 1, 255);
 	SetNZ(p, p.x)
 END DoINX;
 
 (* INY   Increment Index Y by One *)
 PROCEDURE DoINY(VAR p: CPU; mode: INTEGER);
 BEGIN
-	p.y := BIT.IAND(p.y + 1, 255);
+	p.y := DoBITAND(p.y + 1, 255);
 	SetNZ(p, p.y)
 END DoINY;
 
@@ -424,12 +445,11 @@ PROCEDURE DoLSR(VAR p: CPU; mode: INTEGER);
 VAR m: LONGINT; v: INTEGER;
 BEGIN
 	IF mode = mAccum THEN
-		SetC(p, ODD(p.a));
-		p.a := p.a DIV 2;
-		SetNZ(p, p.a)
+		SetC(p, ODD(p.a)); p.a := p.a DIV 2;  IF carrY IN p.flags THEN p.a := DoBITOR(p.a, 128) END
 	ELSE
-		m := EA(p, mode); v := p.readProc(m); SetC(p, ODD(v)); v := v DIV 2;
-		p.writeProc(m, v); SetNZ(p, v)
+		m := EA(p, mode); v := p.readProc(m);
+		SetC(p, ODD(v)); v := v DIV 2;  IF carrY IN p.flags THEN v := DoBITOR(v, 128) END;
+		p.writeProc(m, v)
 	END
 END DoLSR;
 
@@ -441,7 +461,7 @@ END DoNOP;
 (* ORA   "OR" Memory with Accumulator *)
 PROCEDURE DoORA(VAR p: CPU; mode: INTEGER);
 BEGIN
-	p.a := BIT.IOR(CEA(p, mode), p.a);
+	p.a := DoBITOR(CEA(p, mode), p.a);
 	SetNZ(p, p.a)
 END DoORA;
 
@@ -453,9 +473,8 @@ END DoPHA;
 
 (* PHP   Push Processor Status on Stack *)
 PROCEDURE DoPHP(VAR p: CPU; mode: INTEGER);
-VAR sw: INTEGER;
 BEGIN
-	PushByte(p, SHORT(SYSTEM.VAL(LONGINT, p.flags)))
+	PushByte(p, ORD(p.flags))
 END DoPHP;
 
 (* PLA   Pull Accumulator from Stack *)
@@ -466,8 +485,19 @@ END DoPLA;
 
 (* PLP   Pull Processor Status from Stack *)
 PROCEDURE DoPLP(VAR p: CPU; mode: INTEGER);
+VAR b: INTEGER;
 BEGIN
-	p.flags := SYSTEM.VAL(SET, PopByte(p))
+	b := PopByte(p);
+	p.flags := {}; (*SYSTEM.VAL(SET, PopByte(p)) *)
+	IF (b BITAND 1) = 1 THEN DoINCL(p.flags, carrY) END;
+	IF (b BITAND 2) = 2 THEN DoINCL(p.flags, zerO) END;
+	IF (b BITAND 4) = 4 THEN DoINCL(p.flags, interrupT) END;
+	IF (b BITAND 8) = 8 THEN DoINCL(p.flags, decimaL) END;
+	IF (b BITAND 16) = 16 THEN DoINCL(p.flags, breaK) END;
+	IF (b BITAND 32) = 32 THEN DoINCL(p.flags, reserveD) END;
+	IF (b BITAND 64) = 64 THEN DoINCL(p.flags, overfloW) END;
+	IF (b BITAND 128) = 128 THEN DoINCL(p.flags, negativE) END;
+
 END DoPLP;
 
 (* ROL   Rotate One Bit Left (Memory or Accumulator) *)
@@ -477,12 +507,12 @@ BEGIN
 	IF mode = mAccum THEN
 		p.a := p.a * 2;
 		IF p.a > 255 THEN p.a := p.a - 256; SetC(p, TRUE) ELSE SetC(p, FALSE) END;
-		IF carrY IN p.flags THEN p.a := BIT.IOR(p.a, 1) END
+		IF carrY IN p.flags THEN p.a := DoBITOR(p.a, 1) END
 	ELSE
 		m := EA(p, mode); v := p.readProc(m);
 		v := v * 2;
 		IF v > 255 THEN v := v - 256; SetC(p, TRUE) ELSE SetC(p, FALSE) END;
-		IF carrY IN p.flags THEN v := BIT.IOR(v, 1) END;
+		IF carrY IN p.flags THEN v := DoBITOR(v, 1) END;
 		p.writeProc(m, v)
 	END
 END DoROL;
@@ -492,10 +522,10 @@ PROCEDURE DoROR(VAR p: CPU; mode: INTEGER);
 VAR m: LONGINT; v: INTEGER;
 BEGIN
 	IF mode = mAccum THEN
-		SetC(p, ODD(p.a)); p.a := p.a DIV 2;  IF carrY IN p.flags THEN p.a := BIT.IOR(p.a, 128) END
+		SetC(p, ODD(p.a)); p.a := p.a DIV 2;  IF carrY IN p.flags THEN p.a := DoBITOR(p.a, 128) END
 	ELSE
 		m := EA(p, mode); v := p.readProc(m);
-		SetC(p, ODD(v)); v := v DIV 2;  IF carrY IN p.flags THEN v := BIT.IOR(v, 128) END;
+		SetC(p, ODD(v)); v := v DIV 2;  IF carrY IN p.flags THEN v := DoBITOR(v, 128) END;
 		p.writeProc(m, v)
 	END
 END DoROR;
@@ -518,28 +548,28 @@ VAR m, r: INTEGER;
 BEGIN
 	m := CEA(p, mode); r := p.a - m - 1;
 	IF carrY IN p.flags THEN INC(r) END;
-	SetC(p, r > 255); r := BIT.IAND(r, 255);
+	SetC(p, r > 255); r := DoBITAND(r, 255);
 	SetNZ(p, r);
-	SetV(p, (BIT.BIT(p.a,7) # BIT.BIT(m,7)) & (BIT.BIT(r,7) # BIT.BIT(p.a,7)));
+	SetV(p, (DoBITBIT(p.a,7) # DoBITBIT(m,7)) & (DoBITBIT(r,7) # DoBITBIT(p.a,7)));
 	p.a := r;
 END DoSBC;
 
 (* SEC   Set Carry Flag *)
 PROCEDURE DoSEC(VAR p: CPU; mode: INTEGER);
 BEGIN
-	INCL(p.flags, carrY)
+	DoINCL(p.flags, carrY)
 END DoSEC;
 
 (* SED   Set Decimal Mode *)
 PROCEDURE DoSED(VAR p: CPU; mode: INTEGER);
 BEGIN
-	INCL(p.flags, decimaL)
+	DoINCL(p.flags, decimaL)
 END DoSED;
 
 (* SEI   Set Interrupt Disable Status *)
 PROCEDURE DoSEI(VAR p: CPU; mode: INTEGER);
 BEGIN
-	INCL(p.flags, interrupT)
+	DoINCL(p.flags, interrupT)
 END DoSEI;
 
 (* STA   Store Accumulator in Memory *)
@@ -613,7 +643,7 @@ END DoILL;
 
 PROCEDURE Interrupt(VAR p: CPU);
 BEGIN
-	INCL(p.flags, interrupT); PushWord(p, p.pc); DoPHP(p, mImplied); p.pc := WordAt(p, 65534)
+	DoINCL(p.flags, interrupT); PushWord(p, p.pc); DoPHP(p, mImplied); p.pc := WordAt(p, 65534)
 END Interrupt;
 
 (* BRK   Force Break *)
