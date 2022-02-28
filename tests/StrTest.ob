@@ -63,6 +63,7 @@ BEGIN
   Compare("ABCD", "ABCDE");
   Compare("", "ABCDEF");
   Compare("ABCDEF", "");
+  Compare("🟥🟩🟦", "🟥🟦🟩");
 END Comparisons;
 
 PROCEDURE Test;
