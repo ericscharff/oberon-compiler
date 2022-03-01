@@ -27,7 +27,7 @@ CONST
 	(* Condition codes *)
 
 TYPE
-	ReadProc = PROCEDURE (where: INTEGER) :INTEGER;
+	ReadProc = PROCEDURE (where: INTEGER): INTEGER;
 	WriteProc = PROCEDURE (where: INTEGER; what: INTEGER);
 	CPU* = RECORD
 		a*, x*, y*: INTEGER;
@@ -66,7 +66,7 @@ PROCEDURE ODD(a: INTEGER): BOOLEAN;
 BEGIN RETURN (a BITAND 1) = 1 END ODD;
 
 (* Convert a number in two's coplement to a signed integer *)
-PROCEDURE Comp(x: INTEGER) :INTEGER;
+PROCEDURE Comp(x: INTEGER): INTEGER;
 BEGIN
 	IF x >= 128 THEN
 		x := -1 * (DoBITXOR(x, 255)  + 1);
@@ -101,12 +101,12 @@ BEGIN
 	p.writeProc(p.sp + 256, DoBITAND(what,255)); DEC(p.sp)
 END PushWord;
 
-PROCEDURE PopByte(VAR p: CPU) :INTEGER;
+PROCEDURE PopByte(VAR p: CPU): INTEGER;
 BEGIN
 	INC(p.sp); RETURN p.readProc(p.sp + 256)
 END PopByte;
 
-PROCEDURE PopWord(VAR p: CPU) :INTEGER;
+PROCEDURE PopWord(VAR p: CPU): INTEGER;
 VAR x, b: INTEGER;
 BEGIN
 	x := PopByte(p);
@@ -116,14 +116,14 @@ BEGIN
 END PopWord;
 
 (* Fetch the next byte from the program counter, and increment the program counter *)
-PROCEDURE Fetch(VAR p: CPU) :INTEGER;
+PROCEDURE Fetch(VAR p: CPU): INTEGER;
 VAR a: INTEGER;
 BEGIN
 	a := p.readProc(p.pc); INC(p.pc);
 	RETURN a
 END Fetch;
 
-PROCEDURE FetchWord(VAR p: CPU) :INTEGER;
+PROCEDURE FetchWord(VAR p: CPU): INTEGER;
 VAR r, b: INTEGER;
 BEGIN
 	r := Fetch(p);
@@ -132,7 +132,7 @@ BEGIN
 	RETURN b + r
 END FetchWord;
 
-PROCEDURE WordAt(VAR p: CPU; where: INTEGER) :INTEGER;
+PROCEDURE WordAt(VAR p: CPU; where: INTEGER): INTEGER;
 VAR t: INTEGER;
 BEGIN
 	t := 256;
@@ -140,7 +140,7 @@ BEGIN
 END WordAt;
 
 (* Get the effective address indicated by the addressing mode indicated. *)
-PROCEDURE EA(VAR p: CPU; mode: INTEGER) :INTEGER;
+PROCEDURE EA(VAR p: CPU; mode: INTEGER): INTEGER;
 VAR a: INTEGER;
 BEGIN
 	CASE mode OF
@@ -173,7 +173,7 @@ BEGIN
 END EA;
 
 (* Get the contents of the effective address *)
-PROCEDURE CEA(VAR p: CPU; mode: INTEGER) :INTEGER;
+PROCEDURE CEA(VAR p: CPU; mode: INTEGER): INTEGER;
 VAR a: INTEGER;
 BEGIN
 	a := EA(p, mode);
