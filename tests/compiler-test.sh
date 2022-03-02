@@ -10,7 +10,7 @@ cd ../compiler
 ../build/compile RCompiler.ob
 ../build/out.prg RCompiler.ob > ../build/rcompiler_risc_asm_from_c.txt
 ../build/out.prg -dumpcode RCompiler.ob > ../build/risc_code.txt
-cc -DMAX_MEM=524288 -I../build -o ../build/risc-rcompiler ../risc_runner/runner.c
+cc -DMAX_MEM=624288 -I../build -o ../build/risc-rcompiler ../risc_runner/runner.c
 # risc-rcompiler is a RISC binary of the RISC compiler. It is the equivalent
 # to out.prg above, taking Oberon source and producing risc assembly. So, the
 # output of risc-rcompiler can be compared with the same code coming from C.
@@ -26,7 +26,7 @@ diff ../build/rcompiler_risc_asm_from_c.txt ../build/rcompiler_risc_asm_from_ris
 
 # Use the RISC code generator to generate code for the C compiler
 cd ../compiler
-MEM_SIZE=524288 ../build/rcompile Compiler.ob
+MEM_SIZE=624288 ../build/rcompile Compiler.ob
 
 # When this completes, out.prg is a RISC "binary". It interprets RISC code
 # for the Compiler.  Thus, running out.prg on Compiler.ob should generate

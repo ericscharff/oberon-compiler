@@ -35,7 +35,7 @@ TESTS=(
 
 # Some RISC tests need more than the default 65536 words of RAM
 declare -A RISC_MEMSIZE
-RISC_MEMSIZE[TestCompiler]=262144
+RISC_MEMSIZE[TestCompiler]=362144
 
 # Some tests may need to be excluded because RISC doesn't support them
 declare -A RISC_EXCLUSIONS
