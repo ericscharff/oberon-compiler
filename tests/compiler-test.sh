@@ -14,8 +14,8 @@ cc -DMAX_MEM=524288 -I../build -o ../build/risc-rcompiler ../risc_runner/runner.
 # risc-rcompiler is a RISC binary of the RISC compiler. It is the equivalent
 # to out.prg above, taking Oberon source and producing risc assembly. So, the
 # output of risc-rcompiler can be compared with the same code coming from C.
-wc ../build/rcompiler_risc_asm_from_c.txt ../build/rcompiler_risc_asm_from_risc.txt
 ../build/risc-rcompiler RCompiler.ob > ../build/rcompiler_risc_asm_from_risc.txt
+wc ../build/rcompiler_risc_asm_from_c.txt ../build/rcompiler_risc_asm_from_risc.txt
 diff ../build/rcompiler_risc_asm_from_c.txt ../build/rcompiler_risc_asm_from_risc.txt
 
 # Test the compiler by having the compiler compile itself
