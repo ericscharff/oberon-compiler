@@ -7,6 +7,13 @@
 /* Defining COVERAGE generates an instruciton coverage report */
 //#define COVERAGE
 
+/* Defining MONITOR_STACK will test for stack/heap collision */
+#define MONITOR_STACK
+
+/* Defining MEMORY_REPORT will print stats on memory use. */
+/* requires MONITOR_STACK to be set. */
+//#define MEMORY_REPORT
+
 /* Maxiumum memory (in int32_t */
 #ifndef MAX_MEM
   #define MAX_MEM 65536
@@ -305,6 +312,9 @@ void interpret(void) {
   zFlag = false;
   r[GB] = 0;
   r[SP] = MAX_MEM_BYTES - 4;
+#ifdef MONITOR_STACK
+  int minStack  = r[SP];
+#endif
   for (int i = 0; i < MAX_MEM; i++) {
     mem[i] = 0;
   }
@@ -484,6 +494,16 @@ void interpret(void) {
         right = offset;
         r[a] = r[b] - offset;
         zFlag = r[a] == 0;
+#ifdef MONITOR_STACK
+        if ((a == SP) && (r[SP] < minStack)) {
+          minStack = r[SP];
+          if (mem[0] > minStack) {
+            fputs("Stack / Heap Collision\n", stderr);
+            dumpstate(pc, r, (uint8_t *)mem);
+            exit(1);
+          }
+        }
+#endif
         break;
       case MULI:
         r[a] = r[b] * offset;
@@ -648,6 +668,9 @@ void interpret(void) {
       case HALT:
 #ifdef COVERAGE
         print_unvisited();
+#endif
+#ifdef MEMORY_REPORT
+        printf("Max heap %d min stack %d stack use %d\n", mem[0], minStack, MAX_MEM*4-minStack);
 #endif
         return;
     }
