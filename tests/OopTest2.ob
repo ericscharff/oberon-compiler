@@ -9,8 +9,8 @@ IMPORT Out;
 TYPE
   Message = RECORD END;
 
-  DrawMessage = RECORD (Message) END;
-  TickMessage = RECORD (Message) END;
+  DrawMessage = RECORD (Message) dm: INTEGER END;
+  TickMessage = RECORD (Message) tm: INTEGER END;
 
   Object0 = RECORD END;
   Handler = PROCEDURE (VAR obj: Object0; VAR msg: Message);
@@ -109,8 +109,31 @@ BEGIN
   t.handler := TriangleHandler;
 END NewTriangle;
 
+PROCEDURE PrintMessage(VAR m: Message);
+BEGIN
+  CASE m OF
+    DrawMessage: Out.Str("DrawMessage")
+  | TickMessage: Out.Str("TickMessage")
+  END;
+  Out.Ln
+END PrintMessage;
+
+PROCEDURE PrintObject(VAR o: Object);
+BEGIN
+  CASE o OF
+    Square: Out.Str("Square sideLen="); Out.Int(o.sideLen)
+  | Circle: Out.Str("Circle r=" ); Out.Real(o.radius)
+  | Triangle: Out.Str("Triangle base="); Out.Int(o.base);
+              Out.Str(" height=");  Out.Int(o.height)
+  | Actor: Out.Str("Actor velocity="); Out.Int(o.velocity)
+  END;
+  Out.Ln
+END PrintObject;
+
 PROCEDURE SendMessage(VAR m: Message; VAR o: Object);
 BEGIN
+  PrintMessage(m);
+  PrintObject(o);
   o.handler(o, m)
 END SendMessage;
 

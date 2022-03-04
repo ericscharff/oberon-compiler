@@ -522,10 +522,26 @@ BEGIN
   IF ((e.decl.kind = AST.declVarParam) & ~(e.typ.kind = AST.typeArray)) OR
      ((e.decl.kind = AST.declParam) & (e.typ.kind = AST.typeRecord)) THEN
     GenStr("(*");
-    GenQName(l, q);
+    IF e.lTyp = NIL THEN
+      GenQName(l, q);
+    ELSE
+      GenStr("((");
+      GenQName(l, e.lTyp.decl.qname);
+      GenStr("*)");
+      GenQName(l, q);
+      GenStr(")");
+    END;
     GenStr(")");
   ELSE
-    GenQName(l, q);
+    IF e.lTyp = NIL THEN
+      GenQName(l, q);
+    ELSE
+      GenStr("((");
+      GenQName(l, e.lTyp.decl.qname);
+      GenStr(")");
+      GenQName(l, q);
+      GenStr(")");
+    END;
   END;
 END GenIdentRefExpr;
 

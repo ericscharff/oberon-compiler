@@ -82,6 +82,7 @@ BEGIN
   d.qname.moduleName := AST.currentModuleName;
   d.kind := 0;
   d.typ := NIL;
+  d.lTyp := NIL;
   d.expr := NIL;
   d.body := NIL;
   d.next := NIL;

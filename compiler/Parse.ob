@@ -392,6 +392,37 @@ BEGIN
   RETURN s
 END ParseCase;
 
+PROCEDURE ParseTypeCase(caseVar: AST.Expr): AST.Stmt;
+VAR
+  e: AST.Expr;
+  s, tail: AST.Stmt;
+  savedType: AST.Type;
+BEGIN
+  ExpectToken(Lex.tOF);
+  tail := NIL;
+  savedType := caseVar.decl.typ;
+  WHILE ~IsToken(Lex.tEND) DO
+    e := AST.NewExprBinary(l, Lex.tIS, caseVar,
+                           AST.NewExprIdentRef(ParseQualident()),
+                           Decls.booleanType);
+    caseVar.decl.typ := e.rhs.decl.typ;
+    caseVar.decl.lTyp := e.rhs.decl.typ;
+    ExpectToken(Lex.tCOLON);
+    IF tail = NIL THEN
+      s := AST.NewStmtIf(e, ParseStatementSequence());
+      tail := s
+    ELSE
+      tail.elsifs := AST.NewStmtElsIf(e, ParseStatementSequence());
+      tail := tail.elsifs
+    END;
+    caseVar.decl.typ := savedType;
+    caseVar.decl.lTyp := NIL;
+    MatchToken(Lex.tVBAR)
+  END;
+  ExpectToken(Lex.tEND);
+  RETURN s
+END ParseTypeCase;
+
 PROCEDURE ParseCaseStatement(): AST.Stmt;
 VAR
   cond:          AST.Expr;
@@ -399,26 +430,31 @@ VAR
 BEGIN
   ExpectToken(Lex.tCASE);
   cond := ParseExpression();
-  IF ~(cond.typ.kind IN {AST.typeInteger, AST.typeChar}) THEN
-    Lex.ErrorLn(l, "CASE requires INTEGER or CHAR")
-  END;
-  ExpectToken(Lex.tOF);
-  head := ParseCase(cond);
-  tail := head;
-  WHILE MatchToken(Lex.tVBAR) DO
-    s := ParseCase(cond);
-    IF tail = NIL THEN
-      head := s;
-      tail := head;
-    ELSE
-      tail.elsifs := s;
-      IF s # NIL THEN
-        tail := tail.elsifs;
+
+  IF IsTypeGuard(cond) THEN
+    s := ParseTypeCase(cond)
+  ELSE
+    IF ~(cond.typ.kind IN {AST.typeInteger, AST.typeChar}) THEN
+      Lex.ErrorLn(l, "CASE requires INTEGER or CHAR")
+    END;
+    ExpectToken(Lex.tOF);
+    head := ParseCase(cond);
+    tail := head;
+    WHILE MatchToken(Lex.tVBAR) DO
+      s := ParseCase(cond);
+      IF tail = NIL THEN
+        head := s;
+        tail := head;
+      ELSE
+        tail.elsifs := s;
+        IF s # NIL THEN
+          tail := tail.elsifs;
+        END;
       END;
     END;
-  END;
-  ExpectToken(Lex.tEND);
-  s := AST.NewStmtCase(cond, head);
+    ExpectToken(Lex.tEND);
+    s := AST.NewStmtCase(cond, head);
+  END
   RETURN s
 END ParseCaseStatement;
 

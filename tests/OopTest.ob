@@ -3,7 +3,7 @@ MODULE OopTest;
 IMPORT Out;
 
 TYPE
-  Message = RECORD END;
+  Message = RECORD z: INTEGER END;
 
   DrawMessage = RECORD (Message) END;
   TickMessage = RECORD (Message) END;
@@ -127,9 +127,32 @@ BEGIN
   RETURN t
 END NewTriangle;
 
+PROCEDURE PrintMessage(VAR m: Message);
+BEGIN
+  CASE m OF
+    DrawMessage: Out.Str("DrawMessage")
+  | TickMessage: Out.Str("TickMessage")
+  END;
+  Out.Ln
+END PrintMessage;
+
+PROCEDURE PrintObject(o: Object);
+BEGIN
+  CASE o OF
+    Square: Out.Str("Square sideLen="); Out.Int(o.sideLen)
+  | Circle: Out.Str("Circle r=" ); Out.Real(o.radius)
+  | Triangle: Out.Str("Triangle base="); Out.Int(o.base);
+              Out.Str(" height=");  Out.Int(o.height)
+  | Actor: Out.Str("Actor velocity="); Out.Int(o.velocity)
+  END;
+  Out.Ln
+END PrintObject;
+
 PROCEDURE Broadcast(VAR m: Message; l: ListPtr);
 BEGIN
+  PrintMessage(m);
   WHILE l # NIL DO
+    PrintObject(l.o);
     l.o.handler(l.o, m);
     l := l.next
   END

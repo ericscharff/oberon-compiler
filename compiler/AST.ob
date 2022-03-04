@@ -117,6 +117,7 @@ TYPE
     next*:     Decl;
     qname*:    QName;
     typ*:      Type;
+    lTyp*:     Type;
     expr*:     Expr;             (* for CONST declarations            *)
                                  (* PROCEDURE RETURN value            *)
     body*:     Stmt;             (* PROCEDURE or MODULE body          *)
@@ -185,6 +186,10 @@ TYPE
   ExprDesc  = RECORD
     kind*:   ExprKind;
     typ*:    Type;
+    lTyp*:   Type;          (* Only for identRef. if ident was used in a    *)
+                            (* type case, this is the "local type" of the   *)
+                            (* identifier. So the ident can be safely cast  *)
+                            (* to be of type lTyp                           *)
     op*:     Lex.TokenKind; (* for unary, binary                            *)
     lhs*:    Expr;          (* for unary, binary, the base expr for         *)
                             (* arrayRef, pointerDeref, fieldRef, typeGuard, *)
@@ -403,6 +408,7 @@ BEGIN
   NEW(e);
   e.kind := kind;
   e.typ := typ;
+  e.lTyp := NIL;
   e.lhs := NIL;
   e.rhs := NIL;
   e.next := NIL;
@@ -418,6 +424,9 @@ BEGIN
   ASSERT(d.typ # NIL);
   NewExpr(e, exprIdentRef, d.typ);
   e.decl := d;
+  IF d.lTyp # NIL THEN
+    e.lTyp := d.lTyp
+  END;
   IF ((d.kind = declVar) & ~IsImported(d)) OR
      ((d.kind = declParam) &
       ~(d.typ.kind IN {typeArray, typeBuffer, typeRecord})) OR
