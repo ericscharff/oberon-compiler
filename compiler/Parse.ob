@@ -147,7 +147,7 @@ PROCEDURE ParseDesignator(): AST.Expr;
 VAR
   e: AST.Expr;
 BEGIN
-  e := AST.NewExprIdentRef(ParseQualident());
+  e := AST.NewExprIdentRef(l, ParseQualident());
   WHILE IsToken(Lex.tDOT) OR IsToken(Lex.tLBRACK) OR IsToken(Lex.tCARET) OR
         (IsTypeGuard(e) & IsToken(Lex.tLPAREN)) DO
     IF MatchToken(Lex.tDOT) THEN
@@ -403,10 +403,10 @@ BEGIN
   savedType := caseVar.decl.typ;
   WHILE ~IsToken(Lex.tEND) DO
     e := AST.NewExprBinary(l, Lex.tIS, caseVar,
-                           AST.NewExprIdentRef(ParseQualident()),
+                           AST.NewExprIdentRef(l, ParseQualident()),
                            Decls.booleanType);
     caseVar.decl.typ := e.rhs.decl.typ;
-    caseVar.decl.lTyp := e.rhs.decl.typ;
+    caseVar.decl.origTyp := e.rhs.decl.typ;
     ExpectToken(Lex.tCOLON);
     IF tail = NIL THEN
       s := AST.NewStmtIf(e, ParseStatementSequence());
@@ -416,7 +416,7 @@ BEGIN
       tail := tail.elsifs
     END;
     caseVar.decl.typ := savedType;
-    caseVar.decl.lTyp := NIL;
+    caseVar.decl.origTyp := NIL;
     MatchToken(Lex.tVBAR)
   END;
   ExpectToken(Lex.tEND);
@@ -497,7 +497,7 @@ VAR
 BEGIN
   ExpectToken(Lex.tFOR);
   d := Decls.LookupDecl(l, ExpectIdentifier());
-  startExpr := AST.NewExprIdentRef(d);
+  startExpr := AST.NewExprIdentRef(l, d);
   ExpectToken(Lex.tASSIGN);
   startExpr := AST.NewExprAssign(l, startExpr, ParseExpression());
   ExpectToken(Lex.tTO);
@@ -532,7 +532,7 @@ BEGIN
   ExpectToken(Lex.tASSIGN);
   e := ParseExpression();
   d.typ := e.typ;
-  e := AST.NewExprAssign(l, AST.NewExprIdentRef(d), e);
+  e := AST.NewExprAssign(l, AST.NewExprIdentRef(l, d), e);
   RETURN AST.NewStmtAssign(e)
 END ParseVarStatement;
 

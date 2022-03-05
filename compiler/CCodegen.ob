@@ -522,26 +522,10 @@ BEGIN
   IF ((e.decl.kind = AST.declVarParam) & ~(e.typ.kind = AST.typeArray)) OR
      ((e.decl.kind = AST.declParam) & (e.typ.kind = AST.typeRecord)) THEN
     GenStr("(*");
-    IF e.lTyp = NIL THEN
-      GenQName(l, q);
-    ELSE
-      GenStr("((");
-      GenQName(l, e.lTyp.decl.qname);
-      GenStr("*)");
-      GenQName(l, q);
-      GenStr(")");
-    END;
+    GenQName(l, q);
     GenStr(")");
   ELSE
-    IF e.lTyp = NIL THEN
-      GenQName(l, q);
-    ELSE
-      GenStr("((");
-      GenQName(l, e.lTyp.decl.qname);
-      GenStr(")");
-      GenQName(l, q);
-      GenStr(")");
-    END;
+    GenQName(l, q);
   END;
 END GenIdentRefExpr;
 
@@ -701,7 +685,11 @@ BEGIN
   ELSE
     IF e.lhs.typ.kind = AST.typePointer THEN
       GenStr("(assert(");
-      GenTypeTest(l, e.lhs, e.typ);
+      IF e.iVal = 0 THEN
+        GenTypeTest(l, e.lhs, e.typ);
+      ELSE
+        GenStr("1") (* The compiler asserts we can skip the type test (type case) *)
+      END;
       GenStr("), ((");
       GenQName(l, e.decl.qname);
       GenStr(")(");
@@ -712,7 +700,11 @@ BEGIN
       ASSERT(e.lhs.kind = AST.exprIdentRef);
       ASSERT(e.lhs.decl.kind = AST.declVarParam);
       GenStr("(*(assert(");
-      GenTypeTest(l, e.lhs, e.typ);
+      IF e.iVal = 0 THEN
+        GenTypeTest(l, e.lhs, e.typ);
+      ELSE
+        GenStr("1") (* The compiler asserts we can skip the type test (type case) *)
+      END;
       GenStr("), ((");
       GenQName(l, e.decl.qname);
       GenStr("*)");

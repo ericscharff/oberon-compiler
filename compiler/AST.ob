@@ -117,7 +117,7 @@ TYPE
     next*:     Decl;
     qname*:    QName;
     typ*:      Type;
-    lTyp*:     Type;
+    origTyp*:  Type;
     expr*:     Expr;             (* for CONST declarations            *)
                                  (* PROCEDURE RETURN value            *)
     body*:     Stmt;             (* PROCEDURE or MODULE body          *)
@@ -186,10 +186,6 @@ TYPE
   ExprDesc  = RECORD
     kind*:   ExprKind;
     typ*:    Type;
-    lTyp*:   Type;          (* Only for identRef. if ident was used in a    *)
-                            (* type case, this is the "local type" of the   *)
-                            (* identifier. So the ident can be safely cast  *)
-                            (* to be of type lTyp                           *)
     op*:     Lex.TokenKind; (* for unary, binary                            *)
     lhs*:    Expr;          (* for unary, binary, the base expr for         *)
                             (* arrayRef, pointerDeref, fieldRef, typeGuard, *)
@@ -408,7 +404,6 @@ BEGIN
   NEW(e);
   e.kind := kind;
   e.typ := typ;
-  e.lTyp := NIL;
   e.lhs := NIL;
   e.rhs := NIL;
   e.next := NIL;
@@ -416,7 +411,47 @@ BEGIN
   e.assignable := FALSE;
 END NewExpr;
 
-PROCEDURE NewExprIdentRef*(d: Decl): Expr;
+PROCEDURE SetGenTypeInfo(t: Type);
+BEGIN
+  IF t.kind = typePointer THEN
+    t := t.base;
+  END;
+  WHILE t # NIL DO
+    t.needTypeInfo := TRUE;
+    t := t.base;
+  END;
+END SetGenTypeInfo;
+
+PROCEDURE NewExprTypeGuard*(l: Lex.Lexer; base: Expr; newType: Decl): Expr;
+VAR
+  e: Expr;
+BEGIN
+  e := base;
+  IF (newType.kind = declType) &
+     (newType.typ.kind IN {typeRecord, typePointer}) THEN
+    IF ((base.typ.kind = typePointer) &
+        (newType.typ.kind = typePointer) &
+        Extends(newType.typ.base, base.typ.base)) OR
+       ((base.typ.kind = typeRecord) &
+        (newType.typ.kind = typeRecord) &
+        Extends(newType.typ, base.typ)) THEN
+      NewExpr(e, exprTypeGuard, newType.typ);
+      e.lhs := base;
+      e.decl := newType;
+      e.assignable := base.assignable;
+      SetGenTypeInfo(newType.typ);
+    ELSE
+      Lex.ErrorLn(l, "Guarded and base type are unrelated");
+    END;
+  ELSE
+    Lex.Error(l, "Declaration ");
+    Lex.OutStr(l, newType.qname.name);
+    Lex.PrintLnAndHalt(" must be a POINTER or RECORD type");
+  END;
+  RETURN e
+END NewExprTypeGuard;
+
+PROCEDURE NewExprIdentRef*(l: Lex.Lexer; d: Decl): Expr;
 VAR
   e: Expr;
 BEGIN
@@ -424,9 +459,6 @@ BEGIN
   ASSERT(d.typ # NIL);
   NewExpr(e, exprIdentRef, d.typ);
   e.decl := d;
-  IF d.lTyp # NIL THEN
-    e.lTyp := d.lTyp
-  END;
   IF ((d.kind = declVar) & ~IsImported(d)) OR
      ((d.kind = declParam) &
       ~(d.typ.kind IN {typeArray, typeBuffer, typeRecord})) OR
@@ -442,6 +474,10 @@ BEGIN
     e.iVal := d.expr.iVal;
     e.rVal := d.expr.rVal;
     e.setVal := d.expr.setVal;
+  END;
+  IF d.origTyp # NIL THEN
+    e := NewExprTypeGuard(l, e, d.origTyp.decl);
+    e.iVal := 1 (* Hint to the code generator that the cast is valid *)
   END;
   RETURN e
 END NewExprIdentRef;
@@ -532,17 +568,6 @@ BEGIN
   RETURN e
 END NewExprArrayRef;
 
-PROCEDURE SetGenTypeInfo(t: Type);
-BEGIN
-  IF t.kind = typePointer THEN
-    t := t.base;
-  END;
-  WHILE t # NIL DO
-    t.needTypeInfo := TRUE;
-    t := t.base;
-  END;
-END SetGenTypeInfo;
-
 PROCEDURE NeedsTypeInfo*(t: Type): BOOLEAN;
 VAR
   ti: BOOLEAN;
@@ -554,35 +579,6 @@ BEGIN
   UNTIL ti OR (t = NIL);
   RETURN ti
 END NeedsTypeInfo;
-
-PROCEDURE NewExprTypeGuard*(l: Lex.Lexer; base: Expr; newType: Decl): Expr;
-VAR
-  e: Expr;
-BEGIN
-  e := base;
-  IF (newType.kind = declType) &
-     (newType.typ.kind IN {typeRecord, typePointer}) THEN
-    IF ((base.typ.kind = typePointer) &
-        (newType.typ.kind = typePointer) &
-        Extends(newType.typ.base, base.typ.base)) OR
-       ((base.typ.kind = typeRecord) &
-        (newType.typ.kind = typeRecord) &
-        Extends(newType.typ, base.typ)) THEN
-      NewExpr(e, exprTypeGuard, newType.typ);
-      e.lhs := base;
-      e.decl := newType;
-      e.assignable := base.assignable;
-      SetGenTypeInfo(newType.typ);
-    ELSE
-      Lex.ErrorLn(l, "Guarded and base type are unrelated");
-    END;
-  ELSE
-    Lex.Error(l, "Declaration ");
-    Lex.OutStr(l, newType.qname.name);
-    Lex.PrintLnAndHalt(" must be a POINTER or RECORD type");
-  END;
-  RETURN e
-END NewExprTypeGuard;
 
 PROCEDURE NewExprInteger*(iVal: INTEGER; typ: Type): Expr;
 VAR

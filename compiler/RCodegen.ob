@@ -1695,9 +1695,11 @@ PROCEDURE GenTypeGuard(l: Lex.Lexer; e: AST.Expr; VAR item: Item;
 BEGIN
   CalculateSize(e.lhs.typ);
   CalculateSize(e.decl.typ);
-  GenTypeTest(l, e.lhs, e.typ, item, parentTrueChain, parentFalseChain);
-  Emit(opBRA, 0, 0, item.opCond, cp + 2);
-  Emit(opBL, LINK, 0, 0, ASSERT_TRAP);
+  IF e.iVal = 0 THEN
+    GenTypeTest(l, e.lhs, e.typ, item, parentTrueChain, parentFalseChain);
+    Emit(opBRA, 0, 0, item.opCond, cp + 2);
+    Emit(opBL, LINK, 0, 0, ASSERT_TRAP);
+  END;
   GenExpr(l, e.lhs, item, parentTrueChain, parentFalseChain)
 END GenTypeGuard;
 
