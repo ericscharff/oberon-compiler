@@ -16,7 +16,7 @@
 
 /* Maxiumum memory (in int32_t */
 #ifndef MAX_MEM
-  #define MAX_MEM 65536
+#define MAX_MEM 65536
 #endif
 #define MAX_MEM_BYTES (MAX_MEM * 4)
 
@@ -270,7 +270,7 @@ void do_trap(int pc, int32_t *regs, int32_t *mem) {
 }
 
 void copy_type_table_to_mem(int32_t *mem) {
-  for (size_t i = 0; i < (sizeof(TYPE_TABLE)/sizeof(int32_t)); i++) {
+  for (size_t i = 0; i < (sizeof(TYPE_TABLE) / sizeof(int32_t)); i++) {
     mem[i + 1] = TYPE_TABLE[i];
   }
 }
@@ -313,7 +313,7 @@ void interpret(void) {
   r[GB] = 0;
   r[SP] = MAX_MEM_BYTES - 4;
 #ifdef MONITOR_STACK
-  int minStack  = r[SP];
+  int minStack = r[SP];
 #endif
   for (int i = 0; i < MAX_MEM; i++) {
     mem[i] = 0;
@@ -670,7 +670,8 @@ void interpret(void) {
         print_unvisited();
 #endif
 #ifdef MEMORY_REPORT
-        printf("Max heap %d min stack %d stack use %d\n", mem[0], minStack, MAX_MEM*4-minStack);
+        printf("Max heap %d min stack %d stack use %d\n", mem[0], minStack,
+               MAX_MEM * 4 - minStack);
 #endif
         return;
     }
