@@ -331,6 +331,21 @@ BEGIN
   Out.StrI(l.sp.buf, s);
 END OutStr;
 
+PROCEDURE OutStrOberon*(l: Lexer; s: PoolIndex);
+BEGIN
+  IF l.sp.buf[s] = 22X THEN
+    Out.Str("22X")
+  ELSIF l.sp.buf[s] = 09X THEN
+    Out.Str("09X")
+  ELSIF l.sp.buf[s] = 0AX THEN
+    Out.Str("0AX")
+  ELSE
+    Out.Str(22X);
+    OutStr(l, s);
+    Out.Str(22X)
+  END
+END OutStrOberon;
+
 PROCEDURE OutStrEscaped*(l: Lexer; s: PoolIndex);
 VAR
   c: CHAR;
