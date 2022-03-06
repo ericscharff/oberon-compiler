@@ -27,17 +27,17 @@ BEGIN
   WHILE angleInDegrees >= 360 DO
     angleInDegrees := angleInDegrees - 360
   END
-  RETURN table[angleInDegrees]
+RETURN table[angleInDegrees]
 END Sine;
 
 PROCEDURE Cosine(angleInDegrees: INTEGER): REAL;
 BEGIN
-  RETURN Sine(angleInDegrees - 90)
+RETURN Sine(angleInDegrees - 90)
 END Cosine;
 
 PROCEDURE MakeSineTable;
 BEGIN
-  table[0] := 0.000000;
+  table[0] := 0.0;
   table[1] := 0.017452;
   table[2] := 0.034899;
   table[3] := 0.052336;
@@ -127,7 +127,7 @@ BEGIN
   table[87] := 0.998630;
   table[88] := 0.999391;
   table[89] := 0.999848;
-  table[90] := 1.000000;
+  table[90] := 1.0;
   table[91] := 0.999848;
   table[92] := 0.999391;
   table[93] := 0.998630;
@@ -217,7 +217,7 @@ BEGIN
   table[177] := 0.052336;
   table[178] := 0.034899;
   table[179] := 0.017452;
-  table[180] := 0.000000;
+  table[180] := 0.0;
   table[181] := -0.017452;
   table[182] := -0.034899;
   table[183] := -0.052336;
@@ -307,7 +307,7 @@ BEGIN
   table[267] := -0.998630;
   table[268] := -0.999391;
   table[269] := -0.999848;
-  table[270] := -1.000000;
+  table[270] := -1.0;
   table[271] := -0.999848;
   table[272] := -0.999391;
   table[273] := -0.998630;
@@ -418,13 +418,11 @@ END LineArt;
 PROCEDURE Circle;
 VAR
   i: INTEGER;
+
 BEGIN
-  Cairo.MoveTo(c, CANVAS_WIDTH-20.0, CANVAS_HEIGHT / 2.0);
+  Cairo.MoveTo(c, CANVAS_WIDTH - 20.0, CANVAS_HEIGHT / 2.0);
   FOR i := 0 TO 360 DO
-    Cairo.LineTo(
-      c,
-      (CANVAS_WIDTH-20.0)/2.0 * Cosine(i) + CANVAS_WIDTH / 2.0,
-      (CANVAS_HEIGHT-20.0)/2.0 * Sine(i) + CANVAS_HEIGHT / 2.0)
+    Cairo.LineTo(c, (CANVAS_WIDTH - 20.0) / 2.0 * Cosine(i) + CANVAS_WIDTH / 2.0, (CANVAS_HEIGHT - 20.0) / 2.0 * Sine(i) + CANVAS_HEIGHT / 2.0)
   END;
 END Circle;
 
@@ -441,7 +439,9 @@ BEGIN
 END Right;
 
 PROCEDURE Square;
-VAR i: INTEGER;
+VAR
+  i: INTEGER;
+
 BEGIN
   FOR i := 1 TO 4 DO
     Forward(80.0);
@@ -450,7 +450,9 @@ BEGIN
 END Square;
 
 PROCEDURE Flower;
-VAR i: INTEGER;
+VAR
+  i: INTEGER;
+
 BEGIN
   FOR i := 1 TO 20 DO
     Square;
@@ -474,22 +476,22 @@ CONST
 VAR
   i: INTEGER;
 
-  PROCEDURE XCoord(num: INTEGER): REAL;
-  BEGIN
-    num := num MOD 180;
-    RETURN CANVAS_WIDTH / 2.0 + Cosine(num*2) * CANVAS_HEIGHT / 2.0
-  END XCoord;
+PROCEDURE XCoord(num: INTEGER): REAL;
+BEGIN
+  num := num MOD 180;
+RETURN CANVAS_WIDTH / 2.0 + Cosine(num * 2) * CANVAS_HEIGHT / 2.0
+END XCoord;
 
-  PROCEDURE YCoord(num: INTEGER): REAL;
-  BEGIN
-    num := num MOD 180;
-    RETURN CANVAS_HEIGHT / 2.0 + Sine(num*2) * CANVAS_HEIGHT / 2.0
-  END YCoord;
+PROCEDURE YCoord(num: INTEGER): REAL;
+BEGIN
+  num := num MOD 180;
+RETURN CANVAS_HEIGHT / 2.0 + Sine(num * 2) * CANVAS_HEIGHT / 2.0
+END YCoord;
 
 BEGIN
   FOR i := 0 TO 179 DO
     Cairo.MoveTo(c, XCoord(i), YCoord(i));
-    Cairo.LineTo(c, XCoord(i*times), YCoord(i*times));
+    Cairo.LineTo(c, XCoord(i * times), YCoord(i * times));
   END;
 END TimesTable;
 

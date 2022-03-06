@@ -1,12 +1,26 @@
 MODULE Cairo;
 
 TYPE
-  Context* = RECORD _ctx: NATIVE INTEGER END;
+  Context* = RECORD
+    _ctx: NATIVE INTEGER
+  END;
 
-NATIVE (-201) PROCEDURE InitContext*(VAR ctx: Context; width, height: INTEGER); END InitContext;
-NATIVE (-202) PROCEDURE DestroyContext*(VAR ctx: Context); END DestroyContext;
-NATIVE (-203) PROCEDURE WriteToPNG*(VAR ctx: Context; fileName: ARRAY OF CHAR); END WriteToPNG;
-NATIVE (-204) PROCEDURE MoveTo*(VAR ctx: Context; x, y: REAL); END MoveTo;
-NATIVE (-205) PROCEDURE LineTo*(VAR ctx: Context; x, y: REAL); END LineTo;
-NATIVE (-206) PROCEDURE Stroke*(VAR ctx: Context); END Stroke;
+NATIVE (-201) PROCEDURE InitContext*(VAR ctx: Context; width, height: INTEGER);
+END InitContext;
+
+NATIVE (-202) PROCEDURE DestroyContext*(VAR ctx: Context);
+END DestroyContext;
+
+NATIVE (-203) PROCEDURE WriteToPNG*(VAR ctx: Context; fileName: ARRAY OF CHAR);
+END WriteToPNG;
+
+NATIVE (-204) PROCEDURE MoveTo*(VAR ctx: Context; x, y: REAL);
+END MoveTo;
+
+NATIVE (-205) PROCEDURE LineTo*(VAR ctx: Context; x, y: REAL);
+END LineTo;
+
+NATIVE (-206) PROCEDURE Stroke*(VAR ctx: Context);
+END Stroke;
+
 END Cairo.
