@@ -7,18 +7,23 @@ COMPILERDIR=$PARENTDIR/compiler
 PERR=$COMPILERDIR/perr.py
 
 cp $COMPILERDIR/*.ob $BUILDDIR
+cp $COMPILERDIR/runtime.c $BUILDDIR
 cp *.ob $BUILDDIR
-cd $BUILDDIR
 
 CC=${CC:-cc}
 CXX=${CXX:-g++}
+EXTRA_CFLAGS=${EXTRA_CFLAGS:-}
 EXT=.c
 CSTDFLAGS=-std=c17
 OCFLAGS=
 inSwitches=1
 
 while [ $inSwitches -eq 1 ]; do
-  if [ $1 = "-cpp" ]; then
+  if [ $1 = "-extra_runtime" ]; then
+    shift
+    cat $COMPILERDIR/runtime.c $1 > $BUILDDIR/runtime.c
+    shift
+  elif [ $1 = "-cpp" ]; then
     CC=$CXX
     EXT=.cpp
     OCFLAGS="$OCFLAGS -cpp"
@@ -37,4 +42,4 @@ done
 
 cd $BUILDDIR
 ./oberon $OCFLAGS $1 | $PERR
-./oberon $OCFLAGS $1 > out$EXT && $CC -g $CSTDFLAGS -Wall -Wextra -Wpedantic -Wno-unused-parameter -o out.prg out$EXT
+./oberon $OCFLAGS $1 > out$EXT && $CC -g $CSTDFLAGS -Wall -Wextra -Wpedantic -Wno-unused-parameter -o out.prg out$EXT $EXTRA_CFLAGS
