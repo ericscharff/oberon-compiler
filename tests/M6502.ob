@@ -9,7 +9,7 @@ CONST
 	reserveD* = 5;
 	overfloW* = 6;
 	negativE* = 7;
-	
+
 	mIndirectX = 0; (* (zp,X)                    *)
 	mZeroPage = 1;  (* zero page                 *)
 	mImmediate = 2; (* #immediate                *)
@@ -23,7 +23,7 @@ CONST
 	mIndirect = 10; (* (16 bit absolute) for JMP *)
 	mAccum = 11;    (* Accumulator (eg ROR A)    *)
 	mImplied = 12;  (* Implied (eg TYA)          *)
-	
+
 	(* Condition codes *)
 
 TYPE
@@ -43,7 +43,7 @@ TYPE
 VAR
 	dispatch: ARRAY 256 OF Opcode;
 	addrMode: ARRAY 256 OF INTEGER;
-	
+
 PROCEDURE DoBITAND(a, b: INTEGER): INTEGER;
 BEGIN RETURN a BITAND b END DoBITAND;
 

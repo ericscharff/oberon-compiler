@@ -28,8 +28,8 @@ BEGIN
   mem[04] := 09DX; mem[05] := 000X; mem[06] := 003X; (* loop: STA $0300, X *)
   mem[07] := 069X; mem[08] := 002X;  (* ADC #$02 *)
   mem[09] := 0E8X;                   (* INX *)
-  mem[10] := 0D0X; mem[11] := 0F8X;  (* BNE loop *) 
-   
+  mem[10] := 0D0X; mem[11] := 0F8X;  (* BNE loop *)
+
   (* Run until BRK statement *)
   WHILE mem[cpu.pc] # 0X DO M6502.Step(cpu) END;
   (* Page 3 of RAM should be filled with even numbers, then odd numbers *)
