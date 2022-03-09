@@ -1,4 +1,4 @@
-MODULE Lex;
+MODULE PrettyPrintLex;
 
 IMPORT Out;
 
@@ -127,6 +127,7 @@ VAR
   TokenNames*: ARRAY tEOF+1, KwdSize OF CHAR;
   fatal: BOOLEAN;
   ignoreKeywordCase*: BOOLEAN;
+  indent: INTEGER;
 
 PROCEDURE PoolInit*(VAR sp: StringPool);
 VAR
@@ -330,6 +331,21 @@ PROCEDURE OutStr*(l: Lexer; s: PoolIndex);
 BEGIN
   Out.StrI(l.sp.buf, s);
 END OutStr;
+
+PROCEDURE OutStrOberon*(l: Lexer; s: PoolIndex);
+BEGIN
+  IF l.sp.buf[s] = 22X THEN
+    Out.Str("22X")
+  ELSIF l.sp.buf[s] = 09X THEN
+    Out.Str("09X")
+  ELSIF l.sp.buf[s] = 0AX THEN
+    Out.Str("0AX")
+  ELSE
+    Out.Str(22X);
+    OutStr(l, s);
+    Out.Str(22X)
+  END
+END OutStrOberon;
 
 PROCEDURE OutStrEscaped*(l: Lexer; s: PoolIndex);
 VAR
@@ -842,163 +858,53 @@ BEGIN
   TokenNames[tEOF]          :=  "EOF";
 END InitTokenNames;
 
-PROCEDURE TestPool;
+PROCEDURE Newline*;
+VAR i: INTEGER;
+BEGIN
+  Str(0AX);
+  i := indent;
+  WHILE i > 0 DO
+    Str("  ");
+    i := i - 1;
+  END;
+END Newline;
+
+PROCEDURE Space*;
+BEGIN
+  Str(" ")
+END Space;
+
+PROCEDURE PrintInt*(i: INTEGER);
+BEGIN
+  Out.Int(i)
+END PrintInt;
+
+PROCEDURE PrintReal*(r: REAL);
 VAR
-  sp:   StringPool;
-  s:    ARRAY 25 OF CHAR;
-  i,j:  PoolIndex;
+  iVal: INTEGER;
 BEGIN
-  PoolInit(sp);
-  ASSERT(11 = StringLen("Hello world"));
-  s := "Hello world";
-  ASSERT(StrEq(s, 0, "Hello world", 0, 11));
-  ASSERT(~StrEq(s, 0, "Hello", 0, 11));
-  ASSERT(StrEq(s, 1, "Hello world", 1, 10));
-  ASSERT(11 = StringLen(s));
-  ASSERT(StringIntern(sp, s) = 0);
-  s := "Yello world";
-  ASSERT(StringIntern(sp, s) = 12);
-  i := StringInternRange(sp, "Hellooo", 1, 4);
-  ASSERT(i = StringIntern(sp, "ello"));
-  j := StringInternRange(sp, s, 0, 0);
-  ASSERT(i # j);
-  ASSERT(StringIntern(sp, "") = j);
-  s[0] := "A";
-  s[1] := 0X;
-  ASSERT(StringIntern(sp, s) = StringIntern(sp, "A"));
-  ASSERT(StringIntern(sp, s) # StringIntern(sp, "B"));
+  iVal := FLOOR(r);
+  IF FLT(iVal) = r THEN
+    Out.Int(iVal);
+    Out.Str(".0");
+  ELSE
+    Out.Real(r)
+  END
+END PrintReal;
 
-  PoolInit(sp);
-  FOR i := 1 TO 4000 DO
-    MakeDummy(i, s);
-    StringIntern(sp, s);
-  END;
-  FOR i := 1 TO 4000 DO
-    MakeDummy(i, s);
-    ASSERT(StringIntern(sp, s) = (i-1)*6);
-  END;
-  ASSERT(sp.last = 24000);
-  PoolInit(sp);
-  StringInternRange(sp, "A", 0, 9);
-  StringInternRange(sp, "PROCEDURE", 0, 9);
-  StringInternRange(sp, "B", 0, 9);
-  ASSERT(StringIntern(sp, "A") = 0);
-  ASSERT(StringIntern(sp, "PROCEDURE") = 10);
-  ASSERT(StringIntern(sp, "B") = 20);
-  InfoPrintLn("PASS: String pool test");
-END TestPool;
-
-PROCEDURE TestLexer;
-VAR
-  l: Lexer;
-  k: INTEGER;
+PROCEDURE Indent*;
 BEGIN
-  (* Error cases *)
-  fatal := FALSE;
-  ignoreKeywordCase := FALSE;
-  Mute;
-  LexerInitFromString(l, "0C "); NextToken(l);
-  LexerInitFromString(l, "100X"); NextToken(l);
-  LexerInitFromString(l, "' "); NextToken(l);
-  LexerInitFromString(l, "   "); l.buf[0] := 22X; NextToken(l);
-  LexerInitFromString(l, "(* "); NextToken(l);
-  Unmute;
-  (* Regular cases *)
-  fatal := TRUE;
-  LexerInitFromString(l, "
-      Test Hello World Test alpha..beta
-  ARRAY       BEGIN       BITAND      BITOR       BITXOR
-  BY          CASE        CONST       DIV         DO
-  ELSE        ELSIF       END         FALSE       FOR
-  IF          IMPORT      IN          IS          MOD
-  MODULE      NATIVE      NIL         OF          OR
-  POINTER     PROCEDURE   RECORD      REPEAT      RETURN
-  THEN        TO          TRUE        TYPE        UNTIL
-  VAR         WHILE
-      0FFD2H 041X
-      101 102 (103)Wow 104Whoa
-      0.1 0.1E4 0.08E-3 12.83e1
-      + - * / ~ & . , ; | ( ) [ ] { } := ^ = # < >
-      <= >=  .. 10..20
-      (* totally (* skipped *)*)
-      BITXOR
-  ");
-  (* Put quotes around Hello World *)
-  l.buf[11] := 22X;
-  l.buf[23] := 22X;
-  NextToken(l); ASSERT(l.t.kind = tIDENT); ASSERT(l.t.sVal = StringIntern(l.sp, "Test"));
-  NextToken(l); ASSERT(l.t.kind = tSTRING); ASSERT(l.t.sVal = StringIntern(l.sp, "Hello World"));
-  NextToken(l); ASSERT(l.t.kind = tIDENT); ASSERT(l.t.sVal = StringIntern(l.sp, "Test"));
-  NextToken(l); ASSERT(l.t.kind = tIDENT); ASSERT(l.t.sVal = StringIntern(l.sp, "alpha"));
-  NextToken(l); ASSERT(l.t.kind = tDOTDOT);
-  NextToken(l); ASSERT(l.t.kind = tIDENT); ASSERT(l.t.sVal = StringIntern(l.sp, "beta"));
-  FOR k := tARRAY TO tWHILE DO
-    NextToken(l); ASSERT(l.t.kind = k)
-  END;
-  NextToken(l); ASSERT(l.t.kind = tINT); ASSERT(l.t.iVal = 65490); ASSERT(l.t.iVal = 0FFD2H);
-  NextToken(l); ASSERT(l.t.kind = tSTRING); ASSERT(l.sp.buf[l.t.sVal] = "A");
-  NextToken(l); ASSERT(l.t.kind = tINT); ASSERT(l.t.iVal = 101);
-  NextToken(l); ASSERT(l.t.kind = tINT); ASSERT(l.t.iVal = 102);
-  NextToken(l); ASSERT(l.t.kind = tLPAREN);
-  NextToken(l); ASSERT(l.t.kind = tINT); ASSERT(l.t.iVal = 103);
-  NextToken(l); ASSERT(l.t.kind = tRPAREN);
-  NextToken(l); ASSERT(l.t.kind = tIDENT);
-  NextToken(l); ASSERT(l.t.kind = tINT); ASSERT(l.t.iVal = 104);
-  NextToken(l); ASSERT(l.t.kind = tIDENT);
-  NextToken(l); ASSERT(l.t.kind = tREAL); ASSERT(ABS(l.t.rVal - 0.1) < 0.00001);
-  NextToken(l); ASSERT(l.t.kind = tREAL); ASSERT(ABS(l.t.rVal - 0.1e4) < 0.00001);
-  NextToken(l); ASSERT(l.t.kind = tREAL); ASSERT(ABS(l.t.rVal - 0.08e-3) < 0.00001);
-  NextToken(l); ASSERT(l.t.kind = tREAL); ASSERT(ABS(l.t.rVal - 128.3) < 0.00001);
-  FOR k := tPLUS TO tDOTDOT DO
-    NextToken(l); ASSERT(l.t.kind = k);
-  END;
-  NextToken(l); ASSERT(l.t.kind = tINT); ASSERT(l.t.iVal = 10);
-  NextToken(l); ASSERT(l.t.kind = tDOTDOT);
-  NextToken(l); ASSERT(l.t.kind = tINT); ASSERT(l.t.iVal = 20);
-  NextToken(l); ASSERT(l.t.kind = tBITXOR);
-  NextToken(l); ASSERT(l.t.kind = tEOF);
-  NextToken(l); ASSERT(l.t.kind = tEOF);
+  INC(indent)
+END Indent;
 
-  ignoreKeywordCase := TRUE;
-  LexerInitFromString(l, "
-  lower case testing
-  array       begin       bitand      bitor       bitxor
-  by          case        const       div         do
-  else        elsif       end         false       for
-  if          import      in          is          mod
-  module      native      nil         of          or
-  pointer     procedure   record      repeat      return
-  then        to          true        type        until
-  var         while
-  ");
-  NextToken(l); ASSERT(l.t.kind = tIDENT); ASSERT(l.t.sVal = StringIntern(l.sp, "lower"));
-  NextToken(l); ASSERT(l.t.kind = tCASE);
-  NextToken(l); ASSERT(l.t.kind = tIDENT); ASSERT(l.t.sVal = StringIntern(l.sp, "testing"));
-  FOR k := tARRAY TO tWHILE DO
-    NextToken(l); ASSERT(l.t.kind = k)
-  END;
-
-  ignoreKeywordCase := FALSE;
-  LexerInitFromString(l, "upper case testing");
-  NextToken(l); ASSERT(l.t.kind = tIDENT); ASSERT(l.t.sVal = StringIntern(l.sp, "upper"));
-  NextToken(l); ASSERT(l.t.kind = tIDENT); ASSERT(l.t.sVal = StringIntern(l.sp, "case"));
-  NextToken(l); ASSERT(l.t.kind = tIDENT); ASSERT(l.t.sVal = StringIntern(l.sp, "testing"));
-
-  LexerInitFromFile(l, "Lex.ob");
-  REPEAT
-    NextToken(l);
-  UNTIL l.t.kind = tEOF;
-  InfoPrintLn("PASS: Lexer test");
-END TestLexer;
-
-PROCEDURE RunTests*;
+PROCEDURE DeIndent*;
 BEGIN
-  TestPool;
-  TestLexer;
-END RunTests;
+  DEC(indent)
+END DeIndent;
 
 BEGIN
   InitTokenNames;
   fatal := TRUE;
   ignoreKeywordCase := TRUE;
-END Lex.
+  indent := 0;
+END PrettyPrintLex.
