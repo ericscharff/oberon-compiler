@@ -120,6 +120,7 @@ TYPE
     fileName: PoolIndex;
     pos:      INTEGER;
     t*:       Token;
+    lineIsWs: BOOLEAN;
   END;
   LexCallback* = PROCEDURE;
 
@@ -371,6 +372,51 @@ BEGIN
   Out.Str(22X);
 END OutStrEscaped;
 
+PROCEDURE Newline*;
+VAR i: INTEGER;
+BEGIN
+  Out.Str(0AX);
+  i := indent;
+  WHILE i > 0 DO
+    Out.Str("  ");
+    i := i - 1;
+  END;
+END Newline;
+
+PROCEDURE Space*;
+BEGIN
+  Out.Str(" ")
+END Space;
+
+PROCEDURE PrintInt*(i: INTEGER);
+BEGIN
+  Out.Int(i)
+END PrintInt;
+
+PROCEDURE PrintReal*(r: REAL);
+VAR
+  iVal: INTEGER;
+BEGIN
+  iVal := FLOOR(r);
+  IF FLT(iVal) = r THEN
+    Out.Int(iVal);
+    Out.Str(".0");
+  ELSE
+    Out.Real(r)
+  END
+END PrintReal;
+
+PROCEDURE Indent*;
+BEGIN
+  INC(indent)
+END Indent;
+
+PROCEDURE DeIndent*;
+BEGIN
+  DEC(indent)
+END DeIndent;
+
+
 PROCEDURE OutPool*(sp: StringPool);
 VAR
   i: INTEGER;
@@ -454,6 +500,7 @@ BEGIN
   Out.ReadFile(fileName, l.buf);
   l.fileName := StringIntern(l.sp, fileName);
   l.pos := 0;
+  l.lineIsWs := TRUE;
 END LexerInitFromFile;
 
 PROCEDURE LexerInitFromString*(VAR l: Lexer; s: ARRAY OF CHAR);
@@ -693,12 +740,19 @@ VAR
   start: INTEGER;
 BEGIN
   start := l.pos;
+  IF l.lineIsWs THEN
+    Newline
+  ELSE
+    Out.Str(" ");
+  END;
+  Str("(*");
   ASSERT((l.buf[l.pos] = "(") & (l.buf[l.pos+1] = "*"));
   INC(l.pos, 2);
   REPEAT
     IF (l.buf[l.pos] = "(") & (l.buf[l.pos+1] = "*") THEN
       ScanComment(l)
     ELSE
+      Out.Char(l.buf[l.pos]);
       INC(l.pos);
     END;
   UNTIL (l.buf[l.pos] = 0X) OR (l.buf[l.pos] = "*") & (l.buf[l.pos+1] = ")");
@@ -708,6 +762,7 @@ BEGIN
     l.buf[l.pos] := 0X;
   ELSE
     (* l.pos IS pointing at terminating star *)
+    Out.Str("*)");
     INC(l.pos, 2);
   END;
 END ScanComment;
@@ -716,6 +771,11 @@ PROCEDURE NextToken*(VAR l: Lexer);
 BEGIN
   l.t.kind := tINVALIDCHAR;
   REPEAT
+    IF l.buf[l.pos] = 0AX THEN
+      l.lineIsWs := TRUE
+    ELSIF (l.buf[l.pos] > 20X) & (l.buf[l.pos] # "(") THEN
+      l.lineIsWs := FALSE
+    END;
     CASE l.buf[l.pos] OF
       0X: l.t.kind := tEOF;
       (* space, newline, carriage return, newline, tab, vertical tab *)
@@ -857,50 +917,6 @@ BEGIN
   TokenNames[tCaseDotDot]   :=  "DOTDOT";
   TokenNames[tEOF]          :=  "EOF";
 END InitTokenNames;
-
-PROCEDURE Newline*;
-VAR i: INTEGER;
-BEGIN
-  Str(0AX);
-  i := indent;
-  WHILE i > 0 DO
-    Str("  ");
-    i := i - 1;
-  END;
-END Newline;
-
-PROCEDURE Space*;
-BEGIN
-  Str(" ")
-END Space;
-
-PROCEDURE PrintInt*(i: INTEGER);
-BEGIN
-  Out.Int(i)
-END PrintInt;
-
-PROCEDURE PrintReal*(r: REAL);
-VAR
-  iVal: INTEGER;
-BEGIN
-  iVal := FLOOR(r);
-  IF FLT(iVal) = r THEN
-    Out.Int(iVal);
-    Out.Str(".0");
-  ELSE
-    Out.Real(r)
-  END
-END PrintReal;
-
-PROCEDURE Indent*;
-BEGIN
-  INC(indent)
-END Indent;
-
-PROCEDURE DeIndent*;
-BEGIN
-  DEC(indent)
-END DeIndent;
 
 BEGIN
   InitTokenNames;
