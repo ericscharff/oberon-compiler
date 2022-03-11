@@ -27,12 +27,14 @@ BEGIN
   WHILE angleInDegrees >= 360 DO
     angleInDegrees := angleInDegrees - 360
   END
-RETURN table[angleInDegrees]
+
+  RETURN table[angleInDegrees]
 END Sine;
 
 PROCEDURE Cosine(angleInDegrees: INTEGER): REAL;
 BEGIN
-RETURN Sine(angleInDegrees - 90)
+
+  RETURN Sine(angleInDegrees - 90)
 END Cosine;
 
 PROCEDURE MakeSineTable;
@@ -479,13 +481,15 @@ VAR
 PROCEDURE XCoord(num: INTEGER): REAL;
 BEGIN
   num := num MOD 180;
-RETURN CANVAS_WIDTH / 2.0 + Cosine(num * 2) * CANVAS_HEIGHT / 2.0
+
+  RETURN CANVAS_WIDTH / 2.0 + Cosine(num * 2) * CANVAS_HEIGHT / 2.0
 END XCoord;
 
 PROCEDURE YCoord(num: INTEGER): REAL;
 BEGIN
   num := num MOD 180;
-RETURN CANVAS_HEIGHT / 2.0 + Sine(num * 2) * CANVAS_HEIGHT / 2.0
+
+  RETURN CANVAS_HEIGHT / 2.0 + Sine(num * 2) * CANVAS_HEIGHT / 2.0
 END YCoord;
 
 BEGIN

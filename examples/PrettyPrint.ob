@@ -616,9 +616,14 @@ BEGIN
   IF MatchToken(Lex.tBEGIN) THEN
     ParseStatementSequence;
   END;
+  IF IsToken(Lex.tRETURN) THEN
+    Lex.Indent;
+    Lex.Newline
+  END;
   IF MatchToken(Lex.tRETURN) THEN
     Lex.Space;
     ParseExpression;
+    Lex.DeIndent;
     Lex.Newline
   END;
   ExpectToken(Lex.tEND);
