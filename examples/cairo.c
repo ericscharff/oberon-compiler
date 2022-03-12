@@ -24,12 +24,12 @@ void Cairo_WriteToPNG(Cairo_Context *ctx, const char *fileName, int len) {
   cairo_surface_write_to_png(c->surface, fileName);
 }
 
-void Cairo_MoveTo(Cairo_Context *ctx, float x, float y) {
+void Cairo_MoveTo(Cairo_Context *ctx, double x, double y) {
   Cairo_Context_Native *c = (Cairo_Context_Native*)ctx;
   cairo_move_to(c->cr, x, y);
 }
 
-void Cairo_LineTo(Cairo_Context *ctx, float x, float y) {
+void Cairo_LineTo(Cairo_Context *ctx, double x, double y) {
   Cairo_Context_Native *c = (Cairo_Context_Native*)ctx;
   cairo_line_to(c->cr, x, y);
 }

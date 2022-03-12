@@ -66,13 +66,13 @@ int make_set_range(int s, int e) {
   return r;
 }
 
-float FLT(int x) { return x; }
+double FLT(int x) { return x; }
 
 void Out_Int(int i) {
   printf("%d", i);
 }
 
-void Out_Real(float r) {
+void Out_Real(double r) {
   printf("%f", r);
 }
 
@@ -98,7 +98,7 @@ void Out_ErrInt(int i) {
   fprintf(stderr, "%d", i);
 }
 
-void Out_ErrReal(float r) {
+void Out_ErrReal(double r) {
   fprintf(stderr, "%g", r);
 }
 
@@ -142,7 +142,8 @@ void Out_ReadFile(const char *fileName, size_t q, char *buf, size_t r) {
 
 void Out_Halt(void) { exit(1); }
 
-int Out_RealAsInt(float f) {
+int Out_RealAsInt(double d) {
+  float f = d;
   int i;
   memcpy(&i, &f, sizeof(i));
   return i;
