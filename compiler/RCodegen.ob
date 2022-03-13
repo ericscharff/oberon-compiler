@@ -66,11 +66,6 @@ CONST
   opXORI  = 110; (* ra := rb ^ immediate  *)
   opANNI  = 111; (* ra := rb & ~immediate *)
   opCMPI  = 112; (* rb - immediate        *)
-  opRADDI = 153; (* ra := rb + immediate  *) (* REAL *)
-  opRSUBI = 154; (* ra := rb - immediate  *) (* REAL *)
-  opRMULI = 155; (* ra := rb * immediate  *) (* REAL *)
-  opRDIVI = 156; (* ra := rb / immediate  *) (* REAL *)
-  opRCMPI = 157; (* rb - immediate        *) (* REAL *)
 
   opHALT = 1000;
 
@@ -345,16 +340,6 @@ BEGIN
       GenStr("I2R "); GenReg(codeBuffer[i].ra);
     ELSIF op = opR2I THEN
       GenStr("R2I "); GenReg(codeBuffer[i].ra);
-    ELSIF op = opRADDI THEN
-      Gen2("RADD", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].value)
-    ELSIF op = opRSUBI THEN
-      Gen2("RSUB", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].value)
-    ELSIF op = opRMULI THEN
-      Gen2("RMUL", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].value)
-    ELSIF op = opRDIVI THEN
-      Gen2("RDIV", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].value)
-    ELSIF op = opRCMPI THEN
-      Gen2("RCMP", codeBuffer[i].ra, codeBuffer[i].rb, codeBuffer[i].value)
     ELSIF op = opHALT THEN
       GenStr("HALT")
     ELSE
@@ -468,16 +453,6 @@ BEGIN
       GenStr("RDIV");
     ELSIF op = opRCMP THEN
       GenStr("RCMP");
-    ELSIF op = opRADDI THEN
-      GenStr("RADDI");
-    ELSIF op = opRSUBI THEN
-      GenStr("RSUBI");
-    ELSIF op = opRMULI THEN
-      GenStr("RMULI");
-    ELSIF op = opRDIVI THEN
-      GenStr("RDIVI");
-    ELSIF op = opRCMPI THEN
-      GenStr("RCMPI");
     ELSIF op = opI2R THEN
       GenStr("I2R");
     ELSIF op = opR2I THEN
@@ -751,15 +726,10 @@ END RestoreRegisters;
 
 PROCEDURE GenRealCompare(VAR lhs, rhs: Item; op: OpCode);
 BEGIN
-  IF rhs.kind = itemConst THEN
-    Load(lhs);
-    Emit(opRCMPI, lhs.r, lhs.r, 0, rhs.offset)
-  ELSE
-    Load(lhs);
-    Load(rhs);
-    Emit(opRCMP, lhs.r, lhs.r, rhs.r, 0);
-    DecCurReg
-  END;
+  Load(lhs);
+  Load(rhs);
+  Emit(opRCMP, lhs.r, lhs.r, rhs.r, 0);
+  DecCurReg;
   lhs.kind := itemCond;
   lhs.opCond := op;
   (* We don't need or want the result of the lhs, which is always loaded *)
@@ -830,53 +800,25 @@ END GenStringOp;
 PROCEDURE GenRealOp(op: Lex.TokenKind; VAR lhs, rhs: Item);
 BEGIN
   IF op = Lex.tPLUS THEN
-    IF lhs.kind = itemConst THEN
-      Load(rhs);
-      lhs.kind := rhs.kind; lhs.r := rhs.r;
-      Emit(opRADDI, lhs.r, lhs.r, 0, lhs.offset)
-    ELSIF rhs.kind = itemConst THEN
-      Load(lhs);
-      Emit(opRADDI, lhs.r, lhs.r, 0, rhs.offset)
-    ELSE
-      Load(lhs);
-      Load(rhs);
-      Emit(opRADD, lhs.r, lhs.r, rhs.r, 0);
-      DecCurReg
-    END
+    Load(lhs);
+    Load(rhs);
+    Emit(opRADD, lhs.r, lhs.r, rhs.r, 0);
+    DecCurReg
   ELSIF op = Lex.tMINUS THEN
-    IF rhs.kind = itemConst THEN
-      Load(lhs);
-      Emit(opRSUBI, lhs.r, lhs.r, 0, rhs.offset)
-    ELSE
-      Load(lhs);
-      Load(rhs);
-      Emit(opRSUB, lhs.r, lhs.r, rhs.r, 0);
-      DecCurReg
-    END
+    Load(lhs);
+    Load(rhs);
+    Emit(opRSUB, lhs.r, lhs.r, rhs.r, 0);
+    DecCurReg
   ELSIF op = Lex.tSTAR THEN
-    IF lhs.kind = itemConst THEN
-      Load(rhs);
-      lhs.kind := rhs.kind; lhs.r := rhs.r;
-      Emit(opRMULI, lhs.r, lhs.r, 0, lhs.offset)
-    ELSIF rhs.kind = itemConst THEN
-      Load(lhs);
-      Emit(opRMULI, lhs.r, lhs.r, 0, rhs.offset)
-    ELSE
-      Load(lhs);
-      Load(rhs);
-      Emit(opRMUL, lhs.r, lhs.r, rhs.r, 0);
-      DecCurReg
-    END
+    Load(lhs);
+    Load(rhs);
+    Emit(opRMUL, lhs.r, lhs.r, rhs.r, 0);
+    DecCurReg
   ELSIF op = Lex.tSLASH THEN
-    IF rhs.kind = itemConst THEN
-      Load(lhs);
-      Emit(opRDIVI, lhs.r, lhs.r, 0, rhs.offset)
-    ELSE
-      Load(lhs);
-      Load(rhs);
-      Emit(opRDIV, lhs.r, lhs.r, rhs.r, 0);
-      DecCurReg
-    END
+    Load(lhs);
+    Load(rhs);
+    Emit(opRDIV, lhs.r, lhs.r, rhs.r, 0);
+    DecCurReg
   ELSIF op = Lex.tEQ THEN
     GenRealCompare(lhs, rhs, opBEQ)
   ELSIF op = Lex.tPOUND THEN
@@ -1662,9 +1604,10 @@ BEGIN
     localTrueChain := 0; localFalseChain := 0;
     GenExpr(l, e.rhs, item, localTrueChain, localFalseChain);
     LoadValue(item, localTrueChain, localFalseChain);
-    Emit(opRCMPI, item.r, item.r, 0, Out.RealAsInt(0.0));
+    Emit(opMOVI, curReg, 0, 0, Out.RealAsInt(0.0));
+    Emit(opRCMP, item.r, item.r, curReg, 0);
     Emit(opBRA, 0, 0, opBGT, cp+2);
-    Emit(opRMULI, item.r, item.r, 0, Out.RealAsInt(-1.0));
+    Emit(opRSUB, item.r, curReg, item.r, 0);
   ELSIF e.iVal = AST.builtinNew THEN
     allocSize := CalculateSize(e.rhs.typ.base);
     IF AST.NeedsTypeInfo(e.rhs.typ.base) THEN

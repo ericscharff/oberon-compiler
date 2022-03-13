@@ -53,11 +53,6 @@ typedef enum Opcode {
   RMUL,  /* ra := rb * rc                 */ /* float */
   RDIV,  /* ra := rb / rc                 */ /* float */
   RCMP,  /* rb - rc, affects conditions   */ /* float */
-  RADDI, /* ra := rb + offset             */ /* float */
-  RSUBI, /* ra := rb - offset             */ /* float */
-  RMULI, /* ra := rb * offset             */ /* float */
-  RDIVI, /* ra := rb / offset             */ /* float */
-  RCMPI, /* rb - offset                   */ /* float */
   I2R,   /* r[a] int -> float             */
   R2I,   /* r[a] float -> int             */
   LDW,   /* ra := Mem[rb + offset] (word) */
@@ -82,13 +77,12 @@ typedef enum Opcode {
 } Opcode;
 
 const char *INSTR_NAMES[] = {
-    "Invalid", "MOV",   "ADD",   "SUB",   "MUL",   "DIV",  "MOD",  "LSL",
-    "ASR",     "AND",   "OR",    "XOR",   "ANN",   "CMP",  "MOVI", "ADDI",
-    "SUBI",    "MULI",  "DIVI",  "MODI",  "LSLI",  "ASRI", "ANDI", "ORI",
-    "XORI",    "ANNI",  "CMPI",  "RADD",  "RSUB",  "RMUL", "RDIV", "RCMP",
-    "RADDI",   "RSUBI", "RMULI", "RDIVI", "RCMPI", "I2R",  "R2I",  "LDW",
-    "LDB",     "STW",   "STB",   "CJP",   "BL",    "BLr",  "Br",   "B",
-    "BF",      "BEQ",   "BNE",   "BLT",   "BGE",   "BLE",  "BGT",  "BHI",
+    "Invalid", "MOV",  "ADD",  "SUB",  "MUL",  "DIV",  "MOD",  "LSL",  "ASR",
+    "AND",     "OR",   "XOR",  "ANN",  "CMP",  "MOVI", "ADDI", "SUBI", "MULI",
+    "DIVI",    "MODI", "LSLI", "ASRI", "ANDI", "ORI",  "XORI", "ANNI", "CMPI",
+    "RADD",    "RSUB", "RMUL", "RDIV", "RCMP", "I2R",  "R2I",  "LDW",  "LDB",
+    "STW",     "STB",  "CJP",  "BL",   "BLr",  "Br",   "B",    "BF",   "BEQ",
+    "BNE",     "BLT",  "BGE",  "BLE",  "BGT",  "BHI",
 
     "HALT",
 };
@@ -415,43 +409,6 @@ void interpret(void) {
       case RCMP: {
         float fLeft = to_float(r[b]);
         float fRight = to_float(r[c]);
-        /* Hack to ensure left and right are reasonable later */
-        if (fLeft < fRight) {
-          left = 100;
-          right = 101;
-        }
-        if (fLeft > fRight) {
-          left = 101;
-          right = 100;
-        }
-        if (fLeft == fRight) {
-          left = 100;
-          right = 100;
-          zFlag = true;
-        } else {
-          zFlag = false;
-        }
-        break;
-      }
-      case RADDI:
-        r[a] = to_int(to_float(r[b]) + to_float(offset));
-        zFlag = to_float(r[a]) == 0.0;
-        break;
-      case RSUBI:
-        r[a] = to_int(to_float(r[b]) - to_float(offset));
-        zFlag = to_float(r[a]) == 0.0;
-        break;
-      case RMULI:
-        r[a] = to_int(to_float(r[b]) * to_float(offset));
-        zFlag = to_float(r[a]) == 0.0;
-        break;
-      case RDIVI:
-        r[a] = to_int(to_float(r[b]) / to_float(offset));
-        zFlag = to_float(r[a]) == 0.0;
-        break;
-      case RCMPI: {
-        float fLeft = to_float(r[b]);
-        float fRight = to_float(offset);
         /* Hack to ensure left and right are reasonable later */
         if (fLeft < fRight) {
           left = 100;
