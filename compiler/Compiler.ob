@@ -18,6 +18,7 @@ MODULE Compiler;
               features are not used in code, then this flag is unnecessary.
               In C++ mode, the syntax matches C++ (e.g., type extensions
               emit C++ subclasses.
+    dumpdecl- Print information about the AST to the generated code.
 *)
 
 IMPORT Args, AST, CCodegen, Decls, Lex, Parse;
@@ -46,6 +47,8 @@ BEGIN
       CCodegen.EnableBoundsChecks;
     ELSIF fileName = "-cpp" THEN
       CCodegen.EnableCPlusPlus;
+    ELSIF fileName = "-dumpdecl" THEN
+      CCodegen.EnableDumpDecls;
     ELSE
       gotFile := TRUE;
     END;

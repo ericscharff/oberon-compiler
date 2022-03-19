@@ -1,12 +1,13 @@
 MODULE CCodegen;
 
-IMPORT AST, Lex, Out;
+IMPORT AST, Lex, Out, DumpDecl;
 
 VAR
   indent:          INTEGER;
   innerProcCount:  INTEGER;
   addBoundsChecks: BOOLEAN;
   genCPlusPlus:    BOOLEAN;
+  dumpDecls:       BOOLEAN;
   GenExpr:         PROCEDURE (l: Lex.Lexer; e: AST.Expr);
 
 PROCEDURE GenStr(s: ARRAY OF CHAR);
@@ -1176,6 +1177,13 @@ END GenProc;
 PROCEDURE Generate*(VAR l: Lex.Lexer; d: AST.Decl);
 BEGIN
   IF d.nesting = 0 THEN
+    IF dumpDecls THEN
+      GenStr("/*");
+      GenLn;
+      DumpDecl.Generate(l, d);
+      GenStr("*/");
+      GenLn;
+    END;
     CASE d.kind OF
       AST.declType: GenTypedef(l, d);
     | AST.declVar: GenVar(l, d);
@@ -1213,6 +1221,11 @@ BEGIN
   addBoundsChecks := TRUE
 END EnableBoundsChecks;
 
+PROCEDURE EnableDumpDecls*;
+BEGIN
+  dumpDecls := TRUE
+END EnableDumpDecls;
+
 PROCEDURE EnableCPlusPlus*;
 BEGIN
   genCPlusPlus := TRUE
@@ -1222,6 +1235,7 @@ BEGIN
   GenExpr := GenExpr0;
   addBoundsChecks := FALSE;
   genCPlusPlus := FALSE;
+  dumpDecls := FALSE;
   indent := 0;
   innerProcCount := 0
 END CCodegen.
