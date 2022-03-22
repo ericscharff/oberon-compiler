@@ -207,21 +207,21 @@ float to_float(int32_t i) {
   return f;
 }
 
-void do_trap(int pc, int32_t *regs, int32_t *mem) {
+void do_trap(int pc, int32_t *regs, uint8_t *mem) {
   if (pc == -1) {
     fputs("NIL derefernce\n", stderr);
     pc = regs[LR];
-    dumpstate(pc, regs, (uint8_t *)mem);
+    dumpstate(pc, regs, mem);
     exit(1);
   } else if (pc == -2) {
     fputs("Array index out of bounds\n", stderr);
     pc = regs[LR];
-    dumpstate(pc, regs, (uint8_t *)mem);
+    dumpstate(pc, regs, mem);
     exit(1);
   } else if (pc == -3) {
     fputs("ASSERT failure\n", stderr);
     pc = regs[LR];
-    dumpstate(pc, regs, (uint8_t *)mem);
+    dumpstate(pc, regs, mem);
     exit(1);
   } else if (pc == -10) {
     /* Out.Int */
@@ -296,6 +296,7 @@ void interpret(void) {
   int pc = START_PC;
   int32_t r[16];
   int32_t mem[MAX_MEM];
+  uint8_t *memBytes = (uint8_t *)mem;
   bool zFlag;
 
 #ifdef COVERAGE
@@ -313,7 +314,7 @@ void interpret(void) {
     mem[i] = 0;
   }
   copy_type_table_to_mem(mem);
-  copy_strings_to_mem((uint8_t *)mem);
+  copy_strings_to_mem(memBytes);
   mem[0] = (STRING_POOL_START + sizeof(STRING_POOL) + 4) & ~0x3;
   int left = 0; /* previous compare */
   int right = 0;
@@ -322,7 +323,7 @@ void interpret(void) {
     set_visited(pc);
 #endif
     if (pc < 0) {
-      do_trap(pc, r, mem);
+      do_trap(pc, r, memBytes);
       pc = r[LR];
       continue;
     }
@@ -332,7 +333,7 @@ void interpret(void) {
     Register c = PROGRAM[pc].rc;
     int offset = PROGRAM[pc].offset;
 #if 0
-    dumpstate(pc, r, (uint8_t *)mem);
+    dumpstate(pc, r, memBytes);
 #endif
     pc++;
     switch (op) {
@@ -456,7 +457,7 @@ void interpret(void) {
           minStack = r[SP];
           if (mem[0] > minStack) {
             fputs("Stack / Heap Collision\n", stderr);
-            dumpstate(pc, r, (uint8_t *)mem);
+            dumpstate(pc, r, memBytes);
             exit(1);
           }
         }
@@ -514,8 +515,7 @@ void interpret(void) {
       }
       case LDB: {
         int address = r[b] + offset;
-        r[a] = mem[address / 4];
-        r[a] = (r[a] >> ((address % 4) * 8)) & 0xff;
+        r[a] = memBytes[address];
         break;
       }
       case STW: {
@@ -533,11 +533,7 @@ void interpret(void) {
       }
       case STB: {
         int address = r[b] + offset;
-        int current = mem[address / 4];
-        int mask = 0xff << ((address % 4) * 8);
-        current = current & (~mask);
-        current = current | ((r[a] & 0xff) << ((address % 4) * 8));
-        mem[address / 4] = current;
+        memBytes[address] = r[a];
         break;
       }
       case CJP:
