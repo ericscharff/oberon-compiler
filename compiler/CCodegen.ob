@@ -538,7 +538,7 @@ BEGIN
   e := e.rhs;
   WHILE e # NIL DO
     IF e.typ.kind = AST.typeArray THEN
-      (* Arrays are always passed by pointer, no special procesing  *)
+      (* Arrays are always passed by pointer, no special processing  *)
       GenExpr(l, e);
     ELSIF (e.typ.kind = AST.typeRecord) OR
           (formal.kind = AST.declVarParam) THEN
@@ -549,7 +549,7 @@ BEGIN
         (* field of the actual parameter is the structure expected by the   *)
         (* formal parameter. This cast is not strictly necessary, but       *)
         (* avoids compiler  warnings. In C++, this case isn't necessary     *)
-        (* becasue assigning a subtype to a supertype is permitted.         *)
+        (* because assigning a subtype to a supertype is permitted.         *)
         GenStr("(");
         GenQName(l, formal.typ.decl.qname);
         GenStr("*)");
@@ -569,7 +569,7 @@ BEGIN
         (* field of the actual parameter is the structure expected by the   *)
         (* formal parameter. This cast is not strictly necessary, but       *)
         (* avoids compiler  warnings. In C++, this case isn't necessary     *)
-        (* becasue assigning a subtype to a supertype is permitted.         *)
+        (* because assigning a subtype to a supertype is permitted.         *)
         GenStr("((");
         GenQName(l, formal.typ.decl.qname);
         GenStr(")");

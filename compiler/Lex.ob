@@ -19,7 +19,7 @@ CONST
   (* pool in a special way. The ARRAY keyword is inserted first into the     *)
   (* table, and it takes up 10 characters. Thus, ARRAY is at position 0,     *)
   (* BEGIN at position 10, BY at position 20, and so on. This means that the *)
-  (* keword is looked up by PoolIndex DIV 10. Adding new keywords thus       *)
+  (* keyword is looked up by PoolIndex DIV 10. Adding new keywords thus      *)
   (* requires that they be contiguous with each other, and before the        *)
   (* punctuation tokens, IN order to keep things consistent.                 *)
   tARRAY*       =  0;

@@ -45,7 +45,7 @@ CONST
   opR2I  = 59;  (* convert ra from REAL to INTEGER *)
 
   (* Branches have opcode opBRA, and r.c is    *)
-  (* the conndition code, given below:         *)
+  (* the condition code, given below:          *)
   opBEQ = 1;  (* =  *) opBNE = 9;   (* #  *)
   opBLT = 5;  (* <  *) opBGE = 13;  (* >= *)
   opBLE = 6;  (* <= *) opBGT = 14;  (* >  *)
@@ -566,7 +566,7 @@ PROCEDURE AddToChain(VAR chain: INTEGER);
 (* instruction in the buffer to add it to the "chain" and chain points to   *)
 (* this updated instruction. The end result is a linked list of instruction *)
 (* addresses, starting at "chain", and ending at 0. This is later fixed up  *)
-(* using the FixupChain procedure.                                          *)
+(* using the FixChain procedure.                                            *)
 BEGIN
   codeBuffer[cp-1].value := chain;
   chain := cp - 1
@@ -658,7 +658,7 @@ END LoadValue;
 
 (* Loads the address of a variable into a register.                          *)
 (* If this is already in a register (e.g., RegI) no new register is reserve. *)
-(* However, for a varialble (relative to SP or GB) a new register allocated. *)
+(* However, for a variable (relative to SP or GB) a new register allocated.  *)
 PROCEDURE LoadAddress(VAR item: Item);
 BEGIN
   IF item.kind = itemVar THEN
@@ -1763,7 +1763,7 @@ BEGIN
       codeBuffer[after].value := cp; (* fix first branch to point to compare *)
       trueChain := 0; falseChain := 0;
       GenExpr(l, s.cond, item, trueChain, falseChain);
-      (* True chain immediatly returns to loopStart *)
+      (* True chain immediately returns to loopStart *)
       FixChain(trueChain, loopStart);
       LoadCond(item);
       ASSERT(item.kind = itemCond);
@@ -1775,7 +1775,7 @@ BEGIN
       trueChain := 0; falseChain := 0;
       GenStatements(l, s.body);
       GenExpr(l, s.cond, item, trueChain, falseChain);
-      (* False chain immediatly returns to loopStart *)
+      (* False chain immediately returns to loopStart *)
       FixChain(falseChain, loopStart);
       LoadCond(item);
       ASSERT(item.kind = itemCond);
@@ -1809,7 +1809,7 @@ BEGIN
         e := AST.NewExprBinary(l, Lex.tGTEQ, s.cond.lhs, s.cond.next, Decls.booleanType);
       END;
       GenExpr(l, e, item, trueChain, falseChain);
-      (* True chain immediatly returns to loopStart *)
+      (* True chain immediately returns to loopStart *)
       FixChain(trueChain, loopStart);
       LoadCond(item);
       ASSERT(item.kind = itemCond);

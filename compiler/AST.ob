@@ -190,13 +190,13 @@ TYPE
     lhs*:    Expr;          (* for unary, binary, the base expr for         *)
                             (* arrayRef, pointerDeref, fieldRef, typeGuard, *)
                             (* PROCEDURE call designator                    *)
-                            (* for assignnemt, lvalue                       *)
+                            (* for assignment, lvalue                       *)
     rhs*:    Expr;          (* for binary, also first arg PROCEDURE call    *)
                             (* for arrayRef, expr OF ARRAY index            *)
                             (* for assignment, rvalue                       *)
     next*:   Expr;          (* for PROCEDURE call,next arg in list          *)
     decl*:   Decl;          (* for identRef and typeguard                   *)
-                            (* for fieldRef, refernce to the field's decl   *)
+                            (* for fieldRef, reference to the field's decl  *)
     iVal*:   INTEGER;       (* for INTEGER, BOOLEAN, STRING (StringId)      *)
                             (* for fieldref, StringId OF field name         *)
                             (* for CHAR, the character itself               *)
@@ -312,8 +312,8 @@ END IsOpenArray;
 
 (* Is b := a legal? Note that this is not symmetric, for example, *)
 (* b := "hello"; is legal if b is an array of char, but           *)
-(* "hello" := b would not be legal. When doing comparasons (e.g., *)
-(* for boolean =, it is necessar to comapre a to b OR b to a      *)
+(* "hello" := b would not be legal. When doing comparisons (e.g., *)
+(* for boolean =, it is necessary to compare a to b OR b to a     *)
 PROCEDURE AssignmentCompatable(l: Lex.Lexer; a, b: Type; aSval, bSval: StringId): BOOLEAN;
 VAR
   procCompatable: BOOLEAN;

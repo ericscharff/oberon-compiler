@@ -603,7 +603,7 @@ BEGIN
   e.iVal := AST.builtinWriteLn;
   e.rhs := args;
   IF args # NIL THEN
-    Lex.ErrorLn(l, "WriteLn expects 0 argumens");
+    Lex.ErrorLn(l, "WriteLn expects 0 arguments");
   END;
   RETURN e
 END builtinWriteLn;
@@ -761,8 +761,8 @@ BEGIN
   IF d.state = AST.stateUnresolved THEN
     d.state := AST.stateResolving;
     IF d.qname.name = modInitName THEN
-      (* MODULE inits are a bit special, they are followed by any dels *)
-      (* that have been imported by the MODULE. Resolve these first.   *)
+      (* MODULE inits are a bit special, they are followed by any decls *)
+      (* that have been imported by the MODULE. Resolve these first.    *)
       p := d.next;
       WHILE p.kind # AST.declEND DO
         IF p.kind = AST.declImport THEN
