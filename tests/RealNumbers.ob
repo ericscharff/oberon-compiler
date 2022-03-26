@@ -2,12 +2,25 @@ MODULE RealNumbers;
 
 IMPORT Out;
 
+PROCEDURE Plus(a, b, c, d: REAL): REAL;
+BEGIN
+  RETURN a + b + c + d
+END Plus;
+
+PROCEDURE PlusOne(a: REAL): REAL;
+BEGIN
+  RETURN a + 1.0
+END PlusOne;
+
 PROCEDURE Test;
 VAR
   a, b, c, d: REAL;
 BEGIN
   a := 0.1; b := 1.0; c := 0.5; d := 0.25;
   Out.Real(a + b + c + d); Out.Ln;
+  Out.Real(Plus(a, b, c, d)); Out.Ln;
+  Out.Real(Plus(a+a, b+b, PlusOne(c+c), d+d)); Out.Ln;
+  Out.Real(Plus(a+a, b+b, c+PlusOne(c+c), d+d)); Out.Ln;
   Out.Real(a + FLT(1) + c + d); Out.Ln;
   Out.Real(a + b * c / d); Out.Ln;
   Out.Real(a - b - c - d); Out.Ln;
