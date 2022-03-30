@@ -1108,6 +1108,14 @@ BEGIN
   RETURN e
 END ValidateReturnStatement;
 
+PROCEDURE CheckReturnStatement*(l: Lex.Lexer; procDecl: Decl);
+BEGIN
+  IF (procDecl.typ.base.kind # typeNil) & (procDecl.expr = NIL) THEN
+    Lex.ErrorLn(l, "Missing RETURN statement");
+  END;
+END CheckReturnStatement;
+
+
 PROCEDURE InitTypeKindNames;
 BEGIN
   TypeKindNames[typeNil]       := "NIL";

@@ -869,6 +869,7 @@ BEGIN
         AST.ValidateReturnStatement(l, procDecl, ParseExpression());
   END;
   ExpectToken(Lex.tEND);
+  AST.CheckReturnStatement(l, procDecl);
   procDecl.procVars := Decls.CurrentScope();
   DEC(nesting);
   Decls.CloseScope(oldScope);
