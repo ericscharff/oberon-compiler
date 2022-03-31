@@ -12,6 +12,33 @@ in Lex.ob.
 When enabled, the builtin types and identifiers "nil", "integer", "real",
 "boolean", "char", and "set" are also allowed,
 
+Inline RETURN
+
+In Oberon-07, RETURN is a statement that *must* appear at the end of a PROCEDURE.
+With inlien RETURN, RETURN is a statement that can appear anywhere within
+a procedure, and returns immediately from that procedure, e.g.
+
+  PROCEDURE UseX(x: INTEGER): INTEGER;
+  BEGIN
+    IF x < 0 THEN RETURN -1 END;
+    IF x > 10 THEN RETURN 1000 END;
+    (* Code can guarantee x >= 0 and x <= 10 if it wants *)
+    RETURN x + 1
+  END;
+
+Note that a RETURN is still required at the end of a procedure, even if it
+can not possibly be reached, e.g.
+
+  PROCEDURE UseX(x: INTEGER): INTEGER;
+  BEGIN
+    IF x < 0 THEN RETURN -1 END;
+    IF x >= 0 THEN RETURN 1 END;
+    (* Not reachable, but required for semantic compatability *)
+    RETURN x + 1
+  END;
+
+RETURN is not allowed from a PROCEDURE that does not return a value.
+
 Native record fields.
 
 A record field may be marked with the NATIVE keyword, e.g.

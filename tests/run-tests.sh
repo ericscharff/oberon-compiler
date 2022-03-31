@@ -9,6 +9,7 @@ TESTS=(
   CaseTest
   FibFact
   FibFact2
+  FibFact3
   IOTest
   KnightsTour
   LangExtensions

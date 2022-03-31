@@ -12,6 +12,7 @@ VAR
   l*: Lex.Lexer;
   importCache: ARRAY 128 OF CachedImport;
   importCacheEnd: INTEGER;
+  currentProcDecl: AST.Decl;
   nesting: INTEGER;
   lastModuleDecls*: AST.Decl;
   ParseExpression: PROCEDURE (): AST.Expr;
@@ -558,6 +559,14 @@ BEGIN
   RETURN s
 END ParseAssignOrProcCall;
 
+PROCEDURE ParseReturnStatement(): AST.Stmt;
+BEGIN
+  ExpectToken(Lex.tRETURN);
+  currentProcDecl.expr :=
+      AST.ValidateReturnStatement(l, currentProcDecl, ParseExpression());
+  RETURN AST.NewStmtReturn(currentProcDecl.expr)
+END ParseReturnStatement;
+
 PROCEDURE ParseStatement(): AST.Stmt;
 VAR
   s: AST.Stmt;
@@ -576,6 +585,8 @@ BEGIN
     s := ParseVarStatement();
   ELSIF IsToken(Lex.tIDENT) THEN
     s := ParseAssignOrProcCall();
+  ELSIF IsToken(Lex.tRETURN) & allowLanguageExtensions THEN
+    s := ParseReturnStatement();
   ELSE
     (* Empty *)
     s := AST.NewStmtEmpty();
@@ -855,9 +866,11 @@ END ParseVarDeclaration;
 
 PROCEDURE ParseProcedureBody(procDecl: AST.Decl);
 VAR
-  oldScope: AST.Decl;
+  oldScope, oldProcDecl: AST.Decl;
 BEGIN
   oldScope := Decls.OpenScope();
+  oldProcDecl := currentProcDecl;
+  currentProcDecl := procDecl;
   INC(nesting);
   Decls.AddFormalParamsToScope(l, procDecl);
   ParseDeclarationSequence;
@@ -872,6 +885,7 @@ BEGIN
   AST.CheckReturnStatement(l, procDecl);
   procDecl.procVars := Decls.CurrentScope();
   DEC(nesting);
+  currentProcDecl := oldProcDecl;
   Decls.CloseScope(oldScope);
 END ParseProcedureBody;
 
@@ -1068,6 +1082,7 @@ END RunTests;
 
 BEGIN
   importCacheEnd := 0;
+  currentProcDecl := NIL;
   ParseExpression := ParseExpression0;
   ParseStatementSequence := ParseStatementSequence0;
   ParseType := ParseType0;

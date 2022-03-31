@@ -72,7 +72,8 @@ CONST
   stmtCaseItem* = 8;  (* Individual CASE clause *)
   stmtElsIf*    = 9;  (* ELSIF clauses          *)
   stmtElse*     = 10; (* ELSE for IF statement  *)
-  stmtEmpty*    = 11; (* Placeholder            *)
+  stmtReturn*   = 12;
+  stmtEmpty*    = 13; (* Placeholder            *)
 
   stateUnresolved* = 0;
   stateResolving*  = 1;
@@ -1094,6 +1095,15 @@ BEGIN
   NewStmt(s, stmtEmpty);
   RETURN s
 END NewStmtEmpty;
+
+PROCEDURE NewStmtReturn*(e: Expr): Stmt;
+VAR
+  s: Stmt;
+BEGIN
+  NewStmt(s, stmtReturn);
+  s.cond := e;
+  RETURN s
+END NewStmtReturn;
 
 PROCEDURE ValidateReturnStatement*(l: Lex.Lexer; procDecl: Decl; e: Expr): Expr;
 BEGIN

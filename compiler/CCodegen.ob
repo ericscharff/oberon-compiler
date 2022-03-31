@@ -914,6 +914,10 @@ BEGIN
       AST.stmtAssign, AST.stmtProcCall:
         GenExpr(l, s.cond);
         GenStr(";");
+    | AST.stmtReturn:
+        GenStr("return ");
+        GenExpr(l, s.cond);
+        GenStr(";");
     | AST.stmtIf:
         GenStr("if ");
         GenParenExpr(l, s.cond);

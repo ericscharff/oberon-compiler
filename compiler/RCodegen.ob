@@ -135,6 +135,7 @@ VAR
                          (* local stack frame, temporarily. During lookup of  *)
                          (* x for g, the SP needs to be offset, restored when *)
                          (* the registers are restored.                       *)
+  epilog:       INTEGER; (* chain to point to the end of the function.        *)
   genCode:      BOOLEAN;
   genBoundsCheck: BOOLEAN;
   genNilCheck:    BOOLEAN;
@@ -1722,6 +1723,10 @@ BEGIN
         (* ProcCall was a function that returned a value that can be ignored *)
         DecCurReg
       END
+    ELSIF s.kind = AST.stmtReturn THEN
+      GenReturn(l, s.cond);
+      Emit(opBRA, 0, 0, opB, 0);
+      AddToChain(epilog);
     ELSIF s.kind = AST.stmtIf THEN
       after := 0;
       trueChain := 0; falseChain := 0;
@@ -1924,8 +1929,11 @@ VAR
   fp: INTEGER;
   vars: AST.Decl;
   i, registersInUse: INTEGER;
+  oldEpilog: INTEGER;
 BEGIN
   ASSERT(d.kind = AST.declProcedure);
+  oldEpilog := epilog;
+  epilog := 0;
   IF d.nesting = 0 THEN
     cp := 0;
   END;
@@ -2003,9 +2011,11 @@ BEGIN
   GenStatements(l, d.body);
   IF d.expr # NIL THEN GenReturn(l, d.expr) END;
   (* Epilog *)
+  FixChain(epilog, cp);
   Emit(opLDW, rLR, rSP, 0, 0);
   Emit(opADDI, rSP, rSP, 0, fp);
   Emit(opBrg, rLR, 0, 0, 0);
+  epilog := oldEpilog;
   IF d.nesting = 0 THEN
     IF genCode THEN
       DumpCode(d.offset)
@@ -2095,6 +2105,7 @@ BEGIN
   stackOffset := 0;
   lastType := 0;
   mainStartPc := 0;
+  epilog := 0;
   genCode := FALSE;
   genBoundsCheck := TRUE;
   genNilCheck := TRUE;
