@@ -19,6 +19,20 @@ begin
   return r
 end FactIter;
 
+procedure FactIter2*(n: integer): integer;
+var
+  i, r: integer;
+begin
+  i := 1;
+  r := 1;
+  while TRUE do
+    if i > n then return r end;
+    r := r * i;
+    INC(i)
+  end;
+  return r
+end FactIter2;
+
 procedure FactRec*(n: integer): integer;
 var r: integer;
 begin
@@ -64,6 +78,7 @@ begin
   ASSERT(FactRec(n) = FactIter(n));
   ASSERT(FactIter(Seven) = FactIter(n));
   ASSERT(FactIter(7) = 5040);
+  ASSERT(FactIter(7) = FactIter2(7));
   Out.Int(FactRec(n)); Out.Ln;
   ASSERT(FibIter(20) = FibRec(20));
   ASSERT(FibRec(20) = 10946);
