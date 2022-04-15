@@ -1,4 +1,6 @@
-Lowercase keywords
+# Extensions to Oberon-07
+
+## Lowercase keywords
 
 Most of the reserved words in Oberon (MODULE, PROCEDURE, etc.) can be entered
 in lower case.  Note, however, that identifiers are still case sensitive, so
@@ -12,7 +14,7 @@ in Lex.ob.
 When enabled, the builtin types and identifiers "nil", "integer", "real",
 "boolean", "char", and "set" are also allowed,
 
-Inline RETURN
+## Inline RETURN
 
 In Oberon-07, RETURN is a statement that *must* appear at the end of a PROCEDURE.
 With inlien RETURN, RETURN is a statement that can appear anywhere within
@@ -39,7 +41,7 @@ can not possibly be reached, e.g.
 
 RETURN is not allowed from a PROCEDURE that does not return a value.
 
-Native record fields.
+## Native record fields.
 
 A record field may be marked with the NATIVE keyword, e.g.
 
@@ -89,7 +91,7 @@ compiler.)
 If a native procedure needs to return a value, the value should be placed in
 R0.
 
-Inline variables
+## Inline variables
 
 Variables may be defined within a statement block, e.g.
 
