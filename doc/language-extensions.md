@@ -4,15 +4,17 @@
 
 Most of the reserved words in Oberon (MODULE, PROCEDURE, etc.) can be entered
 in lower case.  Note, however, that identifiers are still case sensitive, so
-"begin" and "BEGIN" work, but "procedureName" and "ProcedureName" do not. e.g.
+`begin` and `BEGIN` work, but `procedureName` and `ProcedureName` do not. e.g.
 
-  module Test; import Out; begin Out.Str("Hello"): end Test.
+```
+module Test; import Out; begin Out.Str("Hello"): end Test.
+```
 
 Is valid code. This can be controlled by the ignoreKeywordCase global variable
 in Lex.ob.
 
-When enabled, the builtin types and identifiers "nil", "integer", "real",
-"boolean", "char", and "set" are also allowed,
+When enabled, the builtin types and identifiers `nil`, `integer`, `real`,
+`boolean`, `char`, and `set` are also allowed,
 
 ## Inline RETURN
 
@@ -20,6 +22,7 @@ In Oberon-07, RETURN is a statement that *must* appear at the end of a PROCEDURE
 With inlien RETURN, RETURN is a statement that can appear anywhere within
 a procedure, and returns immediately from that procedure, e.g.
 
+```
   PROCEDURE UseX(x: INTEGER): INTEGER;
   BEGIN
     IF x < 0 THEN RETURN -1 END;
@@ -27,10 +30,12 @@ a procedure, and returns immediately from that procedure, e.g.
     (* Code can guarantee x >= 0 and x <= 10 if it wants *)
     RETURN x + 1
   END;
+```
 
 Note that a RETURN is still required at the end of a procedure, even if it
 can not possibly be reached, e.g.
 
+```
   PROCEDURE UseX(x: INTEGER): INTEGER;
   BEGIN
     IF x < 0 THEN RETURN -1 END;
@@ -38,6 +43,7 @@ can not possibly be reached, e.g.
     (* Not reachable, but required for semantic compatability *)
     RETURN x + 1
   END;
+```
 
 RETURN is not allowed from a PROCEDURE that does not return a value.
 
@@ -45,20 +51,24 @@ RETURN is not allowed from a PROCEDURE that does not return a value.
 
 A record field may be marked with the NATIVE keyword, e.g.
 
+```
   MODULE Net;
   TYPE CSocket = RECORD _sock :NATIVE INTEGER; END;
   END Net.
+```
 
 The native keyword has no effect in native code generation, but when
 performing C Code generation, this creates a "native field." The
 generated C code for this record looks like this:
 
+```
   typedef struct Net_CSocket {
     Net_CSocket_Native _sock;
   } Net_CSocket;
+```
 
 It is assumed that the C code (in the preamble) declares the type
-Net_CSocket_Native.
+`Net_CSocket_Native`.
 
 The intention is that if Oberon code needs to communicate with Native
 C code, and that native C code needs access to state that needs to be
@@ -70,14 +80,19 @@ the C type is incompatible with the field type.)
 
 NATIVE procedures have a similar syntax:
 
+```
 NATIVE (-101) DrawLine(x1, y1, x2, y2 :INTEGER);
+```
 
 The number in parenthesis is required, but is ignored by the C code generator.
 It is important for the RISC code generator, because it allows generation of
 "trap" instructions. Effectively, it allows the RISC code generator to emit
 calls as if they were real procedures, e.g.,
+
+```
   <args passed in registers, first arg in R0>
   BL -101
+```
 
 Then, the RISC interpreter can treat jumps to negative PC values as functions
 that are implemented by the interpreter. This makes it easy for both C and
@@ -95,7 +110,9 @@ R0.
 
 Variables may be defined within a statement block, e.g.
 
+```
   VAR x := 12;
+```
 
 The type of the variable is determined by the right hand side of the
 assignment.
@@ -107,7 +124,9 @@ Variable length arrays (a.k.a. buffers)
 
 A new type of array is allowed
 
+```
 ARRAY * OF <Type>
+```
 
 This represents a variable length array, similar to an ArrayList in other
 languages.
@@ -129,6 +148,7 @@ that should be put in the new buffer location.
 
 Example:
 
+```
 VAR
   b :ARRAY * OF INTERGER;
   i :INTEGER:
@@ -143,5 +163,6 @@ BEGIN
     INC(i)
   END
 END
+```
 
-Would print 1, 2, 3
+would print 1, 2, 3
