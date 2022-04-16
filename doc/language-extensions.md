@@ -23,26 +23,26 @@ PROCEDURE. With inlien RETURN, RETURN is a statement that can appear anywhere
 within a procedure, and returns immediately from that procedure, e.g.
 
 ```
-  PROCEDURE UseX(x: INTEGER): INTEGER;
-  BEGIN
-    IF x < 0 THEN RETURN -1 END;
-    IF x > 10 THEN RETURN 1000 END;
-    (* Code can guarantee x >= 0 and x <= 10 if it wants *)
-    RETURN x + 1
-  END;
+PROCEDURE UseX(x: INTEGER): INTEGER;
+BEGIN
+  IF x < 0 THEN RETURN -1 END;
+  IF x > 10 THEN RETURN 1000 END;
+  (* Code can guarantee x >= 0 and x <= 10 if it wants *)
+  RETURN x + 1
+END;
 ```
 
 Note that a RETURN is still required at the end of a procedure, even if it can
 not possibly be reached, e.g.
 
 ```
-  PROCEDURE UseX(x: INTEGER): INTEGER;
-  BEGIN
-    IF x < 0 THEN RETURN -1 END;
-    IF x >= 0 THEN RETURN 1 END;
-    (* Not reachable, but required for semantic compatability *)
-    RETURN x + 1
-  END;
+PROCEDURE UseX(x: INTEGER): INTEGER;
+BEGIN
+  IF x < 0 THEN RETURN -1 END;
+  IF x >= 0 THEN RETURN 1 END;
+  (* Not reachable, but required for semantic compatability *)
+  RETURN x + 1
+END;
 ```
 
 RETURN is not allowed from a PROCEDURE that does not return a value.
@@ -52,9 +52,9 @@ RETURN is not allowed from a PROCEDURE that does not return a value.
 A record field may be marked with the NATIVE keyword, e.g.
 
 ```
-  MODULE Net;
-  TYPE CSocket = RECORD _sock :NATIVE INTEGER; END;
-  END Net.
+MODULE Net;
+TYPE CSocket = RECORD _sock :NATIVE INTEGER; END;
+END Net.
 ```
 
 The native keyword has no effect in native code generation, but when performing
@@ -62,9 +62,9 @@ C Code generation, this creates a "native field." The generated C code for this
 record looks like this:
 
 ```
-  typedef struct Net_CSocket {
-    Net_CSocket_Native _sock;
-  } Net_CSocket;
+typedef struct Net_CSocket {
+  Net_CSocket_Native _sock;
+} Net_CSocket;
 ```
 
 It is assumed that the C code (in the preamble) declares the type
@@ -90,8 +90,8 @@ It is important for the RISC code generator, because it allows generation of
 calls as if they were real procedures, e.g.,
 
 ```
-  <args passed in registers, first arg in R0>
-  BL -101
+<args passed in registers, first arg in R0>
+BL -101
 ```
 
 Then, the RISC interpreter can treat jumps to negative PC values as functions
@@ -109,7 +109,7 @@ If a native procedure needs to return a value, the value should be placed in R0.
 Variables may be defined within a statement block, e.g.
 
 ```
-  VAR x := 12;
+VAR x := 12;
 ```
 
 The type of the variable is determined by the right hand side of the assignment.
