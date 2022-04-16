@@ -33,7 +33,7 @@ transpiled compiler is what is used for development.
 
 The two Oberon compilers should adhere to and implement all of the features of
 the Oberon-07 language. Both also contain some optional extensions to Oberon,
-described in [doc/language-extensions.txt](doc/language-extensions.txt). Some
+described in [doc/language-extensions.md](doc/language-extensions.md). Some
 experimental new features include lower case keywords and buffers (variable
 sized arrays, like Vectors/ArrayLists in other languages.)
 
