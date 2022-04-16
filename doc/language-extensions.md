@@ -18,8 +18,8 @@ When enabled, the builtin types and identifiers `nil`, `integer`, `real`,
 
 ## Inline RETURN
 
-In Oberon-07, RETURN is a statement that *must* appear at the end of a
-PROCEDURE. With inlien RETURN, RETURN is a statement that can appear anywhere
+In Oberon-07, `RETURN` is a statement that *must* appear at the end of a
+`PROCEDURE`. With inline RETURN, RETURN is a statement that can appear anywhere
 within a procedure, and returns immediately from that procedure, e.g.
 
 ```
@@ -49,7 +49,7 @@ RETURN is not allowed from a PROCEDURE that does not return a value.
 
 ## Native record fields.
 
-A record field may be marked with the NATIVE keyword, e.g.
+A record field may be marked with the `NATIVE` keyword, e.g.
 
 ```
 MODULE Net;
