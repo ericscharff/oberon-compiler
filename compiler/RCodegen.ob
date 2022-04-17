@@ -235,7 +235,7 @@ PROCEDURE DumpAssembly(l: Lex.Lexer; delta: INTEGER);
 VAR
   i:  INTEGER;
   op: OpCode;
-  ra, rb, rc :INTEGER;
+  ra, rb, rc, value :INTEGER;
 BEGIN
   i := 0;
   WHILE i < cp DO
@@ -243,11 +243,12 @@ BEGIN
     ra := codeBuffer[i].ra;
     rb := codeBuffer[i].rb;
     rc := codeBuffer[i].rc;
+    value := codeBuffer[i].value;
     Out.Int(i + delta); Tab;
     IF op = opMOV THEN
       GenStr("MOV "); GenReg(ra); GenStr(", "); GenReg(rb);
     ELSIF op = opMOVI THEN
-      GenStr("MOV "); GenReg(ra); GenStr(", #"); Out.Int(codeBuffer[i].value);
+      GenStr("MOV "); GenReg(ra); GenStr(", #"); Out.Int(value);
     ELSIF op = opADD THEN
       Gen3("ADD", ra, rb, rc)
     ELSIF op = opSUB THEN
@@ -273,39 +274,39 @@ BEGIN
     ELSIF op = opCMP THEN
       Gen3("CMP", ra, rb, rc)
     ELSIF op = opADDI THEN
-      Gen2("ADD", ra, rb, codeBuffer[i].value)
+      Gen2("ADD", ra, rb, value)
     ELSIF op = opSUBI THEN
-      Gen2("SUB", ra, rb, codeBuffer[i].value)
+      Gen2("SUB", ra, rb, value)
     ELSIF op = opMULI THEN
-      Gen2("MUL", ra, rb, codeBuffer[i].value)
+      Gen2("MUL", ra, rb, value)
     ELSIF op = opDIVI THEN
-      Gen2("DIV", ra, rb, codeBuffer[i].value)
+      Gen2("DIV", ra, rb, value)
     ELSIF op = opMODI THEN
-      Gen2("MOD", ra, rb, codeBuffer[i].value)
+      Gen2("MOD", ra, rb, value)
     ELSIF op = opLSLI THEN
-      Gen2("LSL", ra, rb, codeBuffer[i].value)
+      Gen2("LSL", ra, rb, value)
     ELSIF op = opASRI THEN
-      Gen2("ASR", ra, rb, codeBuffer[i].value)
+      Gen2("ASR", ra, rb, value)
     ELSIF op = opANDI THEN
-      Gen2("AND", ra, rb, codeBuffer[i].value)
+      Gen2("AND", ra, rb, value)
     ELSIF op = opORI THEN
-      Gen2("OR", ra, rb, codeBuffer[i].value)
+      Gen2("OR", ra, rb, value)
     ELSIF op = opXORI THEN
-      Gen2("XOR", ra, rb, codeBuffer[i].value)
+      Gen2("XOR", ra, rb, value)
     ELSIF op = opANNI THEN
-      Gen2("ANN", ra, rb, codeBuffer[i].value)
+      Gen2("ANN", ra, rb, value)
     ELSIF op = opCMPI THEN
-      Gen2("CMP", ra, rb, codeBuffer[i].value)
+      Gen2("CMP", ra, rb, value)
     ELSIF op = opLDW THEN
-      Gen2("LDW", ra, rb, codeBuffer[i].value)
+      Gen2("LDW", ra, rb, value)
     ELSIF op = opLDB THEN
-      Gen2("LDB", ra, rb, codeBuffer[i].value)
+      Gen2("LDB", ra, rb, value)
     ELSIF op = opSTW THEN
-      Gen2("STW", ra, rb, codeBuffer[i].value)
+      Gen2("STW", ra, rb, value)
     ELSIF op = opSTB THEN
-      Gen2("STB", ra, rb, codeBuffer[i].value)
+      Gen2("STB", ra, rb, value)
     ELSIF op = opCJP THEN
-      GenStr("CASE "); Out.Int(codeBuffer[i].value)
+      GenStr("CASE "); Out.Int(value)
     ELSIF op = opBRA THEN
       CASE rc OF
         opBEQ: GenStr("BEQ ")
@@ -318,13 +319,13 @@ BEGIN
         | opBF: GenStr("BF ");
         | opBHI: GenStr("BHI ");
       END;
-      IF codeBuffer[i].value >= 0 THEN
-        Out.Int(codeBuffer[i].value + delta)
+      IF value >= 0 THEN
+        Out.Int(value + delta)
       ELSE
-        Out.Int(codeBuffer[i].value)
+        Out.Int(value)
       END
     ELSIF op = opBL THEN
-      GenStr("BL "); Out.Int(codeBuffer[i].value);
+      GenStr("BL "); Out.Int(value);
       GenStr(" ("); GenQName(l, codeBuffer[i].q);
       GenStr(")")
     ELSIF op = opBLr THEN
