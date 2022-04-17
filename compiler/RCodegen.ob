@@ -785,22 +785,19 @@ BEGIN
 END GenStringCompare;
 
 PROCEDURE GenStringOp(op: Lex.TokenKind; VAR lhs, rhs: Item);
+VAR branchOp: INTEGER;
 BEGIN
-  IF op = Lex.tEQ THEN
-    GenStringCompare(lhs, rhs, opBEQ)
-  ELSIF op = Lex.tPOUND THEN
-    GenStringCompare(lhs, rhs, opBNE)
-  ELSIF op = Lex.tLT THEN
-    GenStringCompare(lhs, rhs, opBLT)
-  ELSIF op = Lex.tGT THEN
-    GenStringCompare(lhs, rhs, opBGT)
-  ELSIF op = Lex.tLTEQ THEN
-    GenStringCompare(lhs, rhs, opBLE)
-  ELSIF op = Lex.tGTEQ THEN
-    GenStringCompare(lhs, rhs, opBGE)
-  ELSE
-    ASSERT(FALSE)
-  END
+  branchOp := -1;
+  CASE op OF
+    Lex.tEQ: branchOp := opBEQ;
+  | Lex.tPOUND: branchOp := opBNE;
+  | Lex.tLT: branchOp := opBLT;
+  | Lex.tGT: branchOp := opBGT;
+  | Lex.tLTEQ: branchOp := opBLE;
+  | Lex.tGTEQ: branchOp := opBGE;
+  END;
+  ASSERT(branchOp # -1);
+  GenStringCompare(lhs, rhs, branchOp)
 END GenStringOp;
 
 PROCEDURE GenRealOp(op: Lex.TokenKind; VAR lhs, rhs: Item);
