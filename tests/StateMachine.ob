@@ -1,0 +1,71 @@
+MODULE StateMachine;
+
+(* Use function pointers to model a state machine *)
+
+IMPORT Out;
+
+VAR
+  updateFn: PROCEDURE (elapsedTime: INTEGER; event: INTEGER);
+
+PROCEDURE Log(s: ARRAY OF CHAR; i, j: INTEGER);
+BEGIN
+  Out.Str(s);
+  Out.Char(" ");
+  Out.Int(i);
+  Out.Char(" ");
+  Out.Int(j);
+  Out.Ln
+END Log;
+
+PROCEDURE StateEnd(elapsedTime: INTEGER; event: INTEGER);
+BEGIN
+  Log("StateEnd", elapsedTime, event);
+END StateEnd;
+
+PROCEDURE State4(elapsedTime: INTEGER; event: INTEGER);
+BEGIN
+  Log("State4", elapsedTime, event);
+  IF event = 0 THEN
+    updateFn := StateEnd
+  END;
+END State4;
+
+PROCEDURE State3(elapsedTime: INTEGER; event: INTEGER);
+BEGIN
+  Log("State3", elapsedTime, event);
+  IF event = 1 THEN
+    updateFn := State4
+  END;
+END State3;
+
+PROCEDURE State2(elapsedTime: INTEGER; event: INTEGER);
+BEGIN
+  Log("State2", elapsedTime, event);
+  IF event = 2 THEN
+    updateFn := State3
+  END;
+END State2;
+
+PROCEDURE State1(elapsedTime: INTEGER; event: INTEGER);
+BEGIN
+  Log("State1", elapsedTime, event);
+  IF event = 3 THEN
+    updateFn := State2
+  END;
+END State1;
+
+PROCEDURE Driver;
+VAR
+  i: INTEGER;
+BEGIN
+  updateFn := State1;
+  i := 0;
+  WHILE updateFn # StateEnd DO
+    updateFn(10, i);
+    i := (i + 1) MOD 4
+  END
+END Driver;
+
+BEGIN
+  Driver
+END StateMachine.

@@ -26,6 +26,7 @@ TESTS=(
   SetTest
   Shadow
   ShortCircuit
+  StateMachine
   StrTest
   Test6502
   TestBed
