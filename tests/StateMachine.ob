@@ -5,6 +5,7 @@ MODULE StateMachine;
 IMPORT Out;
 
 VAR
+  state2TotalTime: INTEGER;
   updateFn: PROCEDURE (elapsedTime: INTEGER; event: INTEGER);
 
 PROCEDURE Log(s: ARRAY OF CHAR; i, j: INTEGER);
@@ -41,7 +42,8 @@ END State3;
 PROCEDURE State2(elapsedTime: INTEGER; event: INTEGER);
 BEGIN
   Log("State2", elapsedTime, event);
-  IF event = 2 THEN
+  state2TotalTime := state2TotalTime + elapsedTime;
+  IF state2TotalTime >= 100 THEN
     updateFn := State3
   END;
 END State2;
@@ -58,6 +60,7 @@ PROCEDURE Driver;
 VAR
   i: INTEGER;
 BEGIN
+  state2TotalTime := 0;
   updateFn := State1;
   i := 0;
   WHILE updateFn # StateEnd DO
