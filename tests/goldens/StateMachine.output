@@ -1,21 +1,21 @@
-State1 10 0
-State1 10 1
-State1 10 2
-State1 10 3
-State2 10 0
-State2 10 1
-State2 10 2
-State2 10 3
-State2 10 0
-State2 10 1
-State2 10 2
-State2 10 3
-State2 10 0
-State2 10 1
-State3 10 2
-State3 10 3
-State3 10 0
-State3 10 1
-State4 10 2
-State4 10 3
-State4 10 0
+State1 10 0 0
+State1 10 1 0
+State1 10 2 0
+State1 10 3 0
+State2 10 0 0
+State2 10 1 10
+State2 10 2 20
+State2 10 3 30
+State2 10 0 40
+State2 10 1 50
+State2 10 2 60
+State2 10 3 70
+State2 10 0 80
+State2 10 1 90
+State3 10 2 100
+State3 10 3 100
+State3 10 0 100
+State3 10 1 100
+State4 10 2 100
+State4 10 3 100
+State4 10 0 100

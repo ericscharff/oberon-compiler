@@ -15,6 +15,8 @@ BEGIN
   Out.Int(i);
   Out.Char(" ");
   Out.Int(j);
+  Out.Char(" ");
+  Out.Int(state2TotalTime);
   Out.Ln
 END Log;
 
