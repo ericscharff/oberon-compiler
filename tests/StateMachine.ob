@@ -9,14 +9,29 @@ VAR
   updateFn: PROCEDURE (elapsedTime: INTEGER; event: INTEGER);
 
 PROCEDURE Log(s: ARRAY OF CHAR; i, j: INTEGER);
+
+  PROCEDURE LogS(varName, varVal: ARRAY OF CHAR);
+  BEGIN
+    Out.Str(varName);
+    Out.Char("=");
+    Out.Str(varVal);
+  END LogS;
+
+  PROCEDURE LogI(varName: ARRAY OF CHAR; varVal: INTEGER);
+  BEGIN
+    Out.Str(varName);
+    Out.Char("=");
+    Out.Int(varVal);
+  END LogI;
+
 BEGIN
-  Out.Str(s);
+  LogS("stateName", s);
   Out.Char(" ");
-  Out.Int(i);
+  LogI("elapsedTime", i);
   Out.Char(" ");
-  Out.Int(j);
+  LogI("event", j);
   Out.Char(" ");
-  Out.Int(state2TotalTime);
+  LogI("state2TotalTime", state2TotalTime);
   Out.Ln
 END Log;
 
