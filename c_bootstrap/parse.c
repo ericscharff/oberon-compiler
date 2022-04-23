@@ -231,7 +231,7 @@ Expr *parse_simple_expression(void) {
   return e;
 }
 
-bool is_relation() {
+bool is_relation(void) {
   return is_token(TOKEN_EQ) || is_token(TOKEN_POUND) || is_token(TOKEN_LT) ||
          is_token(TOKEN_LTEQ) || is_token(TOKEN_GT) || is_token(TOKEN_GTEQ) ||
          is_token(TOKEN_IN) || is_token(TOKEN_IS);
