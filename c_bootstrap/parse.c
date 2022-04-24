@@ -78,7 +78,7 @@ Expr *parse_set_element(void) {
   return e;
 }
 
-Expr *parse_set() {
+Expr *parse_set(void) {
   Loc loc = token.pos;
   Expr *e = NULL;
   expect_token(TOKEN_LBRACE);

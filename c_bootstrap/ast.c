@@ -798,7 +798,7 @@ Module *new_module(const char *name, Decl *decls, Statement *body) {
   return m;
 }
 
-void init_global_types() {
+void init_global_types(void) {
   Loc loc = {"<global>", 0};
   current_package_name = string_intern("");
   assert(booleanType.kind == TYPE_BOOLEAN);
