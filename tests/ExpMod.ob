@@ -1,4 +1,4 @@
-MODULE Modulo;
+MODULE ExpMod;
 
 IMPORT Out;
 
@@ -50,4 +50,4 @@ END Test;
 
 BEGIN
   Test
-END Modulo.
+END ExpMod.

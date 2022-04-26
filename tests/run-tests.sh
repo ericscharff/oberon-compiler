@@ -7,6 +7,7 @@ set -e
 TESTS=(
   ArrayTest
   CaseTest
+  ExpMod
   FibFact
   FibFact2
   FibFact3
@@ -15,7 +16,6 @@ TESTS=(
   LangExtensions
   Mandelbrot
   Maze
-  Modulo
   OopTest
   OopTest2
   Pentominoes
