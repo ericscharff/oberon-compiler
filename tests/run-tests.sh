@@ -7,7 +7,6 @@ set -e
 TESTS=(
   ArrayTest
   CaseTest
-  ExpMod
   FibFact
   FibFact2
   FibFact3
