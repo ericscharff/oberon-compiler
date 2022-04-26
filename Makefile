@@ -1,7 +1,6 @@
 BUILDDIR=build
 CFLAGS=-g -std=c17 -Wall -Wextra -Wpedantic
 
-
 BOOTSTRAP_SRCS=$(wildcard c_bootstrap/*.c)
 COMPILER_SRCS=$(wildcard compiler/*.ob) compiler/runtime.c
 

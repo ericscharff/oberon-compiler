@@ -1,0 +1,53 @@
+MODULE ExpMod;
+
+IMPORT Out;
+
+(* Reverse the bits in an initeger *)
+PROCEDURE Reverse(n: INTEGER; VAR d: INTEGER): INTEGER;
+VAR result: INTEGER;
+BEGIN
+  result := 0;
+  d := 0;
+  WHILE n # 0 DO
+    INC(d);
+    result := result * 2;
+    result := result BITOR (n BITAND 1);
+    n := n DIV 2;
+  END
+  RETURN result
+END Reverse;
+
+(* Compute (x^y) MOD m *)
+(*
+Inspired by the square and multiply algorithm presented in Computerphile:
+https://www.youtube.com/watch?v=cbGB__V8MNk
+*)
+PROCEDURE Exponent(x, y, m: INTEGER): INTEGER;
+VAR
+  digits, result: INTEGER;
+BEGIN
+  y := Reverse(y, digits);
+  result := 1;
+  x := x MOD m;
+  WHILE digits > 0 DO
+    result := (result * result) MOD m;
+    IF (y BITAND 1) = 1 THEN
+      result := (result * x) MOD m;
+    END;
+    y := y DIV 2;
+    DEC(digits)
+  END
+  RETURN result
+END Exponent;
+
+PROCEDURE Test;
+BEGIN
+  Out.Int(Exponent(23, 373, 747)); Out.Ln;
+  Out.Int(Exponent(17, 281, 71)); Out.Ln;
+  Out.Int(Exponent(17, 283, 71)); Out.Ln;
+  Out.Int(Exponent(74, 1240, 1311)); Out.Ln;
+END Test;
+
+BEGIN
+  Test
+END ExpMod.
