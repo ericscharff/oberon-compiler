@@ -15,6 +15,7 @@ TESTS=(
   LangExtensions
   Mandelbrot
   Maze
+  Modulo
   OopTest
   OopTest2
   Pentominoes
