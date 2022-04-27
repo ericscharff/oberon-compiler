@@ -16,7 +16,7 @@
 
 /* Maxiumum memory (in int32_t */
 #ifndef MAX_MEM
-#define MAX_MEM 65536
+#define MAX_MEM 1024
 #endif
 #define MAX_MEM_BYTES (MAX_MEM * 4)
 
