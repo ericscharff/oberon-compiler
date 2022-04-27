@@ -40,12 +40,34 @@ BEGIN
   RETURN result
 END Exponent;
 
+(* Compute (x^y) MOD m *)
+(* This version does not require bit reversal *)
+PROCEDURE Exponent2(x, y, m: INTEGER): INTEGER;
+VAR
+  result: INTEGER;
+BEGIN
+  result := 1;
+  x := x MOD m;
+  WHILE y > 0 DO
+    IF (y BITAND 1) = 1 THEN
+      result := (result * x) MOD m;
+    END;
+    x := (x * x) MOD m;
+    y := y DIV 2;
+  END
+  RETURN result
+END Exponent2;
+
 PROCEDURE Test;
 BEGIN
   Out.Int(Exponent(23, 373, 747)); Out.Ln;
+  Out.Int(Exponent2(23, 373, 747)); Out.Ln;
   Out.Int(Exponent(17, 281, 71)); Out.Ln;
+  Out.Int(Exponent2(17, 281, 71)); Out.Ln;
   Out.Int(Exponent(17, 283, 71)); Out.Ln;
+  Out.Int(Exponent2(17, 283, 71)); Out.Ln;
   Out.Int(Exponent(74, 1240, 1311)); Out.Ln;
+  Out.Int(Exponent2(74, 1240, 1311)); Out.Ln;
 END Test;
 
 BEGIN
