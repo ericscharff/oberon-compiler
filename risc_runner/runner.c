@@ -121,9 +121,6 @@ typedef struct Instruction {
 
 #include "risc_code.txt"
 
-#ifdef COVERAGE
-uint32_t visited_ip[(sizeof(PROGRAM) / sizeof(Instruction)) / 32 + 1];
-#endif
 int saved_argc;
 char **saved_argv;
 
@@ -276,13 +273,13 @@ void copy_strings_to_mem(uint8_t *mem) {
 }
 
 #ifdef COVERAGE
-void set_visited(int pc) {
+void set_visited(uint32_t *visited_ip, int pc) {
   int loc = pc / 32;
   int bitLoc = pc % 32;
   visited_ip[loc] |= 1 << bitLoc;
 }
 
-void print_unvisited(void) {
+void print_unvisited(uint32_t *visited_ip) {
   printf("Unvisted instructions:\n");
   for (size_t pc = 0; pc < (sizeof(PROGRAM) / sizeof(Instruction)); pc++) {
     if ((visited_ip[pc / 32] & (1 << pc % 32)) == 0) {
@@ -300,6 +297,7 @@ void interpret(void) {
   bool zFlag;
 
 #ifdef COVERAGE
+  uint32_t visited_ip[(sizeof(PROGRAM) / sizeof(Instruction)) / 32 + 1];
   for (size_t ip = 0; ip < (sizeof(visited_ip) / sizeof(uint32_t)); ip++) {
     visited_ip[ip] = 0;
   }
@@ -320,7 +318,7 @@ void interpret(void) {
   int right = 0;
   while (1) {
 #ifdef COVERAGE
-    set_visited(pc);
+    set_visited(visited_ip, pc);
 #endif
     if (pc < 0) {
       do_trap(pc, r, memBytes);
@@ -620,7 +618,7 @@ void interpret(void) {
         return;
       case HALT:
 #ifdef COVERAGE
-        print_unvisited();
+        print_unvisited(visited_ip);
 #endif
 #ifdef MEMORY_REPORT
         printf("Max heap %d min stack %d stack use %d\n", mem[0], minStack,
