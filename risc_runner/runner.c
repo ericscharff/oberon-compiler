@@ -119,10 +119,12 @@ typedef struct Instruction {
   int offset;
 } Instruction;
 
-#include "risc_code.txt"
+typedef struct Environment {
+  int saved_argc;
+  char **saved_argv;
+} Environment;
 
-int saved_argc;
-char **saved_argv;
+#include "risc_code.txt"
 
 void line(const char *reg0, int32_t r0, const char *reg1, int32_t r1,
           int32_t mem, uint8_t *contents) {
@@ -204,7 +206,7 @@ float to_float(int32_t i) {
   return f;
 }
 
-void do_trap(int pc, int32_t *regs, uint8_t *mem) {
+void do_trap(int pc, int32_t *regs, uint8_t *mem, Environment *env) {
   if (pc == -1) {
     fputs("NIL derefernce\n", stderr);
     pc = regs[LR];
@@ -248,10 +250,10 @@ void do_trap(int pc, int32_t *regs, uint8_t *mem) {
     /* Out.RealAsInt */
   } else if (pc == -30) {
     /* Args.Count */
-    regs[0] = saved_argc;
+    regs[0] = env->saved_argc;
   } else if (pc == -31) {
     /* Args.GetArg */
-    strncpy(((char *)mem) + regs[0], saved_argv[regs[2]], regs[1]);
+    strncpy(((char *)mem) + regs[0], env->saved_argv[regs[2]], regs[1]);
   } else {
     fprintf(stderr, "Bad trap %d, %d", pc, mem[0]);
     pc = regs[LR];
@@ -289,7 +291,7 @@ void print_unvisited(uint32_t *visited_ip) {
 }
 #endif
 
-void interpret(void) {
+void interpret(Environment *env) {
   int pc = START_PC;
   int32_t r[16];
   int32_t mem[MAX_MEM];
@@ -321,7 +323,7 @@ void interpret(void) {
     set_visited(visited_ip, pc);
 #endif
     if (pc < 0) {
-      do_trap(pc, r, memBytes);
+      do_trap(pc, r, memBytes, env);
       pc = r[LR];
       continue;
     }
@@ -630,12 +632,14 @@ void interpret(void) {
 }
 
 int main(int argc, char **argv) {
-  saved_argc = argc;
-  saved_argv = argv;
+  Environment env;
+
+  env.saved_argc = argc;
+  env.saved_argv = argv;
   /*
   printf("%s(%d): %d %zd\n", argv[0], argc, PROGRAM[0].opcode,
          sizeof(PROGRAM) / sizeof(Instruction));
   */
-  interpret();
+  interpret(&env);
   return 0;
 }
