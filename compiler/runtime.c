@@ -130,7 +130,7 @@ void Out_ReadFile(const char *fileName, size_t q, char *buf, size_t r) {
   fseek(file, 0, SEEK_END);
   long len = ftell(file);
   fseek(file, 0, SEEK_SET);
-  assert(len < 69631);
+  assert(len < 65535);
   if (len && fread(buf, len, 1, file) != 1) {
     fclose(file);
     free(buf);

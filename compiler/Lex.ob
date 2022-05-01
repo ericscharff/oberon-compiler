@@ -5,7 +5,7 @@ IMPORT Out;
 CONST
   NumBuckets = 4096;
   PoolSize   = 64 * 1024;
-  BufSize    = 68 * 1024;
+  BufSize    = 64 * 1024;
   KwdSize    = 10;
 
   (* Token definitions *)

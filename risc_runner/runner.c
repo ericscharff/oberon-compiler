@@ -177,7 +177,7 @@ void read_file(const char *fileName, char *buf) {
   fseek(file, 0, SEEK_END);
   long len = ftell(file);
   fseek(file, 0, SEEK_SET);
-  if (len >= 69631) {
+  if (len >= 65535) {
     fprintf(stderr, "read_file: %s len %ld greater than 69631\n", fileName,
             len);
     exit(1);
