@@ -184,11 +184,9 @@ BEGIN
   END
 END GenReg;
 
-PROCEDURE Gen2(op: ARRAY OF CHAR; ra, rb: Register; value: INTEGER);
+PROCEDURE Gen2(op: OpCode; ra, rb: Register; value: INTEGER);
 BEGIN
-  GenStr(op);
-  GenStr(" ");
-  IF op # "CMP" THEN
+  IF op # opCMP THEN
     GenReg(ra);
     GenStr(", ");
   END;
@@ -197,11 +195,9 @@ BEGIN
   Out.Int(value)
 END Gen2;
 
-PROCEDURE Gen3(op: ARRAY OF CHAR; ra, rb, rc: Register);
+PROCEDURE Gen3(op: OpCode; ra, rb, rc: Register);
 BEGIN
-  GenStr(op);
-  GenStr(" ");
-  IF op # "CMP" THEN
+  IF op # opCMP THEN
     GenReg(ra);
     GenStr(", ");
   END;
@@ -231,6 +227,66 @@ BEGIN
   END;
 END GenQName;
 
+PROCEDURE GenOp(op: OpCode; cond: INTEGER);
+BEGIN
+  CASE op OF
+  opMOV: GenStr("MOV")
+  | opADD: GenStr("ADD")
+  | opSUB: GenStr("SUB")
+  | opMUL: GenStr("MUL")
+  | opDIV: GenStr("DIV")
+  | opMOD: GenStr("MOD")
+  | opLSL: GenStr("LSL")
+  | opASR: GenStr("ASR")
+  | opAND: GenStr("AND")
+  | opOR: GenStr("OR")
+  | opXOR: GenStr("XOR")
+  | opANN: GenStr("ANN")
+  | opCMP: GenStr("CMP")
+  | opMOVI: GenStr("MOVI")
+  | opADDI: GenStr("ADDI")
+  | opSUBI: GenStr("SUBI")
+  | opMULI: GenStr("MULI")
+  | opDIVI: GenStr("DIVI")
+  | opMODI: GenStr("MODI")
+  | opLSLI: GenStr("LSLI")
+  | opASRI: GenStr("ASRI")
+  | opANDI: GenStr("ANDI")
+  | opORI: GenStr("ORI")
+  | opXORI: GenStr("XORI")
+  | opANNI: GenStr("ANNI")
+  | opCMPI: GenStr("CMPI")
+  | opLDW: GenStr("LDW")
+  | opLDB: GenStr("LDB")
+  | opSTW: GenStr("STW")
+  | opSTB: GenStr("STB")
+  | opCJP: GenStr("CJP")
+  | opBRA:
+    CASE cond OF
+      opBEQ: GenStr("BEQ")
+      | opBNE: GenStr("BNE")
+      | opBLT: GenStr("BLT")
+      | opBGT: GenStr("BGT")
+      | opBGE: GenStr("BGE")
+      | opBLE: GenStr("BLE")
+      | opB: GenStr("B");
+      | opBF: GenStr("BF");
+      | opBHI: GenStr("BHI");
+    END
+  | opBL: GenStr("BL")
+  | opBLr: GenStr("BLr")
+  | opBrg: GenStr("Br")
+  | opRADD: GenStr("RADD")
+  | opRSUB: GenStr("RSUB")
+  | opRMUL: GenStr("RMUL")
+  | opRDIV: GenStr("RDIV")
+  | opRCMP: GenStr("RCMP")
+  | opI2R: GenStr("I2R")
+  | opR2I: GenStr("R2I")
+  | opHALT: GenStr("HALT")
+  END
+END GenOp;
+
 PROCEDURE DumpAssembly(l: Lex.Lexer; delta: INTEGER);
 VAR
   i:  INTEGER;
@@ -245,109 +301,99 @@ BEGIN
     rc := codeBuffer[i].rc;
     value := codeBuffer[i].value;
     Out.Int(i + delta); Tab;
+    GenOp(op, rc);
+    GenStr(" ");
     IF op = opMOV THEN
-      GenStr("MOV "); GenReg(ra); GenStr(", "); GenReg(rb);
+      GenReg(ra); GenStr(", "); GenReg(rb);
     ELSIF op = opMOVI THEN
-      GenStr("MOV "); GenReg(ra); GenStr(", #"); Out.Int(value);
+      GenReg(ra); GenStr(", #"); Out.Int(value);
     ELSIF op = opADD THEN
-      Gen3("ADD", ra, rb, rc)
+      Gen3(op, ra, rb, rc)
     ELSIF op = opSUB THEN
-      Gen3("SUB", ra, rb, rc)
+      Gen3(op, ra, rb, rc)
     ELSIF op = opMUL THEN
-      Gen3("MUL", ra, rb, rc)
+      Gen3(op, ra, rb, rc)
     ELSIF op = opDIV THEN
-      Gen3("DIV", ra, rb, rc)
+      Gen3(op, ra, rb, rc)
     ELSIF op = opMOD THEN
-      Gen3("MOD", ra, rb, rc)
+      Gen3(op, ra, rb, rc)
     ELSIF op = opLSL THEN
-      Gen3("LSL", ra, rb, rc)
+      Gen3(op, ra, rb, rc)
     ELSIF op = opASR THEN
-      Gen3("ASR", ra, rb, rc)
+      Gen3(op, ra, rb, rc)
     ELSIF op = opAND THEN
-      Gen3("AND", ra, rb, rc)
+      Gen3(op, ra, rb, rc)
     ELSIF op = opOR THEN
-      Gen3("OR", ra, rb, rc)
+      Gen3(op, ra, rb, rc)
     ELSIF op = opXOR THEN
-      Gen3("XOR", ra, rb, rc)
+      Gen3(op, ra, rb, rc)
     ELSIF op = opANN THEN
-      Gen3("ANN", ra, rb, rc)
+      Gen3(op, ra, rb, rc)
     ELSIF op = opCMP THEN
-      Gen3("CMP", ra, rb, rc)
+      Gen3(op, ra, rb, rc)
     ELSIF op = opADDI THEN
-      Gen2("ADD", ra, rb, value)
+      Gen2(op, ra, rb, value)
     ELSIF op = opSUBI THEN
-      Gen2("SUB", ra, rb, value)
+      Gen2(op, ra, rb, value)
     ELSIF op = opMULI THEN
-      Gen2("MUL", ra, rb, value)
+      Gen2(op, ra, rb, value)
     ELSIF op = opDIVI THEN
-      Gen2("DIV", ra, rb, value)
+      Gen2(op, ra, rb, value)
     ELSIF op = opMODI THEN
-      Gen2("MOD", ra, rb, value)
+      Gen2(op, ra, rb, value)
     ELSIF op = opLSLI THEN
-      Gen2("LSL", ra, rb, value)
+      Gen2(op, ra, rb, value)
     ELSIF op = opASRI THEN
-      Gen2("ASR", ra, rb, value)
+      Gen2(op, ra, rb, value)
     ELSIF op = opANDI THEN
-      Gen2("AND", ra, rb, value)
+      Gen2(op, ra, rb, value)
     ELSIF op = opORI THEN
-      Gen2("OR", ra, rb, value)
+      Gen2(op, ra, rb, value)
     ELSIF op = opXORI THEN
-      Gen2("XOR", ra, rb, value)
+      Gen2(op, ra, rb, value)
     ELSIF op = opANNI THEN
-      Gen2("ANN", ra, rb, value)
+      Gen2(op, ra, rb, value)
     ELSIF op = opCMPI THEN
-      Gen2("CMP", ra, rb, value)
+      Gen2(op, ra, rb, value)
     ELSIF op = opLDW THEN
-      Gen2("LDW", ra, rb, value)
+      Gen2(op, ra, rb, value)
     ELSIF op = opLDB THEN
-      Gen2("LDB", ra, rb, value)
+      Gen2(op, ra, rb, value)
     ELSIF op = opSTW THEN
-      Gen2("STW", ra, rb, value)
+      Gen2(op, ra, rb, value)
     ELSIF op = opSTB THEN
-      Gen2("STB", ra, rb, value)
+      Gen2(op, ra, rb, value)
     ELSIF op = opCJP THEN
-      GenStr("CASE "); Out.Int(value)
+      Out.Int(value)
     ELSIF op = opBRA THEN
-      CASE rc OF
-        opBEQ: GenStr("BEQ ")
-        | opBNE: GenStr("BNE ")
-        | opBLT: GenStr("BLT ")
-        | opBGT: GenStr("BGT ")
-        | opBGE: GenStr("BGE ")
-        | opBLE: GenStr("BLE ")
-        | opB: GenStr("B ");
-        | opBF: GenStr("BF ");
-        | opBHI: GenStr("BHI ");
-      END;
       IF value >= 0 THEN
         Out.Int(value + delta)
       ELSE
         Out.Int(value)
       END
     ELSIF op = opBL THEN
-      GenStr("BL "); Out.Int(value);
+      Out.Int(value);
       GenStr(" ("); GenQName(l, codeBuffer[i].q);
       GenStr(")")
     ELSIF op = opBLr THEN
-      GenStr("BL "); GenReg(rc)
+      GenReg(rc)
     ELSIF op = opBrg THEN
-      GenStr("B "); GenReg(ra)
+      GenReg(ra)
     ELSIF op = opRADD THEN
-      Gen3("RADD", ra, rb, rc)
+      Gen3(op, ra, rb, rc)
     ELSIF op = opRSUB THEN
-      Gen3("RSUB", ra, rb, rc)
+      Gen3(op, ra, rb, rc)
     ELSIF op = opRMUL THEN
-      Gen3("RMUL", ra, rb, rc)
+      Gen3(op, ra, rb, rc)
     ELSIF op = opRDIV THEN
-      Gen3("RDIV", ra, rb, rc)
+      Gen3(op, ra, rb, rc)
     ELSIF op = opRCMP THEN
-      Gen3("RCMP", ra, rb, rc)
+      Gen3(op, ra, rb, rc)
     ELSIF op = opI2R THEN
-      GenStr("I2R "); GenReg(ra);
+      GenReg(ra);
     ELSIF op = opR2I THEN
-      GenStr("R2I "); GenReg(ra);
+      GenReg(ra);
     ELSIF op = opHALT THEN
-      GenStr("HALT")
     ELSE
       ASSERT(FALSE)
     END;
@@ -359,114 +405,15 @@ END DumpAssembly;
 PROCEDURE DumpCode(delta: INTEGER);
 VAR
   i, offset: INTEGER;
-  op: OpCode;
 BEGIN
   i := 0;
   WHILE i < cp DO
     offset := codeBuffer[i].value;
-    op := codeBuffer[i].op;
+
     GenStr("{");
-    IF op = opMOV THEN
-      GenStr("MOV");
-    ELSIF op = opADD THEN
-      GenStr("ADD");
-    ELSIF op = opSUB THEN
-      GenStr("SUB");
-    ELSIF op = opMUL THEN
-      GenStr("MUL");
-    ELSIF op = opDIV THEN
-      GenStr("DIV");
-    ELSIF op = opMOD THEN
-      GenStr("MOD");
-    ELSIF op = opLSL THEN
-      GenStr("LSL");
-    ELSIF op = opASR THEN
-      GenStr("ASR");
-    ELSIF op = opAND THEN
-      GenStr("AND");
-    ELSIF op = opOR THEN
-      GenStr("OR");
-    ELSIF op = opXOR THEN
-      GenStr("XOR");
-    ELSIF op = opANN THEN
-      GenStr("ANN");
-    ELSIF op = opCMP THEN
-      GenStr("CMP");
-    ELSIF op = opMOVI THEN
-      GenStr("MOVI");
-    ELSIF op = opADDI THEN
-      GenStr("ADDI");
-    ELSIF op = opSUBI THEN
-      GenStr("SUBI");
-    ELSIF op = opMULI THEN
-      GenStr("MULI");
-    ELSIF op = opDIVI THEN
-      GenStr("DIVI");
-    ELSIF op = opMODI THEN
-      GenStr("MODI");
-    ELSIF op = opLSLI THEN
-      GenStr("LSLI");
-    ELSIF op = opASRI THEN
-      GenStr("ASRI");
-    ELSIF op = opANDI THEN
-      GenStr("ANDI");
-    ELSIF op = opORI THEN
-      GenStr("ORI");
-    ELSIF op = opXORI THEN
-      GenStr("XORI");
-    ELSIF op = opANNI THEN
-      GenStr("ANNI");
-    ELSIF op = opCMPI THEN
-      GenStr("CMPI");
-    ELSIF op = opLDW THEN
-      GenStr("LDW");
-    ELSIF op = opLDB THEN
-      GenStr("LDB");
-    ELSIF op = opSTW THEN
-      GenStr("STW");
-    ELSIF op = opSTB THEN
-      GenStr("STB");
-    ELSIF op = opCJP THEN
-      GenStr("CJP");
-    ELSIF op = opBRA THEN
-      IF offset >= 0 THEN
-        INC(offset, delta);
-      END;
-      CASE codeBuffer[i].rc OF
-        opBEQ: GenStr("BEQ ")
-        | opBNE: GenStr("BNE ")
-        | opBLT: GenStr("BLT ")
-        | opBGT: GenStr("BGT ")
-        | opBGE: GenStr("BGE ")
-        | opBLE: GenStr("BLE ")
-        | opB: GenStr("B ");
-        | opBF: GenStr("BF ");
-        | opBHI: GenStr("BHI ");
-      END;
-    ELSIF op = opBL THEN
-      GenStr("BL");
-    ELSIF op = opBLr THEN
-      GenStr("BLr");
-    ELSIF op = opBrg THEN
-      GenStr("Br");
-    ELSIF op = opRADD THEN
-      GenStr("RADD");
-    ELSIF op = opRSUB THEN
-      GenStr("RSUB");
-    ELSIF op = opRMUL THEN
-      GenStr("RMUL");
-    ELSIF op = opRDIV THEN
-      GenStr("RDIV");
-    ELSIF op = opRCMP THEN
-      GenStr("RCMP");
-    ELSIF op = opI2R THEN
-      GenStr("I2R");
-    ELSIF op = opR2I THEN
-      GenStr("R2I");
-    ELSIF op = opHALT THEN
-      GenStr("HALT");
-    ELSE
-      ASSERT(FALSE);
+    GenOp(codeBuffer[i].op, codeBuffer[i].rc);
+    IF (codeBuffer[i].op = opBRA) & (offset >= 0) THEN
+      INC(offset, delta);
     END;
     GenStr(", ");
     GenReg(codeBuffer[i].ra);
