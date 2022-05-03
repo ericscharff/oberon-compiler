@@ -60,8 +60,8 @@ CONST
 
   opHALT = 43;
 
-  (* Branches have opcode opBRA, and r.c is    *)
-  (* the condition code, given below:          *)
+  (* Branches have opcode opBRA, and r.c is *)
+  (* the condition code, given below:       *)
   opBEQ = 1;  (* =  *) opBNE = 9;   (* #  *)
   opBLT = 5;  (* <  *) opBGE = 13;  (* >= *)
   opBLE = 6;  (* <= *) opBGT = 14;  (* >  *)
@@ -184,23 +184,19 @@ BEGIN
   END
 END GenReg;
 
-PROCEDURE Gen2(op: OpCode; ra, rb: Register; value: INTEGER);
+PROCEDURE Gen2(ra, rb: Register; value: INTEGER);
 BEGIN
-  IF op # opCMP THEN
-    GenReg(ra);
-    GenStr(", ");
-  END;
+  GenReg(ra);
+  GenStr(", ");
   GenReg(rb);
   GenStr(", #");
   Out.Int(value)
 END Gen2;
 
-PROCEDURE Gen3(op: OpCode; ra, rb, rc: Register);
+PROCEDURE Gen3(ra, rb, rc: Register);
 BEGIN
-  IF op # opCMP THEN
-    GenReg(ra);
-    GenStr(", ");
-  END;
+  GenReg(ra);
+  GenStr(", ");
   GenReg(rb);
   GenStr(", ");
   GenReg(rc)
@@ -308,61 +304,61 @@ BEGIN
     ELSIF op = opMOVI THEN
       GenReg(ra); GenStr(", #"); Out.Int(value);
     ELSIF op = opADD THEN
-      Gen3(op, ra, rb, rc)
+      Gen3(ra, rb, rc)
     ELSIF op = opSUB THEN
-      Gen3(op, ra, rb, rc)
+      Gen3(ra, rb, rc)
     ELSIF op = opMUL THEN
-      Gen3(op, ra, rb, rc)
+      Gen3(ra, rb, rc)
     ELSIF op = opDIV THEN
-      Gen3(op, ra, rb, rc)
+      Gen3(ra, rb, rc)
     ELSIF op = opMOD THEN
-      Gen3(op, ra, rb, rc)
+      Gen3(ra, rb, rc)
     ELSIF op = opLSL THEN
-      Gen3(op, ra, rb, rc)
+      Gen3(ra, rb, rc)
     ELSIF op = opASR THEN
-      Gen3(op, ra, rb, rc)
+      Gen3(ra, rb, rc)
     ELSIF op = opAND THEN
-      Gen3(op, ra, rb, rc)
+      Gen3(ra, rb, rc)
     ELSIF op = opOR THEN
-      Gen3(op, ra, rb, rc)
+      Gen3(ra, rb, rc)
     ELSIF op = opXOR THEN
-      Gen3(op, ra, rb, rc)
+      Gen3(ra, rb, rc)
     ELSIF op = opANN THEN
-      Gen3(op, ra, rb, rc)
+      Gen3(ra, rb, rc)
     ELSIF op = opCMP THEN
-      Gen3(op, ra, rb, rc)
+      Gen3(ra, rb, rc)
     ELSIF op = opADDI THEN
-      Gen2(op, ra, rb, value)
+      Gen2(ra, rb, value)
     ELSIF op = opSUBI THEN
-      Gen2(op, ra, rb, value)
+      Gen2(ra, rb, value)
     ELSIF op = opMULI THEN
-      Gen2(op, ra, rb, value)
+      Gen2(ra, rb, value)
     ELSIF op = opDIVI THEN
-      Gen2(op, ra, rb, value)
+      Gen2(ra, rb, value)
     ELSIF op = opMODI THEN
-      Gen2(op, ra, rb, value)
+      Gen2(ra, rb, value)
     ELSIF op = opLSLI THEN
-      Gen2(op, ra, rb, value)
+      Gen2(ra, rb, value)
     ELSIF op = opASRI THEN
-      Gen2(op, ra, rb, value)
+      Gen2(ra, rb, value)
     ELSIF op = opANDI THEN
-      Gen2(op, ra, rb, value)
+      Gen2(ra, rb, value)
     ELSIF op = opORI THEN
-      Gen2(op, ra, rb, value)
+      Gen2(ra, rb, value)
     ELSIF op = opXORI THEN
-      Gen2(op, ra, rb, value)
+      Gen2(ra, rb, value)
     ELSIF op = opANNI THEN
-      Gen2(op, ra, rb, value)
+      Gen2(ra, rb, value)
     ELSIF op = opCMPI THEN
-      Gen2(op, ra, rb, value)
+      Gen2(ra, rb, value)
     ELSIF op = opLDW THEN
-      Gen2(op, ra, rb, value)
+      Gen2(ra, rb, value)
     ELSIF op = opLDB THEN
-      Gen2(op, ra, rb, value)
+      Gen2(ra, rb, value)
     ELSIF op = opSTW THEN
-      Gen2(op, ra, rb, value)
+      Gen2(ra, rb, value)
     ELSIF op = opSTB THEN
-      Gen2(op, ra, rb, value)
+      Gen2(ra, rb, value)
     ELSIF op = opCJP THEN
       Out.Int(value)
     ELSIF op = opBRA THEN
@@ -380,15 +376,15 @@ BEGIN
     ELSIF op = opBrg THEN
       GenReg(ra)
     ELSIF op = opRADD THEN
-      Gen3(op, ra, rb, rc)
+      Gen3(ra, rb, rc)
     ELSIF op = opRSUB THEN
-      Gen3(op, ra, rb, rc)
+      Gen3(ra, rb, rc)
     ELSIF op = opRMUL THEN
-      Gen3(op, ra, rb, rc)
+      Gen3(ra, rb, rc)
     ELSIF op = opRDIV THEN
-      Gen3(op, ra, rb, rc)
+      Gen3(ra, rb, rc)
     ELSIF op = opRCMP THEN
-      Gen3(op, ra, rb, rc)
+      Gen3(ra, rb, rc)
     ELSIF op = opI2R THEN
       GenReg(ra);
     ELSIF op = opR2I THEN
