@@ -303,61 +303,11 @@ BEGIN
       GenReg(ra); GenStr(", "); GenReg(rb);
     ELSIF op = opMOVI THEN
       GenReg(ra); GenStr(", #"); Out.Int(value);
-    ELSIF op = opADD THEN
+    ELSIF (op >= opADD) & (op <= opCMP) THEN
       Gen3(ra, rb, rc)
-    ELSIF op = opSUB THEN
-      Gen3(ra, rb, rc)
-    ELSIF op = opMUL THEN
-      Gen3(ra, rb, rc)
-    ELSIF op = opDIV THEN
-      Gen3(ra, rb, rc)
-    ELSIF op = opMOD THEN
-      Gen3(ra, rb, rc)
-    ELSIF op = opLSL THEN
-      Gen3(ra, rb, rc)
-    ELSIF op = opASR THEN
-      Gen3(ra, rb, rc)
-    ELSIF op = opAND THEN
-      Gen3(ra, rb, rc)
-    ELSIF op = opOR THEN
-      Gen3(ra, rb, rc)
-    ELSIF op = opXOR THEN
-      Gen3(ra, rb, rc)
-    ELSIF op = opANN THEN
-      Gen3(ra, rb, rc)
-    ELSIF op = opCMP THEN
-      Gen3(ra, rb, rc)
-    ELSIF op = opADDI THEN
+    ELSIF (op >= opADDI) & (op <= opCMPI) THEN
       Gen2(ra, rb, value)
-    ELSIF op = opSUBI THEN
-      Gen2(ra, rb, value)
-    ELSIF op = opMULI THEN
-      Gen2(ra, rb, value)
-    ELSIF op = opDIVI THEN
-      Gen2(ra, rb, value)
-    ELSIF op = opMODI THEN
-      Gen2(ra, rb, value)
-    ELSIF op = opLSLI THEN
-      Gen2(ra, rb, value)
-    ELSIF op = opASRI THEN
-      Gen2(ra, rb, value)
-    ELSIF op = opANDI THEN
-      Gen2(ra, rb, value)
-    ELSIF op = opORI THEN
-      Gen2(ra, rb, value)
-    ELSIF op = opXORI THEN
-      Gen2(ra, rb, value)
-    ELSIF op = opANNI THEN
-      Gen2(ra, rb, value)
-    ELSIF op = opCMPI THEN
-      Gen2(ra, rb, value)
-    ELSIF op = opLDW THEN
-      Gen2(ra, rb, value)
-    ELSIF op = opLDB THEN
-      Gen2(ra, rb, value)
-    ELSIF op = opSTW THEN
-      Gen2(ra, rb, value)
-    ELSIF op = opSTB THEN
+    ELSIF (op >= opLDW) & (op <= opSTB) THEN
       Gen2(ra, rb, value)
     ELSIF op = opCJP THEN
       Out.Int(value)
@@ -375,15 +325,7 @@ BEGIN
       GenReg(rc)
     ELSIF op = opBrg THEN
       GenReg(ra)
-    ELSIF op = opRADD THEN
-      Gen3(ra, rb, rc)
-    ELSIF op = opRSUB THEN
-      Gen3(ra, rb, rc)
-    ELSIF op = opRMUL THEN
-      Gen3(ra, rb, rc)
-    ELSIF op = opRDIV THEN
-      Gen3(ra, rb, rc)
-    ELSIF op = opRCMP THEN
+    ELSIF (op >= opRADD) & (op <= opRCMP) THEN
       Gen3(ra, rb, rc)
     ELSIF op = opI2R THEN
       GenReg(ra);
