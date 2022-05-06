@@ -15,7 +15,7 @@ actually three different compilers:
     this RISC processor.
 
 The two Oberon compilers share most of their code, with the major difference
-being the code generators (either producing C or producting RISC code.)
+being the code generators (either producing C or producing RISC code.)
 
 The compilers written in Oberon are self hosting - the Oberon compiler can
 compile itself, and produce either C code (or a RISC) binary for a compiler that
@@ -23,7 +23,7 @@ can also compile itself. Theoretically, the C bootstrap compiler is no longer
 necessary, since it would be possible to start "from scratch" from the generated
 C code produced by Oberon of itself. The C bootstrap compiler isn't nearly as
 well tested, and probably lacks features. It remains though to bootstrap the
-Oberon compiler, as well as a hitorical artifact that was critical in getting a
+Oberon compiler, as well as a historical artifact that was critical in getting a
 self-hosting compiler. Most new features are added only to the Oberon
 implementation.
 
