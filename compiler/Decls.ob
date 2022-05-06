@@ -494,15 +494,15 @@ BEGIN
   e.iVal := AST.builtinInit;
   e.rhs := args;
   IF (args = NIL) OR (args.next = NIL) OR (args.next.next # NIL) THEN
-    Lex.ErrorLn(l, "INIT_ARRAY expects 2 arguments");
+    Lex.ErrorLn(l, "NEW_ARRAY expects 2 arguments");
   END;
   IF args.next.typ.kind # AST.typeInteger THEN
-    Lex.ErrorLn(l, "Second arg to INIT_ARRAY must be an INTEGER");
+    Lex.ErrorLn(l, "Second arg to NEW_ARRAY must be an INTEGER");
   END;
   IF args.typ.kind = AST.typeBuffer THEN
     e.typ := nilType;
   ELSE
-    Lex.ErrorLn(l, "First arg to INIT_ARRAY expects an ARRAY *");
+    Lex.ErrorLn(l, "First arg to NEW_ARRAY expects an ARRAY *");
   END;
   RETURN e
 END builtinInit;
@@ -638,7 +638,7 @@ BEGIN
     AddBuiltin(l, Lex.Intern(l, "FLT"), builtinFlt);
     AddBuiltin(l, Lex.Intern(l, "LEN"), builtinLen);
     AddBuiltin(l, Lex.Intern(l, "NEW"), builtinNew);
-    AddBuiltin(l, Lex.Intern(l, "INIT_ARRAY"), builtinInit);
+    AddBuiltin(l, Lex.Intern(l, "NEW_ARRAY"), builtinInit);
     AddBuiltin(l, Lex.Intern(l, "PUSH"), builtinPush);
     (* Oberon-0 Builtins *)
     AddBuiltin(l, Lex.Intern(l, "ReadInt"), builtinReadInt);

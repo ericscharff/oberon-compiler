@@ -132,7 +132,7 @@ A buffer may be passed anywhere an open array is expected, and LEN(buffer) works
 just as it would with an open array. Similarly, buffer elements are referenced
 just like arrays - buf[2] := ...
 
-Before a buffer can be used, the user must call `INIT_ARRAY` on the buffer.
+Before a buffer can be used, the user must call `NEW_ARRAY` on the buffer.
 INIT\_ARRAY takes an additional argument, which is the initial capacity. This is
 how many elements can be added to the buffer before it must be grown (with a new
 call to malloc/new). Note that this sets capacity, not length, which starts at 0.
@@ -149,7 +149,7 @@ VAR
   b :ARRAY * OF INTERGER;
   i :INTEGER:
 BEGIN
-  INIT_ARRAY(b, 5);
+  NEW_ARRAY(b, 5);
   PUSH(b, 1);
   PUSH(b, 2);
   PUSH(b, 3);

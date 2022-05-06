@@ -116,17 +116,17 @@ VAR
   i:  INTEGER;
   r:  RecBuf;
 BEGIN
-  INIT_ARRAY(b, 4);
+  NEW_ARRAY(b, 4);
   FOR i := 1 TO 20 DO
     PUSH(b, i*5)
   END;
   DumpBuffer(b);
-  INIT_ARRAY(b2, 4);
+  NEW_ARRAY(b2, 4);
   FOR i := 1 TO 20 DO
     AddToBuf(b2, i*5);
   END;
   DumpBuffer(b2);
-  INIT_ARRAY(r.b, 400);
+  NEW_ARRAY(r.b, 400);
   FOR i := 1 TO 20 DO
     PUSH(r.b, i*5)
   END;
