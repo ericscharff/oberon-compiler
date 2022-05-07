@@ -11,6 +11,8 @@ TYPE
   IntBuf = ARRAY * OF INTEGER;
   RecBuf = RECORD z: INTEGER; b: ARRAY * OF INTEGER END;
   NatBuf = RECORD _nat: NATIVE INTEGER END;
+  Pair = RECORD a, b: INTEGER END;
+  PairBuf = ARRAY * OF Pair;
   CallbackFunc = PROCEDURE (i: INTEGER);
 
 PROCEDURE FactIter*(n: INTEGER): INTEGER;
@@ -109,13 +111,37 @@ BEGIN
   CallNative(r)
 END TestNativeCode;
 
+PROCEDURE SumPairs(pairs: ARRAY OF Pair): INTEGER;
+BEGIN
+  VAR sum := 0;
+  VAR l := LEN(pairs) - 1;
+  WHILE l >= 0 DO
+    sum := sum + pairs[l].a + pairs[l].b;
+    DEC(l)
+  END
+  RETURN sum
+END SumPairs;
+
 PROCEDURE TestBuffers;
 VAR
   b:  ARRAY * OF INTEGER;
+  p:  PairBuf;
+  pa: Pair;
   b2: IntBuf;
   i:  INTEGER;
   r:  RecBuf;
 BEGIN
+  NEW_ARRAY(p, 25);
+  pa.a := 11; pa.b := 12;
+  PUSH(p, pa);
+  pa.a := 13; pa.b := 14;
+  PUSH(p, pa);
+  pa.a := 15; pa.b := 16;
+  PUSH(p, pa);
+  Out.Int(11 + 12 + 13 + 14 + 15 + 16); Out.Ln;
+  Out.Int(SumPairs(p)); Out.Ln;
+  i := SumPairs(p);
+  ASSERT(i = 11 + 12 + 13 + 14 + 15 + 16);
   NEW_ARRAY(b, 4);
   FOR i := 1 TO 20 DO
     PUSH(b, i*5)
