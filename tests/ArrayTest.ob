@@ -16,7 +16,7 @@ VAR
 
 PROCEDURE P(VAR b: BOOLEAN);
 BEGIN
-  WriteInt(b); WriteLn;
+  Out.Int(ORD(b)); Out.Ln;
 END P;
 
 PROCEDURE RefTest(VAR a: INTEGER; z, z2: BOOLEAN; VAR z3: BOOLEAN; b: R);
@@ -37,7 +37,7 @@ BEGIN
     s := s + as[i].x;
     INC(i)
   END;
-  WriteInt(s); WriteLn
+  Out.Int(s); Out.Ln
 END Sum;
 
 PROCEDURE TestAr;

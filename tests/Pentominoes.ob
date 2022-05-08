@@ -90,7 +90,7 @@ BEGIN
   found := pieces = {};
   variant := 0;
   IF iter = 300000 THEN
-    WriteInt(pieces); WriteLn; PrintBoard; iter := 0
+    Out.Int(ORD(pieces)); Out.Ln; PrintBoard; iter := 0
   ELSE INC(iter) END;
   y := FirstEmptySquare() DIV BoardWidth;
   x := FirstEmptySquare() - y * BoardWidth;

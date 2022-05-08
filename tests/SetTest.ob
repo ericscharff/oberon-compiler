@@ -1,59 +1,61 @@
 MODULE SetTest;
 
+IMPORT Out;
+
 PROCEDURE Test;
 VAR
   s, s2: SET;
   i, j, k: INTEGER;
 BEGIN
   s := {};
-  WriteInt(s); WriteLn;
+  Out.Int(ORD(s)); Out.Ln;
   s := {1};
-  WriteInt(s); WriteLn;
+  Out.Int(ORD(s)); Out.Ln;
   s := s + s;
-  WriteInt(s); WriteLn;
+  Out.Int(ORD(s)); Out.Ln;
   i := 1; j := 0; k := 2;
   s := {i};
-  WriteInt(s); WriteLn;
+  Out.Int(ORD(s)); Out.Ln;
   s := -{i};
-  WriteInt(s); WriteLn;
+  Out.Int(ORD(s)); Out.Ln;
   s := {i, j, k};
-  WriteInt(s); WriteLn;
+  Out.Int(ORD(s)); Out.Ln;
   s := {j .. k};
-  WriteInt(s); WriteLn;
+  Out.Int(ORD(s)); Out.Ln;
   i := 3; j := 9;
   s := {0 .. j};
-  WriteInt(s); WriteLn;
+  Out.Int(ORD(s)); Out.Ln;
   s := {2 .. j};
-  WriteInt(s); WriteLn;
+  Out.Int(ORD(s)); Out.Ln;
   s := {i .. 9};
-  WriteInt(s); WriteLn;
+  Out.Int(ORD(s)); Out.Ln;
   i := 0; j := 3; k := 7;
   s := {i .. j, j .. k};
-  WriteInt(s); WriteLn;
+  Out.Int(ORD(s)); Out.Ln;
   s := s - {7};
-  WriteInt(s); WriteLn;
+  Out.Int(ORD(s)); Out.Ln;
   s := {0};
   s2 := {7};
   s := s + s2;
-  WriteInt(s); WriteLn;
+  Out.Int(ORD(s)); Out.Ln;
   s := {0};
   s2 := {7};
   s := s - s2;
-  WriteInt(s); WriteLn;
+  Out.Int(ORD(s)); Out.Ln;
   s := {0};
   s2 := {7};
   s := s * s2;
-  WriteInt(s); WriteLn;
+  Out.Int(ORD(s)); Out.Ln;
   s := {0};
   s2 := {7};
   s := s / s2;
-  WriteInt(s); WriteLn;
-  IF 0 IN s THEN WriteInt(10) ELSE WriteInt(0) END;
-  IF i IN s THEN WriteInt(10) ELSE WriteInt(0) END;
-  IF 1 IN s THEN WriteInt(10) ELSE WriteInt(0) END;
-  IF 7 IN s THEN WriteInt(10) ELSE WriteInt(0) END;
-  IF 8 IN s THEN WriteInt(10) ELSE WriteInt(0) END;
-  WriteLn
+  Out.Int(ORD(s)); Out.Ln;
+  IF 0 IN s THEN Out.Int(10) ELSE Out.Int(0) END; Out.Char(" ");
+  IF i IN s THEN Out.Int(10) ELSE Out.Int(0) END; Out.Char(" ");
+  IF 1 IN s THEN Out.Int(10) ELSE Out.Int(0) END; Out.Char(" ");
+  IF 7 IN s THEN Out.Int(10) ELSE Out.Int(0) END; Out.Char(" ");
+  IF 8 IN s THEN Out.Int(10) ELSE Out.Int(0) END;
+  Out.Ln
 END Test;
 
 BEGIN

@@ -1,8 +1,10 @@
 MODULE CaseTest;
 
+IMPORT Out;
+
 PROCEDURE Start;
 BEGIN
-  WriteChar(41X)
+  Out.Char(41X)
 END Start;
 
 PROCEDURE FancyRange(ch: CHAR);
@@ -12,21 +14,21 @@ BEGIN
   CASE ch OF
     "A" .. "Z", "a" .. "z", "0" .. "9", "_": i := 2;
   END;
-  WriteInt(i); WriteLn
+  Out.Int(i); Out.Ln
 END FancyRange;
 
 PROCEDURE Trial(a: INTEGER);
 BEGIN
   CASE a OF
-    0: WriteInt(1000)
-  | 1: WriteInt(1001)
-  | 2: WriteInt(1002)
-  | 3: WriteInt(1003)
-  | 4: WriteInt(1004)
-  | 5: WriteInt(1005)
-  | 8 .. 10: WriteInt(3333)
+    0: Out.Int(1000)
+  | 1: Out.Int(1001)
+  | 2: Out.Int(1002)
+  | 3: Out.Int(1003)
+  | 4: Out.Int(1004)
+  | 5: Out.Int(1005)
+  | 8 .. 10: Out.Int(3333)
   END;
-  WriteLn
+  Out.Ln
 END Trial;
 
 BEGIN

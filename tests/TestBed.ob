@@ -1,5 +1,7 @@
 MODULE TestBed;
 
+IMPORT Out;
+
 TYPE
   A = ARRAY 4 OF INTEGER;
 
@@ -24,15 +26,15 @@ BEGIN
   s[1].w := 7;
   i := 100; j := 2;
   k := s[i].u;
-  WriteInt(k);
+  Out.Int(k);
   k := s[1].w;
-  WriteInt(k);
+  Out.Int(k);
   k := s[i].v[j].x;
-  WriteInt(k);
+  Out.Int(k);
   k := s[1].v[2].y;
-  WriteInt(k);
+  Out.Int(k);
   s[0].v[i].y := k;
-  WriteInt(s[0].v[i].y)
+  Out.Int(s[0].v[i].y)
 END FieldTest;
 
 PROCEDURE CondTest;
@@ -122,7 +124,7 @@ BEGIN
     s := s + a[i] + b + c[i];
     i := i + 1
   END;
-  WriteInt(s); WriteLn
+  Out.Int(s); Out.Ln
 END Sum;
 
 PROCEDURE SumTest;
@@ -136,20 +138,20 @@ END SumTest;
 PROCEDURE ShortCircuitTest;
 PROCEDURE C1(a, b: INTEGER);
 BEGIN
-  IF ((a > 10) & (b > 20)) THEN WriteInt(1) ELSE WriteInt(0) END;
-  WriteLn;
+  IF ((a > 10) & (b > 20)) THEN Out.Int(1) ELSE Out.Int(0) END;
+  Out.Ln;
 END C1;
 PROCEDURE C2(a, b: INTEGER);
 BEGIN
-  IF (~((a > 10) & (b > 20))) THEN WriteInt(1) ELSE WriteInt(0) END;
-  WriteLn;
+  IF (~((a > 10) & (b > 20))) THEN Out.Int(1) ELSE Out.Int(0) END;
+  Out.Ln;
 END C2;
 BEGIN
   C1(3, 4);
   C1(3, 40);
   C1(30, 4);
   C1(30, 40);
-  WriteLn;
+  Out.Ln;
   C2(3, 4);
   C2(3, 40);
   C2(30, 4);
@@ -178,11 +180,11 @@ END BoolTest;
 
 PROCEDURE BoolReturnValTest;
 BEGIN
-  IF BoolTest(0) THEN WriteInt(1) ELSE WriteInt(2) END; WriteLn;
-  IF BoolTest(1) THEN WriteInt(1) ELSE WriteInt(2) END; WriteLn;
-  IF BoolTest(2) THEN WriteInt(1) ELSE WriteInt(2) END; WriteLn;
-  IF BoolTest(3) THEN WriteInt(1) ELSE WriteInt(2) END; WriteLn;
-  IF BoolTest(4) THEN WriteInt(1) ELSE WriteInt(2) END; WriteLn;
+  IF BoolTest(0) THEN Out.Int(1) ELSE Out.Int(2) END; Out.Ln;
+  IF BoolTest(1) THEN Out.Int(1) ELSE Out.Int(2) END; Out.Ln;
+  IF BoolTest(2) THEN Out.Int(1) ELSE Out.Int(2) END; Out.Ln;
+  IF BoolTest(3) THEN Out.Int(1) ELSE Out.Int(2) END; Out.Ln;
+  IF BoolTest(4) THEN Out.Int(1) ELSE Out.Int(2) END; Out.Ln;
 END BoolReturnValTest;
 
 BEGIN

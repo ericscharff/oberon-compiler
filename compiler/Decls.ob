@@ -642,9 +642,11 @@ BEGIN
     AddBuiltin(l, Lex.Intern(l, "PUSH"), builtinPush);
     (* Oberon-0 Builtins *)
     AddBuiltin(l, Lex.Intern(l, "ReadInt"), builtinReadInt);
+    (*
     AddBuiltin(l, Lex.Intern(l, "WriteInt"), builtinWriteInt);
     AddBuiltin(l, Lex.Intern(l, "WriteChar"), builtinWriteChar);
     AddBuiltin(l, Lex.Intern(l, "WriteLn"), builtinWriteLn);
+    *)
     IF Lex.ignoreKeywordCase THEN
       AddTypeDecl(l, Lex.Intern(l, "nil"), nilType);
       AddTypeDecl(l, Lex.Intern(l, "integer"), integerType);

@@ -1,5 +1,7 @@
 MODULE VisitTest;
 
+IMPORT Out;
+
 TYPE
   List = POINTER TO Cell;
   Cell = RECORD
@@ -48,8 +50,8 @@ BEGIN
   AddVal(c, 501);
   AddVal(c, 601);
   VisitAll(c, V, s);
-  WriteInt(s.sum);
-  WriteLn
+  Out.Int(s.sum);
+  Out.Ln
 END VisitTest;
 
 BEGIN

@@ -1,5 +1,7 @@
 MODULE KnightsTour;
 
+IMPORT Out;
+
 (*
   Produce a Knights tour by a brute force recursive descent technique. The
   board is represented as a two-dimensional array of INTEGER, where a square
@@ -70,9 +72,9 @@ VAR x, y: INTEGER;
 BEGIN
   FOR y := 0 TO H-1 DO
     FOR x := 0 TO W-1 DO
-      WriteInt(board[y, x])
+      Out.Int(board[y, x]); Out.Char(9X)
     END;
-    WriteLn;
+    Out.Ln;
   END;
 END PrintBoard;
 

@@ -1,5 +1,7 @@
 MODULE PtrTest;
 
+IMPORT Out;
+
 TYPE
   P = POINTER TO R;
   R = RECORD
@@ -22,11 +24,11 @@ BEGIN
   NEW(start.next);
   SetA(start.next^, 3);
   start.next.b := 4;
-  WriteInt(start.a);
-  WriteInt(start.b);
-  WriteInt(start.next.a);
-  WriteInt(start.next.b);
-  WriteLn
+  Out.Int(start.a); Out.Char(20X);
+  Out.Int(start.b); Out.Char(20X);
+  Out.Int(start.next.a); Out.Char(20X);
+  Out.Int(start.next.b);
+  Out.Ln
 END SimpleTest;
 
 PROCEDURE BuildList(i: INTEGER): P;
@@ -49,7 +51,7 @@ VAR
 BEGIN
   p := BuildList(10);
   WHILE p # NIL DO
-    WriteInt(p.a); WriteLn;
+    Out.Int(p.a); Out.Ln;
     p := p.next
   END
 END LinkList;
