@@ -2,6 +2,8 @@
 
 MODULE ArrayFail;
 
+IMPORT Out;
+
 TYPE
   A5 = ARRAY 5 OF INTEGER;
   A10 = ARRAY 10 OF INTEGER;
@@ -12,7 +14,7 @@ VAR
 
 PROCEDURE Test(a: ARRAY OF INTEGER; i: INTEGER);
 BEGIN
-  WriteInt(a[i]); WriteLn
+  Out.Int(a[i]); Out.Ln
 END Test;
 
 BEGIN

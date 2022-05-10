@@ -2,6 +2,8 @@
 
 MODULE CastFail;
 
+IMPORT Out;
+
 TYPE
   R1 = RECORD a: INTEGER END;
   Ra = RECORD (R1) b: INTEGER END;
@@ -16,7 +18,7 @@ PROCEDURE T;
 VAR r1: R1; ra: Ra; rb: Rb;
 BEGIN
   r1.a := 1; ra.a := 1; rb.a := 1;
-  WriteInt(r1.a); WriteInt(ra.a); WriteInt(rb.a); WriteLn;
+  Out.Int(r1.a); Out.Int(ra.a); Out.Int(rb.a); Out.Ln;
   Test(ra)  (* This would succeed for Test(rb) *)
 END T;
 
