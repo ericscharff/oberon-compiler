@@ -115,6 +115,22 @@ BEGIN
   z(i, b[j].m[j], k);
 END FuncTest;
 
+PROCEDURE BitTest;
+VAR
+  x: INTEGER;
+BEGIN
+  x := 64;
+  ASSERT(x * 64 = 4096);
+  ASSERT(x DIV 16 = 4);
+  ASSERT(x * (-64) = -4096);
+  ASSERT(x DIV (-16) = -4);
+  x := -64;
+  ASSERT(x * 64 = -4096);
+  ASSERT(x DIV 16 = -4);
+  ASSERT(x * (-64) = 4096);
+  ASSERT(x DIV (-16) = 4);
+END BitTest;
+
 PROCEDURE Sum(a: A; b: INTEGER; c: A);
 VAR
   i, s: INTEGER;
@@ -193,6 +209,7 @@ BEGIN
     CondTest;
     FuncTest
   END;
+  BitTest;
   SumTest;
   ShortCircuitTest;
   BoolReturnValTest;
