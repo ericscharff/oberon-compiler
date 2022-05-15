@@ -480,11 +480,7 @@ void interpret(Environment *env) {
         zFlag = r[a] == 0;
         break;
       case ASRI:
-        if (r[b] < 0) {
-          r[a] = r[b] / (1 << offset);
-        } else {
-          r[a] = r[b] >> offset;
-        }
+        r[a] = r[b] >> offset;
         zFlag = r[a] == 0;
         break;
       case ANDI:

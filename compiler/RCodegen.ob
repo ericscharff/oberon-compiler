@@ -725,8 +725,6 @@ BEGIN
 END GenRealOp;
 
 PROCEDURE GenIntegerOp(op: Lex.TokenKind; VAR lhs, rhs: Item);
-VAR
-  n, exp: INTEGER;
 BEGIN
   IF op = Lex.tPLUS THEN
     IF lhs.kind = itemConst THEN
@@ -759,13 +757,7 @@ BEGIN
       Emit(opMULI, lhs.r, lhs.r, 0, lhs.offset)
     ELSIF rhs.kind = itemConst THEN
       Load(lhs);
-      n := rhs.offset; exp := 0;
-      WHILE (n BITAND 1) = 0 DO n := n DIV 2; exp := exp + 1 END;
-      IF n = 1 THEN
-        Emit(opLSLI, lhs.r, lhs.r, 0, exp)
-      ELSE
-        Emit(opMULI, lhs.r, lhs.r, 0, rhs.offset)
-      END;
+      Emit(opMULI, lhs.r, lhs.r, 0, rhs.offset)
     ELSE
       Load(lhs);
       Load(rhs);
@@ -775,13 +767,7 @@ BEGIN
   ELSIF (op = Lex.tDIV) OR (op = Lex.tSLASH) THEN
     IF rhs.kind = itemConst THEN
       Load(lhs);
-      n := rhs.offset; exp := 0;
-      WHILE (n BITAND 1) = 0 DO n := n DIV 2; exp := exp + 1 END;
-      IF n = 1 THEN
-        Emit(opASRI, lhs.r, lhs.r, 0, exp)
-      ELSE
-        Emit(opDIVI, lhs.r, lhs.r, 0, rhs.offset)
-      END
+      Emit(opDIVI, lhs.r, lhs.r, 0, rhs.offset)
     ELSE
       Load(lhs);
       Load(rhs);
