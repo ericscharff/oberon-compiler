@@ -1,5 +1,12 @@
 # Extensions to Oberon-07
 
+## Bitwise boolean operations
+
+The compiler accepts three binary operations, `BITAND`, `BITOR`, and `BITXOR`
+which behave much like `&`, `|`, and `^' in C - they take two INTEGERS and
+return an INTEGER that represent performing bitwise Boolean operations on the
+two integers (e.g., bit 7 combines bit 7 of each operand).
+
 ## Lowercase keywords
 
 Most of the reserved words in Oberon (MODULE, PROCEDURE, etc.) can be entered in
