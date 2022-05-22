@@ -120,9 +120,8 @@ void Out_ErrLn(void) {
   fputs("", stderr);
 }
 
-void Out_ReadFile(const char *fileName, size_t q, char *buf, size_t r) {
+void Out_ReadFile(const char *fileName, size_t q, char *buf, int r) {
   (void)q;
-  (void)r;
   FILE *file = fopen(fileName, "rb");
   if (!file) {
     assert(0);
@@ -131,6 +130,7 @@ void Out_ReadFile(const char *fileName, size_t q, char *buf, size_t r) {
   long len = ftell(file);
   fseek(file, 0, SEEK_SET);
   assert(len < 65535);
+  assert(len <= r);
   if (len && fread(buf, len, 1, file) != 1) {
     fclose(file);
     free(buf);
