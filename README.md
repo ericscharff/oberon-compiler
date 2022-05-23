@@ -53,13 +53,6 @@ Once bootstrapped, the `build` directory contains a shell script called
 # Build the compiler
 $ make
 
-# Alternatively, you can run
-# $ make -f Makefile.cbootstrap
-# which first builds the compiler written in C, and then uses
-# the C compiler to build the compiler written in Oberon, and then
-# uses the Oberon compiler to compile itself. The normal Makefile
-# avoids the need for the the C bootstrap compiler.
-
 # Build an example
 $ cd tests
 $ ../build/compile FibFact.ob
