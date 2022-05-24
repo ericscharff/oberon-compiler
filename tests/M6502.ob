@@ -77,7 +77,7 @@ END Comp;
 PROCEDURE SetNZ(VAR p: CPU; v: INTEGER);
 BEGIN
 	IF v = 0 THEN DoINCL(p.flags, zerO) ELSE DoEXCL(p.flags, zerO) END;
-	IF v > 127 THEN DoINCL(p.flags, negativE) ELSE DoEXCL(p.flags, negativE) END;
+	IF (v < 0) OR (v > 127) THEN DoINCL(p.flags, negativE) ELSE DoEXCL(p.flags, negativE) END;
 END SetNZ;
 
 PROCEDURE SetC(VAR p: CPU; v: BOOLEAN);
@@ -210,11 +210,11 @@ VAR m: INTEGER; v: INTEGER;
 BEGIN
 	IF mode = mAccum THEN
 		p.a := p.a * 2;
-		IF p.a > 255 THEN SetC(p, TRUE); p.a := DoBITAND(p.a, 255); END;
+                SetC(p, p.a > 255); p.a := DoBITAND(p.a, 255);
 		SetNZ(p, p.a)
 	ELSE
 		m := EA(p, mode); v := p.readProc(m); v := v * 2;
-		IF v > 255 THEN SetC(p, TRUE); v := DoBITAND(v, 255); END;
+		SetC(p, v > 255); v := DoBITAND(v, 255);
 		p.writeProc(m, v); SetNZ(p, v)
 	END
 END DoASL;
@@ -224,7 +224,7 @@ PROCEDURE DoBCC(VAR p: CPU; mode: INTEGER);
 VAR dst: INTEGER;
 BEGIN
 	dst := EA(p, mode);
-	IF carrY IN p.flags THEN p.pc := dst; END
+	IF ~(carrY IN p.flags) THEN p.pc := dst; END
 END DoBCC;
 
 (* BCS   Branch on Carry Set *)
@@ -232,7 +232,7 @@ PROCEDURE DoBCS(VAR p: CPU; mode: INTEGER);
 VAR dst: INTEGER;
 BEGIN
 	dst := EA(p, mode);
-	IF ~(carrY IN p.flags) THEN p.pc := dst; END
+	IF carrY IN p.flags THEN p.pc := dst; END
 END DoBCS;
 
 (* BEQ   Branch on Result Zero *)
@@ -366,8 +366,8 @@ END DoDEX;
 (* DEY   Decrement Index Y by One *)
 PROCEDURE DoDEY(VAR p: CPU; mode: INTEGER);
 BEGIN
-	p.x := DoBITAND(p.x - 1, 255);
-	SetNZ(p, p.x)
+	p.y := DoBITAND(p.y - 1, 255);
+	SetNZ(p, p.y)
 END DoDEY;
 
 (* EOR   "Exclusive-Or" Memory with Accumulator *)
@@ -375,7 +375,7 @@ PROCEDURE DoEOR(VAR p: CPU; mode: INTEGER);
 VAR m: INTEGER;
 BEGIN
 	m := CEA(p, mode);
-	p.a := DoBITAND(255, DoBITXOR(p.x, m));
+	p.a := DoBITAND(255, DoBITXOR(p.a, m));
 	SetNZ(p, p.a);
 END DoEOR;
 
@@ -443,10 +443,10 @@ PROCEDURE DoLSR(VAR p: CPU; mode: INTEGER);
 VAR m: INTEGER; v: INTEGER;
 BEGIN
 	IF mode = mAccum THEN
-		SetC(p, ODD(p.a)); p.a := p.a DIV 2;  IF carrY IN p.flags THEN p.a := DoBITOR(p.a, 128) END
+		SetC(p, ODD(p.a)); p.a := p.a DIV 2
 	ELSE
 		m := EA(p, mode); v := p.readProc(m);
-		SetC(p, ODD(v)); v := v DIV 2;  IF carrY IN p.flags THEN v := DoBITOR(v, 128) END;
+		SetC(p, ODD(v)); v := v DIV 2;
 		p.writeProc(m, v)
 	END
 END DoLSR;
@@ -504,13 +504,13 @@ VAR m: INTEGER;  v: INTEGER;
 BEGIN
 	IF mode = mAccum THEN
 		p.a := p.a * 2;
-		IF p.a > 255 THEN p.a := p.a - 256; SetC(p, TRUE) ELSE SetC(p, FALSE) END;
-		IF carrY IN p.flags THEN p.a := DoBITOR(p.a, 1) END
+		IF carrY IN p.flags THEN p.a := DoBITOR(p.a, 1) END;
+		IF p.a > 255 THEN p.a := p.a BITAND 255; SetC(p, TRUE) ELSE SetC(p, FALSE) END;
 	ELSE
 		m := EA(p, mode); v := p.readProc(m);
 		v := v * 2;
-		IF v > 255 THEN v := v - 256; SetC(p, TRUE) ELSE SetC(p, FALSE) END;
 		IF carrY IN p.flags THEN v := DoBITOR(v, 1) END;
+		IF v > 255 THEN v := v BITAND 255; SetC(p, TRUE) ELSE SetC(p, FALSE) END;
 		p.writeProc(m, v)
 	END
 END DoROL;
@@ -520,10 +520,12 @@ PROCEDURE DoROR(VAR p: CPU; mode: INTEGER);
 VAR m: INTEGER; v: INTEGER;
 BEGIN
 	IF mode = mAccum THEN
-		SetC(p, ODD(p.a)); p.a := p.a DIV 2;  IF carrY IN p.flags THEN p.a := DoBITOR(p.a, 128) END
+		IF carrY IN p.flags THEN p.a := p.a + 256 END;
+		SetC(p, ODD(p.a)); p.a := p.a DIV 2
 	ELSE
 		m := EA(p, mode); v := p.readProc(m);
-		SetC(p, ODD(v)); v := v DIV 2;  IF carrY IN p.flags THEN v := DoBITOR(v, 128) END;
+		IF carrY IN p.flags THEN v := v + 256 END;
+		SetC(p, ODD(v)); v := v DIV 2;
 		p.writeProc(m, v)
 	END
 END DoROR;
@@ -546,7 +548,7 @@ VAR m, r: INTEGER;
 BEGIN
 	m := CEA(p, mode); r := p.a - m - 1;
 	IF carrY IN p.flags THEN INC(r) END;
-	SetC(p, r > 255); r := DoBITAND(r, 255);
+	SetC(p, (r BITAND 0FF00H) = 0); r := DoBITAND(r, 255);
 	SetNZ(p, r);
 	SetV(p, (DoBITBIT(p.a,7) # DoBITBIT(m,7)) & (DoBITBIT(r,7) # DoBITBIT(p.a,7)));
 	p.a := r;
