@@ -155,9 +155,9 @@ BEGIN
 		| mIndirectY:
 			a := WordAt(p, Fetch(p)) + p.y;
 		| mZeroPageX:
-			a := Fetch(p) + p.x;
+			a := (Fetch(p) + p.x) BITAND 255;
 		| mZeroPageY:
-			a := Fetch(p) + p.y;
+			a := (Fetch(p) + p.y) BITAND 255;
 		| mAbsoluteX:
 			a := FetchWord(p) + p.x;
 		| mAbsoluteY:
@@ -165,7 +165,7 @@ BEGIN
 		| mRelative:
 			a := Comp(Fetch(p)) + p.pc;
 		| mIndirect:
-			a := FetchWord(p);
+			a := WordAt(p, FetchWord(p));
 		| mAccum:
 			a := p.a;
 	END;
