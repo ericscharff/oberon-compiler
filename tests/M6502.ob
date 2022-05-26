@@ -443,11 +443,13 @@ PROCEDURE DoLSR(VAR p: CPU; mode: INTEGER);
 VAR m: INTEGER; v: INTEGER;
 BEGIN
 	IF mode = mAccum THEN
-		SetC(p, ODD(p.a)); p.a := p.a DIV 2
+		SetC(p, ODD(p.a)); p.a := p.a DIV 2;
+		SetNZ(p, p.a)
 	ELSE
 		m := EA(p, mode); v := p.readProc(m);
 		SetC(p, ODD(v)); v := v DIV 2;
-		p.writeProc(m, v)
+		p.writeProc(m, v);
+		SetNZ(p, v)
 	END
 END DoLSR;
 
@@ -472,13 +474,14 @@ END DoPHA;
 (* PHP   Push Processor Status on Stack *)
 PROCEDURE DoPHP(VAR p: CPU; mode: INTEGER);
 BEGIN
-	PushByte(p, ORD(p.flags))
+	PushByte(p, ORD(p.flags) BITOR 30H)
 END DoPHP;
 
 (* PLA   Pull Accumulator from Stack *)
 PROCEDURE DoPLA(VAR p: CPU; mode: INTEGER);
 BEGIN
-	p.a := PopByte(p)
+	p.a := PopByte(p);
+	SetNZ(p, p.a)
 END DoPLA;
 
 (* PLP   Pull Processor Status from Stack *)
@@ -506,12 +509,14 @@ BEGIN
 		p.a := p.a * 2;
 		IF carrY IN p.flags THEN p.a := DoBITOR(p.a, 1) END;
 		IF p.a > 255 THEN p.a := p.a BITAND 255; SetC(p, TRUE) ELSE SetC(p, FALSE) END;
+		SetNZ(p, p.a)
 	ELSE
 		m := EA(p, mode); v := p.readProc(m);
 		v := v * 2;
 		IF carrY IN p.flags THEN v := DoBITOR(v, 1) END;
 		IF v > 255 THEN v := v BITAND 255; SetC(p, TRUE) ELSE SetC(p, FALSE) END;
-		p.writeProc(m, v)
+		p.writeProc(m, v);
+		SetNZ(p, v)
 	END
 END DoROL;
 
@@ -521,12 +526,14 @@ VAR m: INTEGER; v: INTEGER;
 BEGIN
 	IF mode = mAccum THEN
 		IF carrY IN p.flags THEN p.a := p.a + 256 END;
-		SetC(p, ODD(p.a)); p.a := p.a DIV 2
+		SetC(p, ODD(p.a)); p.a := p.a DIV 2;
+		SetNZ(p, p.a)
 	ELSE
 		m := EA(p, mode); v := p.readProc(m);
 		IF carrY IN p.flags THEN v := v + 256 END;
 		SetC(p, ODD(v)); v := v DIV 2;
-		p.writeProc(m, v)
+		p.writeProc(m, v);
+		SetNZ(p, v)
 	END
 END DoROR;
 
