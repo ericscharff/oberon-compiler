@@ -92,18 +92,20 @@ END SetV;
 
 PROCEDURE PushByte(VAR p: CPU; what: INTEGER);
 BEGIN
-	p.writeProc(p.sp + 256, what); DEC(p.sp)
+	p.writeProc(p.sp + 256, what); DEC(p.sp); IF p.sp < 0 THEN p.sp := 255 END;
 END PushByte;
 
 PROCEDURE PushWord(VAR p: CPU; what: INTEGER);
 BEGIN
 	p.writeProc(p.sp + 256, what DIV 256); DEC(p.sp);
-	p.writeProc(p.sp + 256, DoBITAND(what,255)); DEC(p.sp)
+	IF p.sp < 0 THEN p.sp := 255 END;
+	p.writeProc(p.sp + 256, DoBITAND(what,255)); DEC(p.sp);
+	IF p.sp < 0 THEN p.sp := 255 END;
 END PushWord;
 
 PROCEDURE PopByte(VAR p: CPU): INTEGER;
 BEGIN
-	INC(p.sp); RETURN p.readProc(p.sp + 256)
+	INC(p.sp); IF p.sp > 255 THEN p.sp := 0 END RETURN p.readProc(p.sp + 256)
 END PopByte;
 
 PROCEDURE PopWord(VAR p: CPU): INTEGER;
