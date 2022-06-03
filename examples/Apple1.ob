@@ -1,0 +1,102 @@
+MODULE Apple1;
+
+IMPORT Curses, M6502, Out;
+
+CONST
+  MemSize = 64 * 1024;
+  KeyBufSize = 16 * 1024;
+
+VAR
+  mem: ARRAY MemSize OF CHAR;
+  keyBuf: ARRAY KeyBufSize OF CHAR;
+  firstKey, lastKey: INTEGER;
+  cpu: M6502.CPU;
+  running: BOOLEAN;
+
+PROCEDURE ReadMem(where: INTEGER): INTEGER;
+(* TODO, keyboard reading *)
+VAR a: INTEGER;
+BEGIN
+  IF where = 0D010H THEN
+    IF firstKey = lastKey THEN
+      a := 0
+    ELSE
+      a := ORD(keyBuf[firstKey]) BITOR 080H;
+      firstKey := (firstKey + 1) BITAND (KeyBufSize - 1)
+    END
+  ELSIF where = 0D011H THEN
+    IF firstKey = lastKey THEN
+      a := 1
+    ELSE
+      a := 080H
+    END
+  ELSIF ((where BITAND 0FF0FH) = 0D002H) THEN
+    a := 0
+  ELSIF where = 0D013H THEN
+    a := 0
+  ELSE
+    a := ORD(mem[where])
+  END
+  RETURN a BITAND 255
+END ReadMem;
+
+PROCEDURE WriteMem(where, what: INTEGER);
+(* TODO, screen writing *)
+BEGIN
+  IF where = 0D012H THEN
+    mem[where] := CHR(what BITAND 07FH);
+    Curses.WriteChar(mem[where])
+  ELSE
+    mem[where] := CHR(what)
+  END
+END WriteMem;
+
+PROCEDURE ReadBios;
+VAR
+  buf: ARRAY 256 OF CHAR;
+  i: INTEGER;
+BEGIN
+  Out.ReadFile("bios.bin", buf);
+  FOR i := 0 TO 255 DO
+    mem[i + 0FF00H] := buf[i]
+  END
+END ReadBios;
+
+PROCEDURE UpdateKeyboard;
+VAR
+  c: INTEGER;
+BEGIN
+  Curses.ReadChar(c);
+  IF (c > 0) & (c < 256) THEN
+    IF c = ORD("q") THEN running := FALSE END;
+    IF c = 10 THEN c := 13 END;
+    IF (c >= ORD("a")) & (c <= ORD("z")) THEN
+      (* convert to upper case *)
+      c := c BITAND 05FH;
+    END;
+    keyBuf[lastKey] := CHR(c);
+    lastKey := (lastKey + 1) BITAND (KeyBufSize - 1)
+  END
+END UpdateKeyboard;
+
+PROCEDURE DoFrame;
+VAR c: INTEGER;
+BEGIN
+  UpdateKeyboard;
+  FOR c := 1 to 500 DO M6502.Step(cpu) END
+END DoFrame;
+
+BEGIN
+  cpu.a := 0; cpu.x := 0; cpu.y := 0; cpu.sp := 255;
+  cpu.pc := 0; cpu.flags := {M6502.reserveD};
+  cpu.readProc := ReadMem; cpu.writeProc := WriteMem;
+  firstKey := 0; lastKey := 0; keyBuf[0] := 0X;
+  running := TRUE;
+  ReadBios;
+  cpu.pc := ReadMem(0FFFDH) * 256 + ReadMem(0FFFCH);
+  Curses.StartScreen;
+  WHILE running DO
+    DoFrame
+  END;
+  Curses.EndScreen;
+END Apple1.

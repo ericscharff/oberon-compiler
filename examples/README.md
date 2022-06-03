@@ -4,6 +4,21 @@ This directory contains sample programs that demonstrate the Oberon language and
 extra features of the compiler. More examples (in the form of regression tests)
 can be found in the `tests` directory.
 
+## Apple1
+
+`Apple1.ob` uses the 6502 emulator core from the tests/ directory to provide
+a working simulatio of an Apple 1 computer. To build the emulator, use
+
+```
+EXTRA_CFLAGS=-lncurses ../build/compile -extra_runtime curses.c Apple1.ob
+```
+
+The reason for the native library is to use the ncurses library. The Apple 1
+computer is fairly minimal, but you need a non-blocking way to read raw
+characters, and curses is one of the better cross-platform ways to do that. The
+curses library is fairly minimal, and is only currently useful for the example
+program.
+
 ## Cairo
 
 `CairoTest.ob` uses the NATIVE features of the compiler to integrate with the

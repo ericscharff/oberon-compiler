@@ -1,0 +1,15 @@
+MODULE Curses;
+
+NATIVE (-201) PROCEDURE StartScreen*;
+END StartScreen;
+
+NATIVE (-202) PROCEDURE EndScreen*;
+END EndScreen;
+
+NATIVE (-203) PROCEDURE WriteChar*(c: CHAR);
+END WriteChar;
+
+NATIVE (-204) PROCEDURE ReadChar*(VAR c: INTEGER);
+END ReadChar;
+
+END Curses.
