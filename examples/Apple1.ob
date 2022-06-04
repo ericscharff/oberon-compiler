@@ -68,7 +68,7 @@ VAR
 BEGIN
   Curses.ReadChar(c);
   IF (c > 0) & (c < 256) THEN
-    IF c = ORD("q") THEN running := FALSE END;
+    IF c = ORD("|") THEN running := FALSE END;
     IF c = 10 THEN c := 13 END;
     IF (c >= ORD("a")) & (c <= ORD("z")) THEN
       (* convert to upper case *)
