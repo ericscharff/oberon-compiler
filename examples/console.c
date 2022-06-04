@@ -1,6 +1,6 @@
 #include <ncurses.h>
 
-void Curses_StartScreen(void) {
+void Console_StartScreen(void) {
   initscr();
   cbreak();
   nodelay(stdscr, 1);
@@ -8,11 +8,11 @@ void Curses_StartScreen(void) {
   noecho();
 }
 
-void Curses_EndScreen(void) {
+void Console_EndScreen(void) {
   endwin();
 }
 
-void Curses_WriteChar(char c) {
+void Console_WriteChar(char c) {
   if ((c == '\r') || (c == '\n')) {
     printw("\n");
   } else if ((c >= 32) && (c < 127)) {
@@ -20,6 +20,6 @@ void Curses_WriteChar(char c) {
   }
 }
 
-void Curses_ReadChar(int *c) {
+void Console_ReadChar(int *c) {
   *c = getch();
 }

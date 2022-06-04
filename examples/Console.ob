@@ -1,4 +1,4 @@
-MODULE Curses;
+MODULE Console;
 
 NATIVE (-201) PROCEDURE StartScreen*;
 END StartScreen;
@@ -12,4 +12,4 @@ END WriteChar;
 NATIVE (-204) PROCEDURE ReadChar*(VAR c: INTEGER);
 END ReadChar;
 
-END Curses.
+END Console.

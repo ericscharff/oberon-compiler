@@ -10,7 +10,7 @@ can be found in the `tests` directory.
 a working simulatio of an Apple 1 computer. To build the emulator, use
 
 ```
-EXTRA_CFLAGS=-lncurses ../build/compile -extra_runtime curses.c Apple1.ob
+EXTRA_CFLAGS=-lncurses ../build/compile -extra_runtime console.c Apple1.ob
 ```
 
 The reason for the native library is to use the ncurses library. The Apple 1

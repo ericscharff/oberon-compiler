@@ -1,6 +1,6 @@
 MODULE Apple1;
 
-IMPORT Curses, M6502, Out;
+IMPORT Console, M6502, Out;
 
 CONST
   MemSize = 64 * 1024;
@@ -45,7 +45,7 @@ PROCEDURE WriteMem(where, what: INTEGER);
 BEGIN
   IF where = 0D012H THEN
     mem[where] := CHR(what BITAND 07FH);
-    Curses.WriteChar(mem[where])
+    Console.WriteChar(mem[where])
   ELSE
     mem[where] := CHR(what)
   END
@@ -66,7 +66,7 @@ PROCEDURE UpdateKeyboard;
 VAR
   c: INTEGER;
 BEGIN
-  Curses.ReadChar(c);
+  Console.ReadChar(c);
   IF (c > 0) & (c < 256) THEN
     IF c = ORD("|") THEN running := FALSE END;
     IF c = 10 THEN c := 13 END;
@@ -94,9 +94,9 @@ BEGIN
   running := TRUE;
   ReadBios;
   cpu.pc := ReadMem(0FFFDH) * 256 + ReadMem(0FFFCH);
-  Curses.StartScreen;
+  Console.StartScreen;
   WHILE running DO
     DoFrame
   END;
-  Curses.EndScreen;
+  Console.EndScreen;
 END Apple1.
