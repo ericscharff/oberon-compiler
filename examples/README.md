@@ -16,7 +16,8 @@ a working simulatio of an Apple 1 computer. To build the emulator, use
 The reason for the native library is to set terminal properties using termios.
 The Apple 1 computer is fairly minimal, but it needs a non-blocking way to read
 raw characters. The console support disables canonical mode and echo mode which
-should be supported by POSIX systems.
+should be supported by POSIX systems. See [Apple1.md](Apple1.md) for
+instructions on using the emulator.
 
 ## Cairo
 
