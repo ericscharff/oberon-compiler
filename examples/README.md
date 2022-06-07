@@ -10,14 +10,13 @@ can be found in the `tests` directory.
 a working simulatio of an Apple 1 computer. To build the emulator, use
 
 ```
-EXTRA_CFLAGS=-lncurses ../build/compile -extra_runtime console.c Apple1.ob
+../build/compile -extra_runtime console.c Apple1.ob
 ```
 
-The reason for the native library is to use the ncurses library. The Apple 1
-computer is fairly minimal, but you need a non-blocking way to read raw
-characters, and curses is one of the better cross-platform ways to do that. The
-curses library is fairly minimal, and is only currently useful for the example
-program.
+The reason for the native library is to set terminal properties using termios.
+The Apple 1 computer is fairly minimal, but it needs a non-blocking way to read
+raw characters. The console support disables canonical mode and echo mode which
+should be supported by POSIX systems.
 
 ## Cairo
 
