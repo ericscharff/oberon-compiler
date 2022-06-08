@@ -47,7 +47,8 @@ You can jump to a program by typing an address, followed by R, e.g., `300R`.
 ## Loading and Saving Programs
 
 The terminal is the best way to get software into and out of the emulator. For
-example, the included file `fig6502.mon` is a machine monitor dump of a program,
+example, the file
+[fig6502.mon](https://raw.githubusercontent.com/ericscharff/apple1emu/master/software/fig6502.mon) is a machine monitor dump of a program,
 the Fig-Forth programming language. This is a text file with a binary dump of
 the program, followed by a command to run the program. This can be simply copied
 and pasted into the machine language monitor, which will load (and run) the
