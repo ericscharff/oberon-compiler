@@ -6,8 +6,8 @@ can be found in the `tests` directory.
 
 ## Apple1
 
-`Apple1.ob` uses the 6502 emulator core from the tests/ directory to provide
-a working simulatio of an Apple 1 computer. To build the emulator, use
+`Apple1.ob` uses the 6502 emulator core from the tests/ directory to provide a
+working simulation of an Apple 1 computer. To build the emulator, use
 
 ```
 ../build/compile -extra_runtime console.c Apple1.ob
@@ -38,7 +38,7 @@ The resulting program (`../build/out.prg`) generates a few PNG images.
 
 `PrettyPrint.ob` is a rudimentary Oberon pretty printer, It accepts an Oberon
 file as a command line argument, parses it, and outputs the pretty printed
-outupt to stdout. e.g.
+output to stdout. e.g.
 
 ```
 ../build/compile PrettyPrint.ob

@@ -5,7 +5,7 @@
 The Apple 1 is a 6502 based computer. When the program starts, it creates 64K of
 RAM, and then loads the machine's monitor (the BIOS program that runs when the
 machine starts) from file file `rom.bin`. This contains 256 bytes(!) of data
-loaded into $FF00 through $FFFF. The monitor is an interative program that
+loaded into $FF00 through $FFFF. The monitor is an interactive program that
 allows you to enter bytes into memory, display memory, and jump to a program.
 
 Unlike a real Apple 1, there are 64K of true RAM. The ROM code technically
@@ -48,11 +48,11 @@ You can jump to a program by typing an address, followed by R, e.g., `300R`.
 
 The terminal is the best way to get software into and out of the emulator. For
 example, the file
-[fig6502.mon](https://raw.githubusercontent.com/ericscharff/apple1emu/master/software/fig6502.mon) is a machine monitor dump of a program,
-the Fig-Forth programming language. This is a text file with a binary dump of
-the program, followed by a command to run the program. This can be simply copied
-and pasted into the machine language monitor, which will load (and run) the
-program.
+[fig6502.mon](https://raw.githubusercontent.com/ericscharff/apple1emu/master/software/fig6502.mon)
+is a machine monitor dump of a program, the Fig-Forth programming language. This
+is a text file with a binary dump of the program, followed by a command to run
+the program. This can be simply copied and pasted into the machine language
+monitor, which will load (and run) the program.
 
 Similarly, programs aren't saved, but you can paste the contents of the terminal
 into a text file. Since the monitor can emit the contents of RAM, you can
