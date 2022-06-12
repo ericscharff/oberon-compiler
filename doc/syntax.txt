@@ -59,7 +59,7 @@ DO StatementSequence END.
 (* VARStatement is an oberon extension to declare variables inline *)
 VARStatement = VAR ident ":=" expression.
 ProcedureDeclaration = ProcedureHeading ";" ProcedureBody ident.
-ProcedureHeading = [NATIVE] PROCEDURE identdef [FormalParameters].
+ProcedureHeading = [NATIVE expression] PROCEDURE identdef [FormalParameters].
 ProcedureBody = DeclarationSequence [BEGIN StatementSequence]
  [RETURN expression] END.
 DeclarationSequence = [CONST {ConstDeclaration ";"}]
