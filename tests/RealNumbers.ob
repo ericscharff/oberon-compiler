@@ -14,10 +14,11 @@ END PlusOne;
 
 PROCEDURE Test;
 VAR
-  a, b, c, d: REAL;
+  a, b, c, d, e: REAL;
 BEGIN
-  a := 0.1; b := 1.0; c := 0.5; d := 0.25;
+  a := 0.1; b := 1.0; c := 0.5; d := 0.25; e := 0.4;
   Out.Real(a + b + c + d); Out.Ln;
+  Out.Real(a + b + c + d + e); Out.Ln;
   Out.Real(Plus(a, b, c, d)); Out.Ln;
   Out.Real(Plus(a+a, b+b, PlusOne(c+c), d+d)); Out.Ln;
   Out.Real(Plus(a+a, b+b, c+PlusOne(c+c), d+d)); Out.Ln;
@@ -26,6 +27,7 @@ BEGIN
   Out.Real(a - b - c - d); Out.Ln;
   Out.Real(a * b * c * d); Out.Ln;
   Out.Real(a * b + c * d); Out.Ln;
+  Out.Real(a * b + c * d / e); Out.Ln;
   ASSERT(a < b);
   ASSERT(b > a);
   Out.Real(a + 0.9); Out.Ln;
