@@ -6,7 +6,7 @@ can be found in the `tests` directory.
 
 ## Apple1
 
-`Apple1.ob` uses the 6502 emulator core from the tests/ directory to provide a
+`Apple1.ob` uses the 6502 emulator core from the `tests/` directory to provide a
 working simulation of an Apple 1 computer. To build the emulator, use
 
 ```
