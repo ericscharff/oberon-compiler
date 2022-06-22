@@ -93,4 +93,4 @@ references are within the bounds of the array.)
     the compiler written in Oberon a reality.
 *   There are some stubs that resemble standard Oakwood modules, like The module
     Texts and Files. However, these don't really work like their Project Oberon
-    counterparts (yet).
+    counterparts.
