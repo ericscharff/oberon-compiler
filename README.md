@@ -94,3 +94,5 @@ references are within the bounds of the array.)
 *   There are some stubs that resemble standard Oakwood modules, like The module
     Texts and Files. However, these don't really work like their Project Oberon
     counterparts.
+*   Not all language extensions are supported by the RISC code generator (in
+    particular, buffers).
