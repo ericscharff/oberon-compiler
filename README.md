@@ -39,12 +39,16 @@ sized arrays, like Vectors/ArrayLists in other languages.)
 
 # Usage
 
+## Building the compiler
+
 Running `make` will build the bootstrap compiler, and then the main compiler,
 which is placed in the `build` directory. Once created, this compiler can be
 used to compile the Oberon-based compiler. The Oberon compiler then compiles
 itself, so as a form of a "triple test" one can compare the generated C code to
 ensure that the compiler is still generating correct code. The test suite can be
 run with `make test` and the triple-test with `make compiler-test`.
+
+## Running the compiler
 
 Once bootstrapped, the `build` directory contains a shell script called
 `compile`. This shell script can be used to compile examples. For example:
@@ -82,6 +86,8 @@ is used to perform tests like type inclusion (e.g., "p IS Circle"). When
 generating C code, the object oriented features are simulated through
 appropriately inserted C code, and type descriptors that represent the type
 hierarchy.
+
+## Compiler flags
 
 The compile shell script accepts two flags, `-cpp` to generate C++ code (see
 above), and `-bounds` to generate bounds checks (to assert that any array
