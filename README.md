@@ -89,9 +89,14 @@ hierarchy.
 
 ## Compiler flags
 
-The compile shell script accepts two flags, `-cpp` to generate C++ code (see
-above), and `-bounds` to generate bounds checks (to assert that any array
-references are within the bounds of the array.)
+The compile shell script accepts several command line flags:
+
+*   `-bounds` generates runtime bounds checks (to assert that any array
+    references are within the bounds of the array).
+*   `-cpp` instructs the compiler to generate C++ code (see above).
+*   `-extra_runtime filename.c` causes an extra C source file (filename.c)
+    to be included as part of the C runtime. Typically this is used to add
+    code for new `NATIVE` methods.
 
 # Known issues
 
