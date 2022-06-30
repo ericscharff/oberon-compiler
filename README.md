@@ -98,6 +98,14 @@ The compile shell script accepts several command line flags:
     to be included as part of the C runtime. Typically this is used to add
     code for new `NATIVE` methods.
 
+Additionally, some environment variables may be set to control the C
+compilation:
+
+*   `CC` controls the C compiler used (default: cc)
+*   `CXX` controls the C++ compiler used (default: g++)
+*   `EXTRA_CFLAGS` allows extra flags to be passed to the C compiler. This is
+    often used to pass flags for linking (default: none)
+
 # Known issues
 
 *   The bootstrap compiler in C isn't wonderful. However, it only exists to make
