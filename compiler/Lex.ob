@@ -917,7 +917,7 @@ BEGIN
   VAR         WHILE
       0FFD2H 041X
       101 102 (103)Wow 104Whoa
-      0.1 0.1E4 0.08E-3 12.83e1
+      0.1 0.1E4 0.08E-3 12.825e1
       + - * / ~ & . , ; | ( ) [ ] { } := ^ = # < >
       <= >=  .. 10..20
       (* totally (* skipped *)*)
@@ -948,7 +948,7 @@ BEGIN
   NextToken(l); ASSERT(l.t.kind = tREAL); ASSERT(ABS(l.t.rVal - 0.1) < 0.00001);
   NextToken(l); ASSERT(l.t.kind = tREAL); ASSERT(ABS(l.t.rVal - 0.1e4) < 0.00001);
   NextToken(l); ASSERT(l.t.kind = tREAL); ASSERT(ABS(l.t.rVal - 0.08e-3) < 0.00001);
-  NextToken(l); ASSERT(l.t.kind = tREAL); ASSERT(ABS(l.t.rVal - 128.3) < 0.00001);
+  NextToken(l); ASSERT(l.t.kind = tREAL); ASSERT(ABS(l.t.rVal - 128.25) < 0.00001);
   FOR k := tPLUS TO tDOTDOT DO
     NextToken(l); ASSERT(l.t.kind = k);
   END;
