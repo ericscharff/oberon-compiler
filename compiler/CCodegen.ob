@@ -97,7 +97,7 @@ BEGIN
         GenStr("int ");
         GenQName(l, name);
     | AST.typeReal:
-        GenStr("double ");
+        GenStr("OBERON_REAL ");
         GenQName(l, name);
     | AST.typeBoolean:
         GenStr("bool ");

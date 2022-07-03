@@ -7,6 +7,10 @@
 #define ASSERT assert
 #define oberon_abs(x) ((x) < 0) ? -(x) : (x)
 
+#ifndef OBERON_REAL
+#define OBERON_REAL double
+#endif
+
 #ifdef __cplusplus
 #define oberon_buf_init(bbuf, bcap, btyp) \
     (bbuf).buf = new btyp[bcap]; \
@@ -66,13 +70,13 @@ int make_set_range(int s, int e) {
   return r;
 }
 
-double FLT(int x) { return x; }
+OBERON_REAL FLT(int x) { return x; }
 
 void Out_Int(int i) {
   printf("%d", i);
 }
 
-void Out_Real(double r) {
+void Out_Real(OBERON_REAL r) {
   printf("%f", r);
 }
 
@@ -98,7 +102,7 @@ void Out_ErrInt(int i) {
   fprintf(stderr, "%d", i);
 }
 
-void Out_ErrReal(double r) {
+void Out_ErrReal(OBERON_REAL r) {
   fprintf(stderr, "%g", r);
 }
 
@@ -145,7 +149,7 @@ void Out_ReadFile(const char *fileName, size_t q, char *buf, int r) {
 
 void Out_Halt(void) { exit(1); }
 
-int Out_RealAsInt(double d) {
+int Out_RealAsInt(OBERON_REAL d) {
   float f = d;
   int i;
   memcpy(&i, &f, sizeof(i));

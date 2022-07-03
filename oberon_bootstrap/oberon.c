@@ -30,7 +30,7 @@ typedef struct Lex_StringPool {
   INTEGER last;
   INTEGER buckets[4096];
 } Lex_StringPool;
-typedef double REAL;
+typedef OBERON_REAL REAL;
 typedef struct Lex_Token {
   INTEGER kind;
   INTEGER sVal;
@@ -938,7 +938,7 @@ switch ((*t).kind) {
         break;
 
       case 3:
-        CCodegen_GenStr("double ", 8);
+        CCodegen_GenStr("OBERON_REAL ", 13);
         CCodegen_GenQName(&((*l)), &((*name)));
         break;
 
