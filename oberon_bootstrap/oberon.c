@@ -4814,7 +4814,7 @@ void Lex_TestLexer(void) {
   Lex_NextToken(&(l));
   Lex_Unmute();
   Lex_fatal = 1;
-  Lex_LexerInitFromString(&(l), "\n      Test Hello World Test alpha..beta\n  ARRAY       BEGIN       BITAND      BITOR       BITXOR\n  BY          CASE        CONST       DIV         DO\n  ELSE        ELSIF       END         FALSE       FOR\n  IF          IMPORT      IN          IS          MOD\n  MODULE      NATIVE      NIL         OF          OR\n  POINTER     PROCEDURE   RECORD      REPEAT      RETURN\n  THEN        TO          TRUE        TYPE        UNTIL\n  VAR         WHILE\n      0FFD2H 041X\n      101 102 (103)Wow 104Whoa\n      0.1 0.1E4 0.08E-3 12.825e1\n      + - * / ~ & . , ; | ( ) [ ] { } := ^ = # < >\n      <= >=  .. 10..20\n      (* totally (* skipped *)*)\n      BITXOR\n  ", 650);
+  Lex_LexerInitFromString(&(l), "\n      Test Hello World Test alpha..beta\n  ARRAY       BEGIN       BITAND      BITOR       BITXOR\n  BY          CASE        CONST       DIV         DO\n  ELSE        ELSIF       END         FALSE       FOR\n  IF          IMPORT      IN          IS          MOD\n  MODULE      NATIVE      NIL         OF          OR\n  POINTER     PROCEDURE   RECORD      REPEAT      RETURN\n  THEN        TO          TRUE        TYPE        UNTIL\n  VAR         WHILE\n      0FFD2H 041X\n      101 102 (103)Wow 104Whoa\n      0.1 0.1E4 0.08E-3 12.83e1\n      + - * / ~ & . , ; | ( ) [ ] { } := ^ = # < >\n      <= >=  .. 10..20\n      (* totally (* skipped *)*)\n      BITXOR\n  ", 649);
   l.buf[11] = '"';
   l.buf[23] = '"';
   Lex_NextToken(&(l));
@@ -4876,7 +4876,7 @@ void Lex_TestLexer(void) {
   assert((oberon_abs((l.t.rVal - 0.000080)) < 0.000010));
   Lex_NextToken(&(l));
   assert((l.t.kind == 41));
-  assert((oberon_abs((l.t.rVal - 128.250000)) < 0.000010));
+  assert((oberon_abs((l.t.rVal - 128.300003)) < 0.000010));
   for (k = 42; k <= 66; k++) {
     Lex_NextToken(&(l));
     assert((l.t.kind == k));
