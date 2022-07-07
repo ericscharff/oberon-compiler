@@ -24,6 +24,15 @@ $(BUILDDIR)/oberon0: $(BOOTSTRAP_SRCS) $(COMPILER_SRCS)
 	cp compiler/runtime.c compiler/compile compiler/rcompile $(BUILDDIR)
 	$(CC) $(CFLAGS) -o $(@) oberon_bootstrap/oberon.c
 
+$(BUILDDIR)/compiler-float.c: $(BUILDDIR)/oberon0-float
+	cd $(BUILDDIR); ./oberon0-float; ./oberon0-float Compiler.ob > compiler-float.c
+
+$(BUILDDIR)/oberon0-float: $(BOOTSTRAP_SRCS) $(COMPILER_SRCS)
+	mkdir -p $(BUILDDIR)
+	cp compiler/*.ob $(BUILDDIR)
+	cp compiler/runtime.c compiler/compile compiler/rcompile $(BUILDDIR)
+	$(CC) $(CFLAGS) -DOBERON_REAL=float -o $(@) oberon_bootstrap/oberon.c
+
 clean:
 	rm -rf build
 
