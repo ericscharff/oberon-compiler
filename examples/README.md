@@ -38,8 +38,8 @@ The resulting program (`../build/out.prg`) generates a few PNG images.
 ## PrettyPrint
 
 `PrettyPrint.ob` is a rudimentary Oberon pretty printer, It accepts an Oberon
-file as a command line argument, parses it, and outputs the pretty printed
-output to stdout. e.g.
+file as a command line argument, parses it, and outputs the formatted output to
+stdout. e.g.
 
 ```
 ../build/compile PrettyPrint.ob
