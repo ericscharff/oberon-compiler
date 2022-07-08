@@ -10,7 +10,7 @@ void Console_StartScreen(void) {
     return;
   }
   orig_io = io;
-  // Polling read
+  // Enable polling read
   io.c_cc[VMIN] = 0;
   io.c_cc[VTIME] = 0;
 
