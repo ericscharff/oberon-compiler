@@ -1,4 +1,4 @@
-MODULE IOTest;
+MODULE IOOperations;
 
 IMPORT Out;
 
@@ -26,4 +26,4 @@ BEGIN
   a := a + 1;
   Out.Int(a);
   Out.Ln
-END IOTest.
+END IOOperations.

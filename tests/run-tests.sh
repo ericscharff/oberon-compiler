@@ -11,7 +11,7 @@ TESTS=(
   FibFact
   FibFact2
   FibFact3
-  IOTest
+  IOOperations
   KnightsTour
   LangExtensions
   Mandelbrot
@@ -44,7 +44,7 @@ RISC_MEMSIZE[TestCompiler]=362144
 declare -A RISC_EXCLUSIONS
 RISC_EXCLUSIONS[LangExtensions]=1 # Buffers, native functions
 
-# Generate stdin for IOTest
+# Generate stdin for IOOperations
 echo "19" > ../build/stdin.txt
 
 fail() {
