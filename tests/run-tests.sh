@@ -24,12 +24,12 @@ TESTS=(
   RecCopy
   Recurse
   Recurse2
+  Run6502
   SetTest
   Shadow
   ShortCircuit
   StateMachine
   StrTest
-  Test6502
   TestBed
   TestCompiler
   TypeExt

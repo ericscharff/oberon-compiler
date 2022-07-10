@@ -1,4 +1,4 @@
-MODULE Test6502;
+MODULE Run6502;
 
 IMPORT M6502, Out;
 
@@ -37,4 +37,4 @@ BEGIN
     Out.Int(ORD(mem[0300H + i]) BITAND 255);
     IF ((i+1) MOD 16) = 0 THEN Out.Ln ELSE Out.Char(" ") END
   END;
-END Test6502.:
+END Run6502.:
