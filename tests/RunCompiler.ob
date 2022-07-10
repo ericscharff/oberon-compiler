@@ -1,4 +1,4 @@
-MODULE TestCompiler;
+MODULE RunCompiler;
 
 IMPORT Decls, Lex, Parse;
 
@@ -11,4 +11,4 @@ END Test;
 
 BEGIN
   Test
-END TestCompiler.
+END RunCompiler.

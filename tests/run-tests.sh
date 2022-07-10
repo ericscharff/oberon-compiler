@@ -25,20 +25,20 @@ TESTS=(
   Recurse
   Recurse2
   Run6502
+  RunCompiler
   SetTest
   Shadow
   ShortCircuit
   StateMachine
   StrTest
   TestBed
-  TestCompiler
   TypeExt
   VisitList
 )
 
 # Some RISC tests need more than the default 65536 words of RAM
 declare -A RISC_MEMSIZE
-RISC_MEMSIZE[TestCompiler]=362144
+RISC_MEMSIZE[RunCompiler]=362144
 
 # Some tests may need to be excluded because RISC doesn't support them
 declare -A RISC_EXCLUSIONS
