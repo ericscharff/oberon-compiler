@@ -16,6 +16,7 @@ TESTS=(
   LangExtensions
   Mandelbrot
   Maze
+  MiscFeatures
   OopTest
   OopTest2
   Pentominoes
@@ -31,7 +32,6 @@ TESTS=(
   ShortCircuit
   StateMachine
   StrTest
-  TestBed
   TypeExt
   VisitList
 )

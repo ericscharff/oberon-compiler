@@ -1,4 +1,4 @@
-MODULE TestBed;
+MODULE MiscFeatures;
 
 IMPORT Out;
 
@@ -213,4 +213,4 @@ BEGIN
   SumTest;
   ShortCircuitTest;
   BoolReturnValTest;
-END TestBed.
+END MiscFeatures.
