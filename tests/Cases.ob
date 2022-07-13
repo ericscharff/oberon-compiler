@@ -1,4 +1,4 @@
-MODULE CaseTest;
+MODULE Cases;
 
 IMPORT Out;
 
@@ -54,4 +54,4 @@ BEGIN
   FancyRange(","); (* Smaller than 0  *)
   FancyRange("{"); (* Larger than z   *)
   FancyRange("^"); (* Between Z and a *)
-END CaseTest.
+END Cases.
