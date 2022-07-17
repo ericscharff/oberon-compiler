@@ -5,7 +5,7 @@
 set -e
 
 TESTS=(
-  ArrayTest
+  Arrays
   Cases
   ExpMod
   FibFact
