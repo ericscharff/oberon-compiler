@@ -1,4 +1,4 @@
-MODULE ArrayTest;
+MODULE Arrays;
 
 IMPORT Out;
 
@@ -196,4 +196,4 @@ BEGIN
   CopierTest;
   CounterTest;
   VarCounterTest;
-END ArrayTest.
+END Arrays.
