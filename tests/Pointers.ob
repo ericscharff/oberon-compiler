@@ -1,4 +1,4 @@
-MODULE PtrTest;
+MODULE Pointers;
 
 IMPORT Out;
 
@@ -59,4 +59,4 @@ END LinkList;
 BEGIN
   SimpleTest;
   LinkList
-END PtrTest.
+END Pointers.

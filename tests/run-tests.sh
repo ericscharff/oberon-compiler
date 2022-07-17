@@ -20,7 +20,7 @@ TESTS=(
   OopTest
   OopTest2
   Pentominoes
-  PtrTest
+  Pointers
   RealNumbers
   RecCopy
   Recurse
