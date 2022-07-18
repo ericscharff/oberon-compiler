@@ -27,7 +27,7 @@ TESTS=(
   Recurse2
   Run6502
   RunCompiler
-  SetTest
+  Sets
   Shadow
   ShortCircuit
   StateMachine

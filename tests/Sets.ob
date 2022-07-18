@@ -1,4 +1,4 @@
-MODULE SetTest;
+MODULE Sets;
 
 IMPORT Out;
 
@@ -60,4 +60,4 @@ END Test;
 
 BEGIN
   Test
-END SetTest.
+END Sets.
