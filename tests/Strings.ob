@@ -1,4 +1,4 @@
-MODULE StrTest;
+MODULE Strings;
 
 IMPORT Out;
 
@@ -85,4 +85,4 @@ END Test;
 BEGIN
   Comparisons;
   Test
-END StrTest.
+END Strings.

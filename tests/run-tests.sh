@@ -31,7 +31,7 @@ TESTS=(
   Shadow
   ShortCircuit
   StateMachine
-  StrTest
+  Strings
   TypeExt
   VisitList
 )
