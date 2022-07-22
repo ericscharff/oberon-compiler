@@ -1,4 +1,4 @@
-MODULE OopTest;
+MODULE Oop;
 
 IMPORT Out;
 
@@ -195,4 +195,4 @@ END Driver;
 
 BEGIN
   Driver
-END OopTest.
+END Oop.

@@ -17,7 +17,7 @@ TESTS=(
   Mandelbrot
   Maze
   MiscFeatures
-  OopTest
+  Oop
   OopTest2
   Pentominoes
   Pointers
