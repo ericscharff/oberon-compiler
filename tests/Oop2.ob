@@ -1,4 +1,4 @@
-MODULE OopTest;
+MODULE Oop2;
 
 (*
  * This is a variant of OopTest that doesn't use pointers.
@@ -183,4 +183,4 @@ END Driver;
 
 BEGIN
   Driver
-END OopTest.
+END Oop2.

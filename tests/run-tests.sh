@@ -18,7 +18,7 @@ TESTS=(
   Maze
   MiscFeatures
   Oop
-  OopTest2
+  Oop2
   Pentominoes
   Pointers
   RealNumbers
