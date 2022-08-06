@@ -1,3 +1,4 @@
+/* Automatically generated code, do not edit! */
 typedef int oberon_typeid;
 oberon_typeid oberon_typeinfos[1];
 typedef struct oberon_typedesc { int parent[6]; } oberon_typedesc;
@@ -5017,6 +5018,8 @@ void CCodegen_GenTypeinfos(void);
 void CCodegen_GenTypeinfos(void) {
   INTEGER i;
   INTEGER c;
+  CCodegen_GenStr("/* Automatically generated code, do not edit! */", 49);
+  CCodegen_GenLn();
   CCodegen_GenStr("typedef int oberon_typeid;", 27);
   CCodegen_GenLn();
   CCodegen_GenStr("oberon_typeid oberon_typeinfos[1];", 35);

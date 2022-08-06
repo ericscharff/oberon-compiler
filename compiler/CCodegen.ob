@@ -49,6 +49,7 @@ PROCEDURE GenTypeinfos*;
 VAR
   i, c: INTEGER;
 BEGIN
+  GenStr("/* Automatically generated code, do not edit! */"); GenLn;
   GenStr("typedef int oberon_typeid;"); GenLn; (* No longer used *)
   GenStr("oberon_typeid oberon_typeinfos[1];"); GenLn; (* No longer used *)
   GenStr("typedef struct oberon_typedesc { int parent[6]; } oberon_typedesc;");
