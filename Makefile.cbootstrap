@@ -1,3 +1,4 @@
+# builds the compiler using a bootstrap Oberon -> C compiler written in C
 BUILDDIR=build
 CFLAGS=-g -std=c17 -Wall -Wextra -Wpedantic
 
