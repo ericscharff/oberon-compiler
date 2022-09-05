@@ -4,8 +4,9 @@
 
 set -e
 
-# Start with the C-compiled version of the C compiled version of the RISC
-# compiler
+# Start with the current version of the compiler (which transpiles Oberon to C).
+# It should work with the bootstrap compiler written in C, or the compiler
+# written in Oberon.
 cd ..
 make build/compiler-float.c
 cd compiler
