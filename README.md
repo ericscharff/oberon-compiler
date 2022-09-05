@@ -76,6 +76,9 @@ $ ../build/out.prg
 # or run all the tests
 $ ./run-tests.sh
 
+# or run some of the tests
+$ TESTS='Maze FibFact' ./run-tests.sh
+
 # Self hosting test: Use the compiler to build a RISC binary of the compiler,
 # and then use the RISC binary / interpreter to compile itself
 $ ./compiler-test.sh

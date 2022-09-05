@@ -4,7 +4,7 @@
 
 set -e
 
-TESTS=(
+ALL_TESTS=(
   Arrays
   Cases
   ExpMod
@@ -35,6 +35,7 @@ TESTS=(
   TypeExt
   VisitList
 )
+TESTS=${TESTS:=$ALL_TESTS}
 
 # Some RISC tests need more than the default 65536 words of RAM
 declare -A RISC_MEMSIZE
