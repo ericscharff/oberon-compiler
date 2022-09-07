@@ -46,7 +46,12 @@ which is placed in the `build` directory. Once created, this compiler can be
 used to compile the Oberon-based compiler. The Oberon compiler then compiles
 itself, so as a form of a "triple test" one can compare the generated C code to
 ensure that the compiler is still generating correct code. The test suite can be
-run with `make test` and the triple-test with `make compiler-test`.
+run with `make test` and the triple-test with `make compiler-test`. Specific
+tests may be run with
+
+```
+$ TESTS='Maze FibFact' make test
+```
 
 ## Running the compiler
 
