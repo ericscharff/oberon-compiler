@@ -35,7 +35,11 @@ ALL_TESTS=(
   TypeExt
   VisitList
 )
-TESTS=${TESTS:=$ALL_TESTS}
+
+if [ -n "$TESTS" ]; then
+  unset ALL_TESTS
+  read -a ALL_TESTS <<< "$TESTS"
+fi
 
 # Some RISC tests need more than the default 65536 words of RAM
 declare -A RISC_MEMSIZE
@@ -53,7 +57,7 @@ fail() {
   exit 1
 }
 
-for i in ${TESTS[@]}; do
+for i in ${ALL_TESTS[@]}; do
   echo "Running test $i..."
   ../build/compile ${i}.ob
   pushd ../build > /dev/null
@@ -61,7 +65,7 @@ for i in ${TESTS[@]}; do
   popd > /dev/null
   diff -c goldens/$i.output ../build/$i.output || fail $i
 done
-for i in ${TESTS[@]}; do
+for i in ${ALL_TESTS[@]}; do
   if [ -v RISC_EXCLUSIONS[$i] ]; then
     echo "Running RISC test $i... (Skipped)"
     continue
@@ -77,7 +81,7 @@ for i in ${TESTS[@]}; do
   popd > /dev/null
   diff -c goldens/$i.output ../build/$i.output || fail $i
 done
-for i in ${TESTS[@]}; do
+for i in ${ALL_TESTS[@]}; do
   echo "Running C++ test $i..."
   ../build/compile -cpp ${i}.ob
   pushd ../build > /dev/null
@@ -85,7 +89,7 @@ for i in ${TESTS[@]}; do
   popd > /dev/null
   diff -c goldens/$i.output ../build/$i.output || fail $i
 done
-for i in ${TESTS[@]}; do
+for i in ${ALL_TESTS[@]}; do
   echo "Running test $i with bounds checking..."
   ../build/compile -bounds ${i}.ob
   pushd ../build > /dev/null
