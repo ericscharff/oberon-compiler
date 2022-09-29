@@ -1,5 +1,6 @@
 # Extensions to Oberon-07
 
+
 ## Bitwise boolean operations
 
 The compiler accepts three binary operations, `BITAND`, `BITOR`, and `BITXOR`
