@@ -1,6 +1,7 @@
 grammar Oberon;
 
 /*
+
 letter : 'A' | 'B' | … | 'Z' | 'a' | 'b' | … | 'z' ;
 digit : '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' ;
 hexdigit : digit | 'A' | 'B' | 'C' | 'D' | 'E' | 'F' ;
@@ -9,6 +10,7 @@ real : digit (digit)* '.' (digit)* (scaleFactor)?  ;
 scaleFactor : 'E' ('+' | '-')? digit (digit)* ;
 IDENT : letter (letter | digit)* ;
 string : ''' (character)* ''' | digit (hexdigit)* 'X' ;
+
 */
 
 qualident
