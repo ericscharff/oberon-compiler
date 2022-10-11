@@ -1,33 +1,48 @@
 Actor velocity is 1
 DrawMessage
 Actor velocity=1
+Actor velocity=1
 Drawing actor at position 5
+Triangle base=3 height=2
 Triangle base=3 height=2
 Drawing triangle WITH base 3 and height 2
 Circle r=2.200000
+Circle r=2.200000
 Drawing circle OF radius 2.200000
 Square sideLen=15
+Square sideLen=15
 Drawing square OF size 15
+Square sideLen=25
 Square sideLen=25
 Drawing square OF size 25
 TickMessage
 Actor velocity=1
+Actor velocity=1
+Triangle base=3 height=2
 Triangle base=3 height=2
 Unhandled Message
 Circle r=2.200000
+Circle r=2.200000
 Unhandled Message
 Square sideLen=15
+Square sideLen=15
 Unhandled Message
+Square sideLen=25
 Square sideLen=25
 Unhandled Message
 DrawMessage
 Actor velocity=1
+Actor velocity=1
 Drawing actor at position 6
+Triangle base=3 height=2
 Triangle base=3 height=2
 Drawing triangle WITH base 3 and height 2
 Circle r=2.200000
+Circle r=2.200000
 Drawing circle OF radius 2.200000
 Square sideLen=15
+Square sideLen=15
 Drawing square OF size 15
+Square sideLen=25
 Square sideLen=25
 Drawing square OF size 25

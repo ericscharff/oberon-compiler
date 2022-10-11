@@ -240,7 +240,7 @@ BEGIN
                 q.name := f.qname.name;
                 GenQName(l, q);
               END;
-              IF AST.NeedsTypeInfo(t) THEN
+              IF AST.NeedsTypeInfo(t) & (t.kind = AST.typeRecord) THEN
                 GenStr(", oberon_typeid ");
                 IF procDecl THEN
                   q.name := f.qname.name;

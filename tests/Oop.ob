@@ -148,11 +148,24 @@ BEGIN
   Out.Ln
 END PrintObject;
 
+PROCEDURE PrintObject2(VAR o: Object);
+BEGIN
+  CASE o OF
+    Square: Out.Str("Square sideLen="); Out.Int(o.sideLen)
+  | Circle: Out.Str("Circle r=" ); Out.Real(o.radius)
+  | Triangle: Out.Str("Triangle base="); Out.Int(o.base);
+              Out.Str(" height=");  Out.Int(o.height)
+  | Actor: Out.Str("Actor velocity="); Out.Int(o.velocity)
+  END;
+  Out.Ln
+END PrintObject2;
+
 PROCEDURE Broadcast(VAR m: Message; l: ListPtr);
 BEGIN
   PrintMessage(m);
   WHILE l # NIL DO
     PrintObject(l.o);
+    PrintObject2(l.o);
     l.o.handler(l.o, m);
     l := l.next
   END

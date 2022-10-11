@@ -1100,7 +1100,7 @@ switch ((*t).kind) {
                 q.name = (*f).qname.name;
                 CCodegen_GenQName(&((*l)), &(q));
               }
-              if (AST_NeedsTypeInfo(t)) {
+              if (AST_NeedsTypeInfo(t) && ((*t).kind == 11)) {
                 CCodegen_GenStr(", oberon_typeid ", 17);
                 if (procDecl) {
                   q.name = (*f).qname.name;
