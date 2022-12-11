@@ -8,7 +8,6 @@ set -e
 # It should work with the bootstrap compiler written in C, or the compiler
 # written in Oberon.
 cd ..
-make build/compiler-float.c
 cd compiler
 ../build/compile RCompiler.ob
 ../build/out.prg RCompiler.ob > ../build/rcompiler_risc_asm_from_c.txt
@@ -44,8 +43,8 @@ MEM_SIZE=624288 ../build/rcompile Compiler.ob
 # The output of the C-based compiler is identical to the output of the
 # compiler when run in the RISC interpreter
 
-wc ../build/rgen-compiler.c ../build/compiler-float.c ../build/rgen-rcompiler.c ../build/rcompiler.c
-diff ../build/rgen-compiler.c ../build/compiler-float.c
+wc ../build/rgen-compiler.c ../build/rgen-rcompiler.c ../build/rcompiler.c
+#diff ../build/rgen-compiler.c ../build/compiler-float.c
 diff ../build/rgen-rcompiler.c ../build/rcompiler.c
 
 echo "Compiler built successfully"

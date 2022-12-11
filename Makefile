@@ -1,7 +1,6 @@
 BUILDDIR=build
 CFLAGS=-g -std=c17 -Wall -Wextra -Wpedantic
 
-BOOTSTRAP_SRCS=$(wildcard oberon_bootstrap/*.c)
 COMPILER_SRCS=$(wildcard compiler/*.ob) compiler/runtime.c
 
 $(BUILDDIR)/oberonr: $(BUILDDIR)/oberon $(COMPILER_SRCS)
@@ -10,28 +9,18 @@ $(BUILDDIR)/oberonr: $(BUILDDIR)/oberon $(COMPILER_SRCS)
 
 $(BUILDDIR)/oberon: $(BUILDDIR)/oberon1 $(COMPILER_SRCS)
 	cd compiler; ../$(BUILDDIR)/oberon1 Compiler.ob > ../$(BUILDDIR)/compiler.c
-	$(CC) $(CFLAGS) -o $(@) $(BUILDDIR)/compiler.c
+	$(CC) $(CFLAGS) -o $(@) -Icompiler $(BUILDDIR)/compiler.c
 	cd compiler; ../$(BUILDDIR)/compile Compiler.ob
 	mv $(BUILDDIR)/out.prg $(BUILDDIR)/oberon
 
 $(BUILDDIR)/oberon1: $(BUILDDIR)/oberon0 $(COMPILER_SRCS)
-	cd $(BUILDDIR); ./oberon0; ./oberon0 Compiler.ob > out.c
-	$(CC) $(CFLAGS) $(BUILDDIR)/out.c -o $(@)
+	cd compiler; ../$(BUILDDIR)/oberon0 Compiler.ob > ../$(BUILDDIR)/compiler.c
+	$(CC) $(CFLAGS) -o $(@) -Icompiler $(BUILDDIR)/compiler.c
 
-$(BUILDDIR)/oberon0: $(BOOTSTRAP_SRCS) $(COMPILER_SRCS)
-	mkdir -p $(BUILDDIR)
-	cp compiler/*.ob $(BUILDDIR)
-	cp compiler/runtime.c compiler/compile compiler/rcompile $(BUILDDIR)
-	$(CC) $(CFLAGS) -o $(@) oberon_bootstrap/oberon.c
-
-$(BUILDDIR)/compiler-float.c: $(BUILDDIR)/oberon0-float
-	cd $(BUILDDIR); ./oberon0-float; ./oberon0-float Compiler.ob > compiler-float.c
-
-$(BUILDDIR)/oberon0-float: $(BOOTSTRAP_SRCS) $(COMPILER_SRCS)
-	mkdir -p $(BUILDDIR)
-	cp compiler/*.ob $(BUILDDIR)
-	cp compiler/runtime.c compiler/compile compiler/rcompile $(BUILDDIR)
-	$(CC) $(CFLAGS) -DOBERON_REAL=float -o $(@) oberon_bootstrap/oberon.c
+$(BUILDDIR)/oberon0: risc_runner/runner.c risc_bootstrap/risc_code.txt
+	mkdir $(BUILDDIR)
+	cp compiler/* $(BUILDDIR)
+	$(CC) $(CFLAGS) -DMAX_MEM=624288 -Irisc_bootstrap -o $(@) risc_runner/runner.c
 
 clean:
 	rm -rf build
