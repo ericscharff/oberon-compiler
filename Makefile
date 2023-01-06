@@ -18,7 +18,7 @@ $(BUILDDIR)/oberon1: $(BUILDDIR)/oberon0 $(COMPILER_SRCS)
 	$(CC) $(CFLAGS) -o $(@) -Icompiler $(BUILDDIR)/compiler.c
 
 $(BUILDDIR)/oberon0: risc_runner/runner.c risc_bootstrap/risc_code.txt
-	mkdir $(BUILDDIR)
+	mkdir -p $(BUILDDIR)
 	cp compiler/* $(BUILDDIR)
 	$(CC) $(CFLAGS) -DMAX_MEM=624288 -Irisc_bootstrap -o $(@) risc_runner/runner.c
 
