@@ -1,0 +1,54 @@
+MODULE Sound;
+
+IMPORT Out;
+
+CONST
+  SR = 20.0; (* Sampling Rate *)
+  Freq = 3.0;  (* Frequency, in Hertz *)
+
+(* Ractional part of x *)
+PROCEDURE Frac(x: REAL): REAL;
+BEGIN
+  RETURN x - FLT(FLOOR(x))
+END Frac;
+
+PROCEDURE SquareWave(x: REAL): REAL;
+VAR r: REAL;
+BEGIN
+  r := 1.0;
+  IF x >= 0.5 THEN r := -1.0 END
+  RETURN r
+END SquareWave;
+
+PROCEDURE SawtoothWave(x: REAL): REAL;
+BEGIN
+  RETURN 2.0 * x - 1.0
+END SawtoothWave;
+
+PROCEDURE TriangleWave(x: REAL): REAL;
+VAR r: REAL;
+BEGIN
+  r := 1.0 - 4.0 * x;
+  IF x >= 0.5 THEN r := 4.0 * x - 3.0 END;
+  RETURN r
+END TriangleWave;
+
+PROCEDURE TestWaves;
+VAR
+  t: INTEGER;
+  x: REAL;
+BEGIN
+  Out.Str("t Square Sawtooth Triangle"); Out.Ln;
+  FOR t := 0 TO 400 DO
+    x := Frac(FLT(t)*Freq / SR);
+    Out.Int(t); Out.Char(" ");
+    Out.Real(SquareWave(x)); Out.Char(" ");
+    Out.Real(SawtoothWave(x)); Out.Char(" ");
+    Out.Real(TriangleWave(x));
+    Out.Ln
+  END
+END TestWaves;
+
+BEGIN
+  TestWaves
+END Sound.

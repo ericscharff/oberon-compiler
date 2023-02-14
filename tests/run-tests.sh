@@ -30,6 +30,7 @@ ALL_TESTS=(
   Sets
   Shadow
   ShortCircuit
+  Sound
   StateMachine
   Strings
   TypeExt
