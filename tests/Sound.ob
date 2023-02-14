@@ -6,31 +6,39 @@ CONST
   SR = 20.0; (* Sampling Rate *)
   Freq = 3.0;  (* Frequency, in Hertz *)
 
+(* Scale [-1.0, 1.0) to [0, 255] *)
+PROCEDURE Scale(x: REAL): INTEGER;
+BEGIN
+  IF x < -1.0 THEN RETURN 0 END;
+  IF x >= 1.0 THEN RETURN 255 END;
+  RETURN FLOOR(x * 128.0 + 128.0)
+END Scale;
+
 (* Ractional part of x *)
 PROCEDURE Frac(x: REAL): REAL;
 BEGIN
   RETURN x - FLT(FLOOR(x))
 END Frac;
 
-PROCEDURE SquareWave(x: REAL): REAL;
+PROCEDURE SquareWave(x: REAL): INTEGER;
 VAR r: REAL;
 BEGIN
   r := 1.0;
   IF x >= 0.5 THEN r := -1.0 END
-  RETURN r
+  RETURN Scale(r)
 END SquareWave;
 
-PROCEDURE SawtoothWave(x: REAL): REAL;
+PROCEDURE SawtoothWave(x: REAL): INTEGER;
 BEGIN
-  RETURN 2.0 * x - 1.0
+  RETURN Scale(2.0 * x - 1.0)
 END SawtoothWave;
 
-PROCEDURE TriangleWave(x: REAL): REAL;
+PROCEDURE TriangleWave(x: REAL): INTEGER;
 VAR r: REAL;
 BEGIN
   r := 1.0 - 4.0 * x;
   IF x >= 0.5 THEN r := 4.0 * x - 3.0 END;
-  RETURN r
+  RETURN Scale(r)
 END TriangleWave;
 
 PROCEDURE TestWaves;
@@ -42,9 +50,9 @@ BEGIN
   FOR t := 0 TO 400 DO
     x := Frac(FLT(t)*Freq / SR);
     Out.Int(t); Out.Char(" ");
-    Out.Real(SquareWave(x)); Out.Char(" ");
-    Out.Real(SawtoothWave(x)); Out.Char(" ");
-    Out.Real(TriangleWave(x));
+    Out.Int(SquareWave(x)); Out.Char(" ");
+    Out.Int(SawtoothWave(x)); Out.Char(" ");
+    Out.Int(TriangleWave(x));
     Out.Ln
   END
 END TestWaves;
