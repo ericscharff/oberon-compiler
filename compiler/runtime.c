@@ -28,7 +28,7 @@
 #define oberon_abs(x) ((x) < 0) ? -(x) : (x)
 
 #ifndef OBERON_REAL
-#define OBERON_REAL double
+#define OBERON_REAL float
 #endif
 
 #ifdef __cplusplus

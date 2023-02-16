@@ -20,25 +20,25 @@ BEGIN
   RETURN x - FLT(FLOOR(x))
 END Frac;
 
-PROCEDURE SquareWave(x: REAL): INTEGER;
+PROCEDURE SquareWave(x: REAL): REAL;
 VAR r: REAL;
 BEGIN
   r := 1.0;
   IF x >= 0.5 THEN r := -1.0 END
-  RETURN Scale(r)
+  RETURN r
 END SquareWave;
 
-PROCEDURE SawtoothWave(x: REAL): INTEGER;
+PROCEDURE SawtoothWave(x: REAL): REAL;
 BEGIN
-  RETURN Scale(2.0 * x - 1.0)
+  RETURN 2.0 * x - 1.0
 END SawtoothWave;
 
-PROCEDURE TriangleWave(x: REAL): INTEGER;
+PROCEDURE TriangleWave(x: REAL): REAL;
 VAR r: REAL;
 BEGIN
   r := 1.0 - 4.0 * x;
   IF x >= 0.5 THEN r := 4.0 * x - 3.0 END;
-  RETURN Scale(r)
+  RETURN r
 END TriangleWave;
 
 PROCEDURE TestWaves;
@@ -50,9 +50,9 @@ BEGIN
   FOR t := 0 TO 400 DO
     x := Frac(FLT(t)*Freq / SR);
     Out.Int(t); Out.Char(" ");
-    Out.Int(SquareWave(x)); Out.Char(" ");
-    Out.Int(SawtoothWave(x)); Out.Char(" ");
-    Out.Int(TriangleWave(x));
+    Out.Real(SquareWave(x)); Out.Char(" ");
+    Out.Real(SawtoothWave(x)); Out.Char(" ");
+    Out.Real(TriangleWave(x));
     Out.Ln
   END
 END TestWaves;
