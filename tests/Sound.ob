@@ -6,6 +6,16 @@ CONST
   SR = 20.0; (* Sampling Rate *)
   Freq = 3.0;  (* Frequency, in Hertz *)
 
+  (* Note Frequencies *)
+  C4 = 261.63;
+  D4 = 293.66;
+  E4 = 329.63;
+  F4 = 349.23;
+  G4 = 392.00;
+  A4 = 440.00;
+  B4 = 493.88;
+  C5 = 523.25;
+
 (* Scale [-1.0, 1.0) to [0, 255] *)
 PROCEDURE Scale(x: REAL): INTEGER;
 BEGIN
@@ -89,7 +99,31 @@ BEGIN
   END
 END MakeA440;
 
+PROCEDURE MajorScale;
+  PROCEDURE Note(freq: REAL);
+  VAR t: INTEGER; x: REAL;
+  BEGIN
+    FOR t := 0 to 4000 DO
+      x := Frac(FLT(t) * freq / 8000.0);
+      Out.Char(CHR(Scale(TriangleWave(x))))
+    END;
+    FOR t := 0 to 1000 DO
+      Out.Char(CHR(128))
+    END
+  END Note;
+BEGIN
+  Note(C4);
+  Note(D4);
+  Note(E4);
+  Note(F4);
+  Note(G4);
+  Note(A4);
+  Note(B4);
+  Note(C5);
+END MajorScale;
+
 BEGIN
   TestWaves
 (*  MakeA440 *)
+(*  MajorScale *)
 END Sound.
