@@ -14,7 +14,15 @@ CONST
   G4 = 392.00;
   A4 = 440.00;
   B4 = 493.88;
-  C5 = 523.25;
+  (* These aren't quite right, but they're very close *)
+  C3 = C4 / 2.0;
+  D3 = D4 / 2.0;
+  E3 = E4 / 2.0;
+  F3 = F4 / 2.0;
+  G3 = G4 / 2.0;
+  A3 = A4 / 2.0;
+  B3 = B4 / 2.0;
+  C5 = C4 * 2.0;
 
 (* Scale [-1.0, 1.0) to [0, 255] *)
 PROCEDURE Scale(x: REAL): INTEGER;
@@ -112,6 +120,13 @@ PROCEDURE MajorScale;
     END
   END Note;
 BEGIN
+  Note(C3);
+  Note(D3);
+  Note(E3);
+  Note(F3);
+  Note(G3);
+  Note(A3);
+  Note(B3);
   Note(C4);
   Note(D4);
   Note(E4);
