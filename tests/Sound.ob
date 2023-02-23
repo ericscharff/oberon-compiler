@@ -119,22 +119,32 @@ PROCEDURE MajorScale;
       Out.Char(CHR(128))
     END
   END Note;
+
+  PROCEDURE Sequence(s: ARRAY OF CHAR);
+  VAR i: INTEGER; c: CHAR; notes: ARRAY 8 OF REAL;
+  BEGIN
+    notes[0] := A4;
+    notes[1] := B4;
+    notes[2] := C4;
+    notes[3] := D4;
+    notes[4] := E4;
+    notes[5] := F4;
+    notes[6] := G4;
+    i := 0;
+    WHILE i < LEN(s) DO
+      c := s[i];
+      IF (c >= "A") & (c <= "G") THEN
+        (* Middle C through B *)
+        Note(notes[ORD(c) - ORD("A")]);
+      ELSIF (c >= "a") & (c <= "g") THEN
+        (* High c through b *)
+        Note(2.0 * notes[ORD(c) - ORD("a")]);
+      END;
+      INC(i);
+    END; 
+  END Sequence;
 BEGIN
-  Note(C3);
-  Note(D3);
-  Note(E3);
-  Note(F3);
-  Note(G3);
-  Note(A3);
-  Note(B3);
-  Note(C4);
-  Note(D4);
-  Note(E4);
-  Note(F4);
-  Note(G4);
-  Note(A4);
-  Note(B4);
-  Note(C5);
+  Sequence("C D E F G A B c d e f g a b")
 END MajorScale;
 
 BEGIN
