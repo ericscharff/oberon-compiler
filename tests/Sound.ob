@@ -149,7 +149,7 @@ BEGIN
 END MajorScale;
 
 BEGIN
-(*  TestWaves *)
+  TestWaves
 (*  MakeA440 *)
-  MajorScale
+(*  MajorScale *)
 END Sound.
