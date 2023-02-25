@@ -14,15 +14,6 @@ CONST
   G4 = 392.00;
   A4 = 440.00;
   B4 = 493.88;
-  (* These aren't quite right, but they're very close *)
-  C3 = C4 / 2.0;
-  D3 = D4 / 2.0;
-  E3 = E4 / 2.0;
-  F3 = F4 / 2.0;
-  G3 = G4 / 2.0;
-  A3 = A4 / 2.0;
-  B3 = B4 / 2.0;
-  C5 = C4 * 2.0;
 
 (* Scale [-1.0, 1.0) to [0, 255] *)
 PROCEDURE Scale(x: REAL): INTEGER;
@@ -113,7 +104,7 @@ PROCEDURE MajorScale;
   BEGIN
     FOR t := 0 to 4000 DO
       x := Frac(FLT(t) * freq / 8000.0);
-      Out.Char(CHR(Scale(TriangleWave(x))))
+      Out.Char(CHR(Scale(SquareWave(x))))
     END;
     FOR t := 0 to 1000 DO
       Out.Char(CHR(128))
@@ -134,17 +125,27 @@ PROCEDURE MajorScale;
     WHILE i < LEN(s) DO
       c := s[i];
       IF (c >= "A") & (c <= "G") THEN
-        (* Middle C through B *)
-        Note(notes[ORD(c) - ORD("A")]);
+        IF s[i+1] = "," THEN
+          (* Low C through B *)
+          Note(notes[ORD(c) - ORD("A")] / 2.0);
+        ELSE
+          (* Middle C through B *)
+          Note(notes[ORD(c) - ORD("A")]);
+        END;
       ELSIF (c >= "a") & (c <= "g") THEN
-        (* High c through b *)
-        Note(2.0 * notes[ORD(c) - ORD("a")]);
+        IF s[i+1] = "'" THEN
+          (* Octave above high C through B *)
+          Note(notes[ORD(c) - ORD("A")] * 4.0);
+        ELSE
+          (* High C through B *)
+          Note(2.0 * notes[ORD(c) - ORD("a")]);
+        END;
       END;
       INC(i);
     END; 
   END Sequence;
 BEGIN
-  Sequence("C D E F G A B c d e f g a b")
+  Sequence("C, D, E, F, G, A, B, C D E F G A B c d e f g a b c'")
 END MajorScale;
 
 BEGIN
