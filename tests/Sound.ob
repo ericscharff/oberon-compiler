@@ -60,8 +60,8 @@ BEGIN
     x := Frac(FLT(t)*Freq / SR);
     Out.Int(t); Out.Char(" ");
     Out.Real(SquareWave(x)); Out.Char(" ");
-    Out.Real(SawtoothWave(x)); Out.Char(" ");
-    Out.Real(TriangleWave(x));
+    Out.Int(Scale(SawtoothWave(x))); Out.Char(" ");
+    Out.Int(Scale(TriangleWave(x)));
     Out.Ln
   END
 END TestWaves;
