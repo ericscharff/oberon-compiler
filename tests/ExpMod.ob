@@ -78,8 +78,15 @@ BEGIN
   RETURN result
 END Exponent2;
 
+PROCEDURE One(i: INTEGER): INTEGER;
+BEGIN
+  RETURN i - i + 1
+END One;
+
 PROCEDURE Test;
 BEGIN
+  Out.Int(8 + One(0)); Out.Ln;
+  Out.Int(One(0) + 8); Out.Ln;
   Out.Int(Exponent(23, 373, 747)); Out.Ln;
   Out.Int(Exponent2(23, 373, 747)); Out.Ln;
   Out.Int(Exponent(17, 281, 71)); Out.Ln;

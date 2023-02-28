@@ -32,6 +32,11 @@ BEGIN
   RETURN a + 1.0
 END PlusOne;
 
+PROCEDURE Identity(a: REAL): REAL;
+BEGIN
+  RETURN a
+END Identity;
+
 PROCEDURE Test;
 VAR
   a, b, c, d, e: REAL;
@@ -51,6 +56,8 @@ BEGIN
   ASSERT(a < b);
   ASSERT(b > a);
   Out.Real(a + 0.9); Out.Ln;
+  Out.Real(Identity(a) + 0.9); Out.Ln;
+  Out.Real(0.9 + Identity(a)); Out.Ln;
   Out.Real(a - 0.1); Out.Ln;
   Out.Real(a * 0.9); Out.Ln;
   Out.Real(a / 0.1); Out.Ln;

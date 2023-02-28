@@ -1353,6 +1353,7 @@ BEGIN
     GenTypeTest(l, e.lhs, e.rhs.typ, item, parentTrueChain, parentFalseChain)
   ELSE
     GenExpr(l, e.lhs, item, parentTrueChain, parentFalseChain);
+    IF (item.kind = itemConst) & (e.lhs.typ.kind = AST.typeReal) THEN Load(item) END;
     IF (item.kind # itemConst) & ~AST.IsStringType(e.lhs.typ) THEN Load(item) END;
     GenExpr(l, e.rhs, rhs, parentTrueChain, parentFalseChain);
     IF e.rhs.typ.kind = AST.typeSet THEN
