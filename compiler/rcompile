@@ -17,4 +17,4 @@ MEM_SIZE=${MEM_SIZE:-65536}
 
 cd $BUILDDIR
 ./oberonr $1 | $PERR
-./oberonr $1 > risc_asm.txt && ./oberonr -dumpcode $1 > risc_code.txt && $CC -g -DMAX_MEM=$MEM_SIZE -Wall -Wextra -Wpedantic -o out.prg runner.c
+./oberonr $1 > risc_asm.txt && ./oberonr -dumpcode $1 > risc_code.txt && $CC -O2 -DMAX_MEM=$MEM_SIZE -Wall -Wextra -Wpedantic -o out.prg runner.c
