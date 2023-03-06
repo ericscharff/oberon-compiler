@@ -42,14 +42,6 @@ if [ -n "$TESTS" ]; then
   read -a ALL_TESTS <<< "$TESTS"
 fi
 
-# Some RISC tests need more than the default 65536 words of RAM
-declare -A RISC_MEMSIZE
-RISC_MEMSIZE[RunCompiler]=362144
-
-# Some tests may need to be excluded because RISC doesn't support them
-declare -A RISC_EXCLUSIONS
-RISC_EXCLUSIONS[LangExtensions]=1 # Buffers, native functions
-
 # Generate stdin for IOOperations
 echo "19" > ../build/stdin.txt
 
@@ -67,13 +59,14 @@ for i in ${ALL_TESTS[@]}; do
   diff -c goldens/$i.output ../build/$i.output || fail $i
 done
 for i in ${ALL_TESTS[@]}; do
-  if [ -v RISC_EXCLUSIONS[$i] ]; then
+  if [ $i = "LangExtensions" ]; then 
     echo "Running RISC test $i... (Skipped)"
     continue
   fi
+
   echo "Running RISC test $i..."
-  if [ -v RISC_MEMSIZE[$i] ]; then
-    MEM_SIZE=${RISC_MEMSIZE[$i]} ../build/rcompile ${i}.ob
+  if [ $i = "RunCompiler" ]; then
+    MEM_SIZE=362144 ../build/rcompile ${i}.ob
   else
     ../build/rcompile ${i}.ob
   fi
