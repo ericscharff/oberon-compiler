@@ -605,10 +605,8 @@ BEGIN
     s := ParseVarStatement();
   ELSIF IsToken(Lex.tIDENT) THEN
     s := ParseAssignOrProcCall();
-(*
   ELSIF IsToken(Lex.tRETURN) & allowLanguageExtensions THEN
     s := ParseReturnStatement();
-*)
   ELSE
     (* Empty *)
     s := AST.NewStmtEmpty();
