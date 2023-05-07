@@ -26,6 +26,7 @@ PROCEDURE Test;
 VAR
   s, s2: SET;
   i, j, k: INTEGER;
+  sets: ARRAY 3 OF SET;
 BEGIN
   s := {};
   Out.Int(ORD(s)); Out.Ln;
@@ -75,7 +76,13 @@ BEGIN
   IF 1 IN s THEN Out.Int(10) ELSE Out.Int(0) END; Out.Char(" ");
   IF 7 IN s THEN Out.Int(10) ELSE Out.Int(0) END; Out.Char(" ");
   IF 8 IN s THEN Out.Int(10) ELSE Out.Int(0) END;
-  Out.Ln
+  Out.Ln;
+  sets[0] := {2};
+  sets[1] := {3};
+  sets[2] := {4};
+  Out.Int(ORD(sets[0])); Out.Ln;
+  Out.Int(ORD(sets[1])); Out.Ln;
+  Out.Int(ORD(sets[2])); Out.Ln
 END Test;
 
 BEGIN
