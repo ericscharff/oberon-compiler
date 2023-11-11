@@ -61,14 +61,20 @@ Once bootstrapped, the `build` directory contains a shell script called
 ```bash
 # Build the compiler
 $ make
+```
 
-# Alternatively, you can run
+Alternatively, you can run
+
+```bash
 # $ make -f Makefile.cbootstrap
-# which first builds the compiler written in C, and then uses
-# the C compiler to build the compiler written in Oberon, and then
-# uses the Oberon compiler to compile itself. The normal Makefile
-# avoids the need for the the C bootstrap compiler.
+```
 
+which first builds the compiler written in C, and then uses
+the C compiler to build the compiler written in Oberon, and then
+uses the Oberon compiler to compile itself. The normal Makefile
+avoids the need for the the C bootstrap compiler.
+
+```bash
 # Build an example
 $ cd tests
 $ ../build/compile FibFact.ob
@@ -77,15 +83,24 @@ $ ../build/compile FibFact.ob
 $ ../build/out.prg
 5040
 10946
+```
 
-# or run all the tests
+or run all the tests
+
+```bash
 $ ./run-tests.sh
+```
 
-# or run some of the tests
+or run some of the tests
+
+```bash
 $ TESTS='Maze FibFact' ./run-tests.sh
+```
 
-# Self hosting test: Use the compiler to build a RISC binary of the compiler,
-# and then use the RISC binary / interpreter to compile itself
+Self hosting test: Use the compiler to build a RISC binary of the compiler,
+and then use the RISC binary / interpreter to compile itself
+
+```bash
 $ ./compiler-test.sh
 ```
 
