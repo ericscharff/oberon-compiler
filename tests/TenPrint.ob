@@ -1,0 +1,59 @@
+(*
+ * This file is part of oberon-compiler
+ *
+ * Copyright (C) 2018-2023  Eric Scharff
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ *)
+
+MODULE TenPrint;
+
+(*
+ * Make a maze inspired by the famous Commodore 64 10PRINT:
+ * 10 PRINT CHR$(205.5+RND(1)); : GOTO 10
+ *)
+
+IMPORT Out;
+
+CONST
+  BitTwo = 1 * 2;
+  BitSix = 1 * 6;
+
+PROCEDURE LFSR(VAR val, result: INTEGER);
+VAR
+  res: INTEGER;
+BEGIN
+  res := ((val BITAND BitTwo) DIV 2) BITXOR ((val BITAND BitSix) DIV 32);
+  result := val BITAND 1;
+  val := val DIV 2;
+  val := val + res * 080000000H;
+END LFSR;
+
+PROCEDURE Test;
+VAR
+  v, r, i: INTEGER;
+BEGIN
+  v := 12345678;
+  FOR i := 1 TO 10000 DO
+    LFSR(v, r);
+    IF (i MOD 80) = 0 THEN Out.Ln END;
+    IF r = 0 THEN Out.Char("/") ELSE Out.Char("\") END
+  END;
+  Out.Ln
+END Test;
+
+BEGIN
+  Test
+END TenPrint.

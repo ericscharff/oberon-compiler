@@ -33,6 +33,7 @@ ALL_TESTS=(
   Sound
   StateMachine
   Strings
+  TenPrint
   TypeExt
   VisitList
 )
