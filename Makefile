@@ -6,7 +6,6 @@ COMPILER_SRCS=$(wildcard compiler/*.ob) compiler/runtime.c
 $(BUILDDIR)/oberonr: $(BUILDDIR)/oberon $(COMPILER_SRCS)
 	cd compiler; ../$(BUILDDIR)/oberon RCompiler.ob > ../$(BUILDDIR)/rcompiler.c
 	$(CC) $(CFLAGS) -o $(@) $(BUILDDIR)/rcompiler.c
-	cd risc_bootstrap; ./regen.sh
 
 $(BUILDDIR)/oberon: $(BUILDDIR)/oberon1 $(COMPILER_SRCS)
 	cd compiler; ../$(BUILDDIR)/oberon1 Compiler.ob > ../$(BUILDDIR)/compiler.c
