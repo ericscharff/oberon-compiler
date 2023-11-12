@@ -27,18 +27,12 @@ MODULE TenPrint;
 
 IMPORT Out;
 
-CONST
-  BitTwo = 1 * 2;
-  BitSix = 1 * 6;
-
 PROCEDURE LFSR(VAR val, result: INTEGER);
-VAR
-  res: INTEGER;
+(* Tap bit 0, 2, 3, and 5 *)
+(* Implement as a 16 bit shfiter which should have the period 2^16-1 *)
 BEGIN
-  res := ((val BITAND BitTwo) DIV 2) BITXOR ((val BITAND BitSix) DIV 32);
-  result := val BITAND 1;
-  val := val DIV 2;
-  val := val + res * 080000000H;
+  result := (val BITXOR (val DIV 4) BITXOR (val DIV 8) BITXOR (val DIV 32)) BITAND 1;
+  val := (val DIV 2) + (result * 08000H);
 END LFSR;
 
 PROCEDURE Test;
