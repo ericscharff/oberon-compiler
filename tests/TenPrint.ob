@@ -37,15 +37,18 @@ END LFSR;
 
 PROCEDURE Test;
 VAR
-  v, r, i: INTEGER;
+  v, r, period: INTEGER;
 BEGIN
-  v := 12345678;
-  FOR i := 1 TO 10000 DO
+  period := 0;
+  v := 1234;
+  REPEAT
+    INC(period);
     LFSR(v, r);
-    IF (i MOD 80) = 0 THEN Out.Ln END;
+    IF (period MOD 80) = 0 THEN Out.Ln END;
     IF r = 0 THEN Out.Char("/") ELSE Out.Char("\") END
-  END;
-  Out.Ln
+  UNTIL v = 1234;
+  Out.Ln;
+  Out.Str("period = "); Out.Int(period); Out.Ln
 END Test;
 
 BEGIN
