@@ -40,13 +40,13 @@ VAR
   v, r, period: INTEGER;
 BEGIN
   period := 0;
-  v := 1234;
+  v := 5678;
   REPEAT
     INC(period);
     LFSR(v, r);
     IF (period MOD 80) = 0 THEN Out.Ln END;
     IF r = 0 THEN Out.Char("/") ELSE Out.Char("\") END
-  UNTIL v = 1234;
+  UNTIL v = 5678;
   Out.Ln;
   Out.Str("period = "); Out.Int(period); Out.Ln
 END Test;
