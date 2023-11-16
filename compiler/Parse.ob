@@ -120,6 +120,7 @@ BEGIN
       Lex.Error(l, "");
       Lex.OutStr(l, d.qname.name);
       Lex.PrintLnAndHalt(" is not a TYPE");
+      Lex.PrintLnAndHalt(" is not a TYPE");
     END;
   END;
   RETURN t
