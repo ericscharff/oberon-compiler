@@ -20,9 +20,9 @@
 
 MODULE TenPrint;
 
-(*
- Make a maze inspired by the famous Commodore 64 10PRINT:
- 10 PRINT CHR$(205.5+RND(1)); : GOTO 10
+(**
+ * Make a maze inspired by the famous Commodore 64 10PRINT:
+ * 10 PRINT CHR$(205.5+RND(1)); : GOTO 10
  *)
 
 IMPORT Out;
