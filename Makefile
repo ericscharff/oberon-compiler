@@ -1,5 +1,5 @@
 BUILDDIR=build
-CFLAGS=-g -std=c17 -Wall -Wextra -Wpedantic
+CFLAGS=-std=c17 -Wall -Wextra -Wpedantic
 
 COMPILER_SRCS=$(wildcard compiler/*.ob) compiler/runtime.c
 
