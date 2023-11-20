@@ -228,17 +228,17 @@ float to_float(int32_t i) {
 
 void do_trap(int pc, int32_t *regs, uint8_t *mem, Environment *env) {
   if (pc == -1) {
-    fputs("NIL derefernce\n", stderr);
+    fputs("do_trap: NIL derefernce\n", stderr);
     pc = regs[LR];
     dumpstate(pc, regs, mem);
     exit(1);
   } else if (pc == -2) {
-    fputs("Array index out of bounds\n", stderr);
+    fputs("do_trap: Array index out of bounds\n", stderr);
     pc = regs[LR];
     dumpstate(pc, regs, mem);
     exit(1);
   } else if (pc == -3) {
-    fputs("ASSERT failure\n", stderr);
+    fputs("do_trap: ASSERT failure\n", stderr);
     pc = regs[LR];
     dumpstate(pc, regs, mem);
     exit(1);
@@ -275,7 +275,7 @@ void do_trap(int pc, int32_t *regs, uint8_t *mem, Environment *env) {
     /* Args.GetArg */
     strncpy(((char *)mem) + regs[0], env->saved_argv[regs[2]], regs[1]);
   } else {
-    fprintf(stderr, "Bad trap %d, %d", pc, mem[0]);
+    fprintf(stderr, "do_trap: Bad trap %d, %d", pc, mem[0]);
     pc = regs[LR];
     dumpstate(pc, regs, (uint8_t *)mem);
     exit(1);
