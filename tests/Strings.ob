@@ -22,6 +22,88 @@ MODULE Strings;
 
 IMPORT Out;
 
+PROCEDURE NumToWord(i: INTEGER);
+BEGIN
+  IF i >= 1000000000 THEN
+    NumToWord(i / 1000000000);
+    Out.Str(" billion");
+    i := i MOD 1000000000;
+  END;
+  IF i >= 1000000 THEN
+    NumToWord(i / 1000000);
+    Out.Str(" million");
+    i := i MOD 1000000;
+  END;
+  IF i >= 1000 THEN
+    NumToWord(i / 1000);
+    Out.Str(" thousand");
+    i := i MOD 1000;
+  END;
+  IF i >= 100 THEN
+    NumToWord(i / 100);
+    Out.Str(" hundred");
+    i := i MOD 100;
+  END;
+  IF i >= 90 THEN
+    Out.Str(" ninety");
+    i := i - 90;
+  END;
+  IF i >= 80 THEN
+    Out.Str(" eighty");
+    i := i - 80;
+  END;
+  IF i >= 70 THEN
+    Out.Str(" seventy");
+    i := i - 70;
+  END;
+  IF i >= 60 THEN
+    Out.Str(" sixty");
+    i := i - 60;
+  END;
+  IF i >= 50 THEN
+    Out.Str(" fifty");
+    i := i - 50;
+  END;
+  IF i >= 40 THEN
+    Out.Str(" fourty");
+    i := i - 40;
+  END;
+  IF i >= 30 THEN
+    Out.Str(" thirty");
+    i := i - 30;
+  END;
+  IF i >= 20 THEN
+    Out.Str(" twenty");
+    i := i - 20;
+  END;
+  CASE i OF
+    1 : Out.Str(" one")
+  | 2 : Out.Str(" two")
+  | 3 : Out.Str(" three")
+  | 4 : Out.Str(" four")
+  | 5 : Out.Str(" five")
+  | 6 : Out.Str(" six")
+  | 7 : Out.Str(" seven")
+  | 8 : Out.Str(" eight")
+  | 9 : Out.Str(" nine")
+  | 10 : Out.Str(" ten")
+  | 11 : Out.Str(" eleven")
+  | 12 : Out.Str(" twelve")
+  | 13 : Out.Str(" thirteen")
+  | 14 : Out.Str(" fourteen")
+  | 15 : Out.Str(" fifteen")
+  | 16 : Out.Str(" sixteen")
+  | 17 : Out.Str(" seventeen")
+  | 18 : Out.Str(" eighteen")
+  | 19 : Out.Str(" nineteen")
+  END;
+END NumToWord;
+
+PROCEDURE ToWord(i: INTEGER);
+BEGIN
+  Out.Int(i); NumToWord(i); Out.Ln
+END ToWord;
+
 PROCEDURE ToLower(VAR c: ARRAY OF CHAR);
 VAR i: INTEGER;
 BEGIN
@@ -100,6 +182,15 @@ BEGIN
   WriteString(ca);
   Middle(81, ca, 82);
   WriteString(ca);
+  ToWord(4);
+  ToWord(14);
+  ToWord(214);
+  ToWord(3214);
+  ToWord(43214);
+  ToWord(543214);
+  ToWord(6543214);
+  ToWord(76543214);
+  ToWord(1000800004);
 END Test;
 
 BEGIN
