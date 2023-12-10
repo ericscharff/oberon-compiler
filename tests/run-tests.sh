@@ -14,7 +14,7 @@ ALL_TESTS=(
   IOOperations
   KnightsTour
   LangExtensions
-  Mandelbrot
+  #Mandelbrot # Disabled due to float differences across platforms
   Maze
   MiscFeatures
   Oop
