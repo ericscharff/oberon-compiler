@@ -1,7 +1,3 @@
-[RIP Nikalus Wirth](https://news.ycombinator.com/item?id=38858012) You were
-and continue to be a massive influence in my life. I wouldn't have a passion
-for computers or a career without you.
-
 # Simple Oberon compiler
 
 This is a collection of compilers for the Oberon-07 programming language. It is
@@ -17,6 +13,11 @@ actually three different compilers:
     sense that it takes Oberon source and produces a binary for a simple RISC
     machine. The binary can be used in conjunction with a C based emulator for
     this RISC processor.
+
+
+
+
+
 
 The two Oberon compilers share most of their code, with the major difference
 being the code generators (either producing C or producing RISC code.)
