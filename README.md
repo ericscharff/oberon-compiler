@@ -14,11 +14,6 @@ actually three different compilers:
     machine. The binary can be used in conjunction with a C based emulator for
     this RISC processor.
 
-
-
-
-
-
 The two Oberon compilers share most of their code, with the major difference
 being the code generators (either producing C or producing RISC code.)
 
