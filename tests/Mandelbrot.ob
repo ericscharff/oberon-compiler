@@ -68,12 +68,8 @@ BEGIN
     FOR x := -39 TO 39 DO
       zReal := FLT(x) / 20.0;
       zImag := FLT(y) / 20.0;
-      cImag := 0.0;
-      cReal := -1.0;
-(*
-      cReal := -0.512511498387847167;
-      cImag := 0.521295573094847167;
-*)
+      cReal := -0.123;
+      cImag := 0.745;
       count := 0;
       zm := zReal * zReal;
       zn := zImag * zImag;
