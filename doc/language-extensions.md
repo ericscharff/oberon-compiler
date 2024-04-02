@@ -11,7 +11,7 @@ two integers (e.g., bit 7 combines bit 7 of each operand).
 
 Most of the reserved words in Oberon (MODULE, PROCEDURE, etc.) can be entered in
 lower case. Note, however, that identifiers are still case sensitive, so `begin`
-and `BEGIN` work, but `procedureName` and `ProcedureName` do not. e.g.
+and `BEGIN` both work, but `procedureName` and `ProcedureName` do not. e.g.
 
 ```
 module Test; import Out; begin Out.Str("Hello"): end Test.
