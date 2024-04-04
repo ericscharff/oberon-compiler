@@ -44,7 +44,7 @@ FFE8: B0 C9 BA 90 02 69 06 2C
 FFF0: 12
 ```
 
-Memory can be set in the same form that the monitor display is. For example, you
+Memory can be set in the same form that the monitor display it. For example, you
 can set a single location in memory with a colon:
 
 ```
