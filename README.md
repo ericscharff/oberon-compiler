@@ -24,7 +24,7 @@ necessary, since it would be possible to start "from scratch" from the generated
 C code produced by Oberon of itself (this is how the compiler works by default.)
 The C bootstrap compiler isn't nearly as well tested, and probably lacks key
 features. It can be used to bootstrap the Oberon compiler, as well as a
-historical artifact that was critical in getting a self-hosting compiler. Most
+historical artifact that was critical in creating self-hosting compiler. Most
 new features are added only to the Oberon implementation.
 
 Though the RISC binary could exclusively be used, the C virtual machine is not
