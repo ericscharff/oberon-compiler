@@ -3,16 +3,16 @@
 This is a collection of compilers for the Oberon-07 programming language. It is
 actually three different compilers:
 
-*   A *bootstrapping compiler,* written in C. This C program takes Oberon source
-    and transpiles it to C.
-*   A *C code generator,* written in Oberon. The bootstrapping compiler was used
-    to get the Oberon compiler up and running. This C transpiler takes Oberon
-    code and translates it into C or C++. The generated code is fairly readable,
-    and can interface seamlessly with C code.
-*   A *RISC code generator,* written in Oberon. This is a "true" compiler in the
-    sense that it takes Oberon source and produces a binary for a simple RISC
-    machine. The binary can be used in conjunction with a C based emulator for
-    this RISC processor.
+- A _bootstrapping compiler,_ written in C. This C program takes Oberon source
+  and transpiles it to C.
+- A _C code generator,_ written in Oberon. The bootstrapping compiler was used
+  to get the Oberon compiler up and running. This C transpiler takes Oberon
+  code and translates it into C or C++. The generated code is fairly readable,
+  and can interface seamlessly with C code.
+- A _RISC code generator,_ written in Oberon. This is a "true" compiler in the
+  sense that it takes Oberon source and produces a binary for a simple RISC
+  machine. The binary can be used in conjunction with a C based emulator for
+  this RISC processor.
 
 The two Oberon compilers share most of their code, with the major difference
 being the code generators (either producing C or producing RISC code.)
@@ -121,27 +121,27 @@ hierarchy.
 
 The compile shell script accepts several command line flags:
 
-*   `-bounds` generates runtime bounds checks (to assert that any array
-    references are within the bounds of the array).
-*   `-cpp` instructs the compiler to generate C++ code (see above).
-*   `-extra_runtime filename.c` causes an extra C source file (filename.c)
-    to be included as part of the C runtime. Typically this is used to add
-    code for new `NATIVE` methods.
+- `-bounds` generates runtime bounds checks (to assert that any array
+  references are within the bounds of the array).
+- `-cpp` instructs the compiler to generate C++ code (see above).
+- `-extra_runtime filename.c` causes an extra C source file (filename.c)
+  to be included as part of the C runtime. Typically this is used to add
+  code for new `NATIVE` methods.
 
 Additionally, some environment variables may be set to control the C
 compilation:
 
-*   `CC` controls the C compiler used (default: cc)
-*   `CXX` controls the C++ compiler used (default: g++)
-*   `EXTRA_CFLAGS` allows extra flags to be passed to the C compiler. This is
-    often used to pass flags for linking (default: none)
+- `CC` controls the C compiler used (default: cc)
+- `CXX` controls the C++ compiler used (default: g++)
+- `EXTRA_CFLAGS` allows extra flags to be passed to the C compiler. This is
+  often used to pass flags for linking (default: none)
 
 # Known issues
 
-*   The bootstrap compiler in C isn't wonderful. However, it only exists to make
-    the compiler written in Oberon a reality.
-*   There are some stubs that resemble standard Oakwood modules, like The module
-    Texts and Files. However, these don't really work like their Project Oberon
-    counterparts.
-*   Not all language extensions are supported by the RISC code generator (in
-    particular, buffers).
+- The bootstrap compiler in C isn't wonderful. However, it only exists to make
+  the compiler written in Oberon a reality.
+- There are some stubs that resemble standard Oakwood modules, like The module
+  Texts and Files. However, these don't really work like their Project Oberon
+  counterparts.
+- Not all language extensions are supported by the RISC code generator (in
+  particular, buffers).
