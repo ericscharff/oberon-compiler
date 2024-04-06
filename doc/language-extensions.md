@@ -25,7 +25,7 @@ When enabled, the builtin types and identifiers `nil`, `integer`, `real`,
 
 ## Inline RETURN
 
-In Oberon-07, `RETURN` is a statement that *must* appear at the end of a
+In Oberon-07, `RETURN` is a statement that _must_ appear at the end of a
 `PROCEDURE`. With inline RETURN, RETURN is a statement that can appear anywhere
 within a procedure, and returns immediately from that procedure, e.g.
 
@@ -140,7 +140,7 @@ just as it would with an open array. Similarly, buffer elements are referenced
 just like arrays - buf[2] := ...
 
 Before a buffer can be used, the user must call `NEW_ARRAY` on the buffer.
-INIT\_ARRAY takes an additional argument, which is the initial capacity. This is
+INIT_ARRAY takes an additional argument, which is the initial capacity. This is
 how many elements can be added to the buffer before it must be grown (with a new
 call to malloc/new). Note that this sets capacity, not length, which starts at 0.
 
