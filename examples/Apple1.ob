@@ -34,7 +34,7 @@ VAR
   running: BOOLEAN;
 
 PROCEDURE ReadMem(where: INTEGER): INTEGER;
-(* TODO, keyboard reading *)
+(* TODO: keyboard reading *)
 VAR a: INTEGER;
 BEGIN
   IF where = 0D010H THEN
