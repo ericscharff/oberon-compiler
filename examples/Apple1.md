@@ -19,8 +19,8 @@ that the Apple 1 is ready to accept input.
 ## Accessing Memory
 
 Memory can be examined by typing an address, or a range of addresses. Typing a
-single address shows its contents, and typing two addressses separated by a
-dot (".") shows a range of memory, e.g.:
+single address shows its contents, and typing two addressses separated by a dot
+(".") shows a range of memory, e.g.:
 
 ```
 \
@@ -64,8 +64,8 @@ The terminal is the best way to get software into and out of the emulator. For
 example, the file [fig6502.mon](fig6502.mon) is a machine monitor dump of a
 program, the Fig-Forth programming language. This is a text file with a binary
 dump of the program, followed by a command to run the program. This can be
-simply copied and pasted into the machine language monitor, which will load
-(and run) the program.
+simply copied and pasted into the machine language monitor, which will load (and
+run) the program.
 
 Similarly, programs aren't saved, but you can paste the contents of the terminal
 into a text file. Since the monitor can emit the contents of RAM, you can
