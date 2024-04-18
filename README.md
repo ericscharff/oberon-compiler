@@ -6,9 +6,9 @@ actually three different compilers:
 - A _bootstrapping compiler,_ written in C. This C program takes Oberon source
   and transpiles it to C.
 - A _C code generator,_ written in Oberon. The bootstrapping compiler was used
-  to get the Oberon compiler up and running. This C transpiler takes Oberon
-  code and translates it into C or C++. The generated code is fairly readable,
-  and can interface seamlessly with C code.
+  to get the Oberon compiler up and running. This C transpiler takes Oberon code
+  and translates it into C or C++. The generated code is fairly readable, and
+  can interface seamlessly with C code.
 - A _RISC code generator,_ written in Oberon. This is a "true" compiler in the
   sense that it takes Oberon source and produces a binary for a simple RISC
   machine. The binary can be used in conjunction with a C based emulator for
@@ -69,10 +69,10 @@ Alternatively, you can run
 # $ make -f Makefile.cbootstrap
 ```
 
-which first builds the compiler written in C, and then uses
-the C compiler to build the compiler written in Oberon, and then
-uses the Oberon compiler to compile itself. The normal Makefile
-avoids the need for the the C bootstrap compiler.
+which first builds the compiler written in C, and then uses the C compiler to
+build the compiler written in Oberon, and then uses the Oberon compiler to
+compile itself. The normal Makefile avoids the need for the the C bootstrap
+compiler.
 
 ```bash
 # Build an example
@@ -97,8 +97,8 @@ or run some of the tests
 $ TESTS='Maze FibFact' ./run-tests.sh
 ```
 
-Self hosting test: Use the compiler to build a RISC binary of the compiler,
-and then use the RISC binary / interpreter to compile itself
+Self hosting test: Use the compiler to build a RISC binary of the compiler, and
+then use the RISC binary / interpreter to compile itself
 
 ```bash
 $ ./compiler-test.sh
@@ -121,12 +121,12 @@ hierarchy.
 
 The compile shell script accepts several command line flags:
 
-- `-bounds` generates runtime bounds checks (to assert that any array
-  references are within the bounds of the array).
+- `-bounds` generates runtime bounds checks (to assert that any array references
+  are within the bounds of the array).
 - `-cpp` instructs the compiler to generate C++ code (see above).
-- `-extra_runtime filename.c` causes an extra C source file (filename.c)
-  to be included as part of the C runtime. Typically this is used to add
-  code for new `NATIVE` methods.
+- `-extra_runtime filename.c` causes an extra C source file (filename.c) to be
+  included as part of the C runtime. Typically this is used to add code for new
+  `NATIVE` methods.
 
 Additionally, some environment variables may be set to control the C
 compilation:
