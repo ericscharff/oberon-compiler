@@ -1,0 +1,56 @@
+DrawMessage
+Square sideLen=25
+Drawing square OF size 25
+TickMessage
+Square sideLen=25
+Unhandled Message
+DrawMessage
+Square sideLen=25
+Drawing square OF size 25
+DrawMessage
+Square sideLen=15
+Drawing square OF size 15
+TickMessage
+Square sideLen=15
+Unhandled Message
+DrawMessage
+Square sideLen=15
+Drawing square OF size 15
+DrawMessage
+Circle r=2.200000
+Drawing circle OF radius 2.200000
+TickMessage
+Circle r=2.200000
+Unhandled Message
+DrawMessage
+Circle r=2.200000
+Drawing circle OF radius 2.200000
+DrawMessage
+Triangle base=3 height=2
+Drawing triangle WITH base 3 and height 2
+TickMessage
+Triangle base=3 height=2
+Unhandled Message
+DrawMessage
+Triangle base=3 height=2
+Drawing triangle WITH base 3 and height 2
+DrawMessage
+Actor velocity=1
+Drawing actor at position 5
+TickMessage
+Actor velocity=1
+TickMessage
+Actor velocity=1
+DrawMessage
+Actor velocity=1
+Drawing actor at position 7
+DrawMessage
+Actor velocity=1
+Drawing actor at position 5
+TickMessage
+Actor velocity=1
+TickMessage
+Actor velocity=1
+DrawMessage
+Actor velocity=1
+Drawing actor at position 7
