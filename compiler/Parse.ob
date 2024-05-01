@@ -65,14 +65,10 @@ BEGIN
   IF IsToken(kind) THEN
     Lex.NextToken(l);
   ELSE
-    IF IsToken(kind) THEN
-      Lex.Error(l, "Expected ");
-    ELSE
-      Lex.Error(l, "Expected ");
-      Lex.Str(Lex.TokenNames[kind]);
-      Lex.Str(", got ");
-      Lex.PrintLnAndHalt(Lex.TokenNames[l.t.kind]);
-    END
+    Lex.Error(l, "Expected ");
+    Lex.Str(Lex.TokenNames[kind]);
+    Lex.Str(", got ");
+    Lex.PrintLnAndHalt(Lex.TokenNames[l.t.kind]);
   END;
 END ExpectToken;
 
