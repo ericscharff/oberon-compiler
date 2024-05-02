@@ -31,7 +31,7 @@ CONST
   DOWN   =  1;
   LEFT   =  2;
   RIGHT  =  3;
-  WIDTH  = 51; (* Must be odd *)
+  WIDTH  = 71; (* Must be odd *)
   HEIGHT = 21; (* Must be odd *)
 
 TYPE
