@@ -78,6 +78,7 @@ VAR
 BEGIN
   s := l.t.sVal;
   IF s = -12 THEN s := -14 END;
+  IF s = -14 THEN s := -16 END;
   ExpectToken(Lex.tIDENT);
   RETURN s
 END ExpectIdentifier;
