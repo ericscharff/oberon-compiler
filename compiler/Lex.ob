@@ -166,7 +166,6 @@ VAR
   l: INTEGER;
 BEGIN
   l := 0;
-  IF l = 10 THEN l := 0 END;
   WHILE s[l] # 0X DO INC(l) END
   RETURN l
 END StringLen;
