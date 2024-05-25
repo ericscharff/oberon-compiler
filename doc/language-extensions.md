@@ -9,16 +9,17 @@ two integers (e.g., bit 7 combines bit 7 of each operand).
 
 ## Lowercase keywords
 
-Most of the reserved words in Oberon (MODULE, PROCEDURE, etc.) can be entered in
-lower case. Note, however, that identifiers are still case sensitive, so `begin`
-and `BEGIN` both work, but `procedureName` and `ProcedureName` do not. e.g.
+Most of the reserved words in Oberon (`MODULE`, `PROCEDURE`, etc.) can be
+entered in lower case. Note, however, that identifiers are still case sensitive,
+so `begin` and `BEGIN` both work, but `procedureName` and `ProcedureName` do
+not. e.g.
 
 ```
 module Test; import Out; begin Out.Str("Hello"): end Test.
 ```
 
-Is valid code. This can be controlled by the ignoreKeywordCase global variable
-in Lex.ob.
+Is valid code. This can be controlled by the `ignoreKeywordCase` global variable
+in [Lex.ob](../compiler/Lex.ob).
 
 When enabled, the builtin types and identifiers `nil`, `integer`, `real`,
 `boolean`, `char`, and `set` are also allowed,
@@ -39,7 +40,7 @@ BEGIN
 END;
 ```
 
-Note that a RETURN is still required at the end of a procedure, even if it can
+Note that a `RETURN` is still required at the end of a procedure, even if it can
 not possibly be reached, e.g.
 
 ```
@@ -52,7 +53,7 @@ BEGIN
 END;
 ```
 
-RETURN is not allowed from a PROCEDURE that does not return a value.
+`RETURN` is not allowed from a `PROCEDURE` that does not return a value.
 
 ## Native record fields.
 
