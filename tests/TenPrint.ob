@@ -44,7 +44,7 @@ BEGIN
   REPEAT
     INC(period);
     LFSR(v, r);
-    IF (period MOD 79) = 0 THEN Out.Ln END;
+    IF (period MOD 78) = 0 THEN Out.Ln END;
     IF r = 0 THEN Out.Char("/") ELSE Out.Char("\") END
   UNTIL v = 1234;
   Out.Ln;
