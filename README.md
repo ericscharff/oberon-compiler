@@ -1,6 +1,7 @@
 # Simple Oberon compiler
 
 This is a collection of compilers for the Oberon-07 programming language. It is
+This is a collection of compilers for the Oberon-07 programming language. It is
 actually three different compilers:
 
 - A _bootstrapping compiler,_ written in C. This C program takes Oberon source
