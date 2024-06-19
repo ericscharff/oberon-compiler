@@ -26,15 +26,15 @@ CONST
   maxTypeId      = 1024;
 
   typeNil*       = 1;
-  typeInteger*   = 2;
+  typeInteger*   = 6;
   typeReal*      = 3;
-  typeBoolean*   = 4;
+  typeBoolean*   = 10;
   typeChar*      = 5;
-  typeSet*       = 6;
+  typeSet*       = 2;
   typeString*    = 7;
   typePointer*   = 8;
   typeArray*     = 9;
-  typeBuffer*    = 10;
+  typeBuffer*    = 4;
   typeRecord*    = 11;
   typeProcedure* = 13;
   typeImport*    = 12;
