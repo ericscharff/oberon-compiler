@@ -36,8 +36,8 @@ CONST
   typeArray*     = 9;
   typeBuffer*    = 10;
   typeRecord*    = 11;
-  typeProcedure* = 12;
-  typeImport*    = 13;
+  typeProcedure* = 13;
+  typeImport*    = 12;
   typeEND        = 14;
 
   declImport*    = 1;
