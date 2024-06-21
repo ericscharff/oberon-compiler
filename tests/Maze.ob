@@ -92,9 +92,9 @@ BEGIN
   len := LEN(arr);
   FOR i := 0 TO len-1 DO
     swap := Rand(len);
-     t := arr[i];
-     arr[i] := arr[swap];
-     arr[swap] := t;
+    t := arr[i];
+    arr[i] := arr[swap];
+    arr[swap] := t;
   END;
 END Shuffle;
 
