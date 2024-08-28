@@ -6,6 +6,7 @@ set -e
 
 ALL_TESTS=(
   Arrays
+  Ascii
   Cases
   ExpMod
   FibFact

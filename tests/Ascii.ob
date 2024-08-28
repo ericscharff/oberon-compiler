@@ -1,0 +1,50 @@
+(*
+ * This file is part of oberon-compiler
+ *
+ * Copyright (C) 2018-2023  Eric Scharff
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ *)
+
+MODULE Ascii;
+
+(**
+ * Print the 7-bit ASCII table (chars 32 through 127 to stdout.
+ * Demonstrates (in code generation) that constant expressions
+ * like 8 DIV 8 get replaced with constant equivalents.
+ *)
+
+IMPORT Out;
+
+CONST Tab = 09X;
+
+PROCEDURE AsciiTable;
+VAR
+  r, c: INTEGER;
+BEGIN
+  FOR r := 32 DIV 8 TO 128 DIV 8 - 1 DO
+    FOR c := 0 TO 7 DO
+      Out.Int(r*8+c);
+      Out.Char(" ");
+      Out.Char(CHR(r*8+c));
+      Out.Char(Tab)
+    END;
+    Out.Ln
+  END;
+END AsciiTable;
+
+BEGIN
+  AsciiTable
+END Ascii.
