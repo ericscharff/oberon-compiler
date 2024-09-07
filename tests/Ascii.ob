@@ -30,6 +30,17 @@ IMPORT Out;
 
 CONST Tab = 09X;
 
+PROCEDURE Utf(c: INTEGER);
+BEGIN
+  ASSERT(c < 0800H);
+  IF c < 080H THEN
+    Out.Char(CHR(c))
+  ELSE
+    Out.Char(CHR(0C0H + (c DIV 64)));
+    Out.Char(CHR(080H + (c BITAND 03FH)))
+  END
+END Utf;
+
 PROCEDURE AsciiTable;
 VAR
   r, c: INTEGER;
@@ -39,6 +50,15 @@ BEGIN
       Out.Int(r*8+c);
       Out.Char(" ");
       Out.Char(CHR(r*8+c));
+      Out.Char(Tab)
+    END;
+    Out.Ln
+  END;
+  FOR r := 160 DIV 8 TO 256 DIV 8 - 1 DO
+    FOR c := 0 TO 7 DO
+      Out.Int(r*8+c);
+      Out.Char(" ");
+      Utf(r*8+c);
       Out.Char(Tab)
     END;
     Out.Ln
