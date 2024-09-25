@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 #define ASSERT assert
 #define oberon_abs(x) ((x) < 0) ? -(x) : (x)

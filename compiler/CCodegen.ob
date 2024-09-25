@@ -28,6 +28,7 @@ VAR
   addBoundsChecks: BOOLEAN;
   genCPlusPlus:    BOOLEAN;
   GenExpr:         PROCEDURE (l: Lex.Lexer; e: AST.Expr);
+  cIntegerSize:    ARRAY 16 OF CHAR;
 
 PROCEDURE GenStr(s: ARRAY OF CHAR);
 BEGIN
@@ -115,7 +116,7 @@ BEGIN
   IF (t.decl = NIL) OR skipDecl THEN
     CASE t.kind OF
       AST.typeInteger:
-        GenStr("int ");
+        GenStr(cIntegerSize);
         GenQName(l, name);
     | AST.typeReal:
         GenStr("OBERON_REAL ");
@@ -1247,6 +1248,7 @@ BEGIN
   GenExpr := GenExpr0;
   addBoundsChecks := FALSE;
   genCPlusPlus := FALSE;
+  cIntegerSize := "int64_t ";   (* was: "int "  (1 space character needed) *)
   indent := 0;
   innerProcCount := 0
 END CCodegen.
