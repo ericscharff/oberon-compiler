@@ -718,8 +718,8 @@ END ScanComment;
 
 PROCEDURE NextToken*(VAR l: Lexer);
 BEGIN
-  l.t.kind := tINVALIDCHAR;
   REPEAT
+    l.t.kind := tINVALIDCHAR;
     CASE l.buf[l.pos] OF
       0X: l.t.kind := tEOF;
       (* space, newline, carriage return, newline, tab, vertical tab *)
