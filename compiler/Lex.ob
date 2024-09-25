@@ -1020,5 +1020,5 @@ END RunTests;
 BEGIN
   InitTokenNames;
   fatal := TRUE;
-  ignoreKeywordCase := TRUE;
+  ignoreKeywordCase := FALSE;
 END Lex.
