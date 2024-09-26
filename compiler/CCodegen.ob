@@ -115,7 +115,7 @@ BEGIN
   IF (t.decl = NIL) OR skipDecl THEN
     CASE t.kind OF
       AST.typeInteger:
-        GenStr("int ");
+        GenStr("OBERON_INTEGER ");
         GenQName(l, name);
     | AST.typeReal:
         GenStr("OBERON_REAL ");

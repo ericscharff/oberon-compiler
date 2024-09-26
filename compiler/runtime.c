@@ -27,6 +27,10 @@
 #define ASSERT assert
 #define oberon_abs(x) ((x) < 0) ? -(x) : (x)
 
+#ifndef OBERON_INTEGER
+#define OBERON_INTEGER int
+#endif
+
 #ifndef OBERON_REAL
 #define OBERON_REAL double
 #endif
