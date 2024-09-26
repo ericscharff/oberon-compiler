@@ -31,13 +31,15 @@ MODULE Compiler;
   FileName.ob and outputs out.c.
 
   Flags:
-    -bounds - Emit bounds checks on array references.
-    -cpp    - Emit C++ code. This is used to support type guards. While
-              strictly speaking not necessary, the code generator uses
-              RTTI to implement typeguard (x IS SomeClass). If C++
-              features are not used in code, then this flag is unnecessary.
-              In C++ mode, the syntax matches C++ (e.g., type extensions
-              emit C++ subclasses.
+    -bounds     - Emit bounds checks on array references.
+    -cpp        - Emit C++ code. This is used to support type guards. While
+                  strictly speaking not necessary, the code generator uses
+                  RTTI to implement typeguard (x IS SomeClass). If C++
+                  features are not used in code, then this flag is unnecessary.
+                  In C++ mode, the syntax matches C++ (e.g., type extensions
+                  emit C++ subclasses.
+    -use_int64  - If set, replace int references with int64_t
+    -use_double - If set, replace float references with double
 *)
 
 IMPORT Args, AST, CCodegen, Decls, Lex, Parse;
@@ -66,6 +68,10 @@ BEGIN
       CCodegen.EnableBoundsChecks;
     ELSIF fileName = "-cpp" THEN
       CCodegen.EnableCPlusPlus;
+    ELSIF fileName = "-use_int64" THEN
+      CCodegen.EnableInt64
+    ELSIF fileName = "-use_double" THEN
+      CCodegen.EnableDouble
     ELSE
       gotFile := TRUE;
     END;

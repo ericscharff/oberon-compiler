@@ -27,6 +27,8 @@ VAR
   innerProcCount:  INTEGER;
   addBoundsChecks: BOOLEAN;
   genCPlusPlus:    BOOLEAN;
+  useInt64:        BOOLEAN;
+  useDouble:       BOOLEAN;
   GenExpr:         PROCEDURE (l: Lex.Lexer; e: AST.Expr);
 
 PROCEDURE GenStr(s: ARRAY OF CHAR);
@@ -115,10 +117,18 @@ BEGIN
   IF (t.decl = NIL) OR skipDecl THEN
     CASE t.kind OF
       AST.typeInteger:
-        GenStr("OBERON_INTEGER ");
+        IF useInt64 THEN
+          GenStr("int64_t ");
+        ELSE
+          GenStr("OBERON_INTEGER ");
+        END;
         GenQName(l, name);
     | AST.typeReal:
-        GenStr("OBERON_REAL ");
+        IF useDouble THEN
+          GenStr("double ");
+        ELSE
+          GenStr("OBERON_REAL ");
+        END;
         GenQName(l, name);
     | AST.typeBoolean:
         GenStr("bool ");
@@ -1242,6 +1252,16 @@ PROCEDURE EnableCPlusPlus*;
 BEGIN
   genCPlusPlus := TRUE
 END EnableCPlusPlus;
+
+PROCEDURE EnableInt64*;
+BEGIN
+  useInt64 := TRUE
+END EnableInt64;
+
+PROCEDURE EnableDouble*;
+BEGIN
+  useDouble := TRUE
+END EnableDouble;
 
 BEGIN
   GenExpr := GenExpr0;

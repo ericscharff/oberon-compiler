@@ -127,6 +127,17 @@ The compile shell script accepts several command line flags:
 - `-extra_runtime filename.c` causes an extra C source file (filename.c) to be
   included as part of the C runtime. Typically this is used to add code for new
   `NATIVE` methods.
+- `-use_int64` defines the C type of INTEGER to be `int64_t`. If this is not set,
+  it uses the type `OBERON_INTEGER`. This is an `ifdef` (defaults to `int`) and can
+  thus be overridden with something like `-DOBERON_INTEGER=int32_t`. Thus, the
+  integer type can be overriden in the compiler shell script, or by preprocessor
+  defines, whichever is better given the context in which it is being used.
+- `-use_double` defines the C type of REAL to be `double`. If this is not set,
+  it uses the type `OBERON_REAL`. This is an `ifdef` (defaults to `float`) and can
+  thus be overridden with something like `-DOBERON_REAL=double`. Thus, the
+  real type can be overriden in the compiler shell script, or by preprocessor
+  defines, whichever is better given the context in which it is being used.
+
 
 Additionally, some environment variables may be set to control the C
 compilation:

@@ -32,6 +32,12 @@ while [ $inSwitches -eq 1 ]; do
   elif [ $1 = "-bounds" ]; then
     OCFLAGS="$OCFLAGS -bounds"
     shift
+  elif [ $1 = "-use_int64" ]; then
+    OCFLAGS="$OCFLAGS -use_int64"
+    shift
+  elif [ $1 = "-use_double" ]; then
+    OCFLAGS="$OCFLAGS -use_double"
+    shift
   else
     inSwitches=0
   fi
