@@ -830,11 +830,19 @@ BEGIN
         END;
       END;
   | AST.builtinReadInt:
-    GenStr("scanf("); GenStr(22X); GenStr("%d"); GenStr(22X); GenStr(", &(");
+    IF useInt64 THEN
+      GenStr("scanf("); GenStr(22X); GenStr("%ld"); GenStr(22X); GenStr(", &(");
+    ELSE
+      GenStr("scanf("); GenStr(22X); GenStr("%d"); GenStr(22X); GenStr(", &(");
+    END;
     GenExpr(l, e.rhs);
     GenStr("))");
   | AST.builtinWriteInt:
-    GenStr("printf("); GenStr(22X); GenStr("%4d"); GenStr(22X); GenStr(", ");
+    IF useInt64 THEN
+      GenStr("printf("); GenStr(22X); GenStr("%4ld"); GenStr(22X); GenStr(", ");
+    ELSE
+      GenStr("printf("); GenStr(22X); GenStr("%4d"); GenStr(22X); GenStr(", ");
+    END;
     GenExpr(l, e.rhs);
     GenStr(")");
   | AST.builtinWriteChar:
