@@ -1,4 +1,4 @@
-# Simple Oberon compiler (2025)
+# Simple Oberon compiler
 
 This is a collection of compilers for the Oberon-07 programming language. It is
 actually three different compilers:
