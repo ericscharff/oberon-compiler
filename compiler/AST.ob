@@ -48,7 +48,7 @@ CONST
   declParam*     = 6;
   declVarParam*  = 7;
   declField*     = 8;
-  declBuiltin*   = 9;
+  declBuiltin*   = 10;
   declEND* = 1001;
 
   exprVal*          = 1; (* CONST value *)
