@@ -66,6 +66,8 @@ BEGIN
     Args.GetArg(fileName, i);
     IF fileName = "-bounds" THEN
       CCodegen.EnableBoundsChecks;
+    ELSIF fileName = "-bounds" THEN
+      CCodegen.EnableBoundsChecks;
     ELSIF fileName = "-cpp" THEN
       CCodegen.EnableCPlusPlus;
     ELSIF fileName = "-use_int64" THEN
