@@ -167,7 +167,7 @@ VAR a: INTEGER;
 BEGIN
 	CASE mode OF
 		mIndirectX:
-			a := WordAt(p, Fetch(p) + p.x);
+			a := WordAt(p, (Fetch(p) + p.x) BITAND 255);
 		| mZeroPage:
 			a := Fetch(p);
 		| mImmediate:
@@ -203,6 +203,16 @@ BEGIN
 	RETURN a
 END CEA;
 
+PROCEDURE BINtoBCD(v: INTEGER): INTEGER;
+BEGIN
+	RETURN (((v DIV 10) MOD 10) * 16) BITOR (v MOD 10)
+END BINtoBCD;
+
+PROCEDURE BCDtoBIN(v: INTEGER): INTEGER;
+BEGIN
+	RETURN ((v DIV 16) * 10) + (v BITAND 0FH)
+END BCDtoBIN;
+
 (* ================================================================ *)
 (* The Opcodes *)
 (* ================================================================ *)
@@ -211,12 +221,21 @@ END CEA;
 PROCEDURE DoADC(VAR p: CPU; mode: INTEGER);
 VAR m, r: INTEGER;
 BEGIN
-	m := CEA(p, mode); r := p.a + m;
-	IF carrY IN p.flags THEN INC(r) END;
-	SetC(p, r > 255); r := DoBITAND(r, 255);
-	SetNZ(p, r);
-	SetV(p, (DoBITBIT(p.a,7) = DoBITBIT(m,7)) & (DoBITBIT(r,7) # DoBITBIT(p.a,7)));
-	p.a := r;
+	m := CEA(p, mode);
+	IF decimaL IN p.flags THEN
+		r := BCDtoBIN(p.a) + BCDtoBIN(m);
+		IF carrY in p.flags THEN INC(r) END;
+		SetC(p, r > 99);
+		SetNZ(p, r);
+		p.a := BINtoBCD(r)
+	ELSE
+		r := p.a + m;
+		IF carrY IN p.flags THEN INC(r) END;
+		SetC(p, r > 255); r := DoBITAND(r, 255);
+		SetNZ(p, r);
+		SetV(p, (DoBITBIT(p.a,7) = DoBITBIT(m,7)) & (DoBITBIT(r,7) # DoBITBIT(p.a,7)));
+		p.a := r;
+	END
 END DoADC;
 
 (* AND   "AND" Memory with Accumulator *)
@@ -575,12 +594,26 @@ END DoRTS;
 PROCEDURE DoSBC(VAR p: CPU; mode: INTEGER);
 VAR m, r: INTEGER;
 BEGIN
-	m := CEA(p, mode); r := p.a - m - 1;
-	IF carrY IN p.flags THEN INC(r) END;
-	SetC(p, (r BITAND 0FF00H) = 0); r := DoBITAND(r, 255);
-	SetNZ(p, r);
-	SetV(p, (DoBITBIT(p.a,7) # DoBITBIT(m,7)) & (DoBITBIT(r,7) # DoBITBIT(p.a,7)));
-	p.a := r;
+	m := CEA(p, mode);
+	IF decimaL IN p.flags THEN
+		r := BCDtoBIN(p.a) - BCDtoBIN(m) - 1;
+		IF carrY IN p.flags THEN INC(r) END;
+		IF (r BITAND 0FF00H) = 0 THEN
+			SetC(p, TRUE)
+		ELSE
+			SetC(p, FALSE);
+			r := r + 100
+		END;
+		p.a := BINtoBCD(r);
+		SetNZ(p, r)
+	ELSE
+		r := p.a - m - 1;
+		IF carrY IN p.flags THEN INC(r) END;
+		SetC(p, (r BITAND 0FF00H) = 0); r := DoBITAND(r, 255);
+		SetNZ(p, r);
+		SetV(p, (DoBITBIT(p.a,7) # DoBITBIT(m,7)) & (DoBITBIT(r,7) # DoBITBIT(p.a,7)));
+		p.a := r;
+	END
 END DoSBC;
 
 (* SEC   Set Carry Flag *)
