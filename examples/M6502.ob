@@ -678,7 +678,9 @@ END Interrupt;
 (* BRK   Force Break *)
 PROCEDURE DoBRK(VAR p: CPU; mode: INTEGER);
 BEGIN
-	Interrupt(p)
+	DoINCL(p.flags, breaK); PushWord(p, p.pc+1); DoPHP(p, mImplied);
+	DoINCL(p.flags, interrupT); (* BRK Disables interrupts *)
+	p.pc := WordAt(p, 65534)
 END DoBRK;
 
 PROCEDURE Step*(VAR p: CPU);
