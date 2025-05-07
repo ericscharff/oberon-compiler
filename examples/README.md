@@ -4,6 +4,11 @@ This directory contains sample programs that demonstrate the Oberon language and
 extra features of the compiler. More examples (in the form of regression tests)
 can be found in the `tests` directory.
 
+## Test6502
+
+`Test6502.ob` runs a regression test suite to make sure that the CPU emulation
+is accurate.
+
 ## Apple1
 
 `Apple1.ob` uses the 6502 emulator core (forked from the copy in the `tests/`

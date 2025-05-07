@@ -1,0 +1,62 @@
+(*
+ * This file is part of oberon-compiler
+ *
+ * Copyright (C) 2018-2025  Eric Scharff
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ *)
+
+MODULE Test6502;
+
+IMPORT M6502, Out;
+
+CONST
+  MemSize = 64 * 1024;
+
+VAR
+  mem: ARRAY MemSize OF CHAR;
+  cpu: M6502.CPU;
+  oldPc: INTEGER;
+
+PROCEDURE ReadMem(where: INTEGER): INTEGER;
+BEGIN
+  RETURN ORD(mem[where]) BITAND 255
+END ReadMem;
+
+PROCEDURE WriteMem(where, what: INTEGER);
+BEGIN
+  mem[where] := CHR(what)
+END WriteMem;
+
+PROCEDURE ReadTestBinary;
+BEGIN
+  Out.ReadFile("6502_functional_test.bin", mem)
+END ReadTestBinary;
+
+BEGIN
+  cpu.a := 0; cpu.x := 0; cpu.y := 0; cpu.sp := 255;
+  cpu.pc := 400H; cpu.flags := {M6502.reserveD};
+  cpu.readProc := ReadMem; cpu.writeProc := WriteMem;
+  oldPc := 0;
+  ReadTestBinary;
+  
+  WHILE oldPc # cpu.pc DO
+    oldPc := cpu.pc;
+    M6502.Step(cpu)
+  END;
+  (* When the test completes, it goes into a tight loop. *)
+  (* This represents the success ending PC.              *)
+  ASSERT(oldPc = 3469H)
+END Test6502.
