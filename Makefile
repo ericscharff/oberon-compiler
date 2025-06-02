@@ -1,3 +1,4 @@
+CC = clang
 BUILDDIR=build
 CFLAGS=-g -std=c17 -Wall -Wextra -Wpedantic
 
