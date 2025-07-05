@@ -1,7 +1,10 @@
 MODULE Sudoku;
 
 (**
- * Generates valid Sudoku boards. Demonstrates self contained random numbers.
+ * Generates valid Sudoku boards. The random number generator depends on an
+ * internal table of random bits to make it self contained. Demonstrates
+ * use of the SET type (to keep track of which numbers are possible for which
+ * cells) as well as ARRAYs of SETs.
  *)
 
 IMPORT Out;
