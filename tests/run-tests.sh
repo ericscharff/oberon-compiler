@@ -34,6 +34,7 @@ ALL_TESTS=(
   Sound
   StateMachine
   Strings
+  Sudoku
   TenPrint
   TypeExt
   VisitList
