@@ -162,7 +162,7 @@ BEGIN
 END NumberOfOneBits;
 
 PROCEDURE RandomInt(max: INTEGER): INTEGER;
-  (* return [0, max) *)
+  (* return [0, max). max must be less than 16 *)
 VAR
   r: INTEGER;
 BEGIN
