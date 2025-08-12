@@ -193,7 +193,7 @@ BEGIN
   WHILE (i < length) & (s[offset + i] # 0X) DO
     hash := hash BITXOR ORD(s[offset + i]);
     hash := hash BITAND 7FFFFFFFH;
-    hash := hash * 16777619;
+    hash := hash * 1000193H;
     sp.buf[sp.last + i] := s[offset + i];
     INC(i)
   END;
