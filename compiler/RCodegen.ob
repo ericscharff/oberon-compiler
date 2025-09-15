@@ -2024,7 +2024,7 @@ BEGIN
   epilog := 0;
   genCode := FALSE;
   genBoundsCheck := FALSE;
-  genNilCheck := TRUE;
+  genNilCheck := FALSE;
   pc := 0;
   Lex.PoolInit(strings)
 END RCodegen.
