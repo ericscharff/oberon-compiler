@@ -2023,7 +2023,7 @@ BEGIN
   mainStartPc := 0;
   epilog := 0;
   genCode := FALSE;
-  genBoundsCheck := TRUE;
+  genBoundsCheck := FALSE;
   genNilCheck := TRUE;
   pc := 0;
   Lex.PoolInit(strings)
