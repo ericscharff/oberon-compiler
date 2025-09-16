@@ -2023,8 +2023,8 @@ BEGIN
   mainStartPc := 0;
   epilog := 0;
   genCode := FALSE;
-  genBoundsCheck := FALSE;
-  genNilCheck := FALSE;
+  genBoundsCheck := TRUE;
+  genNilCheck := TRUE;
   pc := 0;
   Lex.PoolInit(strings)
 END RCodegen.
