@@ -168,6 +168,41 @@ BEGIN
   Compare("🟥🟩🟦", "🟥🟦🟩");
 END Comparisons;
 
+PROCEDURE CenteredText;
+  PROCEDURE StrLen(s: ARRAY OF CHAR): INTEGER;
+  VAR i: INTEGER;
+  BEGIN
+    i := 0;
+    WHILE s[i] # 0X DO INC(i) END
+    RETURN i
+  END StrLen;
+
+  PROCEDURE Pad(n: INTEGER);
+  BEGIN
+    WHILE n > 0 DO Out.Char(" "); DEC(n) END
+  END Pad;
+
+  PROCEDURE CenterInLine(s: ARRAY OF CHAR);
+  CONST w = 80; visibleArea = w-2;
+  VAR l, startPad, endPad: INTEGER;
+  BEGIN
+    l := StrLen(s);
+    startPad := (visibleArea - l) DIV 2;
+    endPad := visibleArea - startPad - l;
+    Out.Char("|");
+    Pad(startPad);
+    Out.Str(s);
+    Pad(endPad);
+    Out.Char("|");
+    Out.Ln
+  END CenterInLine;
+BEGIN
+  CenterInLine("Hello, there!");
+  CenterInLine("This is some simple testing of text centering");
+  CenterInLine("This should have been centereed within an 80");
+  CenterInLine("character margin.");
+END CenteredText;
+
 PROCEDURE Test;
 VAR
   ca: ARRAY 10 OF CHAR;
@@ -191,6 +226,7 @@ BEGIN
   ToWord(6543214);
   ToWord(76543214);
   ToWord(1000800004);
+  CenteredText
 END Test;
 
 BEGIN
