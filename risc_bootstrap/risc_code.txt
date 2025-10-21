@@ -6995,7 +6995,7 @@ const Instruction PROGRAM[] = {
 {LDW, R0, SP, R0, 4},
 {LDW, R0, R0, R0, 147468},
 {CMPI, R0, R0, R0, 0},
-{BLT, R0, R0, R5, 6543},
+{BLT, R0, R0, R5, 6540},
 {LDW, R0, SP, R0, 4},
 {LDW, R0, R0, R0, 147468},
 {CMPI, R0, R0, R0, 71},
