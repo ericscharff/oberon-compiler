@@ -667,14 +667,6 @@ BEGIN
     AddBuiltin(l, Lex.Intern(l, "WriteChar"), builtinWriteChar);
     AddBuiltin(l, Lex.Intern(l, "WriteLn"), builtinWriteLn);
     *)
-    IF Lex.ignoreKeywordCase THEN
-      AddTypeDecl(l, Lex.Intern(l, "nil"), nilType);
-      AddTypeDecl(l, Lex.Intern(l, "integer"), integerType);
-      AddTypeDecl(l, Lex.Intern(l, "real"), realType);
-      AddTypeDecl(l, Lex.Intern(l, "boolean"), booleanType);
-      AddTypeDecl(l, Lex.Intern(l, "char"), charType);
-      AddTypeDecl(l, Lex.Intern(l, "set"), setType);
-    END;
     globalScope := scope;
     (* Special MODULE init function *)
     modInitName := Lex.Intern(l, "_module_init_");

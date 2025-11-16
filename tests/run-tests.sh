@@ -10,8 +10,6 @@ ALL_TESTS=(
   Cases
   ExpMod
   FibFact
-  FibFact2
-  FibFact3
   IOOperations
   KnightsTour
   LangExtensions

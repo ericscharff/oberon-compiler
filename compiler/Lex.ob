@@ -146,7 +146,6 @@ TYPE
 VAR
   TokenNames*: ARRAY tEOF+1, KwdSize OF CHAR;
   fatal: BOOLEAN;
-  ignoreKeywordCase*: BOOLEAN;
 
 PROCEDURE PoolInit*(VAR sp: StringPool);
 VAR
@@ -269,47 +268,7 @@ BEGIN
   StringInternRange(sp, "TYPE", 0, 9);
   StringInternRange(sp, "UNTIL", 0, 9);
   StringInternRange(sp, "VAR", 0, 9);
-  StringInternRange(sp, "WHILE", 0, 9);
-
-  IF ignoreKeywordCase THEN
-    StringInternRange(sp, "array", 0, 9);
-    StringInternRange(sp, "begin", 0, 9);
-    StringInternRange(sp, "bitand", 0, 9);
-    StringInternRange(sp, "bitor", 0, 9);
-    StringInternRange(sp, "bitxor", 0, 9);
-    StringInternRange(sp, "by", 0, 9);
-    StringInternRange(sp, "case", 0, 9);
-    StringInternRange(sp, "const", 0, 9);
-    StringInternRange(sp, "div", 0, 9);
-    StringInternRange(sp, "do", 0, 9);
-    StringInternRange(sp, "else", 0, 9);
-    StringInternRange(sp, "elsif", 0, 9);
-    StringInternRange(sp, "end", 0, 9);
-    StringInternRange(sp, "false", 0, 9);
-    StringInternRange(sp, "for", 0, 9);
-    StringInternRange(sp, "if", 0, 9);
-    StringInternRange(sp, "import", 0, 9);
-    StringInternRange(sp, "in", 0, 9);
-    StringInternRange(sp, "is", 0, 9);
-    StringInternRange(sp, "mod", 0, 9);
-    StringInternRange(sp, "module", 0, 9);
-    StringInternRange(sp, "native", 0, 9);
-    StringInternRange(sp, "nil", 0, 9);
-    StringInternRange(sp, "of", 0, 9);
-    StringInternRange(sp, "or", 0, 9);
-    StringInternRange(sp, "pointer", 0, 9);
-    StringInternRange(sp, "procedure", 0, 9);
-    StringInternRange(sp, "record", 0, 9);
-    StringInternRange(sp, "repeat", 0, 9);
-    StringInternRange(sp, "return", 0, 9);
-    StringInternRange(sp, "then", 0, 9);
-    StringInternRange(sp, "to", 0, 9);
-    StringInternRange(sp, "true", 0, 9);
-    StringInternRange(sp, "type", 0, 9);
-    StringInternRange(sp, "until", 0, 9);
-    StringInternRange(sp, "var", 0, 9);
-    StringInternRange(sp, "while", 0, 9);
-  END
+  StringInternRange(sp, "WHILE", 0, 9)
 END AddKeywords;
 
 PROCEDURE Intern*(VAR l: Lexer; s: ARRAY OF CHAR): PoolIndex;
@@ -527,8 +486,6 @@ BEGIN
   idx := StringInternRange(l.sp, l.buf, start, l.pos - start);
   IF idx <= tLastKwd THEN
     l.t.kind := idx DIV KwdSize;
-  ELSIF (idx <= 2*tLastKwd+KwdSize) & ignoreKeywordCase THEN
-   l.t.kind := (idx - tLastKwd) DIV KwdSize - 1;
   ELSE
     l.t.kind := tIDENT;
     l.t.sVal := idx;
@@ -915,7 +872,6 @@ VAR
 BEGIN
   (* Error cases *)
   fatal := FALSE;
-  ignoreKeywordCase := FALSE;
   Mute;
   LexerInitFromString(l, "0C "); NextToken(l);
   LexerInitFromString(l, "100X"); NextToken(l);
@@ -979,26 +935,6 @@ BEGIN
   NextToken(l); ASSERT(l.t.kind = tEOF);
   NextToken(l); ASSERT(l.t.kind = tEOF);
 
-  ignoreKeywordCase := TRUE;
-  LexerInitFromString(l, "
-  lower case testing
-  array       begin       bitand      bitor       bitxor
-  by          case        const       div         do
-  else        elsif       end         false       for
-  if          import      in          is          mod
-  module      native      nil         of          or
-  pointer     procedure   record      repeat      return
-  then        to          true        type        until
-  var         while
-  ");
-  NextToken(l); ASSERT(l.t.kind = tIDENT); ASSERT(l.t.sVal = StringIntern(l.sp, "lower"));
-  NextToken(l); ASSERT(l.t.kind = tCASE);
-  NextToken(l); ASSERT(l.t.kind = tIDENT); ASSERT(l.t.sVal = StringIntern(l.sp, "testing"));
-  FOR k := tARRAY TO tWHILE DO
-    NextToken(l); ASSERT(l.t.kind = k)
-  END;
-
-  ignoreKeywordCase := FALSE;
   LexerInitFromString(l, "upper case testing");
   NextToken(l); ASSERT(l.t.kind = tIDENT); ASSERT(l.t.sVal = StringIntern(l.sp, "upper"));
   NextToken(l); ASSERT(l.t.kind = tIDENT); ASSERT(l.t.sVal = StringIntern(l.sp, "case"));
@@ -1019,6 +955,5 @@ END RunTests;
 
 BEGIN
   InitTokenNames;
-  fatal := TRUE;
-  ignoreKeywordCase := TRUE;
+  fatal := TRUE
 END Lex.
