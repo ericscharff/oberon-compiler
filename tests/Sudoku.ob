@@ -125,7 +125,7 @@ BEGIN
   FOR i := 0 TO 2 DO
     FOR j := 0 TO 2 DO
       b := board[start + i*9 + j];
-      IF (b # 0) & (b in used) THEN
+      IF (b # 0) & (b IN used) THEN
         RETURN FALSE
       ELSE
         used := used + {b}
@@ -156,7 +156,7 @@ VAR
 BEGIN
   a := 0;
   FOR i := 1 TO 9 DO
-    IF i in s THEN INC(a) END
+    IF i IN s THEN INC(a) END
   END
   RETURN a
 END NumberOfOneBits;
@@ -180,7 +180,7 @@ BEGIN
   elt := -1;
   WHILE n > 0 DO
     INC(elt);
-    IF elt in s THEN DEC(n) END;
+    IF elt IN s THEN DEC(n) END;
   END
   RETURN elt
 END NthSetBit;

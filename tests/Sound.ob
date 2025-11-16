@@ -78,21 +78,21 @@ BEGIN
    *)
 
   (* Three seconds at 8k *)
-  FOR t := 0 to 24000 DO
+  FOR t := 0 TO 24000 DO
     x := Frac(FLT(t) * A4 / 8000.0);
     Out.Char(CHR(Scale(SawtoothWave(x))))
   END;
-  FOR t := 0 to 4000 DO
+  FOR t := 0 TO 4000 DO
     Out.Char(CHR(128))
   END;
-  FOR t := 0 to 24000 DO
+  FOR t := 0 TO 24000 DO
     x := Frac(FLT(t) * A4 / 8000.0);
     Out.Char(CHR(Scale(SquareWave(x))))
   END;
-  FOR t := 0 to 4000 DO
+  FOR t := 0 TO 4000 DO
     Out.Char(CHR(128))
   END;
-  FOR t := 0 to 24000 DO
+  FOR t := 0 TO 24000 DO
     x := Frac(FLT(t) * A4 / 8000.0);
     Out.Char(CHR(Scale(TriangleWave(x))))
   END
@@ -102,11 +102,11 @@ PROCEDURE MajorScale;
   PROCEDURE Note(freq: REAL);
   VAR t: INTEGER; x: REAL;
   BEGIN
-    FOR t := 0 to 4000 DO
+    FOR t := 0 TO 4000 DO
       x := Frac(FLT(t) * freq / 8000.0);
       Out.Char(CHR(Scale(SquareWave(x))))
     END;
-    FOR t := 0 to 1000 DO
+    FOR t := 0 TO 1000 DO
       Out.Char(CHR(128))
     END
   END Note;
