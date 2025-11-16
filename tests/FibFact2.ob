@@ -1,0 +1,115 @@
+(*
+ * This file is part of oberon-compiler
+ *
+ * Copyright (C) 2018-2025  Eric Scharff
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ *)
+
+MODULE FibFact2;
+(* Same as FibFact.ob but exercising new RETHRN statement *)
+
+IMPORT Out;
+
+CONST
+  Seven = 7;
+
+PROCEDURE FactIter*(n: INTEGER): INTEGER;
+VAR
+  i, r: INTEGER;
+BEGIN
+  i := 1;
+  r := 1;
+  WHILE i <= n DO
+    r := r * i;
+    INC(i)
+  END;
+  RETURN r
+END FactIter;
+
+PROCEDURE FactIter2*(n: INTEGER): INTEGER;
+VAR
+  i, r: INTEGER;
+BEGIN
+  i := 1;
+  r := 1;
+  WHILE TRUE DO
+    IF i > n THEN RETURN r END;
+    r := r * i;
+    INC(i)
+  END;
+  RETURN r
+END FactIter2;
+
+PROCEDURE FactRec*(n: INTEGER): INTEGER;
+VAR r: INTEGER;
+BEGIN
+  IF n <= 1 THEN
+    RETURN 1
+  ELSE
+    r := n * FactRec(n-1)
+  END;
+  RETURN r
+END FactRec;
+
+PROCEDURE FibIter*(n: INTEGER): INTEGER;
+VAR
+  prev, newPrev, fib: INTEGER;
+BEGIN
+  prev := 1;
+  fib := 1;
+  WHILE n > 1 DO
+    newPrev := fib;
+    fib := fib + prev;
+    prev := newPrev;
+    DEC(n)
+  END
+  RETURN fib
+END FibIter;
+
+PROCEDURE FibRec*(n: INTEGER): INTEGER;
+BEGIN
+  IF n < 2 THEN
+    RETURN 1
+  ELSE
+    RETURN FibRec(n-1) + FibRec(n-2)
+  END
+  (* this is unreqchable but required *)
+  RETURN 10 
+END FibRec;
+
+PROCEDURE TestFib;
+VAR
+  n: INTEGER;
+BEGIN
+  n := 7;
+  ASSERT(FactRec(n) = FactIter(n));
+  ASSERT(FactIter(Seven) = FactIter(n));
+  ASSERT(FactIter(7) = 5040);
+  ASSERT(FactIter(7) = FactIter2(7));
+  Out.Int(FactRec(n)); Out.Ln;
+  ASSERT(FibIter(20) = FibRec(20));
+  ASSERT(FibRec(20) = 10946);
+  Out.Int(FibIter(20)); Out.Ln;
+END TestFib;
+
+PROCEDURE RunTests*;
+BEGIN
+  TestFib
+END RunTests;
+
+BEGIN
+  RunTests
+END FibFact2.
