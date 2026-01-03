@@ -4,7 +4,6 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PARENTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )"
 BUILDDIR=$PARENTDIR/build
 COMPILERDIR=$PARENTDIR/compiler
-PERR=$COMPILERDIR/perr.py
 
 cp $COMPILERDIR/*.ob $BUILDDIR
 cp $COMPILERDIR/runtime.c $BUILDDIR
@@ -44,5 +43,4 @@ while [ $inSwitches -eq 1 ]; do
 done
 
 cd $BUILDDIR
-./oberon $OCFLAGS $1 | $PERR
 ./oberon $OCFLAGS $1 > out$EXT && $CC -g $CSTDFLAGS -Wall -Wextra -Wpedantic -Wno-unused-parameter -o out.prg out$EXT $EXTRA_CFLAGS

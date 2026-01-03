@@ -126,7 +126,7 @@ void Out_ErrStrI(const char *s, size_t q, int offset) {
 }
 
 void Out_ErrLn(void) {
-  fputs("", stderr);
+  fputs("\n", stderr);
 }
 
 void Out_ReadFile(const char *fileName, size_t q, char *buf, int r) {

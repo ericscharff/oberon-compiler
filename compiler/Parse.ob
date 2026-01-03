@@ -66,8 +66,8 @@ BEGIN
     Lex.NextToken(l);
   ELSE
     Lex.Error(l, "Expected ");
-    Lex.Str(Lex.TokenNames[kind]);
-    Lex.Str(", got ");
+    Lex.ErrStr(Lex.TokenNames[kind]);
+    Lex.ErrStr(", got ");
     Lex.PrintLnAndHalt(Lex.TokenNames[l.t.kind]);
   END;
 END ExpectToken;
@@ -118,7 +118,7 @@ BEGIN
     t := d.typ;
     IF d.kind # AST.declType THEN
       Lex.Error(l, "");
-      Lex.OutStr(l, d.qname.name);
+      Lex.ErrOutStr(l, d.qname.name);
       Lex.PrintLnAndHalt(" is not a TYPE");
     END;
   END;
@@ -942,9 +942,9 @@ BEGIN
   endName := ExpectIdentifier();
   IF d.qname.name # endName THEN
     Lex.Error(l, "Procedure end name [");
-    Lex.OutStr(l, endName);
-    Lex.Str("] must match start name [");
-    Lex.OutStr(l, d.qname.name);
+    Lex.ErrOutStr(l, endName);
+    Lex.ErrStr("] must match start name [");
+    Lex.ErrOutStr(l, d.qname.name);
     Lex.PrintLnAndHalt("]");
   END;
 END ParseProcedureDeclaration;
@@ -1047,9 +1047,9 @@ BEGIN
   e := ExpectIdentifier();
   IF s # e THEN
     Lex.Error(l, "Module end name [");
-    Lex.OutStr(l, e);
-    Lex.Str("] must match start name [");
-    Lex.OutStr(l, s);
+    Lex.ErrOutStr(l, e);
+    Lex.ErrStr("] must match start name [");
+    Lex.ErrOutStr(l, s);
     Lex.PrintLnAndHalt("]");
   END;
   ExpectToken(Lex.tDOT);

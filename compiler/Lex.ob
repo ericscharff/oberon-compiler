@@ -310,6 +310,11 @@ BEGIN
   Out.StrI(l.sp.buf, s);
 END OutStr;
 
+PROCEDURE ErrOutStr*(l: Lexer; s: PoolIndex);
+BEGIN
+  Out.ErrStrI(l.sp.buf, s);
+END ErrOutStr;
+
 PROCEDURE OutStrEscaped*(l: Lexer; s: PoolIndex);
 VAR
   c: CHAR;
@@ -365,6 +370,11 @@ BEGIN
   Out.Str(s);
 END Str;
 
+PROCEDURE ErrStr*(s: ARRAY OF CHAR);
+BEGIN
+  Out.ErrStr(s);
+END ErrStr;
+
 PROCEDURE Int*(i: INTEGER);
 BEGIN
   Out.Int(i);
@@ -378,8 +388,9 @@ END Ln;
 
 PROCEDURE PrintLnAndHalt*(s: ARRAY OF CHAR);
 BEGIN
-  Out.Str(s);
-  Ln;
+  Out.ErrStr(s);
+  Out.ErrLn;
+  Out.Halt
 END PrintLnAndHalt;
 
 PROCEDURE InfoPrintLn*(s: ARRAY OF CHAR);
@@ -388,20 +399,43 @@ BEGIN
   Out.Ln;
 END InfoPrintLn;
 
-PROCEDURE Error*(l: Lexer; s: ARRAY OF CHAR);
+PROCEDURE PosToLine(l: Lexer; pos: INTEGER; VAR line, col: INTEGER);
+VAR
+  i: INTEGER;
 BEGIN
-  Out.Str("Err!");
-  OutStr(l, l.fileName);
-  Out.Str("!");
-  Out.Int(l.pos);
-  Out.Str("!");
-  Out.Str(s);
+  line := 1;
+  col := 1;
+  i := 0;
+  WHILE i < pos DO
+    IF l.buf[i] = 0AX THEN
+      INC(line);
+      col := 1
+    ELSE
+      INC(col)
+    END;
+    INC(i)
+  END
+END PosToLine;
+
+PROCEDURE Error*(l: Lexer; s: ARRAY OF CHAR);
+VAR
+  line, col: INTEGER;
+BEGIN
+  PosToLine(l, l.pos, line, col);
+  ErrOutStr(l, l.fileName);
+  Out.ErrStr(":");
+  Out.ErrInt(line);
+  Out.ErrStr(":");
+  Out.ErrInt(col);
+  Out.ErrStr(":");
+  Out.ErrStr(s);
 END Error;
 
 PROCEDURE ErrorLn*(l: Lexer; s: ARRAY OF CHAR);
 BEGIN
   Error(l, s);
-  Ln;
+  Out.ErrLn;
+  Out.Halt
 END ErrorLn;
 
 PROCEDURE Next(VAR l: Lexer; VAR c: CHAR);

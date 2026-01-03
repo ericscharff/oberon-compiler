@@ -63,7 +63,7 @@ BEGIN
   p := LookupDecl0(name);
   IF p = NIL THEN
     Lex.Error(l, "");
-    Lex.OutStr(l, name);
+    Lex.ErrOutStr(l, name);
     Lex.PrintLnAndHalt(" undefined");
   END;
   RETURN p
@@ -81,15 +81,15 @@ BEGIN
   END;
   IF p = NIL THEN
     Lex.Error(l, "");
-    Lex.OutStr(l, moduleName);
-    Lex.Str(".");
-    Lex.OutStr(l, name);
+    Lex.ErrOutStr(l, moduleName);
+    Lex.ErrStr(".");
+    Lex.ErrOutStr(l, name);
     Lex.PrintLnAndHalt(" undefined");
   ELSIF ~p.exported THEN
     Lex.Error(l, "");
-    Lex.OutStr(l, moduleName);
-    Lex.Str(".");
-    Lex.OutStr(l, name);
+    Lex.ErrOutStr(l, moduleName);
+    Lex.ErrStr(".");
+    Lex.ErrOutStr(l, name);
     Lex.PrintLnAndHalt(" is not exported");
   END;
   RETURN p
@@ -133,7 +133,7 @@ BEGIN
     END;
     IF p.qname.name = name THEN
       Lex.Error(l, "");
-      Lex.OutStr(l, name);
+      Lex.ErrOutStr(l, name);
       Lex.PrintLnAndHalt(" already defined");
     ELSE
       d.next := p.next;
@@ -242,7 +242,7 @@ BEGIN
   ELSE
     IF d.kind # AST.declType THEN
       Lex.Error(l, "");
-      Lex.OutStr(l, d.qname.name);
+      Lex.ErrOutStr(l, d.qname.name);
       Lex.PrintLnAndHalt(" is not a TYPE");
     END;
     t := NewPointerType(l, d.typ);
@@ -686,7 +686,7 @@ BEGIN
       fwds.t.fields := NIL;
     ELSE
       Lex.Error(l, "Bad forward declaration ");
-      Lex.OutStr(l, fwds.t.fields.qname.name);
+      Lex.ErrOutStr(l, fwds.t.fields.qname.name);
       Lex.Ln;
     END;
     fwds := fwds.next;
