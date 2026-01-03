@@ -56,7 +56,7 @@ for i in ${ALL_TESTS[@]}; do
   echo "Running test $i..."
   ../build/compile ${i}.ob
   pushd ../build > /dev/null
-  ../build/out.prg < ../build/stdin.txt > ../build/$i.output
+  ../build/out.prg < ../build/stdin.txt > ../build/$i.output 2>&1
   popd > /dev/null
   diff -c goldens/$i.output ../build/$i.output || fail $i
 done
@@ -73,7 +73,7 @@ for i in ${ALL_TESTS[@]}; do
     ../build/rcompile ${i}.ob
   fi
   pushd ../build > /dev/null
-  ../build/out.prg < ../build/stdin.txt > ../build/$i.output
+  ../build/out.prg < ../build/stdin.txt > ../build/$i.output 2>&1
   popd > /dev/null
   diff -c goldens/$i.output ../build/$i.output || fail $i
 done
@@ -81,7 +81,7 @@ for i in ${ALL_TESTS[@]}; do
   echo "Running C++ test $i..."
   ../build/compile -cpp ${i}.ob
   pushd ../build > /dev/null
-  ../build/out.prg < ../build/stdin.txt > ../build/$i.output
+  ../build/out.prg < ../build/stdin.txt > ../build/$i.output 2>&1 
   popd > /dev/null
   diff -c goldens/$i.output ../build/$i.output || fail $i
 done
@@ -89,7 +89,7 @@ for i in ${ALL_TESTS[@]}; do
   echo "Running test $i with bounds checking..."
   ../build/compile -bounds ${i}.ob
   pushd ../build > /dev/null
-  ../build/out.prg < ../build/stdin.txt > ../build/$i.output
+  ../build/out.prg < ../build/stdin.txt > ../build/$i.output 2>&1
   popd > /dev/null
   diff -c goldens/$i.output ../build/$i.output || fail $i
 done

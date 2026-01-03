@@ -1,15 +1,15 @@
+<string>:1:3:Hex digit must be followed by H or X
+<string>:1:5:Character constant <string>:1:1:Invalid character
+<string>:1:1:Unterminated string
+<string>:1:1:Invalid character
+<string>:1:1:Unterminated comment
+<string>:1:1:BEGIN already defined
+<string>:1:1:BITAND already defined
+<string>:1:1:BITOR already defined
+<string>:1:1:BITXOR already defined
+<string>:1:1:ELSE undefined
 PASS: String pool test
-Err!<string>!2!Hex digit must be followed by H or X
-Err!<string>!4!Character constant 256 > 255
-Err!<string>!0!Invalid character
-Err!<string>!0!Unterminated string
-Err!<string>!0!Invalid character
-Err!<string>!0!Unterminated comment
+256 > 255
 PASS: Lexer test
-Err!<string>!0!BEGIN already defined
-Err!<string>!0!BITAND already defined
-Err!<string>!0!BITOR already defined
-Err!<string>!0!BITXOR already defined
-Err!<string>!0!ELSE undefined
 PASS: Decls test
 PASS: Parser test

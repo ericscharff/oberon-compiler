@@ -383,14 +383,14 @@ END Int;
 PROCEDURE Ln*;
 BEGIN
   Out.Ln;
-  IF fatal THEN Out.Halt END;
+  IF fatal THEN Out.Halt END
 END Ln;
 
 PROCEDURE PrintLnAndHalt*(s: ARRAY OF CHAR);
 BEGIN
   Out.ErrStr(s);
   Out.ErrLn;
-  Out.Halt
+  IF fatal THEN Out.Halt END
 END PrintLnAndHalt;
 
 PROCEDURE InfoPrintLn*(s: ARRAY OF CHAR);
@@ -435,7 +435,7 @@ PROCEDURE ErrorLn*(l: Lexer; s: ARRAY OF CHAR);
 BEGIN
   Error(l, s);
   Out.ErrLn;
-  Out.Halt
+  IF fatal THEN Out.Halt END
 END ErrorLn;
 
 PROCEDURE Next(VAR l: Lexer; VAR c: CHAR);

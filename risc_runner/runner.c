@@ -253,6 +253,24 @@ void do_trap(int pc, int32_t *regs, uint8_t *mem, Environment *env) {
   } else if (pc == -16) {
     /* Out.Halt */
     exit(1);
+  } else if (pc == -17) {
+    /* Out.ErrInt */
+    fprintf(stderr, "%d", regs[0]);
+  } else if (pc == -18) {
+    /* Out.ErrReal */
+    fprintf(stderr, "%f", to_float(regs[0]));
+  } else if (pc == -19) {
+    /* Out.ErrChar */
+    fputc(regs[0] & 0xff, stderr);
+  } else if (pc == -20) {
+    /* Out.ErrStr */
+    fputs(((const char *)mem) + regs[0], stderr);
+  } else if (pc == -21) {
+    /* Out.ErrStrI */
+    fputs(((const char *)mem) + regs[0] + regs[2], stderr);
+  } else if (pc == -22) {
+    /* Out.ErrLn */
+    fputc('\n', stderr);
   } else if (pc == -23) {
     /* Out.ReadFile */
     read_file(((const char *)mem) + regs[0], ((char *)mem) + regs[2]);
