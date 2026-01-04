@@ -285,14 +285,14 @@ END IsImported;
 PROCEDURE OutTypeName(l: Lex.Lexer; t: Type);
 BEGIN
   IF t.decl = NIL THEN
-    Lex.Str(TypeKindNames[t.kind]);
+    Lex.ErrStr(TypeKindNames[t.kind]);
   ELSE
     IF (t.decl.qname.moduleName > 0) &
        (t.decl.qname.moduleName # currentModuleName) THEN
-      Lex.OutStr(l, t.decl.qname.moduleName);
-      Lex.Str(".");
+      Lex.ErrOutStr(l, t.decl.qname.moduleName);
+      Lex.ErrStr(".");
     END;
-    Lex.OutStr(l, t.decl.qname.name);
+    Lex.ErrOutStr(l, t.decl.qname.name);
   END;
 END OutTypeName;
 
@@ -302,10 +302,10 @@ BEGIN
   ASSERT(e.typ # NIL);
   IF e.typ.kind # kind THEN
     Lex.Error(l, "Expected ");
-    Lex.Str(TypeKindNames[kind]);
-    Lex.Str(", got ");
+    Lex.ErrStr(TypeKindNames[kind]);
+    Lex.ErrStr(", got ");
     OutTypeName(l, e.typ);
-    Lex.Ln;
+    Lex.PrintLnAndHalt("");
   END;
 END ExpectType;
 
@@ -393,12 +393,12 @@ BEGIN
   ELSE
     good := FALSE;
     Lex.Error(l, "Type mismatch for op [");
-    Lex.Str(Lex.TokenNames[op]);
-    Lex.Str("] got ");
+    Lex.ErrStr(Lex.TokenNames[op]);
+    Lex.ErrStr("] got ");
     OutTypeName(l, lhs.typ);
-    Lex.Str(" and ");
+    Lex.ErrStr(" and ");
     OutTypeName(l, rhs.typ);
-    Lex.Ln;
+    Lex.PrintLnAndHalt("");
   END;
   RETURN good
 END ExprCompatable;
@@ -466,7 +466,7 @@ BEGIN
     END;
   ELSE
     Lex.Error(l, "Declaration ");
-    Lex.OutStr(l, newType.qname.name);
+    Lex.ErrOutStr(l, newType.qname.name);
     Lex.PrintLnAndHalt(" must be a POINTER or RECORD type");
   END;
   RETURN e
@@ -535,7 +535,7 @@ BEGIN
     IF d.qname.name = name THEN
       IF IsImported(d) & ~d.exported THEN
         Lex.Error(l, "Field ");
-        Lex.OutStr(l, name);
+        Lex.ErrOutStr(l, name);
         Lex.PrintLnAndHalt(" is private");
       END;
       NewExpr(e, exprFieldRef, d.typ);
@@ -545,7 +545,7 @@ BEGIN
       e.assignable := base.assignable;
     ELSE
       Lex.Error(l, "Field ");
-      Lex.OutStr(l, name);
+      Lex.ErrOutStr(l, name);
       Lex.PrintLnAndHalt(" not found");
     END;
   ELSE
@@ -564,10 +564,10 @@ BEGIN
       IF (index.kind = exprVal) & (base.typ.length > 0) &
          ((index.iVal < 0) OR (index.iVal >= base.typ.length)) THEN
         Lex.Error(l, "Array index ");
-        Lex.Int(index.iVal);
-        Lex.Str(" out OF range for ARRAY OF length ");
-        Lex.Int(base.typ.length);
-        Lex.Ln;
+        Lex.ErrInt(index.iVal);
+        Lex.ErrStr(" out OF range for ARRAY OF length ");
+        Lex.ErrInt(base.typ.length);
+        Lex.PrintLnAndHalt("");
       ELSE
         IF base.typ.kind = typeBuffer THEN
           NewExpr(e, exprBufferRef, base.typ.base);
@@ -683,7 +683,7 @@ BEGIN
   IF IsConst(elt) THEN
     IF (elt.iVal < 0) OR (elt.iVal > 31) THEN
       Lex.Error(l, "Value ");
-      Lex.Int(elt.iVal);
+      Lex.ErrInt(elt.iVal);
       Lex.PrintLnAndHalt(" out OF range of SET 0..31");
     ELSE
       e := NewExprSet(setType);
@@ -910,17 +910,17 @@ BEGIN
     (* Good - ARRAY OF X - ARRAY * OF X *)
   ELSIF (formal.kind = declVarParam) & ~actual.assignable THEN
     Lex.Error(l, "For argument ");
-    Lex.Int(arg);
+    Lex.ErrInt(arg);
     Lex.PrintLnAndHalt(", param is not assignable (expected VAR param)");
   ELSIF ~AssignmentCompatable(
       l, actual.typ, formal.typ, actual.iVal, actual.iVal) THEN
     Lex.Error(l, "For argument ");
-    Lex.Int(arg);
-    Lex.Str(", expected ");
+    Lex.ErrInt(arg);
+    Lex.ErrStr(", expected ");
     OutTypeName(l, formal.typ);
-    Lex.Str(", got ");
+    Lex.ErrStr(", got ");
     OutTypeName(l, actual.typ);
-    Lex.Ln;
+    Lex.PrintLnAndHalt("");
   END;
 END ExpectArgMatch;
 
@@ -976,10 +976,10 @@ BEGIN
       END;
     ELSE
       Lex.Error(l, "Expected ");
-      Lex.Int(count);
-      Lex.Str(" parameters, got ");
-      Lex.Int(i);
-      Lex.Ln;
+      Lex.ErrInt(count);
+      Lex.ErrStr(" parameters, got ");
+      Lex.ErrInt(i);
+      Lex.PrintLnAndHalt("");
     END;
   ELSIF (proc.kind = exprIdentRef) & (proc.decl.kind = declBuiltin) THEN
     e := proc.decl.resolver(l, args);

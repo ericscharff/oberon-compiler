@@ -380,6 +380,11 @@ BEGIN
   Out.Int(i);
 END Int;
 
+PROCEDURE ErrInt*(i: INTEGER);
+BEGIN
+  Out.ErrInt(i);
+END ErrInt;
+
 PROCEDURE Ln*;
 BEGIN
   Out.Ln;
