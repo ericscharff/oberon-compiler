@@ -103,7 +103,7 @@ PROCEDURE DoFrame;
 VAR c: INTEGER;
 BEGIN
   UpdateKeyboard;
-  FOR c := 1 to 500 DO M6502.Step(cpu) END
+  FOR c := 1 TO 500 DO M6502.Step(cpu) END
 END DoFrame;
 
 BEGIN

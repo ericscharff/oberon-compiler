@@ -224,7 +224,7 @@ BEGIN
 	m := CEA(p, mode);
 	IF decimaL IN p.flags THEN
 		r := BCDtoBIN(p.a) + BCDtoBIN(m);
-		IF carrY in p.flags THEN INC(r) END;
+		IF carrY IN p.flags THEN INC(r) END;
 		SetC(p, r > 99);
 		SetNZ(p, r);
 		p.a := BINtoBCD(r)
