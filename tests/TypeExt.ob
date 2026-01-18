@@ -111,7 +111,7 @@ VAR
   pvr3: PR3;
   pvr4: PR4;
 BEGIN
-  vr1.a := 10; vr2.a := 10; vr3.a := 10; vr4.a := 10;
+  s1.s := 10; vr1.a := 10; vr2.a := 10; vr3.a := 10; vr4.a := 10;
   BaseTypes1(vr1, vr2, vr3, vr4, s1);
   NEW(pvr1); NEW(pvr2); NEW(pvr3); NEW(pvr4);
   pvr1.a := 10; pvr2.a := 10; pvr3.a := 10; pvr4.a := 10;
