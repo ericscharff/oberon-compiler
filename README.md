@@ -136,7 +136,11 @@ The compile shell script accepts several command line flags:
   and can thus be overridden with something like `-DOBERON_INTEGER=int32_t`.
   Thus, the integer type can be overriden in the compiler shell script, or by
   preprocessor defines, whichever is better given the context in which it is
-  being used.
+  being used. Note that while most code produced by the compiler will work
+  correctly with 64-bit integers, one notable exception is the compiler itself,
+  which relies on 32-bit integers for string hashing, and will likely work
+  unpredictably with 64-bit integers. See `Lex.StringInternRange` for more
+  details.
 - `-use_double` defines the C type of REAL to be `double`. If this is not set,
   it uses the type `OBERON_REAL`. This is an `ifdef` (defaults to `float`) and
   can thus be overridden with something like `-DOBERON_REAL=double`. Thus, the

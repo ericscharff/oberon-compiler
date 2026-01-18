@@ -179,29 +179,42 @@ BEGIN
   RETURN len = 0
 END StrEq;
 
+(* IMPORTANT NOTE: The hashing algorithm used here (derived from the ELF *)
+(* hash) was chosen because it will work correctly with 32-bit signed    *)
+(* INTEGERS, which is the only kind that Oberon supports. Many hash      *)
+(* algorithms rely on unsigned integers, and thus will result in         *)
+(* undefined behavior when transpiled to C, with its undefined signed    *)
+(* overflow behavior. This hashing algorithm is good because it is safe  *)
+(* with 32-bit signed values. **HOWEVER** it will not work properly if   *)
+(* the INTEGER type is 64 bits. Thus, do not recompile the compiler      *)
+(* using 64-bit INTEGERs without changing this algorithm.                *)
 PROCEDURE StringInternRange(VAR sp: StringPool; s: ARRAY OF CHAR; offset, length: INTEGER): PoolIndex;
 VAR
   i:    INTEGER;
   hash: INTEGER;
+  g:    INTEGER;
   b:    INTEGER;
 BEGIN
   ASSERT(sp.last + length < PoolSize);
   (* Copy and compute hash at the same time *)
-  hash := 811C9DC5H;
+  hash := 0;
   i := 0;
   WHILE (i < length) & (s[offset + i] # 0X) DO
-    hash := hash BITXOR ORD(s[offset + i]);
-    hash := hash BITAND 7FFFFFFFH;
-    hash := hash * 1000193H;
+    hash := hash * 16 + ORD(s[offset + i]);
+    g := hash BITAND 70000000H;
+    IF g # 0 THEN
+      hash := hash BITXOR (g DIV 1000000H);
+      hash := hash BITXOR g
+    END;
     sp.buf[sp.last + i] := s[offset + i];
     INC(i)
   END;
   sp.buf[sp.last + i] := 0X;
-  hash := hash * 85EBCA6BH;
-  hash := hash BITXOR (hash DIV 65536);
-  b := hash MOD NumBuckets;
+  b := ABS(hash MOD NumBuckets);
   WHILE (sp.buckets[b] >= 0) &
         ~StrEq(sp.buf, sp.buckets[b], s, offset, length) DO
+    ASSERT(b >= 0);
+    ASSERT(b < NumBuckets);
     INC(b);
     IF b = NumBuckets THEN b := 0; END;
   END;
