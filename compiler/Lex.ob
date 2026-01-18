@@ -171,11 +171,13 @@ END StringLen;
 
 PROCEDURE StrEq(a: ARRAY OF CHAR; ai: INTEGER; b: ARRAY OF CHAR; bi: INTEGER; len: INTEGER): BOOLEAN;
 BEGIN
-  WHILE (len > 0) & (a[ai] = b[bi]) DO
-    INC(ai);
-    INC(bi);
-    DEC(len);
-  END;
+  IF (len <= LEN(a)) & (len <= LEN(b)) THEN
+    WHILE (len > 0) & (a[ai] = b[bi]) DO
+      INC(ai);
+      INC(bi);
+      DEC(len);
+    END;
+  END
   RETURN len = 0
 END StrEq;
 
@@ -476,6 +478,7 @@ BEGIN
   PoolInit(l.sp);
   AddKeywords(l.sp);
   l.buf := s;
+  l.buf[BufSize - 1] := 0X;
   l.fileName := StringIntern(l.sp, "<string>");
   l.pos := 0;
 END LexerInitFromString;

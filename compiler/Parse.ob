@@ -420,6 +420,7 @@ VAR
   savedType: AST.Type;
 BEGIN
   ExpectToken(Lex.tOF);
+  s := NIL;
   tail := NIL;
   savedType := caseVar.decl.typ;
   WHILE ~IsToken(Lex.tEND) DO
