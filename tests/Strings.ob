@@ -214,6 +214,10 @@ BEGIN
   ca[3] := 44X;
   ca[4] := 45X;
   ca[5] := 0X;
+  ca[6] := 0X;
+  ca[7] := 0X;
+  ca[8] := 0X;
+  ca[9] := 0X;
   WriteString(ca);
   Middle(81, ca, 82);
   WriteString(ca);
