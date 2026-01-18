@@ -55,6 +55,7 @@ int checkbounds(int i, int len) {
   return i;
 }
 
+#ifdef C_BOOTSTRAP // This code is essentially no longer used
 // Does the runtime type of a extend b
 bool does_type_extend(oberon_typeid a, oberon_typeid b) {
   while (a) {
@@ -65,6 +66,7 @@ bool does_type_extend(oberon_typeid a, oberon_typeid b) {
   }
   return false;
 }
+#endif
 
 int make_set_range(int s, int e) {
   int r = 0;

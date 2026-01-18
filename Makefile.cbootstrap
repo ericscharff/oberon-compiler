@@ -1,6 +1,6 @@
 # builds the Oberon compiler using a bootstrap Oberon -> C compiler written in C
 BUILDDIR=build
-CFLAGS=-g -std=c17 -Wall -Wextra -Wpedantic
+CFLAGS=-g -std=c17 -Wall -Wextra -Wpedantic -DC_BOOTSTRAP
 
 BOOTSTRAP_SRCS=$(wildcard c_bootstrap/*.c)
 COMPILER_SRCS=$(wildcard compiler/*.ob) compiler/runtime.c
