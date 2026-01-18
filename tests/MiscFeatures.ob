@@ -53,6 +53,7 @@ BEGIN
   Out.Int(k);
   k := s[1].v[2].y;
   Out.Int(k);
+  i := 2;
   s[0].v[i].y := k;
   Out.Int(s[0].v[i].y)
 END FieldTest;
