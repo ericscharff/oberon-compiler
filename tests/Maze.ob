@@ -68,17 +68,25 @@ BEGIN
   Out.Ln;
 END PrintMaze;
 
-PROCEDURE Abs(n: INTEGER): INTEGER;
-BEGIN
-  IF n < 0 THEN n := n * (-1) END;
-  RETURN n
-END Abs;
-
 (* Return a random numger in the range [0, n) *)
 PROCEDURE Rand(n: INTEGER): INTEGER;
+(* Use the Park Miller LCG which works with only 32 bit arithmetic *)
+CONST
+  M = 7FFFFFFFH;
+  A = 48271;
+  Q = M DIV A; (* 44488 *)
+  R = M MOD A; (* 3399 *)
+VAR
+  dv, rm, s, t, result: INTEGER;
 BEGIN
-  randomSeed := (randomSeed * 1103515245 + 12345) BITAND 7FFFFFFFH;
-  RETURN Abs((randomSeed DIV 65536) MOD n)
+  dv := randomSeed DIV Q;
+  rm := randomSeed MOD Q;
+  s := rm * A;
+  t := dv * R;
+  result := s - t;
+  IF result < 0 THEN result := result + M END;
+  randomSeed := result
+  RETURN (randomSeed DIV 65536) MOD n
 END Rand;
 
 (* Shuffle the elements of an array *)
