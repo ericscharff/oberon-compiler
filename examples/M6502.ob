@@ -165,6 +165,7 @@ END WordAt;
 PROCEDURE EA(VAR p: CPU; mode: INTEGER): INTEGER;
 VAR a: INTEGER;
 BEGIN
+	a := 0;
 	CASE mode OF
 		mIndirectX:
 			a := WordAt(p, (Fetch(p) + p.x) BITAND 255);
