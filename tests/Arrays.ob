@@ -131,6 +131,7 @@ VAR
   dest: ARRAY 8 OF CHAR;
 BEGIN
   dest := src;
+  dest[7] := 0X;
   Out.Str(dest); Out.Ln
 END Copier;
 
