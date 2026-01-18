@@ -113,8 +113,8 @@ VAR
   BEGIN
     x := y;
     y := x;
-    p(x, y);
-    p(y, x);
+    IF x > 100 THEN p(x, y) END;
+    IF y > 100 THEN p(y, x) END
   END p;
 
   PROCEDURE z(a: INTEGER; VAR b, c: INTEGER);
