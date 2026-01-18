@@ -171,6 +171,17 @@ BEGIN
   Sum(a, 3, a)
 END SumTest;
 
+PROCEDURE AbsTest;
+VAR
+  i: INTEGER;
+BEGIN
+  i := -35;
+  Out.Int(i);
+  Out.Ln;
+  Out.Int(ABS(i));
+  Out.Ln
+END AbsTest;
+
 PROCEDURE ShortCircuitTest;
 PROCEDURE C1(a, b: INTEGER);
 BEGIN
@@ -231,6 +242,7 @@ BEGIN
   END;
   BitTest;
   SumTest;
+  AbsTest;
   ShortCircuitTest;
   BoolReturnValTest;
 END MiscFeatures.

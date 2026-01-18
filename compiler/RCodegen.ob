@@ -1521,10 +1521,18 @@ BEGIN
     localTrueChain := 0; localFalseChain := 0;
     GenExpr(l, e.rhs, item, localTrueChain, localFalseChain);
     LoadValue(item, localTrueChain, localFalseChain);
-    Emit(opMOVI, curReg, 0, 0, Out.RealAsInt(0.0));
-    Emit(opRCMP, item.r, item.r, curReg, 0);
-    Emit(opBRA, 0, 0, opBGT, cp+2);
-    Emit(opRSUB, item.r, curReg, item.r, 0);
+    IF e.rhs.typ.kind = AST.typeInteger THEN
+      Emit(opMOVI, curReg, 0, 0, 0);
+      Emit(opCMP, item.r, item.r, curReg, 0);
+      Emit(opBRA, 0, 0, opBGT, cp+2);
+      Emit(opSUB, item.r, curReg, item.r, 0);
+    ELSE
+      ASSERT(e.rhs.typ.kind = AST.typeReal);
+      Emit(opMOVI, curReg, 0, 0, Out.RealAsInt(0.0));
+      Emit(opRCMP, item.r, item.r, curReg, 0);
+      Emit(opBRA, 0, 0, opBGT, cp+2);
+      Emit(opRSUB, item.r, curReg, item.r, 0);
+    END
   ELSIF e.iVal = AST.builtinNew THEN
     allocSize := CalculateSize(e.rhs.typ.base);
     IF AST.NeedsTypeInfo(e.rhs.typ.base) THEN
