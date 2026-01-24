@@ -181,8 +181,8 @@ void dumpstate(int pc, int32_t *regs, uint8_t *mem) {
 void read_file(const char *fileName, char *buf) {
   FILE *file = fopen(fileName, "rb");
   if (!file) {
-    fprintf(stderr, "read_file: cannot open %s\n", fileName);
-    exit(1);
+    buf[0] = '\0';
+    return;
   }
   fseek(file, 0, SEEK_END);
   long len = ftell(file);

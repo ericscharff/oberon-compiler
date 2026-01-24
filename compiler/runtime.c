@@ -135,10 +135,8 @@ void Out_ReadFile(const char *fileName, size_t q, char *buf, int r) {
   (void)q;
   FILE *file = fopen(fileName, "rb");
   if (!file) {
-    char errMsg[1024];
-    snprintf(errMsg, 1024, "Error reading %s", fileName);;
-    perror(errMsg);
-    assert(0);
+    buf[0] = '\0';
+    return;
   }
   fseek(file, 0, SEEK_END);
   long len = ftell(file);
