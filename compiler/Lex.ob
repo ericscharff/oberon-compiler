@@ -169,6 +169,23 @@ BEGIN
   RETURN l
 END StringLen;
 
+PROCEDURE StrCat(VAR a: ARRAY OF CHAR; b: ARRAY OF CHAR);
+VAR
+  aLen, bLen, i: INTEGER;
+BEGIN
+  aLen := StringLen(a);
+  bLen := StringLen(b);
+  IF (aLen + bLen) < LEN(a) THEN
+    i := 0;
+    WHILE bLen >= 0 DO
+      a[aLen] := b[i];
+      INC(aLen);
+      INC(i);
+      DEC(bLen)
+    END
+  END
+END StrCat;
+
 PROCEDURE StrEq(a: ARRAY OF CHAR; ai: INTEGER; b: ARRAY OF CHAR; bi: INTEGER; len: INTEGER): BOOLEAN;
 BEGIN
   IF (len <= LEN(a)) & (len <= LEN(b)) THEN
@@ -180,6 +197,20 @@ BEGIN
   END
   RETURN len = 0
 END StrEq;
+
+(* Destructively change s so that directory prefix remains but nothing   *)
+(* else. E.g., "a/b/c/file" becomes "a/b/c/" and "something" becomes "". *)
+(* The path separator is always slash (/).                               *)
+PROCEDURE DirName(VAR s: ARRAY OF CHAR);
+VAR
+  i: INTEGER;
+BEGIN
+  i := StringLen(s);
+  WHILE (i >= 0) & (s[i] # 2FX) DO
+    s[i] := 0X;
+    DEC(i)
+  END
+END DirName;
 
 (* IMPORTANT NOTE: The hashing algorithm used here (derived from the ELF *)
 (* hash) was chosen because it will work correctly with 32-bit signed    *)
@@ -874,6 +905,39 @@ BEGIN
   TokenNames[tEOF]          :=  "EOF";
 END InitTokenNames;
 
+PROCEDURE TestStringOps;
+VAR
+  s:    ARRAY 25 OF CHAR;
+BEGIN
+  s := "Hello";
+  ASSERT(5 = StringLen(s));
+  ASSERT(StrEq("Hello", 0, s, 0, 5));
+  StrCat(s, " world");
+  ASSERT(StrEq(s, 0, "Hello world", 0, 11));
+  ASSERT(StrEq("Hello world", 0, s, 0, 11));
+  s[0] := 0X;
+  StrCat(s, "Alpha");
+  ASSERT(StrEq(s, 0, "Alpha", 0, 5));
+  s := "Beta";
+  StrCat(s, "");
+  ASSERT(StrEq("Beta", 0, s, 0, 5));
+  StrCat(s, "This string is way too long so this should not do anything");
+  ASSERT(StrEq("Beta", 0, s, 0, 5));
+  s := "Something.ob";
+  DirName(s);
+  ASSERT(StrEq(s, 0, "", 0, 1));
+  s := "a/b/c/file.txt";
+  DirName(s);
+  ASSERT(StrEq(s, 0, "a/b/c/", 0, 7));
+  s := "/one/two/three/";
+  DirName(s);
+  ASSERT(StrEq(s, 0, "/one/two/three/", 0, 16));
+  s := "alpha/file.txt";
+  DirName(s);
+  StrCat(s, "beta.txt");
+  ASSERT(StrEq(s, 0, "alpha/beta.txt", 0, 15));
+END TestStringOps;
+
 PROCEDURE TestPool;
 VAR
   sp:   StringPool;
@@ -1004,6 +1068,7 @@ END TestLexer;
 
 PROCEDURE RunTests*;
 BEGIN
+  TestStringOps;
   TestPool;
   TestLexer;
 END RunTests;
