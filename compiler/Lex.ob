@@ -331,6 +331,18 @@ BEGIN
   RETURN len
 END StringLenI;
 
+PROCEDURE CopyLexToString(l: Lexer; s: PoolIndex; VAR dest: ARRAY OF CHAR);
+VAR
+  i, len: INTEGER;
+BEGIN
+  len := StringLenI(l, s);
+  IF len < LEN(dest) THEN
+    FOR i := 0 TO len DO
+      dest[i] := l.sp.buf[s + i]
+    END
+  END
+END CopyLexToString;
+
 PROCEDURE CopyLexToPool*(l: Lexer; s: PoolIndex; VAR destPool: StringPool): PoolIndex;
 BEGIN
   RETURN StringInternRange(destPool, l.sp.buf, s, StringLenI(l, s))
@@ -528,23 +540,20 @@ VAR
   savedBuf:      ARRAY BufSize OF CHAR;
   savedFileName: PoolIndex;
   fileName:      ARRAY 128 OF CHAR;
-  savedPos, i:   INTEGER;
+  moduleStr:     ARRAY 64 OF CHAR;
+  savedPos:      INTEGER;
   savedToken:    Token;
 BEGIN
   savedBuf := l.buf;
   savedFileName := l.fileName;
   savedPos := l.pos;
   savedToken := l.t;
-  (* Make "<moduleName>.ob" *)
-  i := 0;
-  WHILE l.sp.buf[moduleName + i] # 0X DO
-    fileName[i] := l.sp.buf[moduleName + i];
-    INC(i);
-  END;
-  fileName[i] := ".";
-  fileName[i+1] := "o";
-  fileName[i+2] := "b";
-  fileName[i+3] := 0X;
+  CopyLexToString(l, l.fileName, fileName);
+  DirName(fileName);
+  (* fileName now has the directory that the current file has *)
+  CopyLexToString(l, moduleName, moduleStr);
+  StrCat(moduleStr, ".ob"); (* <moduleName>.ob *)
+  StrCat(fileName, moduleStr); (* current mod dir + / + <moduleName>.ob *)
   Out.ReadFile(fileName, l.buf);
   l.fileName := StringIntern(l.sp, fileName);
   l.pos := 0;
