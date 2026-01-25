@@ -1091,7 +1091,7 @@ END InitFromFile;
 
 PROCEDURE TestParse;
 BEGIN
-  InitFromFile("Parse.ob");
+  InitFromFile("compiler/Parse.ob");
   ParseModule;
   Lex.InfoPrintLn("PASS: Parser test");
 END TestParse;

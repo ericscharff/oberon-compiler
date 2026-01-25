@@ -53,6 +53,10 @@ $(BUILDDIR):
 clean:
 	rm -rf build
 
+regen: $(BUILDDIR)/oberonr
+	$(BUILDDIR)/oberon
+	$(BUILDDIR)/oberonr -dumpcode compiler/Compiler.ob > risc_bootstrap/risc_code.txt
+
 test: $(C_TEST_BINS) \
 	$(C_BOUNDS_TEST_BINS) \
 	$(CXX_TEST_BINS) \
