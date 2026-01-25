@@ -1,13 +1,12 @@
 #!/bin/bash
 
+# Turn the last argument (the file name) into an absolute path
+SOURCE_FILE_PATH=${@: -1}
+ABSOLUTE_FILE_PATH=$(cd $(dirname $SOURCE_FILE_PATH) && pwd)/$(basename $SOURCE_FILE_PATH)
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PARENTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )"
 BUILDDIR=$PARENTDIR/build
 COMPILERDIR=$PARENTDIR/compiler
-
-cp $COMPILERDIR/*.ob $BUILDDIR
-cp $COMPILERDIR/runtime.c $BUILDDIR
-cp *.ob $BUILDDIR
 
 CC=${CC:-cc}
 CXX=${CXX:-g++}
@@ -17,10 +16,12 @@ CSTDFLAGS=-std=c17
 OCFLAGS=
 inSwitches=1
 
+cp $PARENTDIR/base/runtime.c $BUILDDIR/runtime.c
+
 while [ $inSwitches -eq 1 ]; do
   if [ $1 = "-extra_runtime" ]; then
     shift
-    cat $COMPILERDIR/runtime.c $1 > $BUILDDIR/runtime.c
+    cat $1 >> $BUILDDIR/runtime.c
     shift
   elif [ $1 = "-cpp" ]; then
     CC=$CXX
@@ -42,5 +43,5 @@ while [ $inSwitches -eq 1 ]; do
   fi
 done
 
-cd $BUILDDIR
-./oberon $OCFLAGS $1 > out$EXT && $CC -g $CSTDFLAGS -Wall -Wextra -Wpedantic -Wno-unused-parameter -o out.prg out$EXT $EXTRA_CFLAGS
+cd $PARENTDIR
+$BUILDDIR/oberon $OCFLAGS $ABSOLUTE_FILE_PATH > $BUILDDIR/out$EXT && $CC -g $CSTDFLAGS -Wall -Wextra -Wpedantic -Wno-unused-parameter -o $BUILDDIR/out.prg $BUILDDIR/out$EXT $EXTRA_CFLAGS

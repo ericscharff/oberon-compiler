@@ -48,14 +48,12 @@ sized arrays, like Vectors/ArrayLists in other languages.)
 Running `make` will build the bootstrap compiler, and then the main compiler,
 which is placed in the `build` directory. Once created, this compiler can be
 used to compile the Oberon-based compiler. The Oberon compiler then compiles
-itself, so as a form of a "triple test" one can compare the generated C code to
-ensure that the compiler is still generating correct code. The test suite can be
-run with `make test` and the triple-test with `make compiler-test`. Specific
-tests may be run with
+itself, so as a form of a "triple test" it compares the generated C code to
+ensure that the compiler is still generating correct code.
 
-```
-$ TESTS='Maze FibFact' make test
-```
+The compiler has an extensive test suite. Invoking `make test` will run all
+of the Oberon tests in the `tests/` directory, and ensure that each produces
+the output as specified in the `tests/goldens/` directory.
 
 ## Running the compiler
 
@@ -63,8 +61,8 @@ Once bootstrapped, the `build` directory contains a shell script called
 `compile`. This shell script can be used to compile examples. For example:
 
 ```bash
-# Build the compiler
-$ make
+# Build the compilers and the runner script
+$ make build/compile
 ```
 
 Alternatively, you can run
@@ -78,6 +76,9 @@ build the compiler written in Oberon, and then uses the Oberon compiler to
 compile itself. The normal Makefile avoids the need for the the C bootstrap
 compiler.
 
+After `build/compile` is built, you can use it to compile a single program in an
+arbitrary location:
+
 ```bash
 # Build an example
 $ cd tests
@@ -87,25 +88,6 @@ $ ../build/compile FibFact.ob
 $ ../build/out.prg
 5040
 10946
-```
-
-or run all the tests
-
-```bash
-$ ./run-tests.sh
-```
-
-or run some of the tests
-
-```bash
-$ TESTS='Maze FibFact' ./run-tests.sh
-```
-
-Self hosting test: Use the compiler to build a RISC binary of the compiler, and
-then use the RISC binary / interpreter to compile itself
-
-```bash
-$ ./compiler-test.sh
 ```
 
 The compiler will read and compile all modules upon which the main class
