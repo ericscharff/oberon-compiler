@@ -29,7 +29,10 @@ $(BUILDDIR)/risc_test_%: tests/%.ob $(BUILDDIR)/oberonr risc_runner/runner.c
 	$(BUILDDIR)/oberonr -dumpcode $(<) > $(BUILDDIR)/$(*)_risc_code.txt
 	$(CC) $(CFLAGS) -o $(@) -DMAX_MEM=65536 -DCODE_FILE=\"$(*)_risc_code.txt\" -I$(BUILDDIR) risc_runner/runner.c
 
-$(BUILDDIR)/compile: contrib/compile $(BUILDDIR)/oberonr
+$(BUILDDIR)/compile: contrib/compile $(BUILDDIR)/oberon
+	cp $(<) $(@)
+
+$(BUILDDIR)/rcompile: contrib/rcompile $(BUILDDIR)/oberonr
 	cp $(<) $(@)
 
 $(BUILDDIR)/oberonr: $(BUILDDIR)/oberon $(COMPILER_SRCS)

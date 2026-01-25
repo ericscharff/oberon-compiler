@@ -1,18 +1,16 @@
 #!/bin/bash
 
+# Turn the last argument (the file name) into an absolute path
+SOURCE_FILE_PATH=${@: -1}
+ABSOLUTE_FILE_PATH=$(cd $(dirname $SOURCE_FILE_PATH) && pwd)/$(basename $SOURCE_FILE_PATH)
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PARENTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )"
 BUILDDIR=$PARENTDIR/build
 COMPILERDIR=$PARENTDIR/compiler
 RUNNERDIR=$PARENTDIR/risc_runner
 
-cp $COMPILERDIR/*.ob $BUILDDIR
-cp $RUNNERDIR/* $BUILDDIR
-cp *.ob $BUILDDIR
-cd $BUILDDIR
-
 CC=${CC:-cc}
 MEM_SIZE=${MEM_SIZE:-65536}
 
-cd $BUILDDIR
-./oberonr $1 > risc_asm.txt && ./oberonr -dumpcode $1 > risc_code.txt && $CC -g -DMAX_MEM=$MEM_SIZE -Wall -Wextra -Wpedantic -o out.prg runner.c
+cd $PARENTDIR
+$BUILDDIR/oberonr $ABSOLUTE_FILE_PATH > $BUILDDIR/risc_asm.txt && $BUILDDIR/oberonr -dumpcode $ABSOLUTE_FILE_PATH > $BUILDDIR/risc_code.txt && $CC -g -DMAX_MEM=$MEM_SIZE -Wall -Wextra -Wpedantic -o $BUILDDIR/out.prg -I$BUILDDIR $RUNNERDIR/runner.c
