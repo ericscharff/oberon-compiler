@@ -146,6 +146,7 @@ TYPE
 VAR
   TokenNames*: ARRAY tEOF+1, KwdSize OF CHAR;
   fatal: BOOLEAN;
+  baseDir: ARRAY 256 OF CHAR;
 
 PROCEDURE PoolInit*(VAR sp: StringPool);
 VAR
@@ -555,6 +556,19 @@ BEGIN
   StrCat(moduleStr, ".ob"); (* <moduleName>.ob *)
   StrCat(fileName, moduleStr); (* current mod dir + / + <moduleName>.ob *)
   Out.ReadFile(fileName, l.buf);
+  IF l.buf[0] = 0X THEN
+    (* Module not found in current file dir, try baseDir *)
+    fileName := baseDir;
+    StrCat(fileName, moduleStr); (* <baseDir has /> + <moduleName>.ob *)
+    Out.ReadFile(fileName, l.buf);
+    IF l.buf[0] = 0X THEN
+      Out.ErrStr("Module ");
+      Out.ErrStr(moduleStr);
+      Out.ErrStr(" not found");
+      Out.ErrLn;
+      Out.Halt
+    END
+  END;
   l.fileName := StringIntern(l.sp, fileName);
   l.pos := 0;
   callback;
@@ -1084,5 +1098,6 @@ END RunTests;
 
 BEGIN
   InitTokenNames;
-  fatal := TRUE
+  fatal := TRUE;
+  baseDir := "base/" (* Assumes builds from compiler root *)
 END Lex.

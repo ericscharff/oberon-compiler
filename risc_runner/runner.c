@@ -134,7 +134,11 @@ typedef struct Environment {
   char **saved_argv;
 } Environment;
 
+#ifdef CODE_FILE
+#include CODE_FILE
+#else
 #include "risc_code.txt"
+#endif
 
 void line(const char *reg0, int32_t r0, const char *reg1, int32_t r1,
           int32_t mem, uint8_t *contents) {
