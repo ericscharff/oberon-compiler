@@ -62,18 +62,12 @@ test: $(C_TEST_BINS) \
 		echo "Running $$test_name"; \
 		./$(BUILDDIR)/c_test_$$test_name < tests/stdin.txt > $(BUILDDIR)/$$test_name.output 2>&1 ; \
 		diff $(BUILDDIR)/$$test_name.output tests/goldens/$$test_name.output || exit 1; \
-	done
-	@for test_name in $(TEST_NAMES); do \
 		echo "Running $$test_name (Bounds checking)"; \
 		./$(BUILDDIR)/c_bounds_test_$$test_name < tests/stdin.txt > $(BUILDDIR)/$$test_name.output 2>&1 ; \
 		diff $(BUILDDIR)/$$test_name.output tests/goldens/$$test_name.output || exit 1; \
-	done
-	@for test_name in $(TEST_NAMES); do \
 		echo "Running $$test_name (RISC)"; \
 		./$(BUILDDIR)/risc_test_$$test_name < tests/stdin.txt > $(BUILDDIR)/$$test_name.output 2>&1 ; \
 		diff $(BUILDDIR)/$$test_name.output tests/goldens/$$test_name.output || exit 1; \
-	done
-	@for test_name in $(TEST_NAMES); do \
 		echo "Running $$test_name (C++)"; \
 		./$(BUILDDIR)/cpp_test_$$test_name < tests/stdin.txt > $(BUILDDIR)/$$test_name.output 2>&1 ; \
 		diff $(BUILDDIR)/$$test_name.output tests/goldens/$$test_name.output || exit 1; \
