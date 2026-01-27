@@ -38,7 +38,7 @@ EXTRA_CFLAGS=$(pkg-config --cflags --libs cairo) ../build/compile \
   -extra_runtime cairo.c CairoTest.ob
 ```
 
-The resulting program (`../build/out.prg`) generates a few PNG images.
+The resulting program (`../build/CairoTest`) generates a few PNG images.
 
 ## PrettyPrint
 
@@ -48,5 +48,5 @@ stdout. e.g.
 
 ```
 ../build/compile PrettyPrint.ob
-../built/out.prg Cairo.ob > Cairo-formatted.ob
+../built/PrettyPrint Cairo.ob > Cairo-formatted.ob
 ```

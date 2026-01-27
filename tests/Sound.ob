@@ -73,7 +73,7 @@ VAR
 BEGIN
   (* To convert to WAV:
    * $ ../build/compile Sound.ob
-   * $ ../build/out.prg > a.raw
+   * $ ../build/Sound > a.raw
    * $ sox -t raw -c 1 -b 8 -e unsigned -r 8k a.raw a.wav
    *)
 

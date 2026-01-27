@@ -83,9 +83,9 @@ arbitrary location:
 # Build an example
 $ cd tests
 $ ../build/compile FibFact.ob
-# Transpiles to ../build/out.c and then compiles to ../build/out.prg
+# Transpiles to ../build/FibFact.c and then compiles to ../build/FibFact
 # Run the example
-$ ../build/out.prg
+$ ../build/FibFact
 5040
 10946
 ```

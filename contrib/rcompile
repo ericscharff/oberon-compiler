@@ -1,8 +1,10 @@
 #!/bin/bash
 
+START_DIR=$(pwd)
 # Turn the last argument (the file name) into an absolute path
 SOURCE_FILE_PATH=${@: -1}
 ABSOLUTE_FILE_PATH=$(cd $(dirname $SOURCE_FILE_PATH) && pwd)/$(basename $SOURCE_FILE_PATH)
+NAME_WITHOUT_EXTENSION=$(basename $ABSOLUTE_FILE_PATH .ob)
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PARENTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )"
 BUILDDIR=$PARENTDIR/build
@@ -13,4 +15,7 @@ CC=${CC:-cc}
 MEM_SIZE=${MEM_SIZE:-65536}
 
 cd $PARENTDIR
-$BUILDDIR/oberonr $ABSOLUTE_FILE_PATH > $BUILDDIR/risc_asm.txt && $BUILDDIR/oberonr -dumpcode $ABSOLUTE_FILE_PATH > $BUILDDIR/risc_code.txt && $CC -g -DMAX_MEM=$MEM_SIZE -Wall -Wextra -Wpedantic -o $BUILDDIR/out.prg -I$BUILDDIR $RUNNERDIR/runner.c
+RISC_FILE=$BUILDDIR/${NAME_WITHOUT_EXTENSION}_risc_asm.txt
+DEST_BIN=$BUILDDIR/$NAME_WITHOUT_EXTENSION
+$BUILDDIR/oberonr $ABSOLUTE_FILE_PATH > $RISC_FILE && $BUILDDIR/oberonr -dumpcode $ABSOLUTE_FILE_PATH > $BUILDDIR/risc_code.txt && $CC -g -DMAX_MEM=$MEM_SIZE -Wall -Wextra -Wpedantic -o $DEST_BIN -I$BUILDDIR $RUNNERDIR/runner.c
+#echo "$(realpath --relative-to=$START_DIR $DEST_BIN) created"

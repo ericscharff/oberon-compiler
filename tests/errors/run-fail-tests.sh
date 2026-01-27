@@ -16,7 +16,7 @@ for i in ${TESTS[@]}; do
   echo "Running test $i..."
   ../../build/compile -bounds ${i}.ob
   pushd ../../build > /dev/null
-  if ( ./out.prg || false ) >/dev/null 2>&1; then
+  if ( ./$i || false ) >/dev/null 2>&1; then
     fail $i
   fi
   popd > /dev/null
@@ -25,7 +25,7 @@ for i in ${TESTS[@]}; do
   echo "Running RISC test $i..."
   ../../build/rcompile ${i}.ob
   pushd ../../build > /dev/null
-  if ( ./out.prg || false ) >/dev/null 2>&1; then
+  if ( ./$i || false ) >/dev/null 2>&1; then
     fail $i
   fi
   popd > /dev/null
@@ -34,7 +34,7 @@ for i in ${TESTS[@]}; do
   echo "Running C++ test $i..."
   ../../build/compile -bounds -cpp ${i}.ob
   pushd ../../build > /dev/null
-  if ( ./out.prg || false ) >/dev/null 2>&1; then
+  if ( ./$i || false ) >/dev/null 2>&1; then
     fail $i
   fi
   popd > /dev/null
