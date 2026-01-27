@@ -18,4 +18,3 @@ cd $PARENTDIR
 RISC_FILE=$BUILDDIR/${NAME_WITHOUT_EXTENSION}_risc_asm.txt
 DEST_BIN=$BUILDDIR/$NAME_WITHOUT_EXTENSION
 $BUILDDIR/oberonr $ABSOLUTE_FILE_PATH > $RISC_FILE && $BUILDDIR/oberonr -dumpcode $ABSOLUTE_FILE_PATH > $BUILDDIR/risc_code.txt && $CC -g -DMAX_MEM=$MEM_SIZE -Wall -Wextra -Wpedantic -o $DEST_BIN -I$BUILDDIR $RUNNERDIR/runner.c
-#echo "$(realpath --relative-to=$START_DIR $DEST_BIN) created"
