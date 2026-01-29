@@ -567,9 +567,10 @@ BEGIN
   END
 END LoadValue;
 
-(* Loads the address of a variable into a register.                          *)
-(* If this is already in a register (e.g., RegI) no new register is reserve. *)
-(* However, for a variable (relative to SP or GB) a new register allocated.  *)
+(* Loads the address of a variable into a register.                        *)
+(* If the item is already in a register (e.g., RegI), then no new register *)
+(* is reserved. A variable (which is relative to SP or GB) will allocate a *)
+(* New register, so as to not interfere with SP or GB.                     *)
 PROCEDURE LoadAddress(VAR item: Item);
 BEGIN
   IF item.kind = itemVar THEN
