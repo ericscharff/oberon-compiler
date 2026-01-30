@@ -28,11 +28,24 @@ CONST
   Seven = 7;
 
 TYPE
+  BaseMessage = RECORD END;
+  SubMessage1 = RECORD (BaseMessage) END;
+  SubMessage2 = RECORD (BaseMessage) END;
+  SubSubMessage1 = RECORD (SubMessage1) END;
+
+  PBaseMessage = POINTER TO BaseMessage;
+  PSub1Message = POINTER TO SubMessage1;
+  PSub2Message = POINTER TO SubMessage2;
+  PSubSub1Message = POINTER TO SubSubMessage1;
+
+  PtrHolder = RECORD p: PBaseMessage END;
+
   IntBuf = ARRAY * OF INTEGER;
   RecBuf = RECORD z: INTEGER; b: ARRAY * OF INTEGER END;
   NatBuf = RECORD _nat: NATIVE INTEGER END;
   Pair = RECORD a, b: INTEGER END;
   PairBuf = ARRAY * OF Pair;
+  OopBuf = ARRAY * OF PtrHolder;
   CallbackFunc = PROCEDURE (i: INTEGER);
 
 PROCEDURE FactIter*(n: INTEGER): INTEGER;
@@ -184,6 +197,53 @@ BEGIN
   END;
 END TestBuffers;
 
+PROCEDURE TestOopBuffers;
+VAR
+  b: OopBuf;
+  p: PtrHolder;
+  pBase: PBaseMessage;
+  pSub1: PSub1Message;
+  pSub2: PSub2Message;
+  pSubSub1: PSubSub1Message;
+BEGIN
+  NEW_ARRAY(b, 4);
+  p.p := NIL;
+
+  NEW(pBase);
+  NEW(pSub1);
+  NEW(pSub2);
+  NEW(pSubSub1);
+
+  p.p := pBase;
+  PUSH(b, p);
+  p.p := pSub1;
+  PUSH(b, p);
+  p.p := pSub2;
+  PUSH(b, p);
+  p.p := pSubSub1;
+  PUSH(b, p);
+
+  ASSERT(b[0].p IS PBaseMessage);
+  ASSERT(b[1].p IS PBaseMessage);
+  ASSERT(b[2].p IS PBaseMessage);
+  ASSERT(b[3].p IS PBaseMessage);
+
+  ASSERT(~(b[0].p IS PSub1Message));
+  ASSERT(b[1].p IS PSub1Message);
+  ASSERT(~(b[2].p IS PSub1Message));
+  ASSERT(b[3].p IS PSub1Message);
+
+  ASSERT(~(b[0].p IS PSub2Message));
+  ASSERT(~(b[1].p IS PSub2Message));
+  ASSERT(b[2].p IS PSub2Message);
+  ASSERT(~(b[3].p IS PSub2Message));
+
+  ASSERT(~(b[0].p IS PSubSub1Message));
+  ASSERT(~(b[1].p IS PSubSub1Message));
+  ASSERT(~(b[2].p IS PSubSub1Message));
+  ASSERT(b[3].p IS PSubSub1Message);
+END TestOopBuffers;
+
 PROCEDURE TestBitops;
 VAR
   i, j: INTEGER;
@@ -199,6 +259,7 @@ PROCEDURE RunTests*;
 BEGIN
   TestNativeCode;
   TestBuffers;
+  TestOopBuffers;
   TestBitops;
   TestFib
 END RunTests;
