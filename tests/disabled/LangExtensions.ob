@@ -42,7 +42,6 @@ TYPE
 
   IntBuf = ARRAY * OF INTEGER;
   RecBuf = RECORD z: INTEGER; b: ARRAY * OF INTEGER END;
-  NatBuf = RECORD _nat: NATIVE INTEGER END;
   Pair = RECORD a, b: INTEGER END;
   PairBuf = ARRAY * OF Pair;
   OopBuf = ARRAY * OF PtrHolder;
@@ -125,24 +124,6 @@ PROCEDURE AddToBuf(VAR b: IntBuf; val: INTEGER);
 BEGIN
   PUSH(b, val)
 END AddToBuf;
-
-NATIVE (-9000) PROCEDURE SetNativeVal(r: NatBuf; v: INTEGER); END SetNativeVal;
-NATIVE (-9001) PROCEDURE CallNative(r: NatBuf); END CallNative;
-NATIVE (-9002) PROCEDURE NativeCallback(i: INTEGER; func: CallbackFunc); END NativeCallback;
-
-PROCEDURE MyCallback(i: INTEGER);
-BEGIN
-  Out.Str("Called back from native with i="); Out.Int(i); Out.Ln
-END MyCallback;
-
-PROCEDURE TestNativeCode;
-VAR
-  r: NatBuf;
-BEGIN
-  NativeCallback(10, MyCallback);
-  SetNativeVal(r, 81);
-  CallNative(r)
-END TestNativeCode;
 
 PROCEDURE SumPairs(pairs: ARRAY OF Pair): INTEGER;
 BEGIN
@@ -257,7 +238,6 @@ END TestBitops;
 
 PROCEDURE RunTests*;
 BEGIN
-  TestNativeCode;
   TestBuffers;
   TestOopBuffers;
   TestBitops;

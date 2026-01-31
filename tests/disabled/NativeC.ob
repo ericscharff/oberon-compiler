@@ -1,0 +1,59 @@
+(*
+ * This file is part of oberon-compiler
+ *
+ * Copyright (C) 2018-2026  Eric Scharff
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ *)
+
+MODULE NativeC;
+
+(* Examples using laguage extensions *)
+
+IMPORT Out;
+
+CONST
+  Seven = 7;
+
+TYPE
+  NatBuf = RECORD _nat: NATIVE INTEGER END;
+  CallbackFunc = PROCEDURE (i: INTEGER);
+
+NATIVE (-9000) PROCEDURE SetNativeVal(r: NatBuf; v: INTEGER); END SetNativeVal;
+NATIVE (-9001) PROCEDURE CallNative(r: NatBuf); END CallNative;
+NATIVE (-9002) PROCEDURE NativeCallback(i: INTEGER; func: CallbackFunc); END NativeCallback;
+
+PROCEDURE MyCallback(i: INTEGER);
+BEGIN
+  Out.Str("Called back from native with i="); Out.Int(i); Out.Ln
+END MyCallback;
+
+PROCEDURE TestNativeCode;
+VAR
+  r: NatBuf;
+BEGIN
+  NativeCallback(10, MyCallback);
+  SetNativeVal(r, 81);
+  CallNative(r)
+END TestNativeCode;
+
+PROCEDURE RunTests*;
+BEGIN
+  TestNativeCode
+END RunTests;
+
+BEGIN
+  RunTests
+END NativeC.

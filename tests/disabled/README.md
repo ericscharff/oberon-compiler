@@ -9,12 +9,8 @@ with the C transpiler, but currently not with the RISC compiler.
 Usage:
 
 ```bash
-$ ../../build/compile -extra_runtime lang_extensions.c LangExtensions.ob
+$ ../../build/compile LangExtensions.ob
 $ ../../build/LangExtensions
-About to call callback with i=11.
-Called back from native with i=11
-NativeCallback completed
-Native code called, buf.nativeQ = 81, nativeR = 82.
 81
 81
 5	10	15	20	25	30	35	40	45	50	55	60	65	70	75	80	85	90	95	100
@@ -22,6 +18,23 @@ Native code called, buf.nativeQ = 81, nativeR = 82.
 5	10	15	20	25	30	35	40	45	50	55	60	65	70	75	80	85	90	95	100
 5040
 10946
+```
+
+## NativeC.ob
+
+This tests the integration between C and Oberon, like native functions and
+calling to/from C code. It therefore makes sense with the C transpiler and not
+with the RISC code generator. To run, the implementations of the C functions
+need to be passed to the build process:
+
+```bash
+$ ../../build/compile -extra_runtime native_c.c NativeC.ob
+$ ../../build/NativeC
+
+About to call callback with i=11.
+Called back from native with i=11
+NativeCallback completed
+Native code called, buf.nativeQ = 81, nativeR = 82.
 ```
 
 ## RunCompiler.ob
