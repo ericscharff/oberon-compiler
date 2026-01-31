@@ -9,7 +9,7 @@ with the C transpiler, but currently not with the RISC compiler.
 Usage:
 
 ```bash
-$ ../../build/compile LangExtensions.ob
+$ ../../build/compile -extra_runtime lang_extensions.c LangExtensions.ob
 $ ../../build/LangExtensions
 About to call callback with i=11.
 Called back from native with i=11
