@@ -19,7 +19,7 @@
  *)
 
 MODULE FibFact2;
-(* Same as FibFact.ob but exercising new RETHRN statement *)
+(* Same as FibFact.ob but exercising new RETHRN and VAR statements *)
 
 IMPORT Out;
 
@@ -65,11 +65,10 @@ BEGIN
 END FactRec;
 
 PROCEDURE FibIter*(n: INTEGER): INTEGER;
-VAR
-  prev, newPrev, fib: INTEGER;
 BEGIN
-  prev := 1;
-  fib := 1;
+  VAR prev := 1;
+  VAR fib := 1;
+  VAR newPrev := -1;
   WHILE n > 1 DO
     newPrev := fib;
     fib := fib + prev;

@@ -1,16 +1,16 @@
 The following tests are in the disabled directory to avoid running them
 automatically.
 
-## LangExtensions.ob
+## Buffers.ob
 
-This tests the Oberon language extensions, like buffers. It can be tested
-with the C transpiler, but currently not with the RISC compiler.
+This tests the buffer Oberon language extension. It can be tested with the C
+transpiler, but currently not with the RISC compiler.
 
 Usage:
 
 ```bash
-$ ../../build/compile LangExtensions.ob
-$ ../../build/LangExtensions
+$ ../../build/compile Buffers.ob
+$ ../../build/Buffers
 81
 81
 5	10	15	20	25	30	35	40	45	50	55	60	65	70	75	80	85	90	95	100
