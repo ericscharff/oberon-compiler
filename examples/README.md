@@ -25,7 +25,7 @@ characters. The console support disables canonical mode and echo mode which
 should be supported by POSIX systems. See [Apple1.md](Apple1.md) for
 instructions on using the emulator.
 
-## Cairo
+## CairoTest
 
 `CairoTest.ob` uses the NATIVE features of the compiler to integrate with the
 Cairo programming library. This depends on native method defined in `Cairo.ob`
