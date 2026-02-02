@@ -1,8 +1,11 @@
 #!/bin/bash
 
+# Usage: fmt.sh SourceFile.ob
+#
 # If lower case keywords are typed, they become upper case in the file.
 # This might make typing easier, and then fmt.sh can be run to make the
 # keywords compile properly.
+
 sed -i 's/\barray\b/ARRAY/g' $1
 sed -i 's/\bbegin\b/BEGIN/g' $1
 sed -i 's/\bbitand\b/BITAND/g' $1
