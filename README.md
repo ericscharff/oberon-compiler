@@ -146,3 +146,8 @@ compilation:
   counterparts.
 - Not all language extensions are supported by the RISC code generator (in
   particular, buffers).
+
+# Related projects
+
+There is syntax highlighting for oberon in my
+[vim-oberon](https://github.com/ericscharff/vim-oberon) vim plugin.
