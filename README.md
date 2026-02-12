@@ -55,16 +55,6 @@ The compiler has an extensive test suite. Invoking `make test` will run all
 of the Oberon tests in the `tests/` directory, and ensure that each produces
 the output as specified in the `tests/goldens/` directory.
 
-It is also possible to do builds with CMake:
-
-```bash
-$ mkdir bld
-$ cd bld
-$ cmake ..
-$ make
-$ make test
-```
-
 ## Running the compiler
 
 Once bootstrapped, the `build` directory contains a shell script called
