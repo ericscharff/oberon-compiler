@@ -22,7 +22,8 @@ MODULE Oop2;
 
 (*
  * This is a variant of OopTest that doesn't use pointers.
- * It is an example of dynamic dispatch without needing dynamic memory allocation.
+ * It is an example of dynamic dispatch without needing dynamic memory
+ * allocation.
  *)
 IMPORT Out;
 
