@@ -977,7 +977,8 @@ BEGIN
     item.kind := itemVar;
     item.isByte := FALSE;
     item.r := rSP;
-    item.offset := stackOffset + e.decl.offset + 4; (* The extra param for length *)
+    (* 4 is added to account for the extra length parameter *)
+    item.offset := stackOffset + e.decl.offset + 4;
     Load(item);
   END;
 END GenLengthof;
@@ -1003,7 +1004,8 @@ BEGIN
     item.kind := itemVar;
     item.isByte := FALSE;
     item.r := rSP;
-    item.offset := stackOffset + e.decl.offset + 4; (* The extra param for typeid *)
+    (* 4 is added to account for the extra typeid parameter *)
+    item.offset := stackOffset + e.decl.offset + 4;
     Load(item);
   END;
 END GenTypeId;
@@ -1304,7 +1306,8 @@ BEGIN
       item.kind := itemVar;
       item.isByte := FALSE;
       item.r := rSP;
-      item.offset := stackOffset + base.decl.offset + 4; (* The extra param for typeid *)
+      (* 4 is added to account for the extra typeid parameter *)
+      item.offset := stackOffset + base.decl.offset + 4;
       Load(item);
     END;
   END;
