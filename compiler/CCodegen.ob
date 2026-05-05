@@ -718,7 +718,8 @@ BEGIN
       IF e.iVal = 0 THEN
         GenTypeTest(l, e.lhs, e.typ);
       ELSE
-        GenStr("1") (* The compiler asserts we can skip the type test (type case) *)
+        ("1") (* The compiler asserts we can skip the type test (type case) *)
+        GenStr("1")
       END;
       GenStr("), ((");
       GenQName(l, e.decl.qname);
@@ -733,7 +734,8 @@ BEGIN
       IF e.iVal = 0 THEN
         GenTypeTest(l, e.lhs, e.typ);
       ELSE
-        GenStr("1") (* The compiler asserts we can skip the type test (type case) *)
+        (* The compiler asserts we can skip the type test (type case) *)
+        GenStr("1")
       END;
       GenStr("), ((");
       GenQName(l, e.decl.qname);
