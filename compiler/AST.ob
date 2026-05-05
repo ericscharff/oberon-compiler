@@ -204,24 +204,36 @@ TYPE
   ExprDesc  = RECORD
     kind*:   ExprKind;
     typ*:    Type;
-    op*:     Lex.TokenKind; (* for unary, binary                            *)
-    lhs*:    Expr;          (* for unary, binary, the base expr for         *)
-                            (* arrayRef, pointerDeref, fieldRef, typeGuard, *)
-                            (* PROCEDURE call designator                    *)
-                            (* for assignment, lvalue                       *)
-    rhs*:    Expr;          (* for binary, also first arg PROCEDURE call    *)
-                            (* for arrayRef, expr OF ARRAY index            *)
-                            (* for assignment, rvalue                       *)
-    next*:   Expr;          (* for PROCEDURE call,next arg in list          *)
-    decl*:   Decl;          (* for identRef and typeguard                   *)
-                            (* for fieldRef, reference to the field's decl  *)
-    iVal*:   INTEGER;       (* for INTEGER, BOOLEAN, STRING (StringId)      *)
-                            (* for fieldref, StringId OF field name         *)
-                            (* for CHAR, the character itself               *)
-                            (* for PROCEDURE call, number OF actual params  *)
-                            (* for builtin procedure, unique identifier     *)
+    (* operator for unary or binary operators                       *)
+    op*:     Lex.TokenKind;
+    (* Unary: the expression (e.g., b for "~ b")                    *)
+    (* Binary: lhs (e.g., a for "a + b"                             *)
+    (* arrayRef, pointerDeref, fieldRef, typeGuard: base expression *)
+    (* e.g., a for a[i], r for r.f                                  *)
+    (* Procedure call: designator                                   *)
+    (* Assignment: lvalue                                           *)
+    lhs*:    Expr;
+    (* Binary: rhs (e.g., b for "a + b"                             *)
+    (* arrayRef: expr for the ARRAY subscript (e.g., i for a[i]     *)
+    (* Procedure call: first argument (actual parameter)            *)
+    (* Assignmnet: rvalue                                           *)
+    rhs*:    Expr;
+    (* Procedure call: next argument (acutal parameter) in list     *)
+    next*:   Expr;
+    (* identRef: declaration (e.g. decl of var i)                   *)
+    (* typeGhard: type being guarded (e.g., MyType for p(MyType)    *)
+    (* fieldRef: reference to the field's decl                      *)
+    decl*:   Decl;
+    (* INTEGER, BOOLEAN, CHAR: The item's (constant)                *)
+    (* fieldRef: StringId of field name                             *)
+    (* Procedure call: number of actual params                      *)
+    (* Builtin procedure: unique identifier                         *)
+    iVal*:   INTEGER;
+    (* for REAL valued item (constant)                              *)
     rVal*:   REAL;
+    (* for SET valued item (constant)                               *)
     setVal*: SET;
+    (* can be assigned to                                           *)
     assignable*: BOOLEAN;
   END;
 
