@@ -108,27 +108,24 @@ TYPE
   Expr*            = POINTER TO ExprDesc;
   Stmt*            = POINTER TO StmtDesc;
   TypeDesc         = RECORD
+    (* one of the type* constants *)
     kind*:         TypeKind;
-    base*:         Type;    (* POINTER type,                             *)
-                            (* ARRAY element,                            *)
-                            (* RECORD base,                              *)
-                            (* PROCEDURE return type                     *)
-    fields*:       Decl;    (* RECORD fields                             *)
-                            (* PROCEDURE formal parameters               *)
-                            (* IMPORT decls                              *)
-                            (* Name of forward decl                      *)
-    length*:       INTEGER; (* ARRAY length                              *)
-                            (* PROCEDURE number of parameters            *)
-    nesting*:      INTEGER; (* RECORD nesting depth. 0=RECORD does not   *)
-                            (* extend, 1=RECORD extends record with      *)
-                            (* nesting 0                                 *)
-    needTypeInfo*: BOOLEAN; (* Type uses IS or typeguard, and thus needs *)
-                            (* runtime info                              *)
-    decl*:         Decl;    (* Optional. If defined as a TYPE, points to *)
-                            (* the declaration (name), NIL otherwise     *)
-    typeId*:       INTEGER; (* RECORD types get a unique identifier,     *)
-                            (* used for type extensions.                 *)
-    reachable*:    BOOLEAN; (* This type is reachable and used.          *)
+    (* POINTER type, ARRAY element, RECORD base, or PROCEDURE return *)
+    base*:         Type;
+    (* RECORD fields, PROCEDURE formal params, IMPORT, or forward decl *)
+    fields*:       Decl;
+    (* ARRAY length, or PROCEDURE number of params *)
+    length*:       INTEGER;
+    (* 0=RECORD does not dextend, N=extends record with nesting N-1 *)
+    nesting*:      INTEGER;
+    (* Type uses IS or typeguard, thus needs runtime info *)
+    needTypeInfo*: BOOLEAN;
+    (* Optional name of the defining TYPE *)
+    decl*:         Decl;
+    (* unique identifier for RECORD types, for type extensions *)
+    typeId*:       INTEGER;
+    (* TRUE if this type is reachable and used, during tree shaking *)
+    reachable*:    BOOLEAN;
   END;
   BuiltinResolver* = PROCEDURE (l: Lex.Lexer; args: Expr): Expr;
   DeclKind         = INTEGER;
