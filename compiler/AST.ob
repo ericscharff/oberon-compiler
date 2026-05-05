@@ -136,33 +136,33 @@ TYPE
     qname*:    QName;
     typ*:      Type;
     origTyp*:  Type;
-    expr*:     Expr;             (* for CONST declarations            *)
-                                 (* PROCEDURE RETURN value            *)
-    body*:     Stmt;             (* PROCEDURE or MODULE body          *)
-    exported*: BOOLEAN;
-    nesting*:  INTEGER;          (* 0=global, 1=proc, 2=nested...     *)
-                                 (* for RECORD fields, 0 is a field   *)
-                                 (* defined in the record itself. If  *)
-                                 (* R1 extends R, then all of R's     *)
-                                 (* fields are level 1. If R2 extends *)
-                                 (* R1 and R1 extends R, then the     *)
-                                 (* fields of R from R2 have nesting  *)
-                                 (* 2, and so on. Thus the nesting is *)
-                                 (* how many record parents would be  *)
-                                 (* traversed to reach the definition *)
-    procVars*: Decl;             (* for PROCEDURE decls, local scope  *)
-    isNative*: BOOLEAN;          (* Native procedures do not generate *)
-                                 (* code                              *)
-    resolver*: BuiltinResolver;  (* Handles native procedure calls    *)
+    (* CONST's expression, or PROCEDURE return value *)
+    expr*:     Expr;
+    (* body of PROCEDURE or MODULE *)
+    body*:     Stmt;
+    exported*: BOOLEAN
+    (* 0=global, 1=proc, 2=nested...     *);
+    (* for RECORD fields, 0 is a field defined in the record itself. If  *)
+    (* R1 extends R, then all of R's fields are level 1. If R2 extends   *)
+    (* R1 and R1 extends R, then the fields of R from R2 have nesting 2, *)
+    (* and so on. Thus the nesting is how many record parents would be   *)
+    (* traversed to reach the definition                                 *)
+    nesting*:  INTEGER;          
+    (* local scope for PROCEDURE decls *)
+    procVars*: Decl;
+    (* native procuedres do not generate code *)
+    isNative*: BOOLEAN;
+    (* handler for native procuedre calls *)
+    resolver*: BuiltinResolver;
     state*:    DeclState;
-    offset*:   INTEGER;          (* Only used by codegen - offset of  *)
-                                 (* this decl from something.         *)
-                                 (* Global var - offset from GP       *)
-                                 (* Local var - offset from FP        *)
-                                 (* Param - offset from FP            *)
-                                 (* Field - offset from start of rec  *)
-                                 (* Procedure - program counter of    *)
-                                 (* code entry point                  *)
+    (* Only used by codegen - offset of this decl from something *)
+    (* decl from something.                                      *)
+    (* Global var - offset from GP                               *)
+    (* Local var  - offset from FP                               *)
+    (* Param      - offset from FP                               *)
+    (* Field      - offset from start of rec                     *)
+    (* Procedure  - program counter of code entry point          *)
+    offset*:   INTEGER;
   END;
   ExprKind         = INTEGER;
   (*
