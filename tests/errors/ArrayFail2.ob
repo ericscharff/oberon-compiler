@@ -1,4 +1,4 @@
-(* This test causes a runtime failure because the array index is out of bounds. *)
+(* Cause a runtime failure because the array index is out of bounds. *)
 
 MODULE ArrayFail2;
 
@@ -17,6 +17,7 @@ END Test;
 
 BEGIN
   a5[2] := 30;
-  (* a5[7] := 30;   -- This fails at compile time, but the open array above does not*)
+  (* This fails at compile time, but the open array above does not*)
+  (* a5[7] := 30;                                                 *)
   Test(a5); (* This fails *)
 END ArrayFail2.

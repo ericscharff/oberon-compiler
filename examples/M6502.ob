@@ -137,7 +137,8 @@ BEGIN
 	RETURN b + x
 END PopWord;
 
-(* Fetch the next byte from the program counter, and increment the program counter *)
+(* Fetch the next byte from the program counter, and increment the program *)
+(* counter *)
 PROCEDURE Fetch(VAR p: CPU): INTEGER;
 VAR a: INTEGER;
 BEGIN

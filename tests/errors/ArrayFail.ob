@@ -1,4 +1,4 @@
-(* This test causes a runtime failure because the array index is out of bounds. *)
+(* Causes a runtime failure because the array index is out of bounds. *)
 
 MODULE ArrayFail;
 
