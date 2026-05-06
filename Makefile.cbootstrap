@@ -3,16 +3,16 @@ BUILDDIR=build
 CFLAGS=-g -std=c17 -Wall -Wextra -Wpedantic -DC_BOOTSTRAP
 
 BOOTSTRAP_SRCS=$(wildcard c_bootstrap/*.c)
-COMPILER_SRCS=$(wildcard compiler/*.ob) compiler/runtime.c
+COMPILER_SRCS=$(wildcard compiler/*.ob) base/runtime.c
 
 $(BUILDDIR)/oberonr: $(BUILDDIR)/oberon $(COMPILER_SRCS)
-	cd compiler; ../$(BUILDDIR)/oberon RCompiler.ob > ../$(BUILDDIR)/rcompiler.c
+	$(BUILDDIR)/oberon compiler/RCompiler.ob > $(BUILDDIR)/rcompiler.c
 	$(CC) $(CFLAGS) -o $(@) $(BUILDDIR)/rcompiler.c
 
 $(BUILDDIR)/oberon: $(BUILDDIR)/oberon1 $(COMPILER_SRCS)
-	cd compiler; ../$(BUILDDIR)/oberon1 Compiler.ob > ../$(BUILDDIR)/compiler.c
+	$(BUILDDIR)/oberon1 compiler/Compiler.ob > $(BUILDDIR)/compiler.c
 	$(CC) $(CFLAGS) -o $(@) $(BUILDDIR)/compiler.c
-	cd compiler; ../$(BUILDDIR)/compile Compiler.ob
+	$(BUILDDIR)/compile compiler/Compiler.ob
 	mv $(BUILDDIR)/out.prg $(BUILDDIR)/oberon
 
 $(BUILDDIR)/oberon1: $(BUILDDIR)/oberon0 $(COMPILER_SRCS)
@@ -24,7 +24,8 @@ $(BUILDDIR)/oberon0: $(BOOTSTRAP_SRCS) $(COMPILER_SRCS)
 	cp c_bootstrap/*.ob $(BUILDDIR)
 	cp c_bootstrap/builtin.defs $(BUILDDIR)
 	cp compiler/*.ob $(BUILDDIR)
-	cp compiler/runtime.c compiler/compile compiler/rcompile $(BUILDDIR)
+	cp base/*.ob $(BUILDDIR)
+	cp base/runtime.c contrib/compile contrib/rcompile $(BUILDDIR)
 	$(CC) $(CFLAGS) -o $(@) c_bootstrap/main.c
 
 clean:
