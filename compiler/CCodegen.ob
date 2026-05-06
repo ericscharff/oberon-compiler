@@ -718,7 +718,7 @@ BEGIN
       IF e.iVal = 0 THEN
         GenTypeTest(l, e.lhs, e.typ);
       ELSE
-        ("1") (* The compiler asserts we can skip the type test (type case) *)
+        (* The compiler asserts we can skip the type test (type case) *)
         GenStr("1")
       END;
       GenStr("), ((");
