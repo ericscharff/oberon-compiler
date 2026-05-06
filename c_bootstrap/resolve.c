@@ -827,7 +827,7 @@ Type *resolve_builtin_procedure(Expr *proc, Expr **actualParams) {
       if (is_integer_type(e->type) || e->type == &realType) {
         return e->type;
       } else {
-        errorloc(e->loc, "CHR expects INTEGER or REAL, got %s", e->type->name);
+        errorloc(e->loc, "ABS expects INTEGER or REAL, got %s", e->type->name);
       }
     } else {
       errorloc(proc->loc, "ABS expects 1 argument, got %d",
