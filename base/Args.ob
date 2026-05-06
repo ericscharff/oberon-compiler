@@ -1,3 +1,7 @@
+MODULE Args;
+
+
+
 (*
  * This file is part of oberon-compiler
  *
@@ -18,9 +22,11 @@
  *
  *)
 
-MODULE Args;
+NATIVE (-30) PROCEDURE Count*(): INTEGER;
+BEGIN
+  RETURN 0
+END Count;
 
-NATIVE (-30) PROCEDURE Count*(): INTEGER; BEGIN RETURN 0 END Count;
-NATIVE (-31) PROCEDURE GetArg*(VAR s: ARRAY OF CHAR; arg: INTEGER); END GetArg;
-
+NATIVE (-31) PROCEDURE GetArg*(VAR s: ARRAY  OF CHAR; arg: INTEGER);
+END GetArg;
 END Args.
