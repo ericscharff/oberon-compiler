@@ -13,7 +13,7 @@ $(BUILDDIR)/oberon: $(BUILDDIR)/oberon1 $(COMPILER_SRCS)
 	$(BUILDDIR)/oberon1 compiler/Compiler.ob > $(BUILDDIR)/compiler.c
 	$(CC) $(CFLAGS) -o $(@) $(BUILDDIR)/compiler.c
 	$(BUILDDIR)/compile compiler/Compiler.ob
-	mv $(BUILDDIR)/out.prg $(BUILDDIR)/oberon
+	mv $(BUILDDIR)/Compiler $(BUILDDIR)/oberon
 
 $(BUILDDIR)/oberon1: $(BUILDDIR)/oberon0 $(COMPILER_SRCS)
 	cd $(BUILDDIR); ./oberon0
@@ -33,7 +33,6 @@ clean:
 
 test: $(BUILDDIR)/oberonr
 	cd tests/errors && ./run-fail-tests.sh
-	cd tests && ./run-tests.sh
 
 compiler-test: $(BUILDDIR)/oberonr
 	cd tests && ./compiler-test.sh

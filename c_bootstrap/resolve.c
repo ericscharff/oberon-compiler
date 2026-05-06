@@ -38,6 +38,7 @@ Decl absDecl;
 Decl chrDecl;
 Decl decDecl;
 Decl incDecl;
+Decl lenDecl;
 Decl newDecl;
 Decl ordDecl;
 Decl valDecl;
@@ -820,6 +821,19 @@ Type *resolve_builtin_procedure(Expr *proc, Expr **actualParams) {
       errorloc(proc->loc, "CHR expects 1 argument, got %d",
                buf_len(actualParams));
     }
+  } else if (proc->type->name == builtin_len) {
+    if (buf_len(actualParams) == 1) {
+      Expr *e = actualParams[0];
+      resolve_expr(e);
+      if (e->type->kind == TYPE_ARRAY) {
+        return &integerType;
+      } else {
+        errorloc(e->loc, "LEN expects ARRAY, got %s", e->type->name);
+      }
+    } else {
+      errorloc(proc->loc, "LEN expects 1 argument, got %d",
+               buf_len(actualParams));
+    }
   } else if (proc->type->name == builtin_abs) {
     if (buf_len(actualParams) == 1) {
       Expr *e = actualParams[0];
@@ -1304,6 +1318,7 @@ void resolve_push_specials(void) {
   const char *e = string_intern("");
   push_builtin(&decDecl, e, builtin_dec);
   push_builtin(&incDecl, e, builtin_inc);
+  push_builtin(&lenDecl, e, builtin_len);
   push_builtin(&newDecl, e, builtin_new);
   push_builtin(&ordDecl, e, builtin_ord);
   push_builtin(&chrDecl, e, builtin_chr);

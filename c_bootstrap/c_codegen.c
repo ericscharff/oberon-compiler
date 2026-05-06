@@ -19,6 +19,7 @@
  */
 
 void gen_statements(Statement *s);
+void gen_lengthof(Expr *e);
 void gen_expr(Expr *e);
 
 char *codegenBuf = NULL;
@@ -459,6 +460,8 @@ void gen_builtin_procedure(Expr *proc, Expr **args) {
     } else {
       gen_str("++");
     }
+  } else if (proc->type->name == builtin_len) {
+    gen_lengthof(args[0]);
   } else if (proc->type->name == builtin_new) {
     // NEW(p) --> p = malloc(sizeof(<P ELEMENT TYPE>))
     Expr *p = args[0];
