@@ -32,10 +32,10 @@ END Real;
 NATIVE (-12) PROCEDURE Char*(c: CHAR);
 END Char;
 
-NATIVE (-13) PROCEDURE Str*(s: ARRAY  OF CHAR);
+NATIVE (-13) PROCEDURE Str*(s: ARRAY OF CHAR);
 END Str;
 
-NATIVE (-14) PROCEDURE StrI*(s: ARRAY  OF CHAR; offset: INTEGER);
+NATIVE (-14) PROCEDURE StrI*(s: ARRAY OF CHAR; offset: INTEGER);
 END StrI;
 
 NATIVE (-15) PROCEDURE Ln*;
@@ -54,22 +54,22 @@ END ErrReal;
 NATIVE (-19) PROCEDURE ErrChar*(c: CHAR);
 END ErrChar;
 
-NATIVE (-20) PROCEDURE ErrStr*(s: ARRAY  OF CHAR);
+NATIVE (-20) PROCEDURE ErrStr*(s: ARRAY OF CHAR);
 END ErrStr;
 
-NATIVE (-21) PROCEDURE ErrStrI*(s: ARRAY  OF CHAR; offset: INTEGER);
+NATIVE (-21) PROCEDURE ErrStrI*(s: ARRAY OF CHAR; offset: INTEGER);
 END ErrStrI;
 
 NATIVE (-22) PROCEDURE ErrLn*;
 END ErrLn;
 
-PROCEDURE PrintLn*(s: ARRAY  OF CHAR);
+PROCEDURE PrintLn*(s: ARRAY OF CHAR);
 BEGIN
   Str(s);
   Ln
 END PrintLn;
 
-NATIVE (-23) PROCEDURE ReadFile*(fileName: ARRAY  OF CHAR; buf: ARRAY  OF CHAR);
+NATIVE (-23) PROCEDURE ReadFile*(fileName: ARRAY OF CHAR; buf: ARRAY OF CHAR);
 END ReadFile;
 
 (* A highly unportable function to put the bits of a REAL into an INTEGER *)
