@@ -1,3 +1,5 @@
+MODULE Apple1;
+
 (*
  * This file is part of oberon-compiler
  *
@@ -18,14 +20,11 @@
  *
  *)
 
-MODULE Apple1;
-
 IMPORT Console, M6502, Out;
 
 CONST
   MemSize = 64 * 1024;
   KeyBufSize = 16 * 1024;
-
 VAR
   mem: ARRAY MemSize OF CHAR;
   keyBuf: ARRAY KeyBufSize OF CHAR;
@@ -35,7 +34,8 @@ VAR
 
 PROCEDURE ReadMem(where: INTEGER): INTEGER;
 (* TODO: keyboard reading *)
-VAR a: INTEGER;
+VAR
+  a: INTEGER;
 BEGIN
   IF where = 0D010H THEN
     IF firstKey = lastKey THEN
@@ -56,13 +56,13 @@ BEGIN
     a := 0
   ELSE
     a := ORD(mem[where])
-  END
+  END;
   RETURN a BITAND 255
 END ReadMem;
 
 PROCEDURE WriteMem(where, what: INTEGER);
-(* TODO, screen writing *)
 BEGIN
+  (* TODO, screen writing *)
   IF where = 0D012H THEN
     mem[where] := CHR(what BITAND 07FH);
     Console.WriteChar(mem[where])
@@ -88,11 +88,15 @@ VAR
 BEGIN
   Console.ReadChar(c);
   IF (c > 0) & (c < 256) THEN
-    IF c = ORD("|") THEN running := FALSE END;
-    IF c = 10 THEN c := 13 END;
+    IF c = ORD("|") THEN
+      running := FALSE
+    END;
+    IF c = 10 THEN
+      c := 13
+    END;
     IF (c >= ORD("a")) & (c <= ORD("z")) THEN
       (* convert to upper case *)
-      c := c BITAND 05FH;
+      c := c BITAND 05FH
     END;
     keyBuf[lastKey] := CHR(c);
     lastKey := (lastKey + 1) BITAND (KeyBufSize - 1)
@@ -100,17 +104,27 @@ BEGIN
 END UpdateKeyboard;
 
 PROCEDURE DoFrame;
-VAR c: INTEGER;
+VAR
+  c: INTEGER;
 BEGIN
   UpdateKeyboard;
-  FOR c := 1 TO 500 DO M6502.Step(cpu) END
+  FOR c := 1 TO 500 DO
+    M6502.Step(cpu)
+  END
 END DoFrame;
 
 BEGIN
-  cpu.a := 0; cpu.x := 0; cpu.y := 0; cpu.sp := 255;
-  cpu.pc := 0; cpu.flags := {M6502.reserveD};
-  cpu.readProc := ReadMem; cpu.writeProc := WriteMem;
-  firstKey := 0; lastKey := 0; keyBuf[0] := 0X;
+  cpu.a := 0;
+  cpu.x := 0;
+  cpu.y := 0;
+  cpu.sp := 255;
+  cpu.pc := 0;
+  cpu.flags := {M6502.reserveD};
+  cpu.readProc := ReadMem;
+  cpu.writeProc := WriteMem;
+  firstKey := 0;
+  lastKey := 0;
+  keyBuf[0] := 0X;
   running := TRUE;
   ReadBios;
   cpu.pc := ReadMem(0FFFDH) * 256 + ReadMem(0FFFCH);
@@ -118,5 +132,5 @@ BEGIN
   WHILE running DO
     DoFrame
   END;
-  Console.EndScreen;
+  Console.EndScreen
 END Apple1.
