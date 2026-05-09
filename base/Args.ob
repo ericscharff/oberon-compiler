@@ -1,7 +1,5 @@
 MODULE Args;
 
-
-
 (*
  * This file is part of oberon-compiler
  *
