@@ -21,6 +21,7 @@
 MODULE M6502;
 
 CONST
+	(* Condition codes *)
 	carrY* = 0;
 	zerO* = 1;
 	interrupT* = 2;
@@ -30,21 +31,20 @@ CONST
 	overfloW* = 6;
 	negativE* = 7;
 
-	mIndirectX = 0; (* (zp,X)                    *)
-	mZeroPage = 1;  (* zero page                 *)
-	mImmediate = 2; (* #immediate                *)
-	mAbsolute = 3;  (* 16 bit absolute           *)
-	mIndirectY = 4; (* (zp),Y                    *)
-	mZeroPageX = 5; (* zp,X                      *)
-	mZeroPageY = 6; (* zp,Y                      *)
-	mAbsoluteX = 7; (* 16 bit absolute, X        *)
-	mAbsoluteY = 8; (* 16 bit absolute, Y        *)
-	mRelative = 9;  (* PC-Relative for branches  *)
+	mIndirectX = 0; (* (zp,X) *)
+	mZeroPage = 1;  (* zero page *)
+	mImmediate = 2; (* #immediate *)
+	mAbsolute = 3;  (* 16 bit absolute *)
+	mIndirectY = 4; (* (zp),Y *)
+	mZeroPageX = 5; (* zp,X *)
+	mZeroPageY = 6; (* zp,Y *)
+	mAbsoluteX = 7; (* 16 bit absolute, X *)
+	mAbsoluteY = 8; (* 16 bit absolute, Y *)
+	mRelative = 9;  (* PC-Relative for branches *)
 	mIndirect = 10; (* (16 bit absolute) for JMP *)
-	mAccum = 11;    (* Accumulator (eg ROR A)    *)
-	mImplied = 12;  (* Implied (eg TYA)          *)
+	mAccum = 11;    (* Accumulator (eg ROR A) *)
+	mImplied = 12;  (* Implied (eg TYA) *)
 
-	(* Condition codes *)
 
 TYPE
 	ReadProc = PROCEDURE (where: INTEGER): INTEGER;
