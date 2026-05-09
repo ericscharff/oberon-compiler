@@ -1,3 +1,5 @@
+MODULE Cairo;
+
 (*
  * This file is part of oberon-compiler
  *
@@ -17,8 +19,6 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
  *)
-
-MODULE Cairo;
 
 TYPE
   Context* = RECORD
@@ -42,5 +42,4 @@ END LineTo;
 
 NATIVE (-206) PROCEDURE Stroke*(VAR ctx: Context);
 END Stroke;
-
 END Cairo.

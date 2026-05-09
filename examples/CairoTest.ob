@@ -1,3 +1,5 @@
+MODULE CairoTest;
+
 (*
  * This file is part of oberon-compiler
  *
@@ -18,8 +20,6 @@
  *
  *)
 
-MODULE CairoTest;
-
 IMPORT Cairo, Math;
 
 CONST
@@ -28,10 +28,8 @@ CONST
   Y_STEPS = CANVAS_HEIGHT / 15.0;
   X_PIXELS_PER_STEP = CANVAS_WIDTH / Y_STEPS;
   Y_PIXELS_PER_STEP = CANVAS_HEIGHT / Y_STEPS;
-
 TYPE
   Runner = PROCEDURE;
-
 VAR
   c: Cairo.Context;
   i: REAL;
@@ -51,18 +49,21 @@ BEGIN
     Cairo.MoveTo(c, CANVAS_WIDTH, i * Y_PIXELS_PER_STEP);
     Cairo.LineTo(c, (Y_STEPS - i) * X_PIXELS_PER_STEP, CANVAS_HEIGHT);
     i := i + 1.0
-  END;
+  END
 END LineArt;
 
 PROCEDURE Circle;
 VAR
   i: INTEGER;
-
 BEGIN
   Cairo.MoveTo(c, CANVAS_WIDTH - 20.0, CANVAS_HEIGHT / 2.0);
   FOR i := 0 TO 360 DO
-    Cairo.LineTo(c, (CANVAS_WIDTH - 20.0) / 2.0 * Math.Cosine(i) + CANVAS_WIDTH / 2.0, (CANVAS_HEIGHT - 20.0) / 2.0 * Math.Sine(i) + CANVAS_HEIGHT / 2.0)
-  END;
+    Cairo.LineTo(
+      c,
+      (CANVAS_WIDTH - 20.0) / 2.0 * Math.Cosine(i) + CANVAS_WIDTH / 2.0,
+      (CANVAS_HEIGHT - 20.0) / 2.0 * Math.Sine(i) + CANVAS_HEIGHT / 2.0
+    )
+  END
 END Circle;
 
 PROCEDURE Forward(size: REAL);
@@ -74,13 +75,12 @@ END Forward;
 
 PROCEDURE Right(angle: INTEGER);
 BEGIN
-  turtleHeading := turtleHeading + angle;
+  turtleHeading := turtleHeading + angle
 END Right;
 
 PROCEDURE Square;
 VAR
   i: INTEGER;
-
 BEGIN
   FOR i := 1 TO 4 DO
     Forward(80.0);
@@ -91,7 +91,6 @@ END Square;
 PROCEDURE Flower;
 VAR
   i: INTEGER;
-
 BEGIN
   FOR i := 1 TO 20 DO
     Square;
@@ -105,35 +104,31 @@ BEGIN
   turtleHeading := 90;
   turtleX := CANVAS_WIDTH / 2.0;
   turtleY := CANVAS_HEIGHT / 2.0;
-  Flower;
+  Flower
 END TurtleGeometry;
 
 PROCEDURE TimesTable;
 CONST
   times = 120;
-
 VAR
   i: INTEGER;
 
 PROCEDURE XCoord(num: INTEGER): REAL;
 BEGIN
   num := num MOD 180;
-
   RETURN CANVAS_WIDTH / 2.0 + Math.Cosine(num * 2) * CANVAS_HEIGHT / 2.0
 END XCoord;
 
 PROCEDURE YCoord(num: INTEGER): REAL;
 BEGIN
   num := num MOD 180;
-
   RETURN CANVAS_HEIGHT / 2.0 + Math.Sine(num * 2) * CANVAS_HEIGHT / 2.0
 END YCoord;
-
 BEGIN
   FOR i := 0 TO 179 DO
     Cairo.MoveTo(c, XCoord(i), YCoord(i));
-    Cairo.LineTo(c, XCoord(i * times), YCoord(i * times));
-  END;
+    Cairo.LineTo(c, XCoord(i * times), YCoord(i * times))
+  END
 END TimesTable;
 
 PROCEDURE RunExample(runner: Runner; outputFile: ARRAY OF CHAR);
@@ -142,12 +137,12 @@ BEGIN
   runner;
   Cairo.Stroke(c);
   Cairo.WriteToPNG(c, outputFile);
-  Cairo.DestroyContext(c);
+  Cairo.DestroyContext(c)
 END RunExample;
 
 BEGIN
   RunExample(LineArt, "line_art.png");
   RunExample(Circle, "circle.png");
   RunExample(TurtleGeometry, "turtle_flower.png");
-  RunExample(TimesTable, "times_table.png");
+  RunExample(TimesTable, "times_table.png")
 END CairoTest.

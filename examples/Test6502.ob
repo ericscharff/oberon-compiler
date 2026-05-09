@@ -1,3 +1,5 @@
+MODULE Test6502;
+
 (*
  * This file is part of oberon-compiler
  *
@@ -18,13 +20,10 @@
  *
  *)
 
-MODULE Test6502;
-
 IMPORT M6502, Out;
 
 CONST
   MemSize = 64 * 1024;
-
 VAR
   mem: ARRAY MemSize OF CHAR;
   cpu: M6502.CPU;
@@ -46,12 +45,16 @@ BEGIN
 END ReadTestBinary;
 
 BEGIN
-  cpu.a := 0; cpu.x := 0; cpu.y := 0; cpu.sp := 255;
-  cpu.pc := 400H; cpu.flags := {M6502.reserveD};
-  cpu.readProc := ReadMem; cpu.writeProc := WriteMem;
+  cpu.a := 0;
+  cpu.x := 0;
+  cpu.y := 0;
+  cpu.sp := 255;
+  cpu.pc := 400H;
+  cpu.flags := {M6502.reserveD};
+  cpu.readProc := ReadMem;
+  cpu.writeProc := WriteMem;
   oldPc := 0;
   ReadTestBinary;
-  
   WHILE oldPc # cpu.pc DO
     oldPc := cpu.pc;
     M6502.Step(cpu)

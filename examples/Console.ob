@@ -1,3 +1,5 @@
+MODULE Console;
+
 (*
  * This file is part of oberon-compiler
  *
@@ -18,8 +20,6 @@
  *
  *)
 
-MODULE Console;
-
 NATIVE (-201) PROCEDURE StartScreen*;
 END StartScreen;
 
@@ -31,5 +31,4 @@ END WriteChar;
 
 NATIVE (-204) PROCEDURE ReadChar*(VAR c: INTEGER);
 END ReadChar;
-
 END Console.
