@@ -34,54 +34,53 @@ CONST
   LINK = 1; (* If set, branch preceded by link *)
 
   (* Opcodes *)
-  opMOV  = 0;   (* ra := rb                        *)
-  opADD  = 1;   (* ra := rb + rc                   *)
-  opSUB  = 2;   (* ra := rb - rc                   *)
-  opMUL  = 3;   (* ra := rb * rc                   *)
-  opDIV  = 4;   (* ra := rb / rc                   *)
-  opMOD  = 5;   (* ra := rb % rc                   *)
-  opLSL  = 6;   (* ra := rb << rc                  *)
-  opASR  = 7;   (* ra := rb >> rc                  *)
-  opAND  = 8;   (* ra := rb & rc                   *)
-  opOR   = 9;   (* ra := rb | rc                   *)
-  opXOR  = 10;  (* ra := rb ^ rc                   *)
-  opANN  = 11;  (* ra := rb & ~n                   *)
-  opCMP  = 12;  (* rb - rc, affects conditions     *)
-  opLDW  = 13;  (* ra := Mem[rb + offset] (word)   *)
-  opLDB  = 14;  (* ra := Mem[rb + offset] (byte)   *)
-  opSTW  = 15;  (* Mem[rb + offset] := ra (word)   *)
-  opSTB  = 16;  (* Mem[rb + offset] := ra (byte)   *)
-  opCJP  = 17;  (* Case jump (pc offset)           *)
-  opBRA  = 19;  (* PC := value (see below)         *)
-  opBL   = 20;  (* LR := PC + 1, PC := value       *)
-  opBLr  = 21;  (* LR := PC + 1, PC := rc          *)
-  opBrg  = 22;  (* PC := ra                        *)
-  opRADD = 23;  (* ra := rb + rc                   *) (* REAL *)
-  opRSUB = 24;  (* ra := rb - rc                   *) (* REAL *)
-  opRMUL = 25;  (* ra := rb * rc                   *) (* REAL *)
-  opRDIV = 26;  (* ra := rb / rc                   *) (* REAL *)
-  opRCMP = 27;  (* rb - rc, affects conditions     *) (* REAL *)
+  opMOV  = 0;   (* ra := rb *)
+  opADD  = 1;   (* ra := rb + rc *)
+  opSUB  = 2;   (* ra := rb - rc *)
+  opMUL  = 3;   (* ra := rb * rc *)
+  opDIV  = 4;   (* ra := rb / rc *)
+  opMOD  = 5;   (* ra := rb % rc *)
+  opLSL  = 6;   (* ra := rb << rc *)
+  opASR  = 7;   (* ra := rb >> rc *)
+  opAND  = 8;   (* ra := rb & rc *)
+  opOR   = 9;   (* ra := rb | rc *)
+  opXOR  = 10;  (* ra := rb ^ rc *)
+  opANN  = 11;  (* ra := rb & ~n *)
+  opCMP  = 12;  (* rb - rc, affects conditions *)
+  opLDW  = 13;  (* ra := Mem[rb + offset] (word) *)
+  opLDB  = 14;  (* ra := Mem[rb + offset] (byte) *)
+  opSTW  = 15;  (* Mem[rb + offset] := ra (word) *)
+  opSTB  = 16;  (* Mem[rb + offset] := ra (byte) *)
+  opCJP  = 17;  (* Case jump (pc offset) *)
+  opBRA  = 19;  (* PC := value (see below) *)
+  opBL   = 20;  (* LR := PC + 1, PC := value *)
+  opBLr  = 21;  (* LR := PC + 1, PC := rc *)
+  opBrg  = 22;  (* PC := ra *)
+  opRADD = 23;  (* ra := rb + rc *) (* REAL *)
+  opRSUB = 24;  (* ra := rb - rc *) (* REAL *)
+  opRMUL = 25;  (* ra := rb * rc *) (* REAL *)
+  opRDIV = 26;  (* ra := rb / rc *) (* REAL *)
+  opRCMP = 27;  (* rb - rc, affects conditions *) (* REAL *)
   opI2R  = 28;  (* convert ra from INTEGER to REAL *)
   opR2I  = 29;  (* convert ra from REAL to INTEGER *)
 
-  opMOVI  = 30; (* ra := immediate       *)
-  opADDI  = 31; (* ra := rb + immediate  *)
-  opSUBI  = 32; (* ra := rb - immediate  *)
-  opMULI  = 33; (* ra := rb * immediate  *)
-  opDIVI  = 34; (* ra := rb / immediate  *)
-  opMODI  = 35; (* ra := rb % immediate  *)
+  opMOVI  = 30; (* ra := immediate *)
+  opADDI  = 31; (* ra := rb + immediate *)
+  opSUBI  = 32; (* ra := rb - immediate *)
+  opMULI  = 33; (* ra := rb * immediate *)
+  opDIVI  = 34; (* ra := rb / immediate *)
+  opMODI  = 35; (* ra := rb % immediate *)
   opLSLI  = 36; (* ra := rb << immediate *)
   opASRI  = 37; (* ra := rb >> immediate *)
-  opANDI  = 38; (* ra := rb & immediate  *)
-  opORI   = 39; (* ra := rb | immediate  *)
-  opXORI  = 40; (* ra := rb ^ immediate  *)
+  opANDI  = 38; (* ra := rb & immediate *)
+  opORI   = 39; (* ra := rb | immediate *)
+  opXORI  = 40; (* ra := rb ^ immediate *)
   opANNI  = 41; (* ra := rb & ~immediate *)
-  opCMPI  = 42; (* rb - immediate        *)
+  opCMPI  = 42; (* rb - immediate *)
 
   opHALT = 43;
 
-  (* Branches have opcode opBRA, and r.c is *)
-  (* the condition code, given below:       *)
+  (** Branches have opcode opBRA, and r.c is the condition code, given below: *)
   opBEQ = 1;  (* =  *) opBNE = 9;   (* #  *)
   opBLT = 5;  (* <  *) opBGE = 13;  (* >= *)
   opBLE = 6;  (* <= *) opBGT = 14;  (* >  *)
@@ -97,18 +96,19 @@ CONST
   TypeInfoEntrySize = 24; (* 6 * size of integer *)
 
   (* Item kinds *)
-  itemReg   = 1; (* Item is in register r                         *)
-  itemVar   = 2; (* Item is a variable whose address is r+offset. *)
-                 (* r is always SP or GP.                         *)
-  itemConst = 3; (* Item value is a constant, stored in offset    *)
-  itemRegI  = 4; (* Register indirect address.                    *)
-                 (* Item's address is r+offset, this is similar   *)
-                 (* to Var, except with Var, r is always SP or    *)
-                 (* GB. with RegI, this is an allocated register, *)
-                 (* which eventually needs to be released.        *)
-  itemCond  = 5; (* Item is a condition. The CMP instruction was  *)
-                 (* already generated, and this represents the    *)
-                 (* condition associated with the relation.       *)
+  (** Item is in register r *)
+  itemReg   = 1;
+  (** Item is a variable whose address is r+offset. r is always SP or GP. *)
+  itemVar   = 2;
+  (** Item value is a constant, stored in offset *)
+  itemConst = 3;
+  (** Register indirect address. Item's address is r+offset, this is similar to Var, except with Var, r is always SP or
+   * GB. with RegI, this is an allocated register, which eventually needs to be released. *)
+  itemRegI  = 4;
+  (** Item is a condition. The CMP instruction was
+    *  already generated, and this represents the
+    * condition associated with the relation. *)
+  itemCond  = 5;
 
 TYPE
   OpCode = INTEGER;
@@ -117,45 +117,55 @@ TYPE
   Instruction = RECORD
     op:         OpCode;
     ra, rb, rc: Register;
-    value:      INTEGER;  (* If op is an immediate, e.g., ra := rb + value    *)
-                          (* if op is a branch, this is the branch offset     *)
+    (** If op is an immediate, e.g., ra := rb + value. If op is a branch, this is the branch offset *)
+    value:      INTEGER;
     q:          AST.QName;
   END;
   Item = RECORD
     kind:   ItemKind;
     r:      Register;
     offset: INTEGER;
-    opCond: OpCode;  (* If kind is itemCond, this is the branch type. *)
-    isByte: BOOLEAN; (* True for accessing a single byte              *)
+    (* If kind is itemCond, this is the branch type. *)
+    opCond: OpCode; 
+    (* True for accessing a single byte *)
+    isByte: BOOLEAN;
   END;
 
 VAR
   GenExpr:      PROCEDURE(l: Lex.Lexer; e: AST.Expr; VAR item: Item;
                           VAR parentTrueChain, parentFalseChain: INTEGER);
   GenCase:      PROCEDURE(l: Lex.Lexer; s: AST.Stmt);
-  typeCache:    ARRAY CACHE_SIZE OF AST.Type; (* Already reached types        *)
-  typeSizes:    ARRAY CACHE_SIZE OF INTEGER;  (* Map RECORD and ARRAY to size *)
+  (** Already reached types *)
+  typeCache:    ARRAY CACHE_SIZE OF AST.Type;
+  (** Map RECORD and ARRAY to size *)
+  typeSizes:    ARRAY CACHE_SIZE OF INTEGER;
   codeBuffer:   ARRAY CODE_BUFFER OF Instruction;
-  globalOffset: INTEGER;                 (* Offset of variable to global base *)
+  (** Offset of variable to global base *)
+  globalOffset: INTEGER;
   lastType:     INTEGER;
-  pc:           INTEGER; (* (Global) program counter. This is the offset from *)
-                         (* the start of code generated. This is measured in  *)
-                         (* instructions, not bytes, so it is not a multiple  *)
-                         (* of 4.                                             *)
-  cp:           INTEGER; (* Code pointer. This is an offset into the code     *)
-                         (* buffer, so 0 represents the start of a procedure. *)
-                         (* It is measured in instructions, not bytes.        *)
-  curReg:       INTEGER; (* Number [0..13] of the next available register     *)
-  stackOffset:  INTEGER; (* When there are nested function calls, the         *)
-                         (* compiler must save earlier expressions on the     *)
-                         (* stack. For example, when compiling f(0, 1, g(x))  *)
-                         (* r0 contains 0 and r1 contains 1. Both are saved   *)
-                         (* on the stack so that g can be called. This means  *)
-                         (* SP+4 doesn't point to the first parameter or the  *)
-                         (* local stack frame, temporarily. During lookup of  *)
-                         (* x for g, the SP needs to be offset, restored when *)
-                         (* the registers are restored.                       *)
-  epilog:       INTEGER; (* chain to point to the end of the function.        *)
+  (** (Global) program counter. This is the offset from
+   * the start of code generated. This is measured in
+   * instructions, not bytes, so it is not a multiple
+   * of 4. *)
+  pc:           INTEGER;
+  (** Code pointer. This is an offset into the code
+   * buffer, so 0 represents the start of a procedure.
+   * It is measured in instructions, not bytes. *)
+  cp:           INTEGER;
+  (** Number [0..13] of the next available register *)
+  curReg:       INTEGER;
+  (** When there are nested function calls, the
+   * compiler must save earlier expressions on the
+   * stack. For example, when compiling f(0, 1, g(x))
+   * r0 contains 0 and r1 contains 1. Both are saved
+   * on the stack so that g can be called. This means
+   * SP+4 doesn't point to the first parameter or the
+   * local stack frame, temporarily. During lookup of
+   * x for g, the SP needs to be offset, restored when
+   * the registers are restored. *)
+  stackOffset:  INTEGER;
+  (** chain to point to the end of the function. *)
+  epilog:       INTEGER;
   genCode:      BOOLEAN;
   genBoundsCheck: BOOLEAN;
   genNilCheck:    BOOLEAN;
