@@ -1,3 +1,5 @@
+MODULE PrettyPrintLex;
+
 (*
  * This file is part of oberon-compiler
  *
@@ -18,23 +20,19 @@
  *
  *)
 
-MODULE PrettyPrintLex;
-
 IMPORT Out;
 
 CONST
   NumBuckets = 4096;
-  PoolSize   = 64 * 1024;
-  BufSize    = 68 * 1024;
-  KwdSize    = 10;
-
+  PoolSize = 64 * 1024;
+  BufSize = 68 * 1024;
+  KwdSize = 10;
   (* Token definitions *)
 
   (* Comments are special tokens. When encountered, they are ignored and     *)
   (* parsing continues at the next token. Whitespace characters are treated  *)
   (* as comments.                                                            *)
-  tCOMMENT      = -1;
-
+  tCOMMENT = -1;
   (* Keywords - Keywords are special because they are included in the string *)
   (* pool in a special way. The ARRAY keyword is inserted first into the     *)
   (* table, and it takes up 10 characters. Thus, ARRAY is at position 0,     *)
@@ -42,110 +40,105 @@ CONST
   (* keword is looked up by PoolIndex DIV 10. Adding new keywords thus       *)
   (* requires that they be contiguous with each other, and before the        *)
   (* punctuation tokens, IN order to keep things consistent.                 *)
-  tARRAY*       =  0;
-  tBEGIN*       =  1;
-  tBITAND*      =  2;
-  tBITOR*       =  3;
-  tBITXOR*      =  4;
-  tBY*          =  5;
-  tCASE*        =  6;
-  tCONST*       =  7;
-  tDIV*         =  8;
-  tDO*          =  9;
-  tELSE*        = 10;
-  tELSIF*       = 11;
-  tEND*         = 12;
-  tFALSE*       = 13;
-  tFOR*         = 14;
-  tIF*          = 15;
-  tIMPORT*      = 16;
-  tIN*          = 17;
-  tIS*          = 18;
-  tMOD*         = 19;
-  tMODULE*      = 20;
-  tNATIVE*      = 21;
-  tNIL*         = 22;
-  tOF*          = 23;
-  tOR*          = 24;
-  tPOINTER*     = 25;
-  tPROCEDURE*   = 26;
-  tRECORD*      = 27;
-  tREPEAT*      = 28;
-  tRETURN*      = 29;
-  tTHEN*        = 30;
-  tTO*          = 31;
-  tTRUE*        = 32;
-  tTYPE*        = 33;
-  tUNTIL*       = 34;
-  tVAR*         = 35;
-  tWHILE*       = 36;
-  tLastKwd      = tWHILE * KwdSize;
-
-  tIDENT*       = 37;
-  tKEYWORD*     = 38;
-  tSTRING*      = 39;
-  tINT*         = 40;
-  tREAL*        = 41;
-  tPLUS*        = 42;
-  tMINUS*       = 43;
-  tSTAR*        = 44;
-  tSLASH*       = 45;
-  tTILDE*       = 46;
-  tAMP*         = 47;
-  tDOT*         = 48;
-  tCOMMA*       = 49;
-  tSEMI*        = 50;
-  tVBAR*        = 51;
-  tLPAREN*      = 52;
-  tRPAREN*      = 53;
-  tLBRACK*      = 54;
-  tRBRACK*      = 55;
-  tLBRACE*      = 56;
-  tRBRACE*      = 57;
-  tASSIGN*      = 58;
-  tCARET*       = 59;
-  tEQ*          = 60;
-  tPOUND*       = 61;
-  tLT*          = 62;
-  tGT*          = 63;
-  tLTEQ*        = 64;
-  tGTEQ*        = 65;
-  tDOTDOT*      = 66;
-  tCOLON*       = 67;
-  tAsSetElt*    = 68;
-  tCaseDotDot*  = 69;
-  tEOF*         = 70;
-
+  tARRAY* = 0;
+  tBEGIN* = 1;
+  tBITAND* = 2;
+  tBITOR* = 3;
+  tBITXOR* = 4;
+  tBY* = 5;
+  tCASE* = 6;
+  tCONST* = 7;
+  tDIV* = 8;
+  tDO* = 9;
+  tELSE* = 10;
+  tELSIF* = 11;
+  tEND* = 12;
+  tFALSE* = 13;
+  tFOR* = 14;
+  tIF* = 15;
+  tIMPORT* = 16;
+  tIN* = 17;
+  tIS* = 18;
+  tMOD* = 19;
+  tMODULE* = 20;
+  tNATIVE* = 21;
+  tNIL* = 22;
+  tOF* = 23;
+  tOR* = 24;
+  tPOINTER* = 25;
+  tPROCEDURE* = 26;
+  tRECORD* = 27;
+  tREPEAT* = 28;
+  tRETURN* = 29;
+  tTHEN* = 30;
+  tTO* = 31;
+  tTRUE* = 32;
+  tTYPE* = 33;
+  tUNTIL* = 34;
+  tVAR* = 35;
+  tWHILE* = 36;
+  tLastKwd = tWHILE * KwdSize;
+  tIDENT* = 37;
+  tKEYWORD* = 38;
+  tSTRING* = 39;
+  tINT* = 40;
+  tREAL* = 41;
+  tPLUS* = 42;
+  tMINUS* = 43;
+  tSTAR* = 44;
+  tSLASH* = 45;
+  tTILDE* = 46;
+  tAMP* = 47;
+  tDOT* = 48;
+  tCOMMA* = 49;
+  tSEMI* = 50;
+  tVBAR* = 51;
+  tLPAREN* = 52;
+  tRPAREN* = 53;
+  tLBRACK* = 54;
+  tRBRACK* = 55;
+  tLBRACE* = 56;
+  tRBRACE* = 57;
+  tASSIGN* = 58;
+  tCARET* = 59;
+  tEQ* = 60;
+  tPOUND* = 61;
+  tLT* = 62;
+  tGT* = 63;
+  tLTEQ* = 64;
+  tGTEQ* = 65;
+  tDOTDOT* = 66;
+  tCOLON* = 67;
+  tAsSetElt* = 68;
+  tCaseDotDot* = 69;
+  tEOF* = 70;
   (* Invalid char is a character that doesn't actually begin a token.        *)
-  tINVALIDCHAR  = 71;
-
-
+  tINVALIDCHAR = 71;
 TYPE
-  PoolIndex*  = INTEGER;
+  PoolIndex* = INTEGER;
   StringPool* = RECORD
-    buf:     ARRAY PoolSize OF CHAR;
-    last:    PoolIndex;
-    buckets: ARRAY NumBuckets OF PoolIndex;
+    buf: ARRAY PoolSize OF CHAR;
+    last: PoolIndex;
+    buckets: ARRAY NumBuckets OF PoolIndex
   END;
-  TokenKind*  = INTEGER;
-  Token*      = RECORD
+  TokenKind* = INTEGER;
+  Token* = RECORD
     kind*: TokenKind;
     sVal*: PoolIndex;
     iVal*: INTEGER;
-    rVal*: REAL;
+    rVal*: REAL
   END;
-  Lexer*      = RECORD
-    sp:       StringPool;
-    buf:      ARRAY BufSize OF CHAR;
+  Lexer* = RECORD
+    sp: StringPool;
+    buf: ARRAY BufSize OF CHAR;
     fileName: PoolIndex;
-    pos:      INTEGER;
-    t*:       Token;
-    lineIsWs: BOOLEAN;
+    pos: INTEGER;
+    t*: Token;
+    lineIsWs: BOOLEAN
   END;
   LexCallback* = PROCEDURE;
-
 VAR
-  TokenNames*: ARRAY tEOF+1, KwdSize OF CHAR;
+  TokenNames*: ARRAY tEOF + 1, KwdSize OF CHAR;
   fatal: BOOLEAN;
   ignoreKeywordCase*: BOOLEAN;
   indent: INTEGER;
@@ -154,11 +147,11 @@ PROCEDURE PoolInit*(VAR sp: StringPool);
 VAR
   i: INTEGER;
 BEGIN
-  FOR i := 0 TO PoolSize-1 DO
+  FOR i := 0 TO PoolSize - 1 DO
     sp.buf[i] := 0X
   END;
   sp.last := 0;
-  FOR i := 0 TO NumBuckets-1 DO
+  FOR i := 0 TO NumBuckets - 1 DO
     sp.buckets[i] := -1
   END
 END PoolInit;
@@ -168,25 +161,37 @@ VAR
   l: INTEGER;
 BEGIN
   l := 0;
-  WHILE s[l] # 0X DO INC(l) END
+  WHILE s[l] # 0X DO
+    INC(l)
+  END;
   RETURN l
 END StringLen;
 
-PROCEDURE StrEq(a: ARRAY OF CHAR; ai: INTEGER; b: ARRAY OF CHAR; bi: INTEGER; len: INTEGER): BOOLEAN;
+PROCEDURE StrEq(
+  a: ARRAY OF CHAR;
+  ai: INTEGER;
+  b: ARRAY OF CHAR;
+  bi: INTEGER;
+  len: INTEGER
+): BOOLEAN;
 BEGIN
   WHILE (len > 0) & (a[ai] = b[bi]) DO
     INC(ai);
     INC(bi);
-    DEC(len);
+    DEC(len)
   END;
   RETURN len = 0
 END StrEq;
 
-PROCEDURE StringInternRange(VAR sp: StringPool; s: ARRAY OF CHAR; offset, length: INTEGER): PoolIndex;
+PROCEDURE StringInternRange(
+  VAR sp: StringPool;
+  s: ARRAY OF CHAR;
+  offset, length: INTEGER
+): PoolIndex;
 VAR
-  i:    INTEGER;
+  i: INTEGER;
   hash: INTEGER;
-  b:    INTEGER;
+  b: INTEGER;
 BEGIN
   ASSERT(sp.last + length < PoolSize);
   (* Copy and compute hash at the same time *)
@@ -206,11 +211,13 @@ BEGIN
   WHILE (sp.buckets[b] >= 0) &
         ~StrEq(sp.buf, sp.buckets[b], s, offset, length) DO
     INC(b);
-    IF b = NumBuckets THEN b := 0; END;
+    IF b = NumBuckets THEN
+      b := 0
+    END
   END;
   IF sp.buckets[b] < 0 THEN
     sp.buckets[b] := sp.last;
-    INC(sp.last, length+1);
+    INC(sp.last, length + 1)
   END;
   RETURN sp.buckets[b]
 END StringInternRange;
@@ -230,7 +237,7 @@ BEGIN
   s[2] := CHR((i MOD 10) + 48);
   i := i DIV 10;
   s[1] := CHR((i MOD 10) + 48);
-  s[5] := 0X;
+  s[5] := 0X
 END MakeDummy;
 
 PROCEDURE AddKeywords(VAR sp: StringPool);
@@ -272,7 +279,6 @@ BEGIN
   StringInternRange(sp, "UNTIL", 0, 9);
   StringInternRange(sp, "VAR", 0, 9);
   StringInternRange(sp, "WHILE", 0, 9);
-
   IF ignoreKeywordCase THEN
     StringInternRange(sp, "array", 0, 9);
     StringInternRange(sp, "begin", 0, 9);
@@ -310,7 +316,7 @@ BEGIN
     StringInternRange(sp, "type", 0, 9);
     StringInternRange(sp, "until", 0, 9);
     StringInternRange(sp, "var", 0, 9);
-    StringInternRange(sp, "while", 0, 9);
+    StringInternRange(sp, "while", 0, 9)
   END
 END AddKeywords;
 
@@ -324,11 +330,18 @@ VAR
   len: INTEGER;
 BEGIN
   len := 0;
-  WHILE l.sp.buf[s] # 0X DO INC(s); INC(len) END
+  WHILE l.sp.buf[s] # 0X DO
+    INC(s);
+    INC(len)
+  END;
   RETURN len
 END StringLenI;
 
-PROCEDURE CopyLexToPool*(l: Lexer; s: PoolIndex; VAR destPool: StringPool): PoolIndex;
+PROCEDURE CopyLexToPool*(
+  l: Lexer;
+  s: PoolIndex;
+  VAR destPool: StringPool
+): PoolIndex;
 BEGIN
   RETURN StringInternRange(destPool, l.sp.buf, s, StringLenI(l, s))
 END CopyLexToPool;
@@ -350,7 +363,7 @@ END FirstChar;
 
 PROCEDURE OutStr*(l: Lexer; s: PoolIndex);
 BEGIN
-  Out.StrI(l.sp.buf, s);
+  Out.StrI(l.sp.buf, s)
 END OutStr;
 
 PROCEDURE OutStrOberon*(l: Lexer; s: PoolIndex);
@@ -376,31 +389,32 @@ BEGIN
   WHILE l.sp.buf[s] # 0X DO
     c := l.sp.buf[s];
     IF c = "\" THEN
-      Out.Str("\\");
+      Out.Str("\\")
     ELSIF c = 22X THEN
       Out.Str("\");
-      Out.Str(22X);
+      Out.Str(22X)
     ELSIF c = 0AX THEN
-      Out.Str("\n");
+      Out.Str("\n")
     ELSIF c = 09X THEN
-      Out.Str("\t");
+      Out.Str("\t")
     ELSE
-      Out.Char(c);
+      Out.Char(c)
     END;
-    INC(s);
+    INC(s)
   END;
-  Out.Str(22X);
+  Out.Str(22X)
 END OutStrEscaped;
 
 PROCEDURE Newline*;
-VAR i: INTEGER;
+VAR
+  i: INTEGER;
 BEGIN
   Out.Str(0AX);
   i := indent;
   WHILE i > 0 DO
     Out.Str("  ");
-    i := i - 1;
-  END;
+    i := i - 1
+  END
 END Newline;
 
 PROCEDURE Space*;
@@ -420,7 +434,7 @@ BEGIN
   iVal := FLOOR(r);
   IF FLT(iVal) = r THEN
     Out.Int(iVal);
-    Out.Str(".0");
+    Out.Str(".0")
   ELSE
     Out.Real(r)
   END
@@ -436,7 +450,6 @@ BEGIN
   DEC(indent)
 END DeIndent;
 
-
 PROCEDURE OutPool*(sp: StringPool);
 VAR
   i: INTEGER;
@@ -450,45 +463,47 @@ END OutPool;
 
 PROCEDURE IsOneChar*(l: Lexer; s: PoolIndex): BOOLEAN;
 BEGIN
-  RETURN (l.sp.buf[s] = 0X) OR (l.sp.buf[s+1] = 0X)
+  RETURN (l.sp.buf[s] = 0X) OR (l.sp.buf[s + 1] = 0X)
 END IsOneChar;
 
 PROCEDURE Mute*;
 BEGIN
-  fatal := FALSE;
+  fatal := FALSE
 END Mute;
 
 PROCEDURE Unmute*;
 BEGIN
-  fatal := TRUE;
+  fatal := TRUE
 END Unmute;
 
 PROCEDURE Str*(s: ARRAY OF CHAR);
 BEGIN
-  Out.Str(s);
+  Out.Str(s)
 END Str;
 
 PROCEDURE Int*(i: INTEGER);
 BEGIN
-  Out.Int(i);
+  Out.Int(i)
 END Int;
 
 PROCEDURE Ln*;
 BEGIN
   Out.Ln;
-  IF fatal THEN Out.Halt END;
+  IF fatal THEN
+    Out.Halt
+  END
 END Ln;
 
 PROCEDURE PrintLnAndHalt*(s: ARRAY OF CHAR);
 BEGIN
   Out.Str(s);
-  Ln;
+  Ln
 END PrintLnAndHalt;
 
 PROCEDURE InfoPrintLn*(s: ARRAY OF CHAR);
 BEGIN
   Out.Str(s);
-  Out.Ln;
+  Out.Ln
 END InfoPrintLn;
 
 PROCEDURE Error*(l: Lexer; s: ARRAY OF CHAR);
@@ -498,19 +513,19 @@ BEGIN
   Out.Str("!");
   Out.Int(l.pos);
   Out.Str("!");
-  Out.Str(s);
+  Out.Str(s)
 END Error;
 
 PROCEDURE ErrorLn*(l: Lexer; s: ARRAY OF CHAR);
 BEGIN
   Error(l, s);
-  Ln;
+  Ln
 END ErrorLn;
 
 PROCEDURE Next(VAR l: Lexer; VAR c: CHAR);
 BEGIN
   INC(l.pos);
-  c := l.buf[l.pos];
+  c := l.buf[l.pos]
 END Next;
 
 PROCEDURE LexerInitFromFile*(VAR l: Lexer; fileName: ARRAY OF CHAR);
@@ -520,7 +535,7 @@ BEGIN
   Out.ReadFile(fileName, l.buf);
   l.fileName := StringIntern(l.sp, fileName);
   l.pos := 0;
-  l.lineIsWs := TRUE;
+  l.lineIsWs := TRUE
 END LexerInitFromFile;
 
 PROCEDURE LexerInitFromString*(VAR l: Lexer; s: ARRAY OF CHAR);
@@ -529,7 +544,7 @@ BEGIN
   AddKeywords(l.sp);
   l.buf := s;
   l.fileName := StringIntern(l.sp, "<string>");
-  l.pos := 0;
+  l.pos := 0
 END LexerInitFromString;
 
 (*
@@ -541,13 +556,17 @@ the lexer. Once complete, the state of the lexer is restored. This allows
 temporarily lexing a new file (an imported MODULE) and THEN returning back
 to the original MODULE.
 *)
-PROCEDURE ImportHelper*(VAR l: Lexer; moduleName: PoolIndex; callback: LexCallback);
+PROCEDURE ImportHelper*(
+  VAR l: Lexer;
+  moduleName: PoolIndex;
+  callback: LexCallback
+);
 VAR
-  savedBuf:      ARRAY BufSize OF CHAR;
+  savedBuf: ARRAY BufSize OF CHAR;
   savedFileName: PoolIndex;
-  fileName:      ARRAY 128 OF CHAR;
-  savedPos, i:   INTEGER;
-  savedToken:    Token;
+  fileName: ARRAY 128 OF CHAR;
+  savedPos, i: INTEGER;
+  savedToken: Token;
 BEGIN
   savedBuf := l.buf;
   savedFileName := l.fileName;
@@ -557,12 +576,12 @@ BEGIN
   i := 0;
   WHILE l.sp.buf[moduleName + i] # 0X DO
     fileName[i] := l.sp.buf[moduleName + i];
-    INC(i);
+    INC(i)
   END;
   fileName[i] := ".";
-  fileName[i+1] := "o";
-  fileName[i+2] := "b";
-  fileName[i+3] := 0X;
+  fileName[i + 1] := "o";
+  fileName[i + 2] := "b";
+  fileName[i + 3] := 0X;
   Out.ReadFile(fileName, l.buf);
   l.fileName := StringIntern(l.sp, fileName);
   l.pos := 0;
@@ -570,32 +589,34 @@ BEGIN
   l.t := savedToken;
   l.pos := savedPos;
   l.fileName := savedFileName;
-  l.buf := savedBuf;
+  l.buf := savedBuf
 END ImportHelper;
 
 PROCEDURE ScanIdent(VAR l: Lexer);
 VAR
-  start:   INTEGER;
-  scan:    BOOLEAN;
-  idx:     INTEGER;
+  start: INTEGER;
+  scan: BOOLEAN;
+  idx: INTEGER;
 BEGIN
   start := l.pos;
   scan := TRUE;
   WHILE scan DO
     scan := FALSE;
     CASE l.buf[l.pos] OF
-      "A" .. "Z", "a" .. "z", "0" .. "9", "_": scan := TRUE; INC(l.pos);
-    END;
+      "A".."Z", "a".."z", "0".."9", "_":
+        scan := TRUE;
+        INC(l.pos)
+    END
   END;
   idx := StringInternRange(l.sp, l.buf, start, l.pos - start);
   IF idx <= tLastKwd THEN
-    l.t.kind := idx DIV KwdSize;
-  ELSIF (idx <= 2*tLastKwd+KwdSize) & ignoreKeywordCase THEN
-   l.t.kind := (idx - tLastKwd) DIV KwdSize - 1;
+    l.t.kind := idx DIV KwdSize
+  ELSIF (idx <= 2 * tLastKwd + KwdSize) & ignoreKeywordCase THEN
+    l.t.kind := (idx - tLastKwd) DIV KwdSize - 1
   ELSE
     l.t.kind := tIDENT;
-    l.t.sVal := idx;
-  END;
+    l.t.sVal := idx
+  END
 END ScanIdent;
 
 PROCEDURE Ten(e: INTEGER): REAL;
@@ -621,27 +642,27 @@ BEGIN
   exp := 0;
   sgn := 1;
   REPEAT
-    digits :=  digits * 10 + (ORD(s[idx]) - ORD("0"));
-    INC(idx);
+    digits := digits * 10 + (ORD(s[idx]) - ORD("0"));
+    INC(idx)
   UNTIL s[idx] = ".";
   INC(idx);
   WHILE (s[idx] >= "0") & (s[idx] <= "9") DO
     DEC(e);
-    digits :=  digits * 10 + (ORD(s[idx]) - ORD("0"));
-    INC(idx);
+    digits := digits * 10 + (ORD(s[idx]) - ORD("0"));
+    INC(idx)
   END;
   IF (s[idx] = "e") OR (s[idx] = "E") THEN
     INC(idx);
     IF s[idx] = "-" THEN
       sgn := -1;
-      INC(idx);
+      INC(idx)
     END;
     WHILE (s[idx] >= "0") & (s[idx] <= "9") DO
       exp := exp * 10 + (ORD(s[idx]) - ORD("0"));
-      INC(idx);
+      INC(idx)
     END;
     exp := exp * sgn;
-    e := e + exp;
+    e := e + exp
   END;
   IF e > 0 THEN
     r := FLT(digits) * Ten(e)
@@ -653,84 +674,88 @@ END StrToReal;
 
 PROCEDURE ScanNumber(VAR l: Lexer);
 VAR
-  ch:          CHAR;
+  ch: CHAR;
   start, base: INTEGER;
-  needHorX:    BOOLEAN;
-  s:           ARRAY 2 OF CHAR;
+  needHorX: BOOLEAN;
+  s: ARRAY 2 OF CHAR;
 BEGIN
   start := l.pos;
   l.t.kind := tINT;
   base := 10;
   needHorX := FALSE;
   Next(l, ch);
-  WHILE (ch >= "0") & (ch <= "9") OR
-        (ch >= "A") & (ch <= "F") OR
-        (ch >= "a") & (ch <= "f") DO
+  WHILE (ch >= "0") &
+        (ch <= "9") OR
+        (ch >= "A") &
+        (ch <= "F") OR
+        (ch >= "a") &
+        (ch <= "f") DO
     IF (ch >= "A") & (ch <= "F") OR (ch >= "a") & (ch <= "f") THEN
-      needHorX := TRUE;
+      needHorX := TRUE
     END;
-    Next(l, ch);
+    Next(l, ch)
   END;
   (* Got letters and hex digits. Could be hex, char, or floating point *)
   IF (ch = "X") OR (ch = "x") THEN
     l.t.kind := tSTRING;
     base := 16;
     needHorX := FALSE;
-    Next(l, ch);
+    Next(l, ch)
   ELSIF (ch = "H") OR (ch = "h") THEN
     base := 16;
     needHorX := FALSE;
-    Next(l, ch);
-  ELSIF (ch = ".") & (l.buf[l.pos+1] # ".") THEN
+    Next(l, ch)
+  ELSIF (ch = ".") & (l.buf[l.pos + 1] # ".") THEN
     (* Special case - 10..20 is 10 TOKEN_DOTDOT 20 *)
     Next(l, ch);
     (* mantissa *)
     WHILE (ch >= "0") & (ch <= "9") DO
-      Next(l, ch);
+      Next(l, ch)
     END;
     IF (ch = "e") OR (ch = "E") THEN
-      Next(l, ch);
+      Next(l, ch)
     END;
     IF ch = "-" THEN
-      Next(l, ch);
+      Next(l, ch)
     END;
     WHILE (ch >= "0") & (ch <= "9") DO
-      Next(l, ch);
+      Next(l, ch)
     END;
-    l.t.kind := tREAL;
+    l.t.kind := tREAL
   ELSIF needHorX THEN
-    ErrorLn(l, "Hex digit must be followed by H or X");
+    ErrorLn(l, "Hex digit must be followed by H or X")
   END;
   l.t.iVal := 0;
   IF l.t.kind = tREAL THEN
-    l.t.rVal := StrToReal(l.buf, start);
+    l.t.rVal := StrToReal(l.buf, start)
   ELSE
     WHILE start # l.pos DO
       ch := l.buf[start];
       IF (ch >= "0") & (ch <= "9") THEN
-        l.t.iVal := l.t.iVal * base + (ORD(ch) - ORD("0"));
+        l.t.iVal := l.t.iVal * base + (ORD(ch) - ORD("0"))
       ELSIF (ch >= "A") & (ch <= "F") THEN
-        l.t.iVal := l.t.iVal * base + (ORD(ch) - ORD("A") + 10);
+        l.t.iVal := l.t.iVal * base + (ORD(ch) - ORD("A") + 10)
       ELSIF (ch >= "a") & (ch <= "f") THEN
-        l.t.iVal := l.t.iVal * base + (ORD(ch) - ORD("a") + 10);
+        l.t.iVal := l.t.iVal * base + (ORD(ch) - ORD("a") + 10)
       ELSIF (ch = "H") OR (ch = "h") OR (ch = "X") OR (ch = "x") THEN
+
       ELSE
-        ASSERT(FALSE);
+        ASSERT(FALSE)
       END;
-      INC(start);
-    END;
+      INC(start)
+    END
   END;
   IF l.t.kind = tSTRING THEN
     IF l.t.iVal > 255 THEN
       Error(l, "Character constant ");
       Out.Int(l.t.iVal);
-      Out.PrintLn(" > 255");
+      Out.PrintLn(" > 255")
     ELSE
       s[0] := CHR(l.t.iVal);
       s[1] := 0X;
-      l.t.sVal := StringIntern(l.sp, s);
-    END;
-  END;
+      l.t.sVal := StringIntern(l.sp, s)
+    END
+  END
 END ScanNumber;
 
 PROCEDURE ScanString(VAR l: Lexer);
@@ -747,12 +772,12 @@ BEGIN
   IF ch = quote THEN
     l.t.kind := tSTRING;
     l.t.sVal := StringInternRange(l.sp, l.buf, start + 1, l.pos - start - 1);
-    Next(l, ch);
+    Next(l, ch)
   ELSE
     l.pos := start;
     ErrorLn(l, "Unterminated string");
-    l.buf[l.pos] := 0X;
-  END;
+    l.buf[l.pos] := 0X
+  END
 END ScanString;
 
 PROCEDURE ScanComment(VAR l: Lexer);
@@ -763,28 +788,28 @@ BEGIN
   IF l.lineIsWs THEN
     Newline
   ELSE
-    Out.Str(" ");
+    Out.Str(" ")
   END;
   Str("(*");
-  ASSERT((l.buf[l.pos] = "(") & (l.buf[l.pos+1] = "*"));
+  ASSERT((l.buf[l.pos] = "(") & (l.buf[l.pos + 1] = "*"));
   INC(l.pos, 2);
   REPEAT
-    IF (l.buf[l.pos] = "(") & (l.buf[l.pos+1] = "*") THEN
+    IF (l.buf[l.pos] = "(") & (l.buf[l.pos + 1] = "*") THEN
       ScanComment(l)
     ELSE
       Out.Char(l.buf[l.pos]);
-      INC(l.pos);
-    END;
-  UNTIL (l.buf[l.pos] = 0X) OR (l.buf[l.pos] = "*") & (l.buf[l.pos+1] = ")");
+      INC(l.pos)
+    END
+  UNTIL (l.buf[l.pos] = 0X) OR (l.buf[l.pos] = "*") & (l.buf[l.pos + 1] = ")");
   IF l.buf[l.pos] = 0X THEN
     l.pos := start;
     ErrorLn(l, "Unterminated comment");
-    l.buf[l.pos] := 0X;
+    l.buf[l.pos] := 0X
   ELSE
     (* l.pos IS pointing at terminating star *)
     Out.Str("*)");
-    INC(l.pos, 2);
-  END;
+    INC(l.pos, 2)
+  END
 END ScanComment;
 
 PROCEDURE NextToken*(VAR l: Lexer);
@@ -797,150 +822,189 @@ BEGIN
       l.lineIsWs := FALSE
     END;
     CASE l.buf[l.pos] OF
-      0X: l.t.kind := tEOF;
-      (* space, newline, carriage return, newline, tab, vertical tab *)
-      | 09X, 0AX, 0BX, 0CX, 0DX, 20X: INC(l.pos); l.t.kind := tCOMMENT
-      | "A" .. "Z", "a" .. "z", "_": ScanIdent(l)
-      | "0" .. "9": ScanNumber(l)
-      | 22X: ScanString(l)
-      | "+": l.t.kind := tPLUS; INC(l.pos)
-      | "-": l.t.kind := tMINUS; INC(l.pos)
-      | "*": l.t.kind := tSTAR; INC(l.pos)
-      | "/": l.t.kind := tSLASH; INC(l.pos)
-      | "~": l.t.kind := tTILDE; INC(l.pos)
-      | "&": l.t.kind := tAMP; INC(l.pos)
+      0X:
+        l.t.kind := tEOF (* space, newline, carriage return, newline, tab, vertical tab *)
+      | 09X, 0AX, 0BX, 0CX, 0DX, 20X:
+        INC(l.pos);
+        l.t.kind := tCOMMENT
+      | "A".."Z", "a".."z", "_":
+        ScanIdent(l)
+      | "0".."9":
+        ScanNumber(l)
+      | 22X:
+        ScanString(l)
+      | "+":
+        l.t.kind := tPLUS;
+        INC(l.pos)
+      | "-":
+        l.t.kind := tMINUS;
+        INC(l.pos)
+      | "*":
+        l.t.kind := tSTAR;
+        INC(l.pos)
+      | "/":
+        l.t.kind := tSLASH;
+        INC(l.pos)
+      | "~":
+        l.t.kind := tTILDE;
+        INC(l.pos)
+      | "&":
+        l.t.kind := tAMP;
+        INC(l.pos)
       | ".":
-          l.t.kind := tDOT;
+        l.t.kind := tDOT;
+        INC(l.pos);
+        IF l.buf[l.pos] = "." THEN
           INC(l.pos);
-          IF l.buf[l.pos] = "." THEN
-            INC(l.pos);
-            l.t.kind := tDOTDOT;
-          END
-      | ",": l.t.kind := tCOMMA; INC(l.pos)
-      | ";": l.t.kind := tSEMI; INC(l.pos)
-      | "|": l.t.kind := tVBAR; INC(l.pos)
+          l.t.kind := tDOTDOT
+        END
+      | ",":
+        l.t.kind := tCOMMA;
+        INC(l.pos)
+      | ";":
+        l.t.kind := tSEMI;
+        INC(l.pos)
+      | "|":
+        l.t.kind := tVBAR;
+        INC(l.pos)
       | "(":
-          IF l.buf[l.pos+1] = "*" THEN
-            ScanComment(l);
-            l.t.kind := tCOMMENT
-          ELSE
-            l.t.kind := tLPAREN;
-            INC(l.pos);
-          END
-      | ")": l.t.kind := tRPAREN; INC(l.pos)
-      | "[": l.t.kind := tLBRACK; INC(l.pos)
-      | "]": l.t.kind := tRBRACK; INC(l.pos)
-      | "{": l.t.kind := tLBRACE; INC(l.pos)
-      | "}": l.t.kind := tRBRACE; INC(l.pos)
+        IF l.buf[l.pos + 1] = "*" THEN
+          ScanComment(l);
+          l.t.kind := tCOMMENT
+        ELSE
+          l.t.kind := tLPAREN;
+          INC(l.pos)
+        END
+      | ")":
+        l.t.kind := tRPAREN;
+        INC(l.pos)
+      | "[":
+        l.t.kind := tLBRACK;
+        INC(l.pos)
+      | "]":
+        l.t.kind := tRBRACK;
+        INC(l.pos)
+      | "{":
+        l.t.kind := tLBRACE;
+        INC(l.pos)
+      | "}":
+        l.t.kind := tRBRACE;
+        INC(l.pos)
       | ":":
-          l.t.kind := tCOLON;
+        l.t.kind := tCOLON;
+        INC(l.pos);
+        IF l.buf[l.pos] = "=" THEN
           INC(l.pos);
-          IF l.buf[l.pos] = "=" THEN
-            INC(l.pos);
-            l.t.kind := tASSIGN;
-          END
-      | "^": l.t.kind := tCARET; INC(l.pos)
-      | "=": l.t.kind := tEQ; INC(l.pos)
-      | "#": l.t.kind := tPOUND; INC(l.pos)
+          l.t.kind := tASSIGN
+        END
+      | "^":
+        l.t.kind := tCARET;
+        INC(l.pos)
+      | "=":
+        l.t.kind := tEQ;
+        INC(l.pos)
+      | "#":
+        l.t.kind := tPOUND;
+        INC(l.pos)
       | "<":
-          l.t.kind := tLT;
+        l.t.kind := tLT;
+        INC(l.pos);
+        IF l.buf[l.pos] = "=" THEN
           INC(l.pos);
-          IF l.buf[l.pos] = "=" THEN
-            INC(l.pos);
-            l.t.kind := tLTEQ;
-          END
+          l.t.kind := tLTEQ
+        END
       | ">":
-          l.t.kind := tGT;
+        l.t.kind := tGT;
+        INC(l.pos);
+        IF l.buf[l.pos] = "=" THEN
           INC(l.pos);
-          IF l.buf[l.pos] = "=" THEN
-            INC(l.pos);
-            l.t.kind := tGTEQ;
-          END
-    END;
+          l.t.kind := tGTEQ
+        END
+    END
   UNTIL l.t.kind >= 0;
   IF l.t.kind = tINVALIDCHAR THEN
-    ErrorLn(l, "Invalid character");
-  END;
+    ErrorLn(l, "Invalid character")
+  END
 END NextToken;
 
 PROCEDURE InitTokenNames;
 BEGIN
-  TokenNames[tARRAY]        :=  "ARRAY";
-  TokenNames[tBEGIN]        :=  "BEGIN";
-  TokenNames[tBITAND]       :=  "BITAND";
-  TokenNames[tBITOR]        :=  "BITOR";
-  TokenNames[tBITXOR]       :=  "BITXOR";
-  TokenNames[tBY]           :=  "BY";
-  TokenNames[tCASE]         :=  "CASE";
-  TokenNames[tCONST]        :=  "CONST";
-  TokenNames[tDIV]          :=  "DIV";
-  TokenNames[tDO]           :=  "DO";
-  TokenNames[tELSE]         :=  "ELSE";
-  TokenNames[tELSIF]        :=  "ELSIF";
-  TokenNames[tEND]          :=  "END";
-  TokenNames[tFALSE]        :=  "FALSE";
-  TokenNames[tFOR]          :=  "FOR";
-  TokenNames[tIF]           :=  "IF";
-  TokenNames[tIMPORT]       :=  "IMPORT";
-  TokenNames[tIN]           :=  "IN";
-  TokenNames[tIS]           :=  "IS";
-  TokenNames[tMOD]          :=  "MOD";
-  TokenNames[tMODULE]       :=  "MODULE";
-  TokenNames[tNATIVE]       :=  "NATIVE";
-  TokenNames[tNIL]          :=  "NIL";
-  TokenNames[tOF]           :=  "OF";
-  TokenNames[tOR]           :=  "OR";
-  TokenNames[tPOINTER]      :=  "POINTER";
-  TokenNames[tPROCEDURE]    :=  "PROCEDURE";
-  TokenNames[tRECORD]       :=  "RECORD";
-  TokenNames[tREPEAT]       :=  "REPEAT";
-  TokenNames[tRETURN]       :=  "RETURN";
-  TokenNames[tTHEN]         :=  "THEN";
-  TokenNames[tTO]           :=  "TO";
-  TokenNames[tTRUE]         :=  "TRUE";
-  TokenNames[tTYPE]         :=  "TYPE";
-  TokenNames[tUNTIL]        :=  "UNTIL";
-  TokenNames[tVAR]          :=  "VAR";
-  TokenNames[tWHILE]        :=  "WHILE";
-  TokenNames[tIDENT]        :=  "IDENT";
-  TokenNames[tKEYWORD]      :=  "KEYWORD";
-  TokenNames[tSTRING]       :=  "STRING";
-  TokenNames[tINT]          :=  "INT";
-  TokenNames[tREAL]         :=  "REAL";
-  TokenNames[tPLUS]         :=  "PLUS";
-  TokenNames[tMINUS]        :=  "MINUS";
-  TokenNames[tSTAR]         :=  "STAR";
-  TokenNames[tSLASH]        :=  "SLASH";
-  TokenNames[tTILDE]        :=  "TILDE";
-  TokenNames[tAMP]          :=  "AMP";
-  TokenNames[tDOT]          :=  "DOT";
-  TokenNames[tCOMMA]        :=  "COMMA";
-  TokenNames[tSEMI]         :=  "SEMI";
-  TokenNames[tVBAR]         :=  "VBAR";
-  TokenNames[tLPAREN]       :=  "LPAREN";
-  TokenNames[tRPAREN]       :=  "RPAREN";
-  TokenNames[tLBRACK]       :=  "LBRACK";
-  TokenNames[tRBRACK]       :=  "RBRACK";
-  TokenNames[tLBRACE]       :=  "LBRACE";
-  TokenNames[tRBRACE]       :=  "RBRACE";
-  TokenNames[tASSIGN]       :=  "ASSIGN";
-  TokenNames[tCARET]        :=  "CARET";
-  TokenNames[tEQ]           :=  "EQ";
-  TokenNames[tPOUND]        :=  "POUND";
-  TokenNames[tLT]           :=  "LT";
-  TokenNames[tGT]           :=  "GT";
-  TokenNames[tLTEQ]         :=  "LTEQ";
-  TokenNames[tGTEQ]         :=  "GTEQ";
-  TokenNames[tDOTDOT]       :=  "DOTDOT";
-  TokenNames[tCOLON]        :=  "COLON";
-  TokenNames[tAsSetElt]     :=  "AS_SET";
-  TokenNames[tCaseDotDot]   :=  "DOTDOT";
-  TokenNames[tEOF]          :=  "EOF";
+  TokenNames[tARRAY] := "ARRAY";
+  TokenNames[tBEGIN] := "BEGIN";
+  TokenNames[tBITAND] := "BITAND";
+  TokenNames[tBITOR] := "BITOR";
+  TokenNames[tBITXOR] := "BITXOR";
+  TokenNames[tBY] := "BY";
+  TokenNames[tCASE] := "CASE";
+  TokenNames[tCONST] := "CONST";
+  TokenNames[tDIV] := "DIV";
+  TokenNames[tDO] := "DO";
+  TokenNames[tELSE] := "ELSE";
+  TokenNames[tELSIF] := "ELSIF";
+  TokenNames[tEND] := "END";
+  TokenNames[tFALSE] := "FALSE";
+  TokenNames[tFOR] := "FOR";
+  TokenNames[tIF] := "IF";
+  TokenNames[tIMPORT] := "IMPORT";
+  TokenNames[tIN] := "IN";
+  TokenNames[tIS] := "IS";
+  TokenNames[tMOD] := "MOD";
+  TokenNames[tMODULE] := "MODULE";
+  TokenNames[tNATIVE] := "NATIVE";
+  TokenNames[tNIL] := "NIL";
+  TokenNames[tOF] := "OF";
+  TokenNames[tOR] := "OR";
+  TokenNames[tPOINTER] := "POINTER";
+  TokenNames[tPROCEDURE] := "PROCEDURE";
+  TokenNames[tRECORD] := "RECORD";
+  TokenNames[tREPEAT] := "REPEAT";
+  TokenNames[tRETURN] := "RETURN";
+  TokenNames[tTHEN] := "THEN";
+  TokenNames[tTO] := "TO";
+  TokenNames[tTRUE] := "TRUE";
+  TokenNames[tTYPE] := "TYPE";
+  TokenNames[tUNTIL] := "UNTIL";
+  TokenNames[tVAR] := "VAR";
+  TokenNames[tWHILE] := "WHILE";
+  TokenNames[tIDENT] := "IDENT";
+  TokenNames[tKEYWORD] := "KEYWORD";
+  TokenNames[tSTRING] := "STRING";
+  TokenNames[tINT] := "INT";
+  TokenNames[tREAL] := "REAL";
+  TokenNames[tPLUS] := "PLUS";
+  TokenNames[tMINUS] := "MINUS";
+  TokenNames[tSTAR] := "STAR";
+  TokenNames[tSLASH] := "SLASH";
+  TokenNames[tTILDE] := "TILDE";
+  TokenNames[tAMP] := "AMP";
+  TokenNames[tDOT] := "DOT";
+  TokenNames[tCOMMA] := "COMMA";
+  TokenNames[tSEMI] := "SEMI";
+  TokenNames[tVBAR] := "VBAR";
+  TokenNames[tLPAREN] := "LPAREN";
+  TokenNames[tRPAREN] := "RPAREN";
+  TokenNames[tLBRACK] := "LBRACK";
+  TokenNames[tRBRACK] := "RBRACK";
+  TokenNames[tLBRACE] := "LBRACE";
+  TokenNames[tRBRACE] := "RBRACE";
+  TokenNames[tASSIGN] := "ASSIGN";
+  TokenNames[tCARET] := "CARET";
+  TokenNames[tEQ] := "EQ";
+  TokenNames[tPOUND] := "POUND";
+  TokenNames[tLT] := "LT";
+  TokenNames[tGT] := "GT";
+  TokenNames[tLTEQ] := "LTEQ";
+  TokenNames[tGTEQ] := "GTEQ";
+  TokenNames[tDOTDOT] := "DOTDOT";
+  TokenNames[tCOLON] := "COLON";
+  TokenNames[tAsSetElt] := "AS_SET";
+  TokenNames[tCaseDotDot] := "DOTDOT";
+  TokenNames[tEOF] := "EOF"
 END InitTokenNames;
 
 BEGIN
   InitTokenNames;
   fatal := TRUE;
   ignoreKeywordCase := TRUE;
-  indent := 0;
+  indent := 0
 END PrettyPrintLex.

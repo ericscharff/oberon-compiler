@@ -1,3 +1,5 @@
+MODULE PrettyPrint;
+
 (*
  * This file is part of oberon-compiler
  *
@@ -18,8 +20,6 @@
  *
  *)
 
-MODULE PrettyPrint;
-
 IMPORT Args, Lex := PrettyPrintLex;
 
 VAR
@@ -38,76 +38,105 @@ END IsToken;
 PROCEDURE PrintToken(kind: Lex.TokenKind);
 BEGIN
   CASE kind OF
-  Lex.tARRAY,
-  Lex.tBEGIN,
-  Lex.tBITAND,
-  Lex.tBITOR,
-  Lex.tBITXOR,
-  Lex.tBY,
-  Lex.tCASE,
-  Lex.tCONST,
-  Lex.tDIV,
-  Lex.tDO,
-  Lex.tELSE,
-  Lex.tELSIF,
-  Lex.tEND,
-  Lex.tFALSE,
-  Lex.tFOR,
-  Lex.tIF,
-  Lex.tIMPORT,
-  Lex.tIN,
-  Lex.tIS,
-  Lex.tMOD,
-  Lex.tMODULE,
-  Lex.tNATIVE,
-  Lex.tNIL,
-  Lex.tOF,
-  Lex.tOR,
-  Lex.tPOINTER,
-  Lex.tPROCEDURE,
-  Lex.tRECORD,
-  Lex.tREPEAT,
-  Lex.tRETURN,
-  Lex.tTHEN,
-  Lex.tTO,
-  Lex.tTRUE,
-  Lex.tTYPE,
-  Lex.tUNTIL,
-  Lex.tVAR,
-  Lex.tWHILE: Lex.Str(Lex.TokenNames[kind])
-
-  | Lex.tIDENT: Lex.OutStr(l, l.t.sVal);
-  | Lex.tSTRING: Lex.OutStrOberon(l, l.t.sVal);
-  | Lex.tINT: Lex.PrintInt(l.t.iVal)
-  | Lex.tREAL: Lex.PrintReal(l.t.rVal)
-
-  | Lex.tPLUS: Lex.Str("+")
-  | Lex.tMINUS: Lex.Str("-")
-  | Lex.tSTAR: Lex.Str("*")
-  | Lex.tSLASH: Lex.Str("/")
-  | Lex.tTILDE: Lex.Str("~")
-  | Lex.tAMP: Lex.Str("&")
-  | Lex.tDOT: Lex.Str(".")
-  | Lex.tCOMMA: Lex.Str(", ")
-  | Lex.tSEMI: Lex.Str(";")
-  | Lex.tVBAR: Lex.Str("|")
-  | Lex.tLPAREN: Lex.Str("(")
-  | Lex.tRPAREN: Lex.Str(")")
-  | Lex.tLBRACK: Lex.Str("[")
-  | Lex.tRBRACK: Lex.Str("]")
-  | Lex.tLBRACE: Lex.Str("{")
-  | Lex.tRBRACE: Lex.Str("}")
-  | Lex.tASSIGN: Lex.Str(" := ")
-  | Lex.tCARET: Lex.Str("^")
-  | Lex.tEQ: Lex.Str("=")
-  | Lex.tPOUND: Lex.Str("#")
-  | Lex.tLT: Lex.Str("<")
-  | Lex.tGT: Lex.Str(">")
-  | Lex.tLTEQ: Lex.Str("<=")
-  | Lex.tGTEQ: Lex.Str(">=")
-  | Lex.tDOTDOT: Lex.Str("..")
-  | Lex.tCOLON: Lex.Str(": ")
-  END;
+    Lex.tARRAY,
+    Lex.tBEGIN,
+    Lex.tBITAND,
+    Lex.tBITOR,
+    Lex.tBITXOR,
+    Lex.tBY,
+    Lex.tCASE,
+    Lex.tCONST,
+    Lex.tDIV,
+    Lex.tDO,
+    Lex.tELSE,
+    Lex.tELSIF,
+    Lex.tEND,
+    Lex.tFALSE,
+    Lex.tFOR,
+    Lex.tIF,
+    Lex.tIMPORT,
+    Lex.tIN,
+    Lex.tIS,
+    Lex.tMOD,
+    Lex.tMODULE,
+    Lex.tNATIVE,
+    Lex.tNIL,
+    Lex.tOF,
+    Lex.tOR,
+    Lex.tPOINTER,
+    Lex.tPROCEDURE,
+    Lex.tRECORD,
+    Lex.tREPEAT,
+    Lex.tRETURN,
+    Lex.tTHEN,
+    Lex.tTO,
+    Lex.tTRUE,
+    Lex.tTYPE,
+    Lex.tUNTIL,
+    Lex.tVAR,
+    Lex.tWHILE:
+      Lex.Str(Lex.TokenNames[kind])
+    | Lex.tIDENT:
+      Lex.OutStr(l, l.t.sVal)
+    | Lex.tSTRING:
+      Lex.OutStrOberon(l, l.t.sVal)
+    | Lex.tINT:
+      Lex.PrintInt(l.t.iVal)
+    | Lex.tREAL:
+      Lex.PrintReal(l.t.rVal)
+    | Lex.tPLUS:
+      Lex.Str("+")
+    | Lex.tMINUS:
+      Lex.Str("-")
+    | Lex.tSTAR:
+      Lex.Str("*")
+    | Lex.tSLASH:
+      Lex.Str("/")
+    | Lex.tTILDE:
+      Lex.Str("~")
+    | Lex.tAMP:
+      Lex.Str("&")
+    | Lex.tDOT:
+      Lex.Str(".")
+    | Lex.tCOMMA:
+      Lex.Str(", ")
+    | Lex.tSEMI:
+      Lex.Str(";")
+    | Lex.tVBAR:
+      Lex.Str("|")
+    | Lex.tLPAREN:
+      Lex.Str("(")
+    | Lex.tRPAREN:
+      Lex.Str(")")
+    | Lex.tLBRACK:
+      Lex.Str("[")
+    | Lex.tRBRACK:
+      Lex.Str("]")
+    | Lex.tLBRACE:
+      Lex.Str("{")
+    | Lex.tRBRACE:
+      Lex.Str("}")
+    | Lex.tASSIGN:
+      Lex.Str(" := ")
+    | Lex.tCARET:
+      Lex.Str("^")
+    | Lex.tEQ:
+      Lex.Str("=")
+    | Lex.tPOUND:
+      Lex.Str("#")
+    | Lex.tLT:
+      Lex.Str("<")
+    | Lex.tGT:
+      Lex.Str(">")
+    | Lex.tLTEQ:
+      Lex.Str("<=")
+    | Lex.tGTEQ:
+      Lex.Str(">=")
+    | Lex.tDOTDOT:
+      Lex.Str("..")
+    | Lex.tCOLON:
+      Lex.Str(": ")
+  END
 END PrintToken;
 
 PROCEDURE MatchToken(kind: Lex.TokenKind): BOOLEAN;
@@ -117,9 +146,9 @@ BEGIN
   IF (kind < 0) OR IsToken(kind) THEN
     PrintToken(l.t.kind);
     Lex.NextToken(l);
-    found := TRUE;
+    found := TRUE
   ELSE
-    found := FALSE;
+    found := FALSE
   END;
   RETURN found
 END MatchToken;
@@ -128,114 +157,126 @@ PROCEDURE ExpectToken(kind: Lex.TokenKind);
 BEGIN
   IF IsToken(kind) THEN
     PrintToken(kind);
-    Lex.NextToken(l);
+    Lex.NextToken(l)
   ELSE
     Lex.Error(l, "Expected ");
     Lex.Str(Lex.TokenNames[kind]);
     Lex.Str(", got ");
-    Lex.PrintLnAndHalt(Lex.TokenNames[l.t.kind]);
-  END;
+    Lex.PrintLnAndHalt(Lex.TokenNames[l.t.kind])
+  END
 END ExpectToken;
 
 PROCEDURE ExpectIdentifier;
 BEGIN
-  ExpectToken(Lex.tIDENT);
+  ExpectToken(Lex.tIDENT)
 END ExpectIdentifier;
 
 PROCEDURE ParseQualident;
 BEGIN
   ExpectIdentifier;
   IF MatchToken(Lex.tDOT) THEN
-    ExpectIdentifier;
-  END;
+    ExpectIdentifier
+  END
 END ParseQualident;
 
 PROCEDURE ParseSetElement;
 BEGIN
   ParseExpression;
   IF MatchToken(Lex.tDOTDOT) THEN
-    ParseExpression()
-  END;
+    ParseExpression
+  END
 END ParseSetElement;
 
 PROCEDURE ParseSet;
 BEGIN
   ExpectToken(Lex.tLBRACE);
-  IF IsToken(Lex.tRBRACE) THEN
-    (* empty set *)
+  IF IsToken(Lex.tRBRACE) THEN (* empty set *)
+
   ELSE
     ParseSetElement;
     WHILE MatchToken(Lex.tCOMMA) DO
-      ParseSetElement;
-    END;
+      ParseSetElement
+    END
   END;
-  ExpectToken(Lex.tRBRACE);
+  ExpectToken(Lex.tRBRACE)
 END ParseSet;
 
 PROCEDURE ParseActualParameters;
 BEGIN
   MatchToken(Lex.tLPAREN);
   IF ~IsToken(Lex.tRPAREN) THEN
-    ParseExpression();
+    ParseExpression;
     WHILE MatchToken(Lex.tCOMMA) DO
-      ParseExpression;
-    END;
+      ParseExpression
+    END
   END;
-  MatchToken(Lex.tRPAREN);
+  MatchToken(Lex.tRPAREN)
 END ParseActualParameters;
 
 PROCEDURE ParseDesignator;
 BEGIN
   ParseQualident;
-  WHILE IsToken(Lex.tDOT) OR IsToken(Lex.tLBRACK) OR IsToken(Lex.tCARET) OR
+  WHILE IsToken(Lex.tDOT) OR
+        IsToken(Lex.tLBRACK) OR
+        IsToken(Lex.tCARET) OR
         IsToken(Lex.tLPAREN) DO
     IF MatchToken(Lex.tDOT) THEN
       ExpectIdentifier
     ELSIF MatchToken(Lex.tLBRACK) THEN
       ParseExpression;
       WHILE MatchToken(Lex.tCOMMA) DO
-        ParseExpression;
+        ParseExpression
       END;
-      ExpectToken(Lex.tRBRACK);
+      ExpectToken(Lex.tRBRACK)
     ELSIF MatchToken(Lex.tCARET) THEN
+
     ELSIF IsToken(Lex.tLPAREN) THEN
-      ParseActualParameters;
+      ParseActualParameters
     ELSE
-      ASSERT(FALSE);
+      ASSERT(FALSE)
     END
-  END;
+  END
 END ParseDesignator;
 
 PROCEDURE ParseFactor;
 BEGIN
   IF IsToken(Lex.tINT) THEN
-    MatchToken(Lex.tINT);
+    MatchToken(Lex.tINT)
   ELSIF IsToken(Lex.tREAL) THEN
-    MatchToken(Lex.tREAL);
+    MatchToken(Lex.tREAL)
   ELSIF IsToken(Lex.tSTRING) THEN
-    MatchToken(Lex.tSTRING);
+    MatchToken(Lex.tSTRING)
   ELSIF MatchToken(Lex.tNIL) THEN
+
   ELSIF MatchToken(Lex.tTRUE) THEN
+
   ELSIF MatchToken(Lex.tFALSE) THEN
+
   ELSIF IsToken(Lex.tLBRACE) THEN
-    ParseSet;
+    ParseSet
   ELSIF IsToken(Lex.tIDENT) THEN
-    ParseDesignator;
+    ParseDesignator
   ELSIF MatchToken(Lex.tLPAREN) THEN
     ParseExpression;
-    ExpectToken(Lex.tRPAREN);
+    ExpectToken(Lex.tRPAREN)
   ELSIF MatchToken(Lex.tTILDE) THEN
-    ParseFactor;
+    ParseFactor
   ELSE
-    Lex.ErrorLn(l, "Factor expected");
-  END;
+    Lex.ErrorLn(l, "Factor expected")
+  END
 END ParseFactor;
 
 PROCEDURE IsMulOperator(): BOOLEAN;
 BEGIN
-  RETURN IsToken(Lex.tSTAR) OR IsToken(Lex.tSLASH) OR IsToken(Lex.tDIV) OR
-         IsToken(Lex.tMOD) OR IsToken(Lex.tAMP) OR IsToken(Lex.tBITAND) OR
-         IsToken(Lex.tBITOR) OR IsToken(Lex.tBITXOR)
+  RETURN
+    IsToken(Lex.tSTAR) OR
+    IsToken(Lex.tSLASH) OR
+    IsToken(Lex.tDIV) OR
+    IsToken(Lex.tMOD) OR
+    IsToken(Lex.tAMP) OR
+    IsToken(Lex.tBITAND) OR
+    IsToken(Lex.tBITOR) OR
+    IsToken(Lex.tBITXOR)
 END IsMulOperator;
 
 PROCEDURE ParseTerm;
@@ -245,8 +286,8 @@ BEGIN
     Lex.Space;
     MatchToken(-1);
     Lex.Space;
-    ParseFactor;
-  END;
+    ParseFactor
+  END
 END ParseTerm;
 
 PROCEDURE IsAddOperator(): BOOLEAN;
@@ -264,14 +305,20 @@ BEGIN
     MatchToken(-1);
     Lex.Space;
     ParseTerm
-  END;
+  END
 END ParseSimpleExpression;
 
 PROCEDURE IsRelation(): BOOLEAN;
 BEGIN
-  RETURN IsToken(Lex.tEQ) OR IsToken(Lex.tPOUND) OR IsToken(Lex.tLT) OR
-         IsToken(Lex.tLTEQ) OR IsToken(Lex.tGT) OR IsToken(Lex.tGTEQ) OR
-         IsToken(Lex.tIN) OR IsToken(Lex.tIS)
+  RETURN
+    IsToken(Lex.tEQ) OR
+    IsToken(Lex.tPOUND) OR
+    IsToken(Lex.tLT) OR
+    IsToken(Lex.tLTEQ) OR
+    IsToken(Lex.tGT) OR
+    IsToken(Lex.tGTEQ) OR
+    IsToken(Lex.tIN) OR
+    IsToken(Lex.tIS)
 END IsRelation;
 
 PROCEDURE ParseExpression0;
@@ -282,12 +329,12 @@ BEGIN
     MatchToken(-1);
     Lex.Space;
     ParseSimpleExpression
-  END;
+  END
 END ParseExpression0;
 
 PROCEDURE ParseBooleanExpression;
 BEGIN
-  ParseExpression;
+  ParseExpression
 END ParseBooleanExpression;
 
 PROCEDURE ParseIfStatement;
@@ -303,12 +350,12 @@ BEGIN
     ParseBooleanExpression;
     Lex.Space;
     ExpectToken(Lex.tTHEN);
-    ParseStatementSequence;
+    ParseStatementSequence
   END;
   IF MatchToken(Lex.tELSE) THEN
     ParseStatementSequence
   END;
-  ExpectToken(Lex.tEND);
+  ExpectToken(Lex.tEND)
 END ParseIfStatement;
 
 PROCEDURE ParseCaseLabel;
@@ -316,16 +363,16 @@ BEGIN
   IF IsToken(Lex.tINT) OR IsToken(Lex.tSTRING) OR IsToken(Lex.tIDENT) THEN
     ParseFactor
   ELSE
-    Lex.ErrorLn(l, "Case label (INTEGER, STRING, IDENT) expected");
-  END;
+    Lex.ErrorLn(l, "Case label (INTEGER, STRING, IDENT) expected")
+  END
 END ParseCaseLabel;
 
 PROCEDURE ParseCaseLabelRange;
 BEGIN
   ParseCaseLabel;
   IF MatchToken(Lex.tDOTDOT) THEN
-    ParseCaseLabel;
-  END;
+    ParseCaseLabel
+  END
 END ParseCaseLabelRange;
 
 PROCEDURE ParseCaseLabelList;
@@ -333,7 +380,7 @@ BEGIN
   ParseCaseLabelRange;
   WHILE MatchToken(Lex.tCOMMA) DO
     ParseCaseLabelRange
-  END;
+  END
 END ParseCaseLabelList;
 
 PROCEDURE ParseCase;
@@ -342,7 +389,7 @@ BEGIN
     ParseCaseLabelList;
     ExpectToken(Lex.tCOLON);
     ParseStatementSequence
-  END;
+  END
 END ParseCase;
 
 PROCEDURE ParseCaseStatement;
@@ -356,9 +403,9 @@ BEGIN
   ParseCase;
   WHILE MatchToken(Lex.tVBAR) DO
     Lex.Space;
-    ParseCase;
+    ParseCase
   END;
-  ExpectToken(Lex.tEND);
+  ExpectToken(Lex.tEND)
 END ParseCaseStatement;
 
 PROCEDURE ParseWhileStatement;
@@ -376,7 +423,7 @@ BEGIN
     Lex.Space;
     ParseStatementSequence
   END;
-  ExpectToken(Lex.tEND);
+  ExpectToken(Lex.tEND)
 END ParseWhileStatement;
 
 PROCEDURE ParseRepeatStatement;
@@ -385,7 +432,7 @@ BEGIN
   ParseStatementSequence;
   ExpectToken(Lex.tUNTIL);
   Lex.Space;
-  ParseBooleanExpression();
+  ParseBooleanExpression
 END ParseRepeatStatement;
 
 PROCEDURE ParseForStatement;
@@ -402,11 +449,11 @@ BEGIN
   Lex.Space;
   IF MatchToken(Lex.tBY) THEN
     ParseExpression;
-    Lex.Space;
+    Lex.Space
   END;
   ExpectToken(Lex.tDO);
   ParseStatementSequence;
-  ExpectToken(Lex.tEND);
+  ExpectToken(Lex.tEND)
 END ParseForStatement;
 
 PROCEDURE ParseVarStatement;
@@ -415,7 +462,7 @@ BEGIN
   Lex.Space;
   ExpectIdentifier;
   ExpectToken(Lex.tASSIGN);
-  ParseExpression;
+  ParseExpression
 END ParseVarStatement;
 
 PROCEDURE ParseAssignOrProcCall;
@@ -427,37 +474,35 @@ BEGIN
   ELSE
     (* Procedure call *)
     IF IsToken(Lex.tLPAREN) THEN
-      ParseActualParameters;
-    END;
-  END;
+      ParseActualParameters
+    END
+  END
 END ParseAssignOrProcCall;
 
 PROCEDURE ParseStatement;
 BEGIN
   IF IsToken(Lex.tIF) THEN
     Lex.Newline;
-    ParseIfStatement;
+    ParseIfStatement
   ELSIF IsToken(Lex.tCASE) THEN
     Lex.Newline;
-    ParseCaseStatement;
+    ParseCaseStatement
   ELSIF IsToken(Lex.tWHILE) THEN
     Lex.Newline;
-    ParseWhileStatement;
+    ParseWhileStatement
   ELSIF IsToken(Lex.tREPEAT) THEN
     Lex.Newline;
-    ParseRepeatStatement;
+    ParseRepeatStatement
   ELSIF IsToken(Lex.tFOR) THEN
     Lex.Newline;
-    ParseForStatement;
+    ParseForStatement
   ELSIF IsToken(Lex.tVAR) & allowLanguageExtensions THEN
     Lex.Newline;
-    ParseVarStatement;
+    ParseVarStatement
   ELSIF IsToken(Lex.tIDENT) THEN
     Lex.Newline;
-    ParseAssignOrProcCall;
-  ELSE
-    (* Empty *)
-  END;
+    ParseAssignOrProcCall
+  END
 END ParseStatement;
 
 PROCEDURE ParseStatementSequence0;
@@ -465,21 +510,22 @@ BEGIN
   Lex.Indent;
   ParseStatement;
   WHILE MatchToken(Lex.tSEMI) DO
-    ParseStatement;
+    ParseStatement
   END;
-  Lex.DeIndent; Lex.Newline;
+  Lex.DeIndent;
+  Lex.Newline
 END ParseStatementSequence0;
 
 PROCEDURE ParseFieldIdentDef;
 BEGIN
   ExpectIdentifier;
-  MatchToken(Lex.tSTAR);
+  MatchToken(Lex.tSTAR)
 END ParseFieldIdentDef;
 
 PROCEDURE ParseIdentDef;
 BEGIN
   ExpectIdentifier;
-  MatchToken(Lex.tSTAR);
+  MatchToken(Lex.tSTAR)
 END ParseIdentDef;
 
 PROCEDURE ParseArrayType;
@@ -490,17 +536,17 @@ BEGIN
     Lex.Space;
     ExpectToken(Lex.tOF);
     Lex.Space;
-    ParseType;
+    ParseType
   ELSE
     ParseExpression;
     WHILE MatchToken(Lex.tCOMMA) DO
-      ParseExpression;
+      ParseExpression
     END;
     Lex.Space;
     ExpectToken(Lex.tOF);
     Lex.Space;
-    ParseType;
-  END;
+    ParseType
+  END
 END ParseArrayType;
 
 PROCEDURE ParseRecordType;
@@ -508,26 +554,29 @@ BEGIN
   ExpectToken(Lex.tRECORD);
   IF MatchToken(Lex.tLPAREN) THEN
     ParseQualident;
-    ExpectToken(Lex.tRPAREN);
+    ExpectToken(Lex.tRPAREN)
   END;
   IF IsToken(Lex.tIDENT) THEN
-    Lex.Indent; Lex.Newline;
+    Lex.Indent;
+    Lex.Newline;
     REPEAT
       ParseFieldIdentDef;
       WHILE MatchToken(Lex.tCOMMA) DO
         ParseFieldIdentDef
       END;
       ExpectToken(Lex.tCOLON);
-      IF MatchToken(Lex.tNATIVE) THEN Lex.Space END;
+      IF MatchToken(Lex.tNATIVE) THEN
+        Lex.Space
+      END;
       ParseType;
       MatchToken(Lex.tSEMI);
       IF IsToken(Lex.tEND) THEN
-        Lex.DeIndent; Lex.Newline;
+        Lex.DeIndent;
+        Lex.Newline
       ELSE
         Lex.Newline
-      END;
+      END
     UNTIL IsToken(Lex.tEND) OR IsToken(Lex.tEOF)
-  ELSE
   END;
   ExpectToken(Lex.tEND)
 END ParseRecordType;
@@ -539,67 +588,69 @@ BEGIN
   ExpectToken(Lex.tTO);
   Lex.Space;
   IF IsToken(Lex.tIDENT) THEN
-    ExpectIdentifier;
+    ExpectIdentifier
   ELSE
     ParseType
-  END;
+  END
 END ParsePointerType;
 
 PROCEDURE ParseFPSection;
 BEGIN
-  IF MatchToken(Lex.tVAR) THEN Lex.Space END;
+  IF MatchToken(Lex.tVAR) THEN
+    Lex.Space
+  END;
   ExpectIdentifier;
   WHILE MatchToken(Lex.tCOMMA) DO
-    ExpectIdentifier;
+    ExpectIdentifier
   END;
   ExpectToken(Lex.tCOLON);
   IF MatchToken(Lex.tARRAY) THEN
     Lex.Space;
     (* ARRAY OF ... *)
     ExpectToken(Lex.tOF);
-    Lex.Space;
+    Lex.Space
   END;
-  ParseQualident;
+  ParseQualident
 END ParseFPSection;
 
 PROCEDURE ParseFormalParameters;
 BEGIN
   IF MatchToken(Lex.tLPAREN) THEN
     IF IsToken(Lex.tVAR) OR IsToken(Lex.tIDENT) THEN
-      ParseFPSection;
+      ParseFPSection
     END;
     WHILE MatchToken(Lex.tSEMI) DO
       Lex.Space;
-      ParseFPSection;
+      ParseFPSection
     END;
     ExpectToken(Lex.tRPAREN);
     IF MatchToken(Lex.tCOLON) THEN
-      ParseQualident;
-    END;
-  END;
+      ParseQualident
+    END
+  END
 END ParseFormalParameters;
 
 PROCEDURE ParseProcedureType;
 BEGIN
   ExpectToken(Lex.tPROCEDURE);
-  ParseFormalParameters()
+  ParseFormalParameters
 END ParseProcedureType;
 
 PROCEDURE ParseType0;
 BEGIN
   IF IsToken(Lex.tIDENT) THEN
-    ParseQualident;
+    ParseQualident
   ELSIF IsToken(Lex.tARRAY) THEN
-    ParseArrayType;
+    ParseArrayType
   ELSIF IsToken(Lex.tRECORD) THEN
-    ParseRecordType;
+    ParseRecordType
   ELSIF IsToken(Lex.tPOINTER) THEN
-    ParsePointerType;
+    ParsePointerType
   ELSIF IsToken(Lex.tPROCEDURE) THEN
-    ParseProcedureType;
+    ParseProcedureType
   ELSE
-    Lex.ErrorLn(l, "Identifier, ARRAY, RECORD, POINTER, or PROCEDURE expected");
-  END;
+    Lex.ErrorLn(l, "Identifier, ARRAY, RECORD, POINTER, or PROCEDURE expected")
+  END
 END ParseType0;
 
 PROCEDURE ParseConstDeclaration;
@@ -608,7 +659,7 @@ BEGIN
   Lex.Space;
   ExpectToken(Lex.tEQ);
   Lex.Space;
-  ParseExpression;
+  ParseExpression
 END ParseConstDeclaration;
 
 PROCEDURE ParseTypeDeclaration;
@@ -617,24 +668,24 @@ BEGIN
   Lex.Space;
   ExpectToken(Lex.tEQ);
   Lex.Space;
-  ParseType;
+  ParseType
 END ParseTypeDeclaration;
 
 PROCEDURE ParseVarDeclaration;
 BEGIN
   ParseIdentDef;
   WHILE MatchToken(Lex.tCOMMA) DO
-    ParseIdentDef;
+    ParseIdentDef
   END;
   ExpectToken(Lex.tCOLON);
-  ParseType;
+  ParseType
 END ParseVarDeclaration;
 
 PROCEDURE ParseProcedureBody;
 BEGIN
   ParseDeclarationSequence;
   IF MatchToken(Lex.tBEGIN) THEN
-    ParseStatementSequence;
+    ParseStatementSequence
   END;
   IF IsToken(Lex.tRETURN) THEN
     Lex.Indent;
@@ -646,7 +697,7 @@ BEGIN
     Lex.DeIndent;
     Lex.Newline
   END;
-  ExpectToken(Lex.tEND);
+  ExpectToken(Lex.tEND)
 END ParseProcedureBody;
 
 PROCEDURE ParseProcedureHeading;
@@ -654,12 +705,12 @@ BEGIN
   IF MatchToken(Lex.tNATIVE) THEN
     Lex.Space;
     ParseExpression;
-    Lex.Space;
+    Lex.Space
   END;
   ExpectToken(Lex.tPROCEDURE);
   Lex.Space;
   ParseIdentDef;
-  ParseFormalParameters;
+  ParseFormalParameters
 END ParseProcedureHeading;
 
 PROCEDURE ParseProcedureDeclaration;
@@ -669,51 +720,58 @@ BEGIN
   Lex.Newline;
   ParseProcedureBody;
   Lex.Space;
-  ExpectIdentifier;
+  ExpectIdentifier
 END ParseProcedureDeclaration;
 
 PROCEDURE ParseDeclarationSequence0;
 BEGIN
   IF MatchToken(Lex.tCONST) THEN
-    Lex.Indent; Lex.Newline;
+    Lex.Indent;
+    Lex.Newline;
     WHILE IsToken(Lex.tIDENT) DO
       ParseConstDeclaration;
       ExpectToken(Lex.tSEMI);
-      Lex.Newline;
+      Lex.Newline
     END;
-    Lex.DeIndent; Lex.Newline;
+    Lex.DeIndent;
+    Lex.Newline
   END;
   IF MatchToken(Lex.tTYPE) THEN
-    Lex.Indent; Lex.Newline;
+    Lex.Indent;
+    Lex.Newline;
     WHILE IsToken(Lex.tIDENT) DO
       ParseTypeDeclaration;
       ExpectToken(Lex.tSEMI);
-      Lex.Newline;
+      Lex.Newline
     END;
-    Lex.DeIndent; Lex.Newline;
+    Lex.DeIndent;
+    Lex.Newline
   END;
   IF MatchToken(Lex.tVAR) THEN
-    Lex.Indent; Lex.Newline;
+    Lex.Indent;
+    Lex.Newline;
     WHILE IsToken(Lex.tIDENT) DO
       ParseVarDeclaration;
       ExpectToken(Lex.tSEMI);
-      Lex.Newline;
+      Lex.Newline
     END;
-    Lex.DeIndent; Lex.Newline;
+    Lex.DeIndent;
+    Lex.Newline
   END;
   WHILE IsToken(Lex.tPROCEDURE) OR IsToken(Lex.tNATIVE) DO
     ParseProcedureDeclaration;
     ExpectToken(Lex.tSEMI);
-    Lex.Newline; Lex.Newline;
-  END;
+    Lex.Newline;
+    Lex.Newline
+  END
 END ParseDeclarationSequence0;
 
 PROCEDURE ParseImport;
 BEGIN
   ExpectIdentifier;
   IF MatchToken(Lex.tASSIGN) THEN
-    ExpectIdentifier()
-  END;
+    ExpectIdentifier
+  END
 END ParseImport;
 
 PROCEDURE ParseImportList;
@@ -722,9 +780,9 @@ BEGIN
   Lex.Space;
   ParseImport;
   WHILE MatchToken(Lex.tCOMMA) DO
-    ParseImport;
+    ParseImport
   END;
-  ExpectToken(Lex.tSEMI);
+  ExpectToken(Lex.tSEMI)
 END ParseImportList;
 
 PROCEDURE ParseModule*;
@@ -733,26 +791,28 @@ BEGIN
   Lex.Space;
   ExpectIdentifier;
   ExpectToken(Lex.tSEMI);
-  Lex.Newline; Lex.Newline;
+  Lex.Newline;
+  Lex.Newline;
   IF IsToken(Lex.tIMPORT) THEN
     ParseImportList;
-    Lex.Newline; Lex.Newline;
+    Lex.Newline;
+    Lex.Newline
   END;
   ParseDeclarationSequence;
   IF MatchToken(Lex.tBEGIN) THEN
-    ParseStatementSequence;
+    ParseStatementSequence
   END;
   ExpectToken(Lex.tEND);
   Lex.Space;
   ExpectIdentifier;
   ExpectToken(Lex.tDOT);
-  Lex.Newline;
+  Lex.Newline
 END ParseModule;
 
 PROCEDURE InitFromFile*(fileName: ARRAY OF CHAR);
 BEGIN
   Lex.LexerInitFromFile(l, fileName);
-  Lex.NextToken(l);
+  Lex.NextToken(l)
 END InitFromFile;
 
 PROCEDURE Run;
@@ -761,7 +821,7 @@ VAR
 BEGIN
   Args.GetArg(fileName, 1);
   InitFromFile(fileName);
-  ParseModule;
+  ParseModule
 END Run;
 
 BEGIN
