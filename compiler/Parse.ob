@@ -1,3 +1,5 @@
+MODULE Parse;
+
 (*
  * This file is part of oberon-compiler
  *
@@ -18,15 +20,13 @@
  *
  *)
 
-MODULE Parse;
-
 IMPORT AST, Decls, Lex;
 
 TYPE
   StringId = Lex.PoolIndex;
   CachedImport = RECORD
-    name:  StringId;
-    decls: AST.Decl;
+    name: StringId;
+    decls: AST.Decl
   END;
 VAR
   l*: Lex.Lexer;
@@ -35,9 +35,9 @@ VAR
   currentProcDecl: AST.Decl;
   nesting: INTEGER;
   lastModuleDecls*: AST.Decl;
-  ParseExpression: PROCEDURE (): AST.Expr;
-  ParseStatementSequence: PROCEDURE (): AST.Stmt;
-  ParseType: PROCEDURE (): AST.Type;
+  ParseExpression: PROCEDURE(): AST.Expr;
+  ParseStatementSequence: PROCEDURE(): AST.Stmt;
+  ParseType: PROCEDURE(): AST.Type;
   ParseDeclarationSequence: PROCEDURE;
   importCallback: Lex.LexCallback;
   allowLanguageExtensions: BOOLEAN;
@@ -53,9 +53,9 @@ VAR
 BEGIN
   IF IsToken(kind) THEN
     Lex.NextToken(l);
-    found := TRUE;
+    found := TRUE
   ELSE
-    found := FALSE;
+    found := FALSE
   END;
   RETURN found
 END MatchToken;
@@ -63,13 +63,13 @@ END MatchToken;
 PROCEDURE ExpectToken(kind: Lex.TokenKind);
 BEGIN
   IF IsToken(kind) THEN
-    Lex.NextToken(l);
+    Lex.NextToken(l)
   ELSE
     Lex.Error(l, "Expected ");
     Lex.ErrStr(Lex.TokenNames[kind]);
     Lex.ErrStr(", got ");
-    Lex.PrintLnAndHalt(Lex.TokenNames[l.t.kind]);
-  END;
+    Lex.PrintLnAndHalt(Lex.TokenNames[l.t.kind])
+  END
 END ExpectToken;
 
 PROCEDURE ExpectIdentifier(): StringId;
@@ -99,9 +99,9 @@ BEGIN
     moduleName := ident;
     ExpectToken(Lex.tDOT);
     ident := ExpectIdentifier();
-    d := Decls.LookupImport(l, moduleName, ident);
+    d := Decls.LookupImport(l, moduleName, ident)
   ELSE
-    d := Decls.LookupDecl(l, ident);
+    d := Decls.LookupDecl(l, ident)
     (* lookup ident *)
   END;
   RETURN d
@@ -119,8 +119,8 @@ BEGIN
     IF d.kind # AST.declType THEN
       Lex.Error(l, "");
       Lex.ErrOutStr(l, d.qname.name);
-      Lex.PrintLnAndHalt(" is not a TYPE");
-    END;
+      Lex.PrintLnAndHalt(" is not a TYPE")
+    END
   END;
   RETURN t
 END ParseQualidentAndGetType;
@@ -131,9 +131,9 @@ VAR
 BEGIN
   e := ParseExpression();
   IF MatchToken(Lex.tDOTDOT) THEN
-    e := AST.NewExprSetRange(l, e, ParseExpression(), Decls.setType);
+    e := AST.NewExprSetRange(l, e, ParseExpression(), Decls.setType)
   ELSE
-    e := AST.NewExprSetElement(l, e, Decls.setType);
+    e := AST.NewExprSetElement(l, e, Decls.setType)
   END;
   RETURN e
 END ParseSetElement;
@@ -145,12 +145,12 @@ BEGIN
   ExpectToken(Lex.tLBRACE);
   IF IsToken(Lex.tRBRACE) THEN
     (* empty set *)
-    e := AST.NewExprSet(Decls.setType);
+    e := AST.NewExprSet(Decls.setType)
   ELSE
     e := ParseSetElement();
     WHILE MatchToken(Lex.tCOMMA) DO
-      e := AST.NewExprSetUnion(l, e, ParseSetElement());
-    END;
+      e := AST.NewExprSetUnion(l, e, ParseSetElement())
+    END
   END;
   ExpectToken(Lex.tRBRACE);
   RETURN e
@@ -158,10 +158,11 @@ END ParseSet;
 
 PROCEDURE IsTypeGuard(e: AST.Expr): BOOLEAN;
 BEGIN
-  RETURN (e.typ.kind = AST.typePointer) OR
-         ((e.typ.kind = AST.typeRecord) &
-          (e.kind = AST.exprIdentRef) &
-          (e.decl.kind = AST.declVarParam))
+  RETURN
+    (e.typ.kind = AST.typePointer) OR
+    ((e.typ.kind = AST.typeRecord) &
+    (e.kind = AST.exprIdentRef) &
+    (e.decl.kind = AST.declVarParam))
 END IsTypeGuard;
 
 PROCEDURE ParseDesignator(): AST.Expr;
@@ -169,23 +170,25 @@ VAR
   e: AST.Expr;
 BEGIN
   e := AST.NewExprIdentRef(l, ParseQualident());
-  WHILE IsToken(Lex.tDOT) OR IsToken(Lex.tLBRACK) OR IsToken(Lex.tCARET) OR
+  WHILE IsToken(Lex.tDOT) OR
+        IsToken(Lex.tLBRACK) OR
+        IsToken(Lex.tCARET) OR
         (IsTypeGuard(e) & IsToken(Lex.tLPAREN)) DO
     IF MatchToken(Lex.tDOT) THEN
-      e := AST.NewExprFieldRef(l, e, ExpectIdentifier());
+      e := AST.NewExprFieldRef(l, e, ExpectIdentifier())
     ELSIF MatchToken(Lex.tLBRACK) THEN
       e := AST.NewExprArrayRef(l, e, ParseExpression());
       WHILE MatchToken(Lex.tCOMMA) DO
-        e := AST.NewExprArrayRef(l, e, ParseExpression());
+        e := AST.NewExprArrayRef(l, e, ParseExpression())
       END;
-      ExpectToken(Lex.tRBRACK);
+      ExpectToken(Lex.tRBRACK)
     ELSIF MatchToken(Lex.tCARET) THEN
-      e := AST.NewExprPointerDeref(l, e);
+      e := AST.NewExprPointerDeref(l, e)
     ELSIF IsTypeGuard(e) & MatchToken(Lex.tLPAREN) THEN
       e := AST.NewExprTypeGuard(l, e, ParseQualident());
-      ExpectToken(Lex.tRPAREN);
+      ExpectToken(Lex.tRPAREN)
     ELSE
-      ASSERT(FALSE);
+      ASSERT(FALSE)
     END
   END;
   RETURN e
@@ -202,8 +205,8 @@ BEGIN
     tail := head;
     WHILE MatchToken(Lex.tCOMMA) DO
       tail.next := ParseExpression();
-      tail := tail.next;
-    END;
+      tail := tail.next
+    END
   END;
   ExpectToken(Lex.tRPAREN);
   RETURN head
@@ -216,54 +219,60 @@ BEGIN
   e := AST.NewExprNil(Decls.nilType);
   IF IsToken(Lex.tINT) THEN
     e := AST.NewExprInteger(l.t.iVal, Decls.integerType);
-    MatchToken(Lex.tINT);
+    MatchToken(Lex.tINT)
   ELSIF IsToken(Lex.tREAL) THEN
     e := AST.NewExprReal(l.t.rVal, Decls.realType);
-    MatchToken(Lex.tREAL);
+    MatchToken(Lex.tREAL)
   ELSIF IsToken(Lex.tSTRING) THEN
     e := AST.NewExprString(l.t.sVal, Decls.stringType);
-    MatchToken(Lex.tSTRING);
+    MatchToken(Lex.tSTRING)
   ELSIF MatchToken(Lex.tNIL) THEN
-    e := AST.NewExprNil(Decls.nilType);
+    e := AST.NewExprNil(Decls.nilType)
   ELSIF MatchToken(Lex.tTRUE) THEN
-    e := AST.NewExprBoolean(1, Decls.booleanType);
+    e := AST.NewExprBoolean(1, Decls.booleanType)
   ELSIF MatchToken(Lex.tFALSE) THEN
-    e := AST.NewExprBoolean(0, Decls.booleanType);
+    e := AST.NewExprBoolean(0, Decls.booleanType)
   ELSIF IsToken(Lex.tLBRACE) THEN
-    e := ParseSet();
+    e := ParseSet()
   ELSIF IsToken(Lex.tIDENT) THEN
     e := ParseDesignator();
     IF IsToken(Lex.tLPAREN) THEN
-      e := AST.NewExprProcCall(l, e, ParseActualParameters());
-    END;
+      e := AST.NewExprProcCall(l, e, ParseActualParameters())
+    END
   ELSIF MatchToken(Lex.tLPAREN) THEN
     e := ParseExpression();
-    ExpectToken(Lex.tRPAREN);
+    ExpectToken(Lex.tRPAREN)
   ELSIF MatchToken(Lex.tTILDE) THEN
-    e := AST.NewExprUnary(l, Lex.tTILDE, ParseFactor());
+    e := AST.NewExprUnary(l, Lex.tTILDE, ParseFactor())
   ELSE
-    Lex.ErrorLn(l, "Factor expected");
+    Lex.ErrorLn(l, "Factor expected")
   END;
   RETURN e
 END ParseFactor;
 
 PROCEDURE IsMulOperator(): BOOLEAN;
 BEGIN
-  RETURN IsToken(Lex.tSTAR) OR IsToken(Lex.tSLASH) OR IsToken(Lex.tDIV) OR
-         IsToken(Lex.tMOD) OR IsToken(Lex.tAMP) OR IsToken(Lex.tBITAND) OR
-         IsToken(Lex.tBITOR) OR IsToken(Lex.tBITXOR)
+  RETURN
+    IsToken(Lex.tSTAR) OR
+    IsToken(Lex.tSLASH) OR
+    IsToken(Lex.tDIV) OR
+    IsToken(Lex.tMOD) OR
+    IsToken(Lex.tAMP) OR
+    IsToken(Lex.tBITAND) OR
+    IsToken(Lex.tBITOR) OR
+    IsToken(Lex.tBITXOR)
 END IsMulOperator;
 
 PROCEDURE ParseTerm(): AST.Expr;
 VAR
-  e:  AST.Expr;
+  e: AST.Expr;
   op: Lex.TokenKind;
 BEGIN
   e := ParseFactor();
   WHILE IsMulOperator() DO
     op := l.t.kind;
     Lex.NextToken(l);
-    e := AST.NewExprBinary(l, op, e, ParseFactor(), Decls.booleanType);
+    e := AST.NewExprBinary(l, op, e, ParseFactor(), Decls.booleanType)
   END;
   RETURN e
 END ParseTerm;
@@ -275,50 +284,55 @@ END IsAddOperator;
 
 PROCEDURE ParseSimpleExpression(): AST.Expr;
 VAR
-  e:                     AST.Expr;
-  op:                    Lex.TokenKind;
+  e: AST.Expr;
+  op: Lex.TokenKind;
   unaryPlus, unaryMinus: BOOLEAN;
 BEGIN
   unaryPlus := FALSE;
   unaryMinus := FALSE;
   IF MatchToken(Lex.tPLUS) THEN
-    unaryPlus := TRUE;
+    unaryPlus := TRUE
   ELSIF MatchToken(Lex.tMINUS) THEN
-    unaryMinus := TRUE;
+    unaryMinus := TRUE
   END;
-
   e := ParseTerm();
   IF unaryPlus THEN
-    e := AST.NewExprUnary(l, Lex.tPLUS, e);
+    e := AST.NewExprUnary(l, Lex.tPLUS, e)
   END;
   IF unaryMinus THEN
-    e := AST.NewExprUnary(l, Lex.tMINUS, e);
+    e := AST.NewExprUnary(l, Lex.tMINUS, e)
   END;
   WHILE IsAddOperator() DO
     op := l.t.kind;
     Lex.NextToken(l);
-    e := AST.NewExprBinary(l, op, e, ParseTerm(), Decls.booleanType);
+    e := AST.NewExprBinary(l, op, e, ParseTerm(), Decls.booleanType)
   END;
   RETURN e
 END ParseSimpleExpression;
 
 PROCEDURE IsRelation(): BOOLEAN;
 BEGIN
-  RETURN IsToken(Lex.tEQ) OR IsToken(Lex.tPOUND) OR IsToken(Lex.tLT) OR
-         IsToken(Lex.tLTEQ) OR IsToken(Lex.tGT) OR IsToken(Lex.tGTEQ) OR
-         IsToken(Lex.tIN) OR IsToken(Lex.tIS)
+  RETURN
+    IsToken(Lex.tEQ) OR
+    IsToken(Lex.tPOUND) OR
+    IsToken(Lex.tLT) OR
+    IsToken(Lex.tLTEQ) OR
+    IsToken(Lex.tGT) OR
+    IsToken(Lex.tGTEQ) OR
+    IsToken(Lex.tIN) OR
+    IsToken(Lex.tIS)
 END IsRelation;
 
 PROCEDURE ParseExpression0(): AST.Expr;
 VAR
-  e:  AST.Expr;
+  e: AST.Expr;
   op: Lex.TokenKind;
 BEGIN
   e := ParseSimpleExpression();
   IF IsRelation() THEN
     op := l.t.kind;
     Lex.NextToken(l);
-    e := AST.NewExprBinary(l, op, e, ParseSimpleExpression(), Decls.booleanType);
+    e := AST.NewExprBinary(l, op, e, ParseSimpleExpression(), Decls.booleanType)
   END;
   RETURN e
 END ParseExpression0;
@@ -329,7 +343,7 @@ VAR
 BEGIN
   e := ParseExpression();
   IF e.typ.kind # AST.typeBoolean THEN
-    Lex.ErrorLn(l, "BOOLEAN expected");
+    Lex.ErrorLn(l, "BOOLEAN expected")
   END;
   RETURN e
 END ParseBooleanExpression;
@@ -337,7 +351,7 @@ END ParseBooleanExpression;
 PROCEDURE ParseIfStatement(): AST.Stmt;
 VAR
   s, tail: AST.Stmt;
-  cond:    AST.Expr;
+  cond: AST.Expr;
 BEGIN
   ExpectToken(Lex.tIF);
   cond := ParseBooleanExpression();
@@ -348,10 +362,10 @@ BEGIN
     cond := ParseBooleanExpression();
     ExpectToken(Lex.tTHEN);
     tail.elsifs := AST.NewStmtElsIf(cond, ParseStatementSequence());
-    tail := tail.elsifs;
+    tail := tail.elsifs
   END;
   IF MatchToken(Lex.tELSE) THEN
-    tail.elsifs := AST.NewStmtElse(ParseStatementSequence());
+    tail.elsifs := AST.NewStmtElse(ParseStatementSequence())
   END;
   ExpectToken(Lex.tEND);
   RETURN s
@@ -364,12 +378,17 @@ BEGIN
   cond := NIL;
   IF IsToken(Lex.tINT) OR IsToken(Lex.tSTRING) OR IsToken(Lex.tIDENT) THEN
     cond := AST.NewExprBinary(
-        l, Lex.tEQ, caseVar, ParseFactor(), Decls.booleanType);
+        l,
+        Lex.tEQ,
+        caseVar,
+        ParseFactor(),
+        Decls.booleanType
+      );
     IF ~AST.IsConst(cond.rhs) THEN
-      Lex.ErrorLn(l, "CASE label must be constant");
-    END;
+      Lex.ErrorLn(l, "CASE label must be constant")
+    END
   ELSE
-    Lex.ErrorLn(l, "Case label (INTEGER, STRING, IDENT) expected");
+    Lex.ErrorLn(l, "Case label (INTEGER, STRING, IDENT) expected")
   END;
   RETURN cond
 END ParseCaseLabel;
@@ -381,7 +400,12 @@ BEGIN
   cond := ParseCaseLabel(caseVar);
   IF MatchToken(Lex.tDOTDOT) THEN
     cond := AST.NewExprBinary(
-        l, Lex.tCaseDotDot, cond, ParseCaseLabel(caseVar), Decls.booleanType);
+        l,
+        Lex.tCaseDotDot,
+        cond,
+        ParseCaseLabel(caseVar),
+        Decls.booleanType
+      )
   END;
   RETURN cond
 END ParseCaseLabelRange;
@@ -394,21 +418,21 @@ BEGIN
   tail := head;
   WHILE MatchToken(Lex.tCOMMA) DO
     tail.next := ParseCaseLabelRange(caseVar);
-    tail := tail.next;
+    tail := tail.next
   END;
   RETURN head
 END ParseCaseLabelList;
 
 PROCEDURE ParseCase(caseVar: AST.Expr): AST.Stmt;
 VAR
-  s:    AST.Stmt;
+  s: AST.Stmt;
   cond: AST.Expr;
 BEGIN
   s := NIL;
   IF IsToken(Lex.tINT) OR IsToken(Lex.tSTRING) OR IsToken(Lex.tIDENT) THEN
     cond := ParseCaseLabelList(caseVar);
     ExpectToken(Lex.tCOLON);
-    s := AST.NewStmtCaseItem(cond, ParseStatementSequence());
+    s := AST.NewStmtCaseItem(cond, ParseStatementSequence())
   END;
   RETURN s
 END ParseCase;
@@ -424,9 +448,13 @@ BEGIN
   tail := NIL;
   savedType := caseVar.decl.typ;
   WHILE ~IsToken(Lex.tEND) DO
-    e := AST.NewExprBinary(l, Lex.tIS, caseVar,
-                           AST.NewExprIdentRef(l, ParseQualident()),
-                           Decls.booleanType);
+    e := AST.NewExprBinary(
+        l,
+        Lex.tIS,
+        caseVar,
+        AST.NewExprIdentRef(l, ParseQualident()),
+        Decls.booleanType
+      );
     caseVar.decl.typ := e.rhs.decl.typ;
     caseVar.decl.origTyp := e.rhs.decl.typ;
     ExpectToken(Lex.tCOLON);
@@ -447,12 +475,11 @@ END ParseTypeCase;
 
 PROCEDURE ParseCaseStatement(): AST.Stmt;
 VAR
-  cond:          AST.Expr;
+  cond: AST.Expr;
   s, head, tail: AST.Stmt;
 BEGIN
   ExpectToken(Lex.tCASE);
   cond := ParseExpression();
-
   IF IsTypeGuard(cond) THEN
     s := ParseTypeCase(cond)
   ELSE
@@ -466,24 +493,24 @@ BEGIN
       s := ParseCase(cond);
       IF tail = NIL THEN
         head := s;
-        tail := head;
+        tail := head
       ELSE
         tail.elsifs := s;
         IF s # NIL THEN
-          tail := tail.elsifs;
-        END;
-      END;
+          tail := tail.elsifs
+        END
+      END
     END;
     ExpectToken(Lex.tEND);
-    s := AST.NewStmtCase(cond, head);
-  END
+    s := AST.NewStmtCase(cond, head)
+  END;
   RETURN s
 END ParseCaseStatement;
 
 PROCEDURE ParseWhileStatement(): AST.Stmt;
 VAR
   s, tail: AST.Stmt;
-  cond:    AST.Expr;
+  cond: AST.Expr;
 BEGIN
   ExpectToken(Lex.tWHILE);
   cond := ParseBooleanExpression();
@@ -494,7 +521,7 @@ BEGIN
     cond := ParseBooleanExpression();
     ExpectToken(Lex.tDO);
     tail.elsifs := AST.NewStmtElsIf(cond, ParseStatementSequence());
-    tail := tail.elsifs;
+    tail := tail.elsifs
   END;
   ExpectToken(Lex.tEND);
   RETURN s
@@ -502,7 +529,7 @@ END ParseWhileStatement;
 
 PROCEDURE ParseRepeatStatement(): AST.Stmt;
 VAR
-  s:    AST.Stmt;
+  s: AST.Stmt;
 BEGIN
   ExpectToken(Lex.tREPEAT);
   s := ParseStatementSequence();
@@ -513,9 +540,9 @@ END ParseRepeatStatement;
 
 PROCEDURE ParseForStatement(): AST.Stmt;
 VAR
-  d:                          AST.Decl;
+  d: AST.Decl;
   startExpr, endExpr, byExpr: AST.Expr;
-  s:                          AST.Stmt;
+  s: AST.Stmt;
 BEGIN
   ExpectToken(Lex.tFOR);
   d := Decls.LookupDecl(l, ExpectIdentifier());
@@ -532,7 +559,7 @@ BEGIN
   byExpr := NIL;
   IF MatchToken(Lex.tBY) THEN
     byExpr := AST.NewExprAssign(l, startExpr.lhs, ParseExpression());
-    byExpr := byExpr.rhs;
+    byExpr := byExpr.rhs
   END;
   startExpr.next := endExpr;
   endExpr.next := byExpr;
@@ -561,21 +588,21 @@ END ParseVarStatement;
 PROCEDURE ParseAssignOrProcCall(): AST.Stmt;
 VAR
   e, args: AST.Expr;
-  s:       AST.Stmt;
+  s: AST.Stmt;
 BEGIN
   e := ParseDesignator();
   IF MatchToken(Lex.tASSIGN) THEN
     (* Assignment *)
     e := AST.NewExprAssign(l, e, ParseExpression());
-    s := AST.NewStmtAssign(e);
+    s := AST.NewStmtAssign(e)
   ELSE
     (* Procedure call *)
     args := NIL;
     IF IsToken(Lex.tLPAREN) THEN
-      args := ParseActualParameters();
+      args := ParseActualParameters()
     END;
     e := AST.NewExprProcCall(l, e, args);
-    s := AST.NewStmtProcCall(e);
+    s := AST.NewStmtProcCall(e)
   END;
   RETURN s
 END ParseAssignOrProcCall;
@@ -583,8 +610,11 @@ END ParseAssignOrProcCall;
 PROCEDURE ParseReturnStatement(): AST.Stmt;
 BEGIN
   ExpectToken(Lex.tRETURN);
-  currentProcDecl.expr :=
-      AST.ValidateReturnStatement(l, currentProcDecl, ParseExpression());
+  currentProcDecl.expr := AST.ValidateReturnStatement(
+      l,
+      currentProcDecl,
+      ParseExpression()
+    );
   RETURN AST.NewStmtReturn(currentProcDecl.expr)
 END ParseReturnStatement;
 
@@ -593,24 +623,24 @@ VAR
   s: AST.Stmt;
 BEGIN
   IF IsToken(Lex.tIF) THEN
-    s := ParseIfStatement();
+    s := ParseIfStatement()
   ELSIF IsToken(Lex.tCASE) THEN
-    s := ParseCaseStatement();
+    s := ParseCaseStatement()
   ELSIF IsToken(Lex.tWHILE) THEN
-    s := ParseWhileStatement();
+    s := ParseWhileStatement()
   ELSIF IsToken(Lex.tREPEAT) THEN
-    s := ParseRepeatStatement();
+    s := ParseRepeatStatement()
   ELSIF IsToken(Lex.tFOR) THEN
-    s := ParseForStatement();
+    s := ParseForStatement()
   ELSIF IsToken(Lex.tVAR) & allowLanguageExtensions THEN
-    s := ParseVarStatement();
+    s := ParseVarStatement()
   ELSIF IsToken(Lex.tIDENT) THEN
-    s := ParseAssignOrProcCall();
+    s := ParseAssignOrProcCall()
   ELSIF IsToken(Lex.tRETURN) & allowLanguageExtensions THEN
-    s := ParseReturnStatement();
+    s := ParseReturnStatement()
   ELSE
     (* Empty *)
-    s := AST.NewStmtEmpty();
+    s := AST.NewStmtEmpty()
   END;
   RETURN s
 END ParseStatement;
@@ -623,20 +653,20 @@ BEGIN
   tail := head;
   WHILE MatchToken(Lex.tSEMI) DO
     tail.next := ParseStatement();
-    tail := tail.next;
+    tail := tail.next
   END;
   RETURN head
 END ParseStatementSequence0;
 
 PROCEDURE ParseFieldIdentDef(VAR recordScope: AST.Decl): AST.Decl;
 VAR
-  d:    AST.Decl;
+  d: AST.Decl;
   name: StringId;
 BEGIN
   name := ExpectIdentifier();
   d := Decls.AddDecl(l, recordScope, name);
   IF MatchToken(Lex.tSTAR) THEN
-    d.exported := TRUE;
+    d.exported := TRUE
   END;
   RETURN d
 END ParseFieldIdentDef;
@@ -650,7 +680,7 @@ BEGIN
   d := Decls.AddScopeDecl(l, n);
   d.nesting := nesting;
   IF MatchToken(Lex.tSTAR) THEN
-    d.exported := TRUE;
+    d.exported := TRUE
   END;
   RETURN d
 END ParseIdentDef;
@@ -658,12 +688,12 @@ END ParseIdentDef;
 PROCEDURE ParseArrayType(): AST.Type;
 VAR
   outer, current, last: AST.Type;
-  e:                    AST.Expr;
+  e: AST.Expr;
 BEGIN
   ExpectToken(Lex.tARRAY);
   IF allowLanguageExtensions & MatchToken(Lex.tSTAR) THEN
     ExpectToken(Lex.tOF);
-    outer := Decls.NewBufferType(ParseType());
+    outer := Decls.NewBufferType(ParseType())
   ELSE
     e := ParseExpression();
     outer := Decls.NewArrayType(l, e);
@@ -674,20 +704,20 @@ BEGIN
       current := Decls.NewArrayType(l, e);
       ASSERT(e.iVal > 0);
       last.base := current;
-      last := current;
+      last := current
     END;
     ExpectToken(Lex.tOF);
     current := ParseType();
-    last.base := current;
+    last.base := current
   END;
   RETURN outer
 END ParseArrayType;
 
 PROCEDURE ParseRecordType(): AST.Type;
 VAR
-  r, base, fieldType:              AST.Type;
+  r, base, fieldType: AST.Type;
   baseDecl, firstField, lastField: AST.Decl;
-  isNative:                        BOOLEAN;
+  isNative: BOOLEAN;
 BEGIN
   base := NIL;
   ExpectToken(Lex.tRECORD);
@@ -695,8 +725,8 @@ BEGIN
     baseDecl := ParseQualident();
     ExpectToken(Lex.tRPAREN);
     IF baseDecl # NIL THEN
-      base := baseDecl.typ;
-    END;
+      base := baseDecl.typ
+    END
   END;
   r := Decls.NewRecordType(l, base);
   IF IsToken(Lex.tIDENT) THEN
@@ -704,7 +734,7 @@ BEGIN
       firstField := ParseFieldIdentDef(r.fields);
       lastField := firstField;
       WHILE MatchToken(Lex.tCOMMA) DO
-        lastField := ParseFieldIdentDef(r.fields);
+        lastField := ParseFieldIdentDef(r.fields)
       END;
       ExpectToken(Lex.tCOLON);
       isNative := MatchToken(Lex.tNATIVE);
@@ -715,9 +745,9 @@ BEGIN
         firstField.kind := AST.declField;
         firstField.typ := fieldType;
         firstField.isNative := isNative;
-        firstField := firstField.next;
+        firstField := firstField.next
       END;
-      MatchToken(Lex.tSEMI);
+      MatchToken(Lex.tSEMI)
     UNTIL IsToken(Lex.tEND) OR IsToken(Lex.tEOF)
   END;
   ExpectToken(Lex.tEND);
@@ -731,18 +761,18 @@ BEGIN
   ExpectToken(Lex.tPOINTER);
   ExpectToken(Lex.tTO);
   IF IsToken(Lex.tIDENT) THEN
-    t := Decls.NewPointerTypeByName(l, ExpectIdentifier());
+    t := Decls.NewPointerTypeByName(l, ExpectIdentifier())
   ELSE
-    t := Decls.NewPointerType(l, ParseType());
+    t := Decls.NewPointerType(l, ParseType())
   END;
   RETURN t
 END ParsePointerType;
 
 PROCEDURE ParseFPSection(procType: AST.Type);
 VAR
-  name:                  StringId;
+  name: StringId;
   firstParam, lastParam: AST.Decl;
-  paramType, arrType:    AST.Type;
+  paramType, arrType: AST.Type;
   varParameter, openArr: BOOLEAN;
 BEGIN
   varParameter := MatchToken(Lex.tVAR);
@@ -762,7 +792,7 @@ BEGIN
       lastParam.kind := AST.declVarParam
     ELSE
       lastParam.kind := AST.declParam
-    END;
+    END
   END;
   ExpectToken(Lex.tCOLON);
   (* The formal description of Oberon-07 is rather restrictive here. This *)
@@ -773,20 +803,20 @@ BEGIN
   IF MatchToken(Lex.tARRAY) THEN
     (* ARRAY OF ... *)
     ExpectToken(Lex.tOF);
-    openArr := TRUE;
+    openArr := TRUE
   END;
   paramType := ParseQualidentAndGetType();
   IF openArr THEN
     arrType := Decls.NewArrayType(l, AST.NewExprInteger(0, Decls.integerType));
     arrType.base := paramType;
-    paramType := arrType;
+    paramType := arrType
   END;
   WHILE (firstParam # NIL) &
         (lastParam # NIL) &
         (firstParam # lastParam.next) DO
     firstParam.typ := paramType;
-    firstParam := firstParam.next;
-  END;
+    firstParam := firstParam.next
+  END
 END ParseFPSection;
 
 PROCEDURE ParseFormalParameters(): AST.Type;
@@ -796,15 +826,15 @@ BEGIN
   t := Decls.NewProcedureType();
   IF MatchToken(Lex.tLPAREN) THEN
     IF IsToken(Lex.tVAR) OR IsToken(Lex.tIDENT) THEN
-      ParseFPSection(t);
+      ParseFPSection(t)
     END;
     WHILE MatchToken(Lex.tSEMI) DO
-      ParseFPSection(t);
+      ParseFPSection(t)
     END;
     ExpectToken(Lex.tRPAREN);
     IF MatchToken(Lex.tCOLON) THEN
-      t.base := ParseQualidentAndGetType();
-    END;
+      t.base := ParseQualidentAndGetType()
+    END
   END;
   Decls.CountProcedureArgs(t);
   RETURN t
@@ -822,17 +852,17 @@ VAR
 BEGIN
   t := NIL;
   IF IsToken(Lex.tIDENT) THEN
-    t := ParseQualidentAndGetType();
+    t := ParseQualidentAndGetType()
   ELSIF IsToken(Lex.tARRAY) THEN
-    t := ParseArrayType();
+    t := ParseArrayType()
   ELSIF IsToken(Lex.tRECORD) THEN
-    t := ParseRecordType();
+    t := ParseRecordType()
   ELSIF IsToken(Lex.tPOINTER) THEN
-    t := ParsePointerType();
+    t := ParsePointerType()
   ELSIF IsToken(Lex.tPROCEDURE) THEN
-    t := ParseProcedureType();
+    t := ParseProcedureType()
   ELSE
-    Lex.ErrorLn(l, "Identifier, ARRAY, RECORD, POINTER, or PROCEDURE expected");
+    Lex.ErrorLn(l, "Identifier, ARRAY, RECORD, POINTER, or PROCEDURE expected")
   END;
   RETURN t
 END ParseType0;
@@ -849,8 +879,8 @@ BEGIN
   d.typ := e.typ;
   d.expr := e;
   IF ~AST.IsConst(e) THEN
-    Lex.ErrorLn(l, "CONST declaration is not constant");
-  END;
+    Lex.ErrorLn(l, "CONST declaration is not constant")
+  END
 END ParseConstDeclaration;
 
 PROCEDURE ParseTypeDeclaration;
@@ -862,27 +892,27 @@ BEGIN
   d.kind := AST.declType;
   d.typ := ParseType();
   IF d.typ.decl = NIL THEN
-    d.typ.decl := d;
-  END;
+    d.typ.decl := d
+  END
 END ParseTypeDeclaration;
 
 PROCEDURE ParseVarDeclaration;
 VAR
   first, last: AST.Decl;
-  t:           AST.Type;
+  t: AST.Type;
 BEGIN
   first := ParseIdentDef();
   last := first;
   WHILE MatchToken(Lex.tCOMMA) DO
-    last := ParseIdentDef();
+    last := ParseIdentDef()
   END;
   ExpectToken(Lex.tCOLON);
   t := ParseType();
   WHILE (first # NIL) & (last # NIL) & (first # last.next) DO
     first.kind := AST.declVar;
     first.typ := t;
-    first := first.next;
-  END;
+    first := first.next
+  END
 END ParseVarDeclaration;
 
 PROCEDURE ParseProcedureBody(procDecl: AST.Decl);
@@ -896,30 +926,29 @@ BEGIN
   Decls.AddFormalParamsToScope(l, procDecl);
   ParseDeclarationSequence;
   IF MatchToken(Lex.tBEGIN) THEN
-    procDecl.body := ParseStatementSequence();
+    procDecl.body := ParseStatementSequence()
   END;
   IF MatchToken(Lex.tRETURN) THEN
-    procDecl.expr :=
-        AST.ValidateReturnStatement(l, procDecl, ParseExpression());
+    procDecl.expr := AST.ValidateReturnStatement(l, procDecl, ParseExpression())
   END;
   ExpectToken(Lex.tEND);
   AST.CheckReturnStatement(l, procDecl);
   procDecl.procVars := Decls.CurrentScope();
   DEC(nesting);
   currentProcDecl := oldProcDecl;
-  Decls.CloseScope(oldScope);
+  Decls.CloseScope(oldScope)
 END ParseProcedureBody;
 
 PROCEDURE ParseProcedureHeading(): AST.Decl;
 VAR
-  d:        AST.Decl;
+  d: AST.Decl;
   isNative: BOOLEAN;
-  e:        AST.Expr;
+  e: AST.Expr;
 BEGIN
   isNative := MatchToken(Lex.tNATIVE);
   IF isNative THEN
     e := ParseExpression();
-    ASSERT(e.iVal < 0);
+    ASSERT(e.iVal < 0)
   END;
   ExpectToken(Lex.tPROCEDURE);
   d := ParseIdentDef();
@@ -934,7 +963,7 @@ END ParseProcedureHeading;
 
 PROCEDURE ParseProcedureDeclaration;
 VAR
-  d:       AST.Decl;
+  d: AST.Decl;
   endName: StringId;
 BEGIN
   d := ParseProcedureHeading();
@@ -946,8 +975,8 @@ BEGIN
     Lex.ErrOutStr(l, endName);
     Lex.ErrStr("] must match start name [");
     Lex.ErrOutStr(l, d.qname.name);
-    Lex.PrintLnAndHalt("]");
-  END;
+    Lex.PrintLnAndHalt("]")
+  END
 END ParseProcedureDeclaration;
 
 PROCEDURE ParseDeclarationSequence0;
@@ -955,26 +984,26 @@ BEGIN
   IF MatchToken(Lex.tCONST) THEN
     WHILE IsToken(Lex.tIDENT) DO
       ParseConstDeclaration;
-      ExpectToken(Lex.tSEMI);
-    END;
+      ExpectToken(Lex.tSEMI)
+    END
   END;
   IF MatchToken(Lex.tTYPE) THEN
     WHILE IsToken(Lex.tIDENT) DO
       ParseTypeDeclaration;
-      ExpectToken(Lex.tSEMI);
-    END;
+      ExpectToken(Lex.tSEMI)
+    END
   END;
   Decls.ResolveForwards(l);
   IF MatchToken(Lex.tVAR) THEN
     WHILE IsToken(Lex.tIDENT) DO
       ParseVarDeclaration;
-      ExpectToken(Lex.tSEMI);
-    END;
+      ExpectToken(Lex.tSEMI)
+    END
   END;
   WHILE IsToken(Lex.tPROCEDURE) OR IsToken(Lex.tNATIVE) DO
     ParseProcedureDeclaration;
-    ExpectToken(Lex.tSEMI);
-  END;
+    ExpectToken(Lex.tSEMI)
+  END
 END ParseDeclarationSequence0;
 
 PROCEDURE GetModuleImports(moduleName: StringId): AST.Decl;
@@ -984,17 +1013,17 @@ VAR
 BEGIN
   i := 0;
   WHILE (i < importCacheEnd) & (importCache[i].name # moduleName) DO
-    INC(i);
+    INC(i)
   END;
   IF importCache[i].name = moduleName THEN
-    d := importCache[i].decls;
+    d := importCache[i].decls
   ELSE
     ASSERT(importCacheEnd < 128);
     Lex.ImportHelper(l, moduleName, importCallback);
     d := lastModuleDecls;
     importCache[importCacheEnd].name := moduleName;
     importCache[importCacheEnd].decls := d;
-    INC(importCacheEnd);
+    INC(importCacheEnd)
   END;
   RETURN d
 END GetModuleImports;
@@ -1002,15 +1031,15 @@ END GetModuleImports;
 PROCEDURE ParseImport;
 VAR
   name, alias: StringId;
-  d:           AST.Decl;
+  d: AST.Decl;
 BEGIN
   name := ExpectIdentifier();
   alias := name;
   IF MatchToken(Lex.tASSIGN) THEN
-    name := ExpectIdentifier();
+    name := ExpectIdentifier()
   END;
   d := GetModuleImports(name);
-  Decls.AddImportDecl(l, alias, d);
+  Decls.AddImportDecl(l, alias, d)
 END ParseImport;
 
 PROCEDURE ParseImportList;
@@ -1018,15 +1047,15 @@ BEGIN
   ExpectToken(Lex.tIMPORT);
   ParseImport;
   WHILE MatchToken(Lex.tCOMMA) DO
-    ParseImport;
+    ParseImport
   END;
-  ExpectToken(Lex.tSEMI);
+  ExpectToken(Lex.tSEMI)
 END ParseImportList;
 
 PROCEDURE ParseModule*;
 VAR
   s, e, oldModule: StringId;
-  d:               AST.Decl;
+  d: AST.Decl;
 BEGIN
   Decls.InitGlobalScope(l);
   nesting := 0;
@@ -1036,13 +1065,13 @@ BEGIN
   d := Decls.OpenScope();
   ExpectToken(Lex.tSEMI);
   IF IsToken(Lex.tIMPORT) THEN
-    ParseImportList;
+    ParseImportList
   END;
   ParseDeclarationSequence;
   IF MatchToken(Lex.tBEGIN) THEN
-    Decls.NewModuleInitDecl(ParseStatementSequence());
+    Decls.NewModuleInitDecl(ParseStatementSequence())
   ELSE
-    Decls.NewModuleInitDecl(NIL);
+    Decls.NewModuleInitDecl(NIL)
   END;
   ExpectToken(Lex.tEND);
   e := ExpectIdentifier();
@@ -1051,12 +1080,12 @@ BEGIN
     Lex.ErrOutStr(l, e);
     Lex.ErrStr("] must match start name [");
     Lex.ErrOutStr(l, s);
-    Lex.PrintLnAndHalt("]");
+    Lex.PrintLnAndHalt("]")
   END;
   ExpectToken(Lex.tDOT);
   lastModuleDecls := Decls.CurrentScope();
   AST.SetModuleName(oldModule);
-  Decls.CloseScope(d);
+  Decls.CloseScope(d)
 END ParseModule;
 
 (* This is called by the lexer. See Lex.ImportHelper. *)
@@ -1080,20 +1109,20 @@ BEGIN
   savedScope := Decls.CurrentScope();
   Lex.NextToken(l);
   ParseModule;
-  Decls.CloseScope(savedScope);
+  Decls.CloseScope(savedScope)
 END ImportHelper;
 
 PROCEDURE InitFromFile*(fileName: ARRAY OF CHAR);
 BEGIN
   Lex.LexerInitFromFile(l, fileName);
-  Lex.NextToken(l);
+  Lex.NextToken(l)
 END InitFromFile;
 
 PROCEDURE TestParse;
 BEGIN
   InitFromFile("compiler/Parse.ob");
   ParseModule;
-  Lex.InfoPrintLn("PASS: Parser test");
+  Lex.InfoPrintLn("PASS: Parser test")
 END TestParse;
 
 PROCEDURE RunTests*;
@@ -1109,5 +1138,5 @@ BEGIN
   ParseType := ParseType0;
   ParseDeclarationSequence := ParseDeclarationSequence0;
   importCallback := ImportHelper;
-  allowLanguageExtensions := TRUE;
+  allowLanguageExtensions := TRUE
 END Parse.

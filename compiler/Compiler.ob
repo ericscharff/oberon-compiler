@@ -1,3 +1,5 @@
+MODULE Compiler;
+
 (*
  * This file is part of oberon-compiler
  *
@@ -17,8 +19,6 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
  *)
-
-MODULE Compiler;
 
 (*
   Main module for the compiler.
@@ -48,16 +48,16 @@ PROCEDURE RunTests;
 BEGIN
   Lex.RunTests;
   Decls.RunTests;
-  Parse.RunTests;
+  Parse.RunTests
 END RunTests;
 
 PROCEDURE CompileFile;
 VAR
   fileName: ARRAY 256 OF CHAR;
-  l:        Lex.Lexer;
-  p:        Decls.ReachableDecl;
-  i:        INTEGER;
-  gotFile:  BOOLEAN;
+  l: Lex.Lexer;
+  p: Decls.ReachableDecl;
+  i: INTEGER;
+  gotFile: BOOLEAN;
 BEGIN
   (* Parse command line args *)
   i := 1;
@@ -65,61 +65,60 @@ BEGIN
   REPEAT
     Args.GetArg(fileName, i);
     IF fileName = "-bounds" THEN
-      CCodegen.EnableBoundsChecks;
+      CCodegen.EnableBoundsChecks
     ELSIF fileName = "-cpp" THEN
-      CCodegen.EnableCPlusPlus;
+      CCodegen.EnableCPlusPlus
     ELSIF fileName = "-use_double" THEN
       CCodegen.EnableDouble
     ELSIF fileName = "-use_int64" THEN
       CCodegen.EnableInt64
     ELSE
-      gotFile := TRUE;
+      gotFile := TRUE
     END;
-    INC(i);
+    INC(i)
   UNTIL gotFile;
   Parse.InitFromFile(fileName);
   Parse.ParseModule;
   l := Parse.l;
-
   Decls.VisitDecl(Parse.lastModuleDecls);
   p := Decls.reachableDecls;
-  CCodegen.GenTypeinfos();
+  CCodegen.GenTypeinfos;
   WHILE p # NIL DO
     IF (p.d.kind = AST.declType) & (p.d.typ.kind = AST.typePointer) THEN
-      CCodegen.Generate(l, p.d);
+      CCodegen.Generate(l, p.d)
     END;
-    p := p.next;
+    p := p.next
   END;
   p := Decls.reachableDecls;
   WHILE p # NIL DO
     IF (p.d.kind = AST.declType) & (p.d.typ.kind # AST.typePointer) THEN
-      CCodegen.Generate(l, p.d);
+      CCodegen.Generate(l, p.d)
     END;
-    p := p.next;
+    p := p.next
   END;
   p := Decls.reachableDecls;
   WHILE p # NIL DO
     IF p.d.kind = AST.declVar THEN
-      CCodegen.Generate(l, p.d);
+      CCodegen.Generate(l, p.d)
     END;
-    p := p.next;
+    p := p.next
   END;
   p := Decls.reachableDecls;
   WHILE p # NIL DO
     IF (p.d.kind = AST.declProcedure) & ~p.d.isNative THEN
-      CCodegen.Generate(l, p.d);
+      CCodegen.Generate(l, p.d)
     END;
-    p := p.next;
+    p := p.next
   END;
-  CCodegen.GenStartMain();
+  CCodegen.GenStartMain;
   p := Decls.reachableDecls;
   WHILE p # NIL DO
     IF p.d.qname.name = Decls.modInitName THEN
-      CCodegen.GenCall(l, p.d.qname);
+      CCodegen.GenCall(l, p.d.qname)
     END;
-    p := p.next;
+    p := p.next
   END;
-  CCodegen.GenEndMain();
+  CCodegen.GenEndMain
 END CompileFile;
 
 BEGIN

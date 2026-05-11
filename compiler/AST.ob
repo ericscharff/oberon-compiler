@@ -1,3 +1,5 @@
+MODULE AST;
+
 (*
  * This file is part of oberon-compiler
  *
@@ -18,143 +20,135 @@
  *
  *)
 
-MODULE AST;
-
 IMPORT Lex;
 
 CONST
-  maxTypeId      = 1024;
-
-  typeNil*       = 1;
-  typeInteger*   = 2;
-  typeReal*      = 3;
-  typeBoolean*   = 4;
-  typeChar*      = 5;
-  typeSet*       = 6;
-  typeString*    = 7;
-  typePointer*   = 8;
-  typeArray*     = 9;
-  typeBuffer*    = 10;
-  typeRecord*    = 11;
+  maxTypeId = 1024;
+  typeNil* = 1;
+  typeInteger* = 2;
+  typeReal* = 3;
+  typeBoolean* = 4;
+  typeChar* = 5;
+  typeSet* = 6;
+  typeString* = 7;
+  typePointer* = 8;
+  typeArray* = 9;
+  typeBuffer* = 10;
+  typeRecord* = 11;
   typeProcedure* = 12;
-  typeImport*    = 13;
-  typeEND        = 14;
-
-  declImport*    = 1;
-  declConst*     = 2;
-  declType*      = 3;
-  declVar*       = 4;
+  typeImport* = 13;
+  typeEND = 14;
+  declImport* = 1;
+  declConst* = 2;
+  declType* = 3;
+  declVar* = 4;
   declProcedure* = 5;
-  declParam*     = 6;
-  declVarParam*  = 7;
-  declField*     = 8;
-  declBuiltin*   = 9;
+  declParam* = 6;
+  declVarParam* = 7;
+  declField* = 8;
+  declBuiltin* = 9;
   declEND* = 1001;
-
-  exprVal*          = 1; (* CONST value *)
-  exprUnary*        = 2;
-  exprBinary*       = 3;
-  exprIdentRef*     = 4;
-  exprProcCall*     = 5;
-  exprFieldRef*     = 6;
+  exprVal* = 1; (* CONST value *)
+  exprUnary* = 2;
+  exprBinary* = 3;
+  exprIdentRef* = 4;
+  exprProcCall* = 5;
+  exprFieldRef* = 6;
   exprPointerDeref* = 7;
-  exprArrayRef*     = 8;
-  exprBufferRef*    = 9;
-  exprTypeGuard*    = 10;
-  exprBuiltin*      = 11;
-  exprAssign*       = 12;
-
-  builtinAbs*    = 1;
+  exprArrayRef* = 8;
+  exprBufferRef* = 9;
+  exprTypeGuard* = 10;
+  exprBuiltin* = 11;
+  exprAssign* = 12;
+  builtinAbs* = 1;
   builtinAssert* = 2;
-  builtinChr*    = 3;
-  builtinDec*    = 4;
-  builtinFloor*  = 5;
-  builtinFlt*    = 6;
-  builtinInit*   = 7;
-  builtinInc*    = 8;
-  builtinLen*    = 9;
-  builtinNew*    = 10;
-  builtinOrd*    = 11;
-  builtinPush*   = 12;
-
+  builtinChr* = 3;
+  builtinDec* = 4;
+  builtinFloor* = 5;
+  builtinFlt* = 6;
+  builtinInit* = 7;
+  builtinInc* = 8;
+  builtinLen* = 9;
+  builtinNew* = 10;
+  builtinOrd* = 11;
+  builtinPush* = 12;
   builtinReadInt* = 13;
   builtinWriteInt* = 14;
   builtinWriteChar* = 15;
   builtinWriteLn* = 16;
-
-  stmtAssign*   = 1;
+  stmtAssign* = 1;
   stmtProcCall* = 2;
-  stmtIf*       = 3;
-  stmtWhile*    = 4;
-  stmtRepeat*   = 5;
-  stmtFor*      = 6;
-  stmtCase*     = 7;  (* Top level CASE node    *)
-  stmtCaseItem* = 8;  (* Individual CASE clause *)
-  stmtElsIf*    = 9;  (* ELSIF clauses          *)
-  stmtElse*     = 10; (* ELSE for IF statement  *)
-  stmtReturn*   = 12;
-  stmtEmpty*    = 13; (* Placeholder            *)
-
+  stmtIf* = 3;
+  stmtWhile* = 4;
+  stmtRepeat* = 5;
+  stmtFor* = 6;
+  stmtCase* = 7; (* Top level CASE node    *)
+  stmtCaseItem* = 8; (* Individual CASE clause *)
+  stmtElsIf* = 9; (* ELSIF clauses          *)
+  stmtElse* = 10; (* ELSE for IF statement  *)
+  stmtReturn* = 12;
+  stmtEmpty* = 13; (* Placeholder            *)
   stateUnresolved* = 0;
-  stateResolving*  = 1;
-  stateResolved*   = 2;
-
+  stateResolving* = 1;
+  stateResolved* = 2;
 TYPE
-  StringId         = Lex.PoolIndex;
-  QName*           = RECORD moduleName*, name*: StringId END;
-  TypeKind*        = INTEGER;
-  Type*            = POINTER TO TypeDesc;
-  Decl*            = POINTER TO DeclDesc;
-  Expr*            = POINTER TO ExprDesc;
-  Stmt*            = POINTER TO StmtDesc;
-  TypeDesc         = RECORD
+  StringId = Lex.PoolIndex;
+  QName* = RECORD
+    moduleName*, name*: StringId
+  END;
+  TypeKind* = INTEGER;
+  Type* = POINTER TO TypeDesc;
+  Decl* = POINTER TO DeclDesc;
+  Expr* = POINTER TO ExprDesc;
+  Stmt* = POINTER TO StmtDesc;
+  TypeDesc = RECORD
     (* one of the type* constants *)
-    kind*:         TypeKind;
+    kind*: TypeKind;
     (* POINTER type, ARRAY element, RECORD base, or PROCEDURE return *)
-    base*:         Type;
+    base*: Type;
     (* RECORD fields, PROCEDURE formal params, IMPORT, or forward decl *)
-    fields*:       Decl;
+    fields*: Decl;
     (* ARRAY length, or PROCEDURE number of params *)
-    length*:       INTEGER;
+    length*: INTEGER;
     (* 0=RECORD does not dextend, N=extends record with nesting N-1 *)
-    nesting*:      INTEGER;
+    nesting*: INTEGER;
     (* Type uses IS or typeguard, thus needs runtime info *)
     needTypeInfo*: BOOLEAN;
     (* Optional name of the defining TYPE *)
-    decl*:         Decl;
+    decl*: Decl;
     (* unique identifier for RECORD types, for type extensions *)
-    typeId*:       INTEGER;
+    typeId*: INTEGER;
     (* TRUE if this type is reachable and used, during tree shaking *)
-    reachable*:    BOOLEAN;
+    reachable*: BOOLEAN
   END;
-  BuiltinResolver* = PROCEDURE (l: Lex.Lexer; args: Expr): Expr;
-  DeclKind         = INTEGER;
-  DeclState        = INTEGER;
-  DeclDesc         = RECORD
-    kind*:     DeclKind;
-    next*:     Decl;
-    qname*:    QName;
-    typ*:      Type;
-    origTyp*:  Type;
+  BuiltinResolver* = PROCEDURE(l: Lex.Lexer; args: Expr): Expr;
+  DeclKind = INTEGER;
+  DeclState = INTEGER;
+  DeclDesc = RECORD
+    kind*: DeclKind;
+    next*: Decl;
+    qname*: QName;
+    typ*: Type;
+    origTyp*: Type;
     (* CONST's expression, or PROCEDURE return value *)
-    expr*:     Expr;
+    expr*: Expr;
     (* body of PROCEDURE or MODULE *)
-    body*:     Stmt;
-    exported*: BOOLEAN
-    (* 0=global, 1=proc, 2=nested...     *);
+    body*: Stmt;
+    exported*: BOOLEAN;
+    (* 0=global, 1=proc, 2=nested...     *)
     (* for RECORD fields, 0 is a field defined in the record itself. If  *)
     (* R1 extends R, then all of R's fields are level 1. If R2 extends   *)
     (* R1 and R1 extends R, then the fields of R from R2 have nesting 2, *)
     (* and so on. Thus the nesting is how many record parents would be   *)
     (* traversed to reach the definition                                 *)
-    nesting*:  INTEGER;          
+    nesting*: INTEGER;
     (* local scope for PROCEDURE decls *)
     procVars*: Decl;
     (* native procuedres do not generate code *)
     isNative*: BOOLEAN;
     (* handler for native procuedre calls *)
     resolver*: BuiltinResolver;
-    state*:    DeclState;
+    state*: DeclState;
     (* Only used by codegen - offset of this decl from something *)
     (* decl from something.                                      *)
     (* Global var - offset from GP                               *)
@@ -162,9 +156,9 @@ TYPE
     (* Param      - offset from FP                               *)
     (* Field      - offset from start of rec                     *)
     (* Procedure  - program counter of code entry point          *)
-    offset*:   INTEGER;
+    offset*: INTEGER
   END;
-  ExprKind         = INTEGER;
+  ExprKind = INTEGER;
   (*
   A call to a PROCEDURE, e.g., MyProc(arg1, Proc2(a, b), arr[i], 4) looks like
   Expr:
@@ -201,63 +195,61 @@ TYPE
   In other words, a proc call's lhs is the PROCEDURE's definition,
   the rhs is the first arg, and then follows the next chain OF those args.
   *)
-  ExprDesc  = RECORD
-    kind*:   ExprKind;
-    typ*:    Type;
+  ExprDesc = RECORD
+    kind*: ExprKind;
+    typ*: Type;
     (* operator for unary or binary operators                       *)
-    op*:     Lex.TokenKind;
+    op*: Lex.TokenKind;
     (* Unary: the expression (e.g., b for "~ b")                    *)
     (* Binary: lhs (e.g., a for "a + b"                             *)
     (* arrayRef, pointerDeref, fieldRef, typeGuard: base expression *)
     (* e.g., a for a[i], r for r.f                                  *)
     (* Procedure call: designator                                   *)
     (* Assignment: lvalue                                           *)
-    lhs*:    Expr;
+    lhs*: Expr;
     (* Binary: rhs (e.g., b for "a + b"                             *)
     (* arrayRef: expr for the ARRAY subscript (e.g., i for a[i]     *)
     (* Procedure call: first argument (actual parameter)            *)
     (* Assignmnet: rvalue                                           *)
-    rhs*:    Expr;
+    rhs*: Expr;
     (* Procedure call: next argument (acutal parameter) in list     *)
-    next*:   Expr;
+    next*: Expr;
     (* identRef: declaration (e.g. decl of var i)                   *)
     (* typeGhard: type being guarded (e.g., MyType for p(MyType)    *)
     (* fieldRef: reference to the field's decl                      *)
-    decl*:   Decl;
+    decl*: Decl;
     (* INTEGER, BOOLEAN, CHAR: The item's (constant)                *)
     (* fieldRef: StringId of field name                             *)
     (* Procedure call: number of actual params                      *)
     (* Builtin procedure: unique identifier                         *)
-    iVal*:   INTEGER;
+    iVal*: INTEGER;
     (* for REAL valued item (constant)                              *)
-    rVal*:   REAL;
+    rVal*: REAL;
     (* for SET valued item (constant)                               *)
     setVal*: SET;
     (* can be assigned to                                           *)
-    assignable*: BOOLEAN;
+    assignable*: BOOLEAN
   END;
-
   StmtKind* = INTEGER;
-  StmtDesc  = RECORD
-    kind*:   StmtKind;
+  StmtDesc = RECORD
+    kind*: StmtKind;
     (* For assignment, this is an exprAssign        *)
     (* For WHILE and REPEAT, this is loop condition *)
     (* For ELSIF, this is a single ELSIF condition  *)
     (* For caseItem, this is a list of cases, using *)
     (* expr.next for each case                      *)
     (* For ELSE, this is ignored                    *)
-    cond*:   Expr;
+    cond*: Expr;
     (* Body of a clause, the StatementSequence for  *)
     (* that node, chained together with next        *)
-    body*:   Stmt;
+    body*: Stmt;
     (* Optional chain of ELSIF (and ELSE) for IF    *)
     (* and WHILE statements, for CASE, this is the  *)
     (* first caseItem                               *)
     elsifs*: Stmt;
     (* next statement in the StatementSequence      *)
-    next*:   Stmt;
+    next*: Stmt
   END;
-
 VAR
   currentModuleName*: StringId;
   TypeKindNames: ARRAY typeEND, 10 OF CHAR;
@@ -272,7 +264,7 @@ END GetNextTypeId;
 
 PROCEDURE SetRecordToParent*(tid, base: INTEGER);
 BEGIN
-  recordToParent[tid] := base;
+  recordToParent[tid] := base
 END SetRecordToParent;
 
 PROCEDURE SetModuleName*(name: StringId): StringId;
@@ -288,7 +280,7 @@ PROCEDURE IsImported(d: Decl): BOOLEAN;
 BEGIN
   ASSERT(d # NIL);
   WHILE (d # NIL) & (d.kind # declEND) DO
-    d := d.next;
+    d := d.next
   END;
   ASSERT(d # NIL);
   ASSERT(d.kind = declEND);
@@ -298,15 +290,15 @@ END IsImported;
 PROCEDURE OutTypeName(l: Lex.Lexer; t: Type);
 BEGIN
   IF t.decl = NIL THEN
-    Lex.ErrStr(TypeKindNames[t.kind]);
+    Lex.ErrStr(TypeKindNames[t.kind])
   ELSE
     IF (t.decl.qname.moduleName > 0) &
        (t.decl.qname.moduleName # currentModuleName) THEN
       Lex.ErrOutStr(l, t.decl.qname.moduleName);
-      Lex.ErrStr(".");
+      Lex.ErrStr(".")
     END;
-    Lex.ErrOutStr(l, t.decl.qname.name);
-  END;
+    Lex.ErrOutStr(l, t.decl.qname.name)
+  END
 END OutTypeName;
 
 PROCEDURE ExpectType(l: Lex.Lexer; e: Expr; kind: TypeKind);
@@ -318,14 +310,14 @@ BEGIN
     Lex.ErrStr(TypeKindNames[kind]);
     Lex.ErrStr(", got ");
     OutTypeName(l, e.typ);
-    Lex.PrintLnAndHalt("");
-  END;
+    Lex.PrintLnAndHalt("")
+  END
 END ExpectType;
 
 PROCEDURE IsStringType*(t: Type): BOOLEAN;
 BEGIN
-  RETURN (t.kind = typeString) OR
-      ((t.kind = typeArray) & (t.base.kind = typeChar))
+  RETURN
+    (t.kind = typeString) OR ((t.kind = typeArray) & (t.base.kind = typeChar))
 END IsStringType;
 
 (* does a extend b *)
@@ -333,8 +325,8 @@ PROCEDURE Extends(a, b: Type): BOOLEAN;
 BEGIN
   IF (a # NIL) & (b # NIL) & (a.kind = typeRecord) & (b.kind = typeRecord) THEN
     WHILE (a # NIL) & (a # b) DO
-      a := a.base;
-    END;
+      a := a.base
+    END
   END;
   RETURN (a # NIL) & (b # NIL) & (a = b)
 END Extends;
@@ -348,11 +340,15 @@ END IsOpenArray;
 (* b := "hello"; is legal if b is an array of char, but           *)
 (* "hello" := b would not be legal. When doing comparisons (e.g., *)
 (* for boolean =, it is necessary to compare a to b OR b to a     *)
-PROCEDURE AssignmentCompatable(l: Lex.Lexer; a, b: Type; aSval, bSval: StringId): BOOLEAN;
+PROCEDURE AssignmentCompatable(
+  l: Lex.Lexer;
+  a, b: Type;
+  aSval, bSval: StringId
+): BOOLEAN;
 VAR
   procCompatable: BOOLEAN;
   aParam, bParam: Decl;
-  len:            INTEGER;
+  len: INTEGER;
 BEGIN
   procCompatable := FALSE;
   IF (a.kind = typeProcedure) & (b.kind = typeProcedure) THEN
@@ -365,14 +361,16 @@ BEGIN
       bParam := b.fields;
       WHILE (len > 0) & (aParam.kind # declEND) & (bParam.kind # declEND) DO
         procCompatable := procCompatable &
-            AssignmentCompatable(l, aParam.typ, bParam.typ, 0, 0);
+          AssignmentCompatable(l, aParam.typ, bParam.typ, 0, 0);
         aParam := aParam.next;
         bParam := bParam.next;
-        DEC(len);
+        DEC(len)
       END;
       procCompatable := procCompatable &
-          (len = 0) & (aParam.kind = declEND) & (bParam.kind = declEND);
-    END;
+        (len = 0) &
+        (aParam.kind = declEND) &
+        (bParam.kind = declEND)
+    END
   END;
   RETURN
     (a = b) OR
@@ -381,28 +379,35 @@ BEGIN
     ((b.kind = typeChar) & (a.kind = typeString) & Lex.IsOneChar(l, aSval)) OR
     ((a.kind = typeNil) & (b.kind = typePointer)) OR
     ((a.kind = typeNil) & (b.kind = typeProcedure)) OR
-    ((a.kind = typePointer) & (b.kind = typePointer) &
-     Extends(a.base, b.base)) OR
+    ((a.kind = typePointer) &
+    (b.kind = typePointer) &
+    Extends(a.base, b.base)) OR
     ((a.kind = typeRecord) & (b.kind = typeRecord) & Extends(a, b)) OR
     ((a.kind = typeProcedure) & (b.kind = typeProcedure) & procCompatable) OR
-    ((a.kind = typeArray) & (a.base.kind = typeChar) & (b.kind = typeArray) &
-     (b.base.kind = typeChar)) OR
+    ((a.kind = typeArray) &
+    (a.base.kind = typeChar) &
+    (b.kind = typeArray) &
+    (b.base.kind = typeChar)) OR
     ((a.kind = typeString) & (b.kind = typeArray) & (b.base.kind = typeChar))
-    (* Strictly speaking, that last case is not true in Oberon. You cannot  *)
-    (* assign one array to another, except for strings. However, this is    *)
-    (* meant to be used for parameter checking, where the formal is an open *)
-    (* array, and the actual is an array of that type. This test passes to  *)
-    (* support argument passing, but should fail elsewhere (e.g., arrays    *)
-    (* cannot be assigned to because is_assignable is FALSE, and arrays     *)
+  (* Strictly speaking, that last case is not true in Oberon. You cannot  *)
+  (* assign one array to another, except for strings. However, this is    *)
+  (* meant to be used for parameter checking, where the formal is an open *)
+  (* array, and the actual is an array of that type. This test passes to  *)
+  (* support argument passing, but should fail elsewhere (e.g., arrays    *)
+  (* cannot be assigned to because is_assignable is FALSE, and arrays     *)
 END AssignmentCompatable;
 
-PROCEDURE ExprCompatable(l: Lex.Lexer; op: Lex.TokenKind; lhs, rhs: Expr): BOOLEAN;
+PROCEDURE ExprCompatable(
+  l: Lex.Lexer;
+  op: Lex.TokenKind;
+  lhs, rhs: Expr
+): BOOLEAN;
 VAR
   good: BOOLEAN;
 BEGIN
   IF AssignmentCompatable(l, lhs.typ, rhs.typ, lhs.iVal, rhs.iVal) OR
      AssignmentCompatable(l, rhs.typ, lhs.typ, rhs.iVal, lhs.iVal) THEN
-    good := TRUE;
+    good := TRUE
   ELSE
     good := FALSE;
     Lex.Error(l, "Type mismatch for op [");
@@ -411,11 +416,10 @@ BEGIN
     OutTypeName(l, lhs.typ);
     Lex.ErrStr(" and ");
     OutTypeName(l, rhs.typ);
-    Lex.PrintLnAndHalt("");
+    Lex.PrintLnAndHalt("")
   END;
   RETURN good
 END ExprCompatable;
-
 
 PROCEDURE IsConst*(e: Expr): BOOLEAN;
 BEGIN
@@ -429,9 +433,8 @@ BEGIN
   ASSERT(e.typ.kind = typeString);
   ASSERT(Lex.IsOneChar(l, e.iVal));
   e.typ := charType;
-  e.iVal := Lex.FirstChar(l, e.iVal);
+  e.iVal := Lex.FirstChar(l, e.iVal)
 END CoerceToChar;
-
 
 PROCEDURE NewExpr*(VAR e: Expr; kind: ExprKind; typ: Type);
 BEGIN
@@ -442,18 +445,18 @@ BEGIN
   e.rhs := NIL;
   e.next := NIL;
   e.decl := NIL;
-  e.assignable := FALSE;
+  e.assignable := FALSE
 END NewExpr;
 
 PROCEDURE SetGenTypeInfo(t: Type);
 BEGIN
   IF t.kind = typePointer THEN
-    t := t.base;
+    t := t.base
   END;
   WHILE t # NIL DO
     t.needTypeInfo := TRUE;
-    t := t.base;
-  END;
+    t := t.base
+  END
 END SetGenTypeInfo;
 
 PROCEDURE NewExprTypeGuard*(l: Lex.Lexer; base: Expr; newType: Decl): Expr;
@@ -464,23 +467,23 @@ BEGIN
   IF (newType.kind = declType) &
      (newType.typ.kind IN {typeRecord, typePointer}) THEN
     IF ((base.typ.kind = typePointer) &
-        (newType.typ.kind = typePointer) &
-        Extends(newType.typ.base, base.typ.base)) OR
+       (newType.typ.kind = typePointer) &
+       Extends(newType.typ.base, base.typ.base)) OR
        ((base.typ.kind = typeRecord) &
-        (newType.typ.kind = typeRecord) &
-        Extends(newType.typ, base.typ)) THEN
+       (newType.typ.kind = typeRecord) &
+       Extends(newType.typ, base.typ)) THEN
       NewExpr(e, exprTypeGuard, newType.typ);
       e.lhs := base;
       e.decl := newType;
       e.assignable := base.assignable;
-      SetGenTypeInfo(newType.typ);
+      SetGenTypeInfo(newType.typ)
     ELSE
-      Lex.ErrorLn(l, "Guarded and base type are unrelated");
-    END;
+      Lex.ErrorLn(l, "Guarded and base type are unrelated")
+    END
   ELSE
     Lex.Error(l, "Declaration ");
     Lex.ErrOutStr(l, newType.qname.name);
-    Lex.PrintLnAndHalt(" must be a POINTER or RECORD type");
+    Lex.PrintLnAndHalt(" must be a POINTER or RECORD type")
   END;
   RETURN e
 END NewExprTypeGuard;
@@ -495,11 +498,11 @@ BEGIN
   e.decl := d;
   IF ((d.kind = declVar) & ~IsImported(d)) OR
      ((d.kind = declParam) &
-      ~(d.typ.kind IN {typeArray, typeBuffer, typeRecord})) OR
+     ~(d.typ.kind IN {typeArray, typeBuffer, typeRecord})) OR
      (d.kind = declVarParam) THEN
-    e.assignable := TRUE;
+    e.assignable := TRUE
   ELSE
-    e.assignable := FALSE;
+    e.assignable := FALSE
   END;
   IF d.kind = declConst THEN
     ASSERT(d.typ = d.expr.typ);
@@ -507,7 +510,7 @@ BEGIN
     e.kind := exprVal;
     e.iVal := d.expr.iVal;
     e.rVal := d.expr.rVal;
-    e.setVal := d.expr.setVal;
+    e.setVal := d.expr.setVal
   END;
   IF d.origTyp # NIL THEN
     e := NewExprTypeGuard(l, e, d.origTyp.decl);
@@ -524,9 +527,9 @@ BEGIN
   e.lhs := base;
   e.assignable := base.assignable;
   IF base.typ.kind = typePointer THEN
-    e.typ := base.typ.base;
+    e.typ := base.typ.base
   ELSE
-    Lex.ErrorLn(l, "not a POINTER");
+    Lex.ErrorLn(l, "not a POINTER")
   END;
   RETURN e
 END NewExprPointerDeref;
@@ -538,31 +541,31 @@ VAR
 BEGIN
   e := base;
   IF base.typ.kind = typePointer THEN
-    base := NewExprPointerDeref(l, base);
+    base := NewExprPointerDeref(l, base)
   END;
   IF base.typ.kind = typeRecord THEN
     d := base.typ.fields;
     WHILE (d # NIL) & (d.kind # declEND) & (d.qname.name # name) DO
-      d := d.next;
+      d := d.next
     END;
     IF d.qname.name = name THEN
       IF IsImported(d) & ~d.exported THEN
         Lex.Error(l, "Field ");
         Lex.ErrOutStr(l, name);
-        Lex.PrintLnAndHalt(" is private");
+        Lex.PrintLnAndHalt(" is private")
       END;
       NewExpr(e, exprFieldRef, d.typ);
       e.lhs := base;
       e.iVal := name;
       e.decl := d;
-      e.assignable := base.assignable;
+      e.assignable := base.assignable
     ELSE
       Lex.Error(l, "Field ");
       Lex.ErrOutStr(l, name);
-      Lex.PrintLnAndHalt(" not found");
-    END;
+      Lex.PrintLnAndHalt(" not found")
+    END
   ELSE
-    Lex.ErrorLn(l, "Not a RECORD");
+    Lex.ErrorLn(l, "Not a RECORD")
   END;
   RETURN e
 END NewExprFieldRef;
@@ -574,30 +577,31 @@ BEGIN
   e := base;
   IF base.typ.kind IN {typeArray, typeBuffer} THEN
     IF index.typ.kind = typeInteger THEN
-      IF (index.kind = exprVal) & (base.typ.length > 0) &
+      IF (index.kind = exprVal) &
+         (base.typ.length > 0) &
          ((index.iVal < 0) OR (index.iVal >= base.typ.length)) THEN
         Lex.Error(l, "Array index ");
         Lex.ErrInt(index.iVal);
         Lex.ErrStr(" out OF range for ARRAY OF length ");
         Lex.ErrInt(base.typ.length);
-        Lex.PrintLnAndHalt("");
+        Lex.PrintLnAndHalt("")
       ELSE
         IF base.typ.kind = typeBuffer THEN
-          NewExpr(e, exprBufferRef, base.typ.base);
+          NewExpr(e, exprBufferRef, base.typ.base)
         ELSE
-          NewExpr(e, exprArrayRef, base.typ.base);
+          NewExpr(e, exprArrayRef, base.typ.base)
         END;
         e.lhs := base;
         e.rhs := index;
-        e.assignable := base.assignable;
-      END;
+        e.assignable := base.assignable
+      END
     ELSE
       Lex.Error(l, "ARRAY index must be an INTEGER, got ");
       OutTypeName(l, index.typ);
-      Lex.Ln;
-    END;
+      Lex.Ln
+    END
   ELSE
-    Lex.ErrorLn(l, "Not an ARRAY");
+    Lex.ErrorLn(l, "Not an ARRAY")
   END;
   RETURN e
 END NewExprArrayRef;
@@ -609,7 +613,7 @@ BEGIN
   ti := FALSE;
   REPEAT
     ti := t.needTypeInfo;
-    t := t.base;
+    t := t.base
   UNTIL ti OR (t = NIL);
   RETURN ti
 END NeedsTypeInfo;
@@ -676,12 +680,12 @@ BEGIN
   ExpectType(l, rhs, typeSet);
   IF IsConst(lhs) & IsConst(rhs) THEN
     e := NewExprSet(lhs.typ);
-    e.setVal := lhs.setVal + rhs.setVal;
+    e.setVal := lhs.setVal + rhs.setVal
   ELSE
     NewExpr(e, exprBinary, lhs.typ);
     e.op := Lex.tPLUS;
     e.lhs := lhs;
-    e.rhs := rhs;
+    e.rhs := rhs
   END;
   RETURN e
 END NewExprSetUnion;
@@ -697,15 +701,15 @@ BEGIN
     IF (elt.iVal < 0) OR (elt.iVal > 31) THEN
       Lex.Error(l, "Value ");
       Lex.ErrInt(elt.iVal);
-      Lex.PrintLnAndHalt(" out OF range of SET 0..31");
+      Lex.PrintLnAndHalt(" out OF range of SET 0..31")
     ELSE
       e := NewExprSet(setType);
-      e.setVal := {elt.iVal};
-    END;
+      e.setVal := {elt.iVal}
+    END
   ELSE
     NewExpr(e, exprUnary, setType);
     e.op := Lex.tAsSetElt;
-    e.lhs := elt;
+    e.lhs := elt
   END;
   RETURN e
 END NewExprSetElement;
@@ -718,12 +722,12 @@ BEGIN
   ExpectType(l, rhs, typeInteger);
   IF IsConst(lhs) & IsConst(rhs) THEN
     e := NewExprSet(setType);
-    e.setVal := {lhs.iVal .. rhs.iVal};
+    e.setVal := {lhs.iVal..rhs.iVal}
   ELSE
     NewExpr(e, exprBinary, setType);
     e.op := Lex.tDOTDOT;
     e.lhs := lhs;
-    e.rhs := rhs;
+    e.rhs := rhs
   END;
   RETURN e
 END NewExprSetRange;
@@ -736,12 +740,12 @@ BEGIN
   e.op := op;
   e.lhs := lhs;
   CASE op OF
-      Lex.tPLUS:
+    Lex.tPLUS:
       IF lhs.typ.kind IN {typeInteger, typeReal, typeSet} THEN
-        e := lhs;
+        e := lhs
       ELSE
-        Lex.ErrorLn(l, "Expected INTEGER, REAL, or SET");
-      END;
+        Lex.ErrorLn(l, "Expected INTEGER, REAL, or SET")
+      END
     | Lex.tMINUS:
       IF lhs.typ.kind IN {typeInteger, typeReal, typeSet} THEN
         IF IsConst(lhs) THEN
@@ -749,24 +753,30 @@ BEGIN
           (* only one of these will be valid, but the others will be ignored *)
           e.iVal := -lhs.iVal;
           e.rVal := -lhs.rVal;
-          e.setVal := -lhs.setVal;
-        END;
+          e.setVal := -lhs.setVal
+        END
       ELSE
-        Lex.ErrorLn(l, "Expected INTEGER, REAL, or SET");
-      END;
+        Lex.ErrorLn(l, "Expected INTEGER, REAL, or SET")
+      END
     | Lex.tTILDE:
       IF lhs.typ.kind = typeBoolean THEN
         IF IsConst(lhs) THEN
-          (* evaluate *)
-        END;
+           (* evaluate *)
+
+        END
       ELSE
-        Lex.ErrorLn(l, "Expected BOOLEAN");
-      END;
+        Lex.ErrorLn(l, "Expected BOOLEAN")
+      END
   END;
   RETURN e
 END NewExprUnary;
 
-PROCEDURE NewExprBinary*(l: Lex.Lexer; op: Lex.TokenKind; lhs, rhs: Expr; booleanType: Type): Expr;
+PROCEDURE NewExprBinary*(
+  l: Lex.Lexer;
+  op: Lex.TokenKind;
+  lhs, rhs: Expr;
+  booleanType: Type
+): Expr;
 VAR
   e: Expr;
 BEGIN
@@ -775,7 +785,7 @@ BEGIN
   e.lhs := lhs;
   e.rhs := rhs;
   CASE op OF
-      Lex.tPLUS, Lex.tMINUS, Lex.tSTAR, Lex.tSLASH:
+    Lex.tPLUS, Lex.tMINUS, Lex.tSTAR, Lex.tSLASH:
       IF ExprCompatable(l, op, lhs, rhs) &
          (lhs.typ.kind IN {typeInteger, typeReal, typeSet}) THEN
         IF IsConst(lhs) & IsConst(rhs) THEN
@@ -784,15 +794,15 @@ BEGIN
           IF op = Lex.tPLUS THEN
             e.iVal := lhs.iVal + rhs.iVal;
             e.rVal := lhs.rVal + rhs.rVal;
-            e.setVal := lhs.setVal + rhs.setVal;
+            e.setVal := lhs.setVal + rhs.setVal
           ELSIF op = Lex.tMINUS THEN
             e.iVal := lhs.iVal - rhs.iVal;
             e.rVal := lhs.rVal - rhs.rVal;
-            e.setVal := lhs.setVal - rhs.setVal;
+            e.setVal := lhs.setVal - rhs.setVal
           ELSIF op = Lex.tSTAR THEN
             e.iVal := lhs.iVal * rhs.iVal;
             e.rVal := lhs.rVal * rhs.rVal;
-            e.setVal := lhs.setVal * rhs.setVal;
+            e.setVal := lhs.setVal * rhs.setVal
           ELSIF op = Lex.tSLASH THEN
             (* avoid division by zero by instead returning a wrong answer *)
             IF rhs.iVal = 0 THEN
@@ -805,136 +815,162 @@ BEGIN
             ELSE
               e.rVal := lhs.rVal / rhs.rVal
             END;
-            e.setVal := lhs.setVal / rhs.setVal;
-          END;
-        END;
+            e.setVal := lhs.setVal / rhs.setVal
+          END
+        END
       ELSE
-        Lex.ErrorLn(l, "Expected INTEGER, REAL, or SET");
-      END;
+        Lex.ErrorLn(l, "Expected INTEGER, REAL, or SET")
+      END
     | Lex.tDIV, Lex.tMOD, Lex.tBITAND, Lex.tBITOR, Lex.tBITXOR:
-      IF ExprCompatable(l, op, lhs, rhs) &
-         (lhs.typ.kind = typeInteger) THEN
+      IF ExprCompatable(l, op, lhs, rhs) & (lhs.typ.kind = typeInteger) THEN
         IF IsConst(lhs) & IsConst(rhs) THEN
           e.kind := exprVal;
           IF op = Lex.tDIV THEN
-            e.iVal := lhs.iVal DIV rhs.iVal;
+            e.iVal := lhs.iVal DIV rhs.iVal
           ELSIF op = Lex.tMOD THEN
-            e.iVal := lhs.iVal MOD rhs.iVal;
+            e.iVal := lhs.iVal MOD rhs.iVal
           ELSIF op = Lex.tBITAND THEN
-            e.iVal := lhs.iVal BITAND rhs.iVal;
+            e.iVal := lhs.iVal BITAND rhs.iVal
           ELSIF op = Lex.tBITOR THEN
-            e.iVal := lhs.iVal BITOR rhs.iVal;
+            e.iVal := lhs.iVal BITOR rhs.iVal
           ELSIF op = Lex.tBITXOR THEN
-            e.iVal := lhs.iVal BITXOR rhs.iVal;
-          END;
-        END;
+            e.iVal := lhs.iVal BITXOR rhs.iVal
+          END
+        END
       ELSE
-        Lex.ErrorLn(l, "Expected INTEGER");
-      END;
+        Lex.ErrorLn(l, "Expected INTEGER")
+      END
     | Lex.tAMP, Lex.tOR:
-      IF ExprCompatable(l, op, lhs, rhs) &
-         (lhs.typ.kind = typeBoolean) THEN
+      IF ExprCompatable(l, op, lhs, rhs) & (lhs.typ.kind = typeBoolean) THEN
         IF IsConst(lhs) & IsConst(rhs) THEN
-          (* evaluate *)
-        END;
+           (* evaluate *)
+
+        END
       ELSE
-        Lex.ErrorLn(l, "Expected BOOLEAN");
-      END;
+        Lex.ErrorLn(l, "Expected BOOLEAN")
+      END
     | Lex.tLT, Lex.tGT, Lex.tLTEQ, Lex.tGTEQ:
       e.typ := booleanType;
       IF ExprCompatable(l, op, lhs, rhs) &
          (IsStringType(lhs.typ) OR
-          (lhs.typ.kind IN {typeInteger, typeReal, typeSet, typeString,
-                            typeChar})) THEN
+         (lhs.typ.kind IN
+         {typeInteger, typeReal, typeSet, typeString, typeChar})) THEN
         IF IsConst(lhs) & IsConst(rhs) THEN
-          (* evaluate *)
+           (* evaluate *)
+
         END;
         IF IsConst(lhs) & (rhs.typ.kind = typeChar) THEN
-          CoerceToChar(l, lhs, rhs.typ);
+          CoerceToChar(l, lhs, rhs.typ)
         END;
         IF IsConst(rhs) & (lhs.typ.kind = typeChar) THEN
-          CoerceToChar(l, rhs, lhs.typ);
-        END;
+          CoerceToChar(l, rhs, lhs.typ)
+        END
       ELSE
-        Lex.ErrorLn(l, "Expected INTEGER, REAL, SET, STRING, or CHAR");
-      END;
+        Lex.ErrorLn(l, "Expected INTEGER, REAL, SET, STRING, or CHAR")
+      END
     | Lex.tEQ, Lex.tPOUND:
       e.typ := booleanType;
       IF ExprCompatable(l, op, lhs, rhs) &
          (IsStringType(lhs.typ) OR
-          (lhs.typ.kind IN {typeInteger, typeReal, typeSet, typeString,
-                            typeChar, typePointer, typeProcedure})) THEN
+         (lhs.typ.kind IN
+         {
+           typeInteger,
+           typeReal,
+           typeSet,
+           typeString,
+           typeChar,
+           typePointer,
+           typeProcedure
+         })) THEN
         IF IsConst(lhs) & IsConst(rhs) THEN
-          (* evaluate *)
+           (* evaluate *)
+
         END;
         IF IsConst(lhs) & (rhs.typ.kind = typeChar) THEN
-          CoerceToChar(l, lhs, rhs.typ);
+          CoerceToChar(l, lhs, rhs.typ)
         END;
         IF IsConst(rhs) & (lhs.typ.kind = typeChar) THEN
-          CoerceToChar(l, rhs, lhs.typ);
-        END;
+          CoerceToChar(l, rhs, lhs.typ)
+        END
       ELSE
-        Lex.ErrorLn(l,
-            "Expected INTEGER, REAL, SET, STRING, CHAR, POINTER, or PROCEDURE");
-      END;
+        Lex.ErrorLn(
+          l,
+          "Expected INTEGER, REAL, SET, STRING, CHAR, POINTER, or PROCEDURE"
+        )
+      END
     | Lex.tIN:
       e.typ := booleanType;
       IF (lhs.typ.kind = typeInteger) & (rhs.typ.kind = typeSet) THEN
         IF IsConst(lhs) & IsConst(rhs) THEN
-          (* evaluate *)
-        END;
+           (* evaluate *)
+
+        END
       ELSE
-        Lex.ErrorLn(l, "Expected INTEGER and SET expected");
-      END;
+        Lex.ErrorLn(l, "Expected INTEGER and SET expected")
+      END
     | Lex.tIS:
       e.typ := booleanType;
       IF ~(lhs.typ.kind IN {typeRecord, typePointer}) THEN
-        Lex.ErrorLn(l, "LHS must be a POINTER or RECORD");
+        Lex.ErrorLn(l, "LHS must be a POINTER or RECORD")
       END;
       IF ~(rhs.typ.kind IN {typeRecord, typePointer}) THEN
-        Lex.ErrorLn(l, "RHS must be a POINTER or RECORD");
+        Lex.ErrorLn(l, "RHS must be a POINTER or RECORD")
       END;
       IF lhs.typ.kind # rhs.typ.kind THEN
-        Lex.ErrorLn(l, "LHS and RHS types must match");
+        Lex.ErrorLn(l, "LHS and RHS types must match")
       END;
       IF (lhs.kind = typeRecord) &
          ((lhs.kind # exprIdentRef) OR (lhs.decl.kind # declVarParam)) THEN
-        Lex.ErrorLn(l, "LHS must be a VAR parameter");
+        Lex.ErrorLn(l, "LHS must be a VAR parameter")
       END;
       IF (rhs.kind # exprIdentRef) OR (rhs.decl.kind # declType) THEN
-        Lex.ErrorLn(l, "RHS must be a type declaration");
+        Lex.ErrorLn(l, "RHS must be a type declaration")
       END;
       IF Extends(rhs.typ, lhs.typ) OR Extends(rhs.typ.base, lhs.typ.base) THEN
-        SetGenTypeInfo(rhs.typ);
+        SetGenTypeInfo(rhs.typ)
       ELSE
-        Lex.ErrorLn(l, "LHS and RHS types are unrelated");
-      END;
+        Lex.ErrorLn(l, "LHS and RHS types are unrelated")
+      END
   END;
   RETURN e
 END NewExprBinary;
 
-PROCEDURE ExpectArgMatch(l: Lex.Lexer; arg: INTEGER; actual: Expr; formal: Decl);
+PROCEDURE ExpectArgMatch(
+  l: Lex.Lexer;
+  arg: INTEGER;
+  actual: Expr;
+  formal: Decl
+);
 BEGIN
-  IF IsOpenArray(formal.typ) & (actual.typ.kind = typeArray) &
+  IF IsOpenArray(formal.typ) &
+     (actual.typ.kind = typeArray) &
      (actual.typ.base = formal.typ.base) THEN
-    (* Good - ARRAY OF X - ARRAY n OF X *)
-  ELSIF IsOpenArray(formal.typ) & (actual.typ.kind = typeBuffer) &
-     (actual.typ.base = formal.typ.base) THEN
-    (* Good - ARRAY OF X - ARRAY * OF X *)
+
+  (* Good - ARRAY OF X - ARRAY n OF X *)
+  ELSIF IsOpenArray(formal.typ) &
+        (actual.typ.kind = typeBuffer) &
+        (actual.typ.base = formal.typ.base) THEN
+
+  (* Good - ARRAY OF X - ARRAY * OF X *)
   ELSIF (formal.kind = declVarParam) & ~actual.assignable THEN
     Lex.Error(l, "For argument ");
     Lex.ErrInt(arg);
-    Lex.PrintLnAndHalt(", param is not assignable (expected VAR param)");
+    Lex.PrintLnAndHalt(", param is not assignable (expected VAR param)")
   ELSIF ~AssignmentCompatable(
-      l, actual.typ, formal.typ, actual.iVal, actual.iVal) THEN
+          l,
+          actual.typ,
+          formal.typ,
+          actual.iVal,
+          actual.iVal
+        ) THEN
     Lex.Error(l, "For argument ");
     Lex.ErrInt(arg);
     Lex.ErrStr(", expected ");
     OutTypeName(l, formal.typ);
     Lex.ErrStr(", got ");
     OutTypeName(l, actual.typ);
-    Lex.PrintLnAndHalt("");
-  END;
+    Lex.PrintLnAndHalt("")
+  END
 END ExpectArgMatch;
 
 PROCEDURE NewExprAssign*(l: Lex.Lexer; lValue, rValue: Expr): Expr;
@@ -943,23 +979,23 @@ VAR
 BEGIN
   NewExpr(e, exprAssign, lValue.typ);
   IF ~lValue.assignable THEN
-    Lex.ErrorLn(l, "lvalue of assignment is not assignable");
+    Lex.ErrorLn(l, "lvalue of assignment is not assignable")
   END;
   IF ExprCompatable(l, Lex.tASSIGN, lValue, rValue) THEN
     e.lhs := lValue;
-    e.rhs := rValue;
+    e.rhs := rValue
   END;
   IF IsConst(rValue) & (lValue.typ.kind = typeChar) THEN
-    CoerceToChar(l, rValue, lValue.typ);
+    CoerceToChar(l, rValue, lValue.typ)
   END;
   RETURN e
 END NewExprAssign;
 
 PROCEDURE NewExprProcCall*(l: Lex.Lexer; proc, args: Expr): Expr;
 VAR
-  e, arg:   Expr;
+  e, arg: Expr;
   i, count: INTEGER;
-  formal:   Decl;
+  formal: Decl;
 BEGIN
   e := proc;
   IF proc.typ.kind = typeProcedure THEN
@@ -971,7 +1007,7 @@ BEGIN
     arg := args;
     WHILE arg # NIL DO
       INC(i);
-      arg := arg.next;
+      arg := arg.next
     END;
     IF i = count THEN
       i := 1;
@@ -980,24 +1016,24 @@ BEGIN
       WHILE count > 0 DO
         ExpectArgMatch(l, i, arg, formal);
         IF IsConst(arg) & (formal.typ.kind = typeChar) THEN
-          CoerceToChar(l, arg, formal.typ);
+          CoerceToChar(l, arg, formal.typ)
         END;
         DEC(count);
         INC(i);
         formal := formal.next;
-        arg := arg.next;
-      END;
+        arg := arg.next
+      END
     ELSE
       Lex.Error(l, "Expected ");
       Lex.ErrInt(count);
       Lex.ErrStr(" parameters, got ");
       Lex.ErrInt(i);
-      Lex.PrintLnAndHalt("");
-    END;
+      Lex.PrintLnAndHalt("")
+    END
   ELSIF (proc.kind = exprIdentRef) & (proc.decl.kind = declBuiltin) THEN
-    e := proc.decl.resolver(l, args);
+    e := proc.decl.resolver(l, args)
   ELSE
-    Lex.ErrorLn(l, "designator is not a PROCEDURE");
+    Lex.ErrorLn(l, "designator is not a PROCEDURE")
   END;
   RETURN e
 END NewExprProcCall;
@@ -1009,7 +1045,7 @@ BEGIN
   s.cond := NIL;
   s.body := NIL;
   s.elsifs := NIL;
-  s.next := NIL;
+  s.next := NIL
 END NewStmt;
 
 PROCEDURE NewStmtAssign*(e: Expr): Stmt;
@@ -1113,7 +1149,7 @@ VAR
   s: Stmt;
 BEGIN
   IF body # NIL THEN
-    ASSERT(body.kind = stmtCaseItem);
+    ASSERT(body.kind = stmtCaseItem)
   END;
   NewStmt(s, stmtCase);
   s.cond := cond;
@@ -1143,10 +1179,10 @@ BEGIN
   ASSERT(procDecl.kind = declProcedure);
   ASSERT(procDecl.typ.kind = typeProcedure);
   IF procDecl.typ.base.kind = typeNil THEN
-    Lex.ErrorLn(l, "RETURN statement unexpected");
+    Lex.ErrorLn(l, "RETURN statement unexpected")
   END;
   IF e.typ.kind # typeNil THEN
-    ExpectType(l, e, procDecl.typ.base.kind);
+    ExpectType(l, e, procDecl.typ.base.kind)
   END;
   RETURN e
 END ValidateReturnStatement;
@@ -1154,30 +1190,29 @@ END ValidateReturnStatement;
 PROCEDURE CheckReturnStatement*(l: Lex.Lexer; procDecl: Decl);
 BEGIN
   IF (procDecl.typ.base.kind # typeNil) & (procDecl.expr = NIL) THEN
-    Lex.ErrorLn(l, "Missing RETURN statement");
-  END;
+    Lex.ErrorLn(l, "Missing RETURN statement")
+  END
 END CheckReturnStatement;
-
 
 PROCEDURE InitTypeKindNames;
 BEGIN
-  TypeKindNames[typeNil]       := "NIL";
-  TypeKindNames[typeInteger]   := "INTEGER";
-  TypeKindNames[typeReal]      := "REAL";
-  TypeKindNames[typeBoolean]   := "BOOLEAN";
-  TypeKindNames[typeChar]      := "CHAR";
-  TypeKindNames[typeSet]       := "SET";
-  TypeKindNames[typeString]    := "STRING";
-  TypeKindNames[typePointer]   := "POINTER";
-  TypeKindNames[typeArray]     := "ARRAY";
-  TypeKindNames[typeBuffer]    := "ARRAY *";
-  TypeKindNames[typeRecord]    := "RECORD";
+  TypeKindNames[typeNil] := "NIL";
+  TypeKindNames[typeInteger] := "INTEGER";
+  TypeKindNames[typeReal] := "REAL";
+  TypeKindNames[typeBoolean] := "BOOLEAN";
+  TypeKindNames[typeChar] := "CHAR";
+  TypeKindNames[typeSet] := "SET";
+  TypeKindNames[typeString] := "STRING";
+  TypeKindNames[typePointer] := "POINTER";
+  TypeKindNames[typeArray] := "ARRAY";
+  TypeKindNames[typeBuffer] := "ARRAY *";
+  TypeKindNames[typeRecord] := "RECORD";
   TypeKindNames[typeProcedure] := "PROCEDURE";
-  TypeKindNames[typeImport]    := "IMPORT";
+  TypeKindNames[typeImport] := "IMPORT"
 END InitTypeKindNames;
 
 BEGIN
   currentModuleName := 0;
   nextTypeId := 0;
-  InitTypeKindNames;
+  InitTypeKindNames
 END AST.

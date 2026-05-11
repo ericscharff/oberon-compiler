@@ -1,3 +1,5 @@
+MODULE Decls;
+
 (*
  * This file is part of oberon-compiler
  *
@@ -18,32 +20,34 @@
  *
  *)
 
-MODULE Decls;
-
 IMPORT AST, Lex;
 
 TYPE
-  StringId  = Lex.PoolIndex;
-  Forward   = POINTER TO FwdDecl;
-  FwdDecl   = RECORD
-    t:    AST.Type;
-    next: Forward;
+  StringId = Lex.PoolIndex;
+  Forward = POINTER TO FwdDecl;
+  FwdDecl = RECORD
+    t: AST.Type;
+    next: Forward
   END;
   ReachableDecl* = POINTER TO ReachableDesc;
-  ReachableDesc  = RECORD
-    d*:    AST.Decl;
-    next*: ReachableDecl;
+  ReachableDesc = RECORD
+    d*: AST.Decl;
+    next*: ReachableDecl
   END;
-
 VAR
-  nilType*, integerType*, realType*, booleanType*,
-    charType*, setType*, stringType*: AST.Type;
+  nilType*,
+  integerType*,
+  realType*,
+  booleanType*,
+  charType*,
+  setType*,
+  stringType*: AST.Type;
   modInitName*: StringId;
   scope, globalScope: AST.Decl;
   reachableDecls*, tailReachable: ReachableDecl;
-  fwds:  Forward;
+  fwds: Forward;
   genSymNum: INTEGER;
-  VisitDecl*: PROCEDURE (d: AST.Decl);
+  VisitDecl*: PROCEDURE(d: AST.Decl);
 
 PROCEDURE LookupDecl0(name: StringId): AST.Decl;
 VAR
@@ -51,7 +55,7 @@ VAR
 BEGIN
   p := scope;
   WHILE (p # NIL) & (p.qname.name # name) DO
-    p := p.next;
+    p := p.next
   END;
   RETURN p
 END LookupDecl0;
@@ -64,7 +68,7 @@ BEGIN
   IF p = NIL THEN
     Lex.Error(l, "");
     Lex.ErrOutStr(l, name);
-    Lex.PrintLnAndHalt(" undefined");
+    Lex.PrintLnAndHalt(" undefined")
   END;
   RETURN p
 END LookupDecl;
@@ -77,20 +81,20 @@ BEGIN
   ASSERT(d.kind = AST.declImport);
   p := d.typ.fields;
   WHILE (p # NIL) & (p.qname.name # name) DO
-    p := p.next;
+    p := p.next
   END;
   IF p = NIL THEN
     Lex.Error(l, "");
     Lex.ErrOutStr(l, moduleName);
     Lex.ErrStr(".");
     Lex.ErrOutStr(l, name);
-    Lex.PrintLnAndHalt(" undefined");
+    Lex.PrintLnAndHalt(" undefined")
   ELSIF ~p.exported THEN
     Lex.Error(l, "");
     Lex.ErrOutStr(l, moduleName);
     Lex.ErrStr(".");
     Lex.ErrOutStr(l, name);
-    Lex.PrintLnAndHalt(" is not exported");
+    Lex.PrintLnAndHalt(" is not exported")
   END;
   RETURN p
 END LookupImport;
@@ -111,7 +115,7 @@ BEGIN
   d.exported := FALSE;
   d.isNative := FALSE;
   d.state := AST.stateUnresolved;
-  d.offset := -1;
+  d.offset := -1
 END NewDecl;
 
 PROCEDURE AddDecl*(l: Lex.Lexer; VAR chain: AST.Decl; name: StringId): AST.Decl;
@@ -121,24 +125,24 @@ BEGIN
   NewDecl(d, name);
   IF chain = NIL THEN
     NewDecl(chain, 0);
-    chain.kind := AST.declEND;
+    chain.kind := AST.declEND
   END;
   IF chain.kind = AST.declEND THEN
     d.next := chain;
-    chain := d;
+    chain := d
   ELSE
     p := chain;
     WHILE (p.next.kind # AST.declEND) & (p.qname.name # name) DO
-      p := p.next;
+      p := p.next
     END;
     IF p.qname.name = name THEN
       Lex.Error(l, "");
       Lex.ErrOutStr(l, name);
-      Lex.PrintLnAndHalt(" already defined");
+      Lex.PrintLnAndHalt(" already defined")
     ELSE
       d.next := p.next;
-      p.next := d;
-    END;
+      p.next := d
+    END
   END;
   RETURN d
 END AddDecl;
@@ -158,7 +162,7 @@ BEGIN
   t.nesting := 0;
   t.needTypeInfo := FALSE;
   t.decl := NIL;
-  t.reachable := FALSE;
+  t.reachable := FALSE
 END NewType;
 
 PROCEDURE AddImportDecl*(l: Lex.Lexer; name: StringId; decls: AST.Decl);
@@ -168,7 +172,7 @@ BEGIN
   d := AddScopeDecl(l, name);
   d.kind := AST.declImport;
   NewType(d.typ, AST.typeImport);
-  d.typ.fields := decls;
+  d.typ.fields := decls
 END AddImportDecl;
 
 PROCEDURE NewBufferType*(base: AST.Type): AST.Type;
@@ -187,9 +191,9 @@ VAR
 BEGIN
   NewType(t, AST.typeArray);
   IF AST.IsConst(length) & (length.typ.kind = AST.typeInteger) THEN
-    t.length := length.iVal;
+    t.length := length.iVal
   ELSE
-    Lex.ErrorLn(l, "ARRAY length must be a CONST INTEGER");
+    Lex.ErrorLn(l, "ARRAY length must be a CONST INTEGER")
   END;
   RETURN t
 END NewArrayType;
@@ -204,8 +208,8 @@ BEGIN
     NewDecl(base.decl, Lex.Intern(l, name));
     base.decl.kind := AST.declType;
     base.decl.typ := base;
-    INC(genSymNum);
-  END;
+    INC(genSymNum)
+  END
 END MakeSyntheticDecl;
 
 PROCEDURE NewPointerType*(VAR l: Lex.Lexer; base: AST.Type): AST.Type;
@@ -214,11 +218,11 @@ VAR
 BEGIN
   t := NIL;
   IF (base # NIL) & (base.kind # AST.typeRecord) THEN
-    Lex.ErrorLn(l, "Pointer base type must be a RECORD");
+    Lex.ErrorLn(l, "Pointer base type must be a RECORD")
   ELSE
     MakeSyntheticDecl(l, base);
     NewType(t, AST.typePointer);
-    t.base := base;
+    t.base := base
   END;
   RETURN t
 END NewPointerType;
@@ -238,14 +242,14 @@ BEGIN
     NEW(f);
     f.t := t;
     f.next := fwds;
-    fwds := f;
+    fwds := f
   ELSE
     IF d.kind # AST.declType THEN
       Lex.Error(l, "");
       Lex.ErrOutStr(l, d.qname.name);
-      Lex.PrintLnAndHalt(" is not a TYPE");
+      Lex.PrintLnAndHalt(" is not a TYPE")
     END;
-    t := NewPointerType(l, d.typ);
+    t := NewPointerType(l, d.typ)
   END;
   RETURN t
 END NewPointerTypeByName;
@@ -268,24 +272,24 @@ BEGIN
   p := t.fields;
   WHILE (p # NIL) & (p.kind # AST.declEND) DO
     INC(i);
-    p := p.next;
+    p := p.next
   END;
-  t.length := i;
+  t.length := i
 END CountProcedureArgs;
 
 PROCEDURE NewRecordType*(l: Lex.Lexer; base: AST.Type): AST.Type;
 VAR
-  t:        AST.Type;
+  t: AST.Type;
   d, dCopy: AST.Decl;
 BEGIN
   NewType(t, AST.typeRecord);
   t.base := base;
   t.typeId := AST.GetNextTypeId();
   IF base = NIL THEN
-    AST.SetRecordToParent(t.typeId, 0);
+    AST.SetRecordToParent(t.typeId, 0)
   ELSE
     AST.SetRecordToParent(t.typeId, base.typeId);
-    t.nesting := base.nesting + 1;
+    t.nesting := base.nesting + 1
   END;
   IF base # NIL THEN
     IF base.kind = AST.typeRecord THEN
@@ -297,11 +301,11 @@ BEGIN
         dCopy.typ := d.typ;
         dCopy.exported := d.exported;
         dCopy.nesting := d.nesting + 1;
-        d := d.next;
-      END;
+        d := d.next
+      END
     ELSE
-      Lex.ErrorLn(l, "RECORD base type is not a RECORD");
-    END;
+      Lex.ErrorLn(l, "RECORD base type is not a RECORD")
+    END
   END;
   RETURN t
 END NewRecordType;
@@ -315,7 +319,7 @@ BEGIN
   d.typ := NewProcedureType();
   d.body := body;
   d.next := scope;
-  scope := d;
+  scope := d
 END NewModuleInitDecl;
 
 PROCEDURE AddTypeDecl(VAR l: Lex.Lexer; name: StringId; t: AST.Type);
@@ -325,17 +329,23 @@ BEGIN
   d := AddDecl(l, scope, name);
   d.kind := AST.declType;
   d.typ := t;
-  IF d.typ.decl = NIL THEN d.typ.decl := d END;
+  IF d.typ.decl = NIL THEN
+    d.typ.decl := d
+  END
 END AddTypeDecl;
 
-PROCEDURE AddBuiltin(VAR l: Lex.Lexer; name: StringId; callback: AST.BuiltinResolver);
+PROCEDURE AddBuiltin(
+  VAR l: Lex.Lexer;
+  name: StringId;
+  callback: AST.BuiltinResolver
+);
 VAR
   d: AST.Decl;
 BEGIN
   d := AddDecl(l, scope, name);
   d.kind := AST.declBuiltin;
   d.typ := nilType;
-  d.resolver := callback;
+  d.resolver := callback
 END AddBuiltin;
 
 (* Native procedure declarations. *)
@@ -348,12 +358,12 @@ BEGIN
   e.iVal := AST.builtinAbs;
   e.rhs := args;
   IF (args = NIL) OR (args.next # NIL) THEN
-    Lex.ErrorLn(l, "ABS expects 1 argument");
+    Lex.ErrorLn(l, "ABS expects 1 argument")
   END;
   IF args.typ.kind IN {AST.typeInteger, AST.typeReal} THEN
-    e.typ := args.typ;
+    e.typ := args.typ
   ELSE
-    Lex.ErrorLn(l, "ABS expects INTEGER or REAL");
+    Lex.ErrorLn(l, "ABS expects INTEGER or REAL")
   END;
   RETURN e
 END builtinAbs;
@@ -366,13 +376,13 @@ BEGIN
   e.iVal := AST.builtinInc;
   e.rhs := args;
   IF (args = NIL) OR ((args.next # NIL) & (args.next.next # NIL)) THEN
-    Lex.ErrorLn(l, "INC expects 1 or 2 arguments");
+    Lex.ErrorLn(l, "INC expects 1 or 2 arguments")
   END;
   IF ~args.assignable THEN
-    Lex.ErrorLn(l, "First argument to INC must be assignable");
+    Lex.ErrorLn(l, "First argument to INC must be assignable")
   END;
   IF (args.next # NIL) & (args.next.typ.kind # AST.typeInteger) THEN
-    Lex.ErrorLn(l, "Second arg to INC must be an INTEGER");
+    Lex.ErrorLn(l, "Second arg to INC must be an INTEGER")
   END;
   RETURN e
 END builtinInc;
@@ -385,13 +395,13 @@ BEGIN
   e.iVal := AST.builtinDec;
   e.rhs := args;
   IF (args = NIL) OR ((args.next # NIL) & (args.next.next # NIL)) THEN
-    Lex.ErrorLn(l, "DEC expects 1 or 2 arguments");
+    Lex.ErrorLn(l, "DEC expects 1 or 2 arguments")
   END;
   IF ~args.assignable THEN
-    Lex.ErrorLn(l, "First argument to DEC must be assignable");
+    Lex.ErrorLn(l, "First argument to DEC must be assignable")
   END;
   IF (args.next # NIL) & (args.next.typ.kind # AST.typeInteger) THEN
-    Lex.ErrorLn(l, "Second arg to DEC must be an INTEGER");
+    Lex.ErrorLn(l, "Second arg to DEC must be an INTEGER")
   END;
   RETURN e
 END builtinDec;
@@ -404,12 +414,12 @@ BEGIN
   e.iVal := AST.builtinAssert;
   e.rhs := args;
   IF (args = NIL) OR (args.next # NIL) THEN
-    Lex.ErrorLn(l, "ASSERT expects 1 argument");
+    Lex.ErrorLn(l, "ASSERT expects 1 argument")
   END;
   IF args.typ.kind = AST.typeBoolean THEN
-    e.typ := args.typ;
+    e.typ := args.typ
   ELSE
-    Lex.ErrorLn(l, "ASSERT expects a BOOLEAN");
+    Lex.ErrorLn(l, "ASSERT expects a BOOLEAN")
   END;
   RETURN e
 END builtinAssert;
@@ -421,15 +431,17 @@ BEGIN
   AST.NewExpr(e, AST.exprBuiltin, nilType);
   e.iVal := AST.builtinOrd;
   e.rhs := args;
-  IF AST.IsConst(e.rhs) THEN AST.CoerceToChar(l, e.rhs, charType) END;
+  IF AST.IsConst(e.rhs) THEN
+    AST.CoerceToChar(l, e.rhs, charType)
+  END;
   IF (args = NIL) OR (args.next # NIL) THEN
-    Lex.ErrorLn(l, "ORD expects 1 argument");
+    Lex.ErrorLn(l, "ORD expects 1 argument")
   END;
   IF (args.typ.kind IN {AST.typeSet, AST.typeChar, AST.typeBoolean}) OR
      ((args.typ.kind = AST.typeString) & Lex.IsOneChar(l, args.iVal)) THEN
-    e.typ := integerType;
+    e.typ := integerType
   ELSE
-    Lex.ErrorLn(l, "ORD expects CHAR, BOOLEAN, or SET");
+    Lex.ErrorLn(l, "ORD expects CHAR, BOOLEAN, or SET")
   END;
   RETURN e
 END builtinOrd;
@@ -442,12 +454,12 @@ BEGIN
   e.iVal := AST.builtinChr;
   e.rhs := args;
   IF (args = NIL) OR (args.next # NIL) THEN
-    Lex.ErrorLn(l, "CHR expects 1 argument");
+    Lex.ErrorLn(l, "CHR expects 1 argument")
   END;
   IF args.typ.kind = AST.typeInteger THEN
-    e.typ := charType;
+    e.typ := charType
   ELSE
-    Lex.ErrorLn(l, "CHR expects an INTEGER");
+    Lex.ErrorLn(l, "CHR expects an INTEGER")
   END;
   RETURN e
 END builtinChr;
@@ -460,12 +472,12 @@ BEGIN
   e.iVal := AST.builtinFloor;
   e.rhs := args;
   IF (args = NIL) OR (args.next # NIL) THEN
-    Lex.ErrorLn(l, "FLOOR expects 1 argument");
+    Lex.ErrorLn(l, "FLOOR expects 1 argument")
   END;
   IF args.typ.kind = AST.typeReal THEN
-    e.typ := integerType;
+    e.typ := integerType
   ELSE
-    Lex.ErrorLn(l, "FLOOR expects a REAL");
+    Lex.ErrorLn(l, "FLOOR expects a REAL")
   END;
   RETURN e
 END builtinFloor;
@@ -478,12 +490,12 @@ BEGIN
   e.iVal := AST.builtinFlt;
   e.rhs := args;
   IF (args = NIL) OR (args.next # NIL) THEN
-    Lex.ErrorLn(l, "FLT expects 1 argument");
+    Lex.ErrorLn(l, "FLT expects 1 argument")
   END;
   IF args.typ.kind = AST.typeInteger THEN
-    e.typ := realType;
+    e.typ := realType
   ELSE
-    Lex.ErrorLn(l, "FLT expects an INTEGER");
+    Lex.ErrorLn(l, "FLT expects an INTEGER")
   END;
   RETURN e
 END builtinFlt;
@@ -496,12 +508,12 @@ BEGIN
   e.iVal := AST.builtinLen;
   e.rhs := args;
   IF (args = NIL) OR (args.next # NIL) THEN
-    Lex.ErrorLn(l, "LEN expects 1 argument");
+    Lex.ErrorLn(l, "LEN expects 1 argument")
   END;
   IF args.typ.kind IN {AST.typeArray, AST.typeBuffer} THEN
-    e.typ := integerType;
+    e.typ := integerType
   ELSE
-    Lex.ErrorLn(l, "LEN expects an ARRAY");
+    Lex.ErrorLn(l, "LEN expects an ARRAY")
   END;
   RETURN e
 END builtinLen;
@@ -514,15 +526,15 @@ BEGIN
   e.iVal := AST.builtinInit;
   e.rhs := args;
   IF (args = NIL) OR (args.next = NIL) OR (args.next.next # NIL) THEN
-    Lex.ErrorLn(l, "NEW_ARRAY expects 2 arguments");
+    Lex.ErrorLn(l, "NEW_ARRAY expects 2 arguments")
   END;
   IF args.next.typ.kind # AST.typeInteger THEN
-    Lex.ErrorLn(l, "Second arg to NEW_ARRAY must be an INTEGER");
+    Lex.ErrorLn(l, "Second arg to NEW_ARRAY must be an INTEGER")
   END;
   IF args.typ.kind = AST.typeBuffer THEN
-    e.typ := nilType;
+    e.typ := nilType
   ELSE
-    Lex.ErrorLn(l, "First arg to NEW_ARRAY expects an ARRAY *");
+    Lex.ErrorLn(l, "First arg to NEW_ARRAY expects an ARRAY *")
   END;
   RETURN e
 END builtinInit;
@@ -535,18 +547,18 @@ BEGIN
   e.iVal := AST.builtinPush;
   e.rhs := args;
   IF (args = NIL) OR (args.next = NIL) OR (args.next.next # NIL) THEN
-    Lex.ErrorLn(l, "PUSH expects 2 arguments");
+    Lex.ErrorLn(l, "PUSH expects 2 arguments")
   END;
   IF ~args.assignable THEN
-    Lex.ErrorLn(l, "First argument to PUSH must be assignable");
+    Lex.ErrorLn(l, "First argument to PUSH must be assignable")
   END;
   IF args.next.typ # args.typ.base THEN
-    Lex.ErrorLn(l, "Second arg to PUSH must have same type as ARRAY");
+    Lex.ErrorLn(l, "Second arg to PUSH must have same type as ARRAY")
   END;
   IF args.typ.kind = AST.typeBuffer THEN
-    e.typ := nilType;
+    e.typ := nilType
   ELSE
-    Lex.ErrorLn(l, "First arg to PUSH expects an ARRAY *");
+    Lex.ErrorLn(l, "First arg to PUSH expects an ARRAY *")
   END;
   RETURN e
 END builtinPush;
@@ -559,15 +571,15 @@ BEGIN
   e.iVal := AST.builtinNew;
   e.rhs := args;
   IF (args = NIL) OR (args.next # NIL) THEN
-    Lex.ErrorLn(l, "NEW expects 1 argument");
+    Lex.ErrorLn(l, "NEW expects 1 argument")
   END;
   IF ~args.assignable THEN
-    Lex.ErrorLn(l, "First argument to NEW must be assignable");
+    Lex.ErrorLn(l, "First argument to NEW must be assignable")
   END;
   IF args.typ.kind = AST.typePointer THEN
-    e.typ := args.typ;
+    e.typ := args.typ
   ELSE
-    Lex.ErrorLn(l, "NEW expects a POINTER");
+    Lex.ErrorLn(l, "NEW expects a POINTER")
   END;
   RETURN e
 END builtinNew;
@@ -580,10 +592,10 @@ BEGIN
   e.iVal := AST.builtinReadInt;
   e.rhs := args;
   IF (args = NIL) OR (args.next # NIL) THEN
-    Lex.ErrorLn(l, "ReadInt expects 1 argument");
+    Lex.ErrorLn(l, "ReadInt expects 1 argument")
   END;
   IF ~args.assignable THEN
-    Lex.ErrorLn(l, "Argument to ReadInt must be assignable");
+    Lex.ErrorLn(l, "Argument to ReadInt must be assignable")
   END;
   RETURN e
 END builtinReadInt;
@@ -596,7 +608,7 @@ BEGIN
   e.iVal := AST.builtinWriteInt;
   e.rhs := args;
   IF (args = NIL) OR (args.next # NIL) THEN
-    Lex.ErrorLn(l, "WriteInt expects 1 argument");
+    Lex.ErrorLn(l, "WriteInt expects 1 argument")
   END;
   RETURN e
 END builtinWriteInt;
@@ -609,9 +621,11 @@ BEGIN
   e.iVal := AST.builtinWriteChar;
   e.rhs := args;
   IF (args = NIL) OR (args.next # NIL) THEN
-    Lex.ErrorLn(l, "WriteChar expects 1 argument");
+    Lex.ErrorLn(l, "WriteChar expects 1 argument")
   END;
-  IF e.rhs.typ.kind = AST.typeString THEN AST.CoerceToChar(l, e.rhs, charType) END;
+  IF e.rhs.typ.kind = AST.typeString THEN
+    AST.CoerceToChar(l, e.rhs, charType)
+  END;
   RETURN e
 END builtinWriteChar;
 
@@ -623,7 +637,7 @@ BEGIN
   e.iVal := AST.builtinWriteLn;
   e.rhs := args;
   IF args # NIL THEN
-    Lex.ErrorLn(l, "WriteLn expects 0 arguments");
+    Lex.ErrorLn(l, "WriteLn expects 0 arguments")
   END;
   RETURN e
 END builtinWriteLn;
@@ -669,9 +683,9 @@ BEGIN
     *)
     globalScope := scope;
     (* Special MODULE init function *)
-    modInitName := Lex.Intern(l, "_module_init_");
+    modInitName := Lex.Intern(l, "_module_init_")
   END;
-  scope := globalScope;
+  scope := globalScope
 END InitGlobalScope;
 
 PROCEDURE ResolveForwards*(l: Lex.Lexer);
@@ -683,14 +697,14 @@ BEGIN
     d := LookupDecl(l, fwds.t.fields.qname.name);
     IF (d # NIL) & (d.kind = AST.declType) & (d.typ.kind = AST.typeRecord) THEN
       fwds.t.base := d.typ;
-      fwds.t.fields := NIL;
+      fwds.t.fields := NIL
     ELSE
       Lex.Error(l, "Bad forward declaration ");
       Lex.ErrOutStr(l, fwds.t.fields.qname.name);
-      Lex.Ln;
+      Lex.Ln
     END;
-    fwds := fwds.next;
-  END;
+    fwds := fwds.next
+  END
 END ResolveForwards;
 
 PROCEDURE AddFormalParamsToScope*(l: Lex.Lexer; procDecl: AST.Decl);
@@ -704,8 +718,8 @@ BEGIN
     actual := AddScopeDecl(l, formal.qname.name);
     actual.kind := formal.kind;
     actual.typ := formal.typ;
-    formal := formal.next;
-  END;
+    formal := formal.next
+  END
 END AddFormalParamsToScope;
 
 PROCEDURE CurrentScope*(): AST.Decl;
@@ -727,7 +741,7 @@ END OpenScope;
 
 PROCEDURE CloseScope*(s: AST.Decl);
 BEGIN
-  scope := s;
+  scope := s
 END CloseScope;
 
 PROCEDURE VisitType(t: AST.Type);
@@ -740,10 +754,12 @@ BEGIN
     f := t.fields;
     WHILE (f # NIL) & (f.kind # AST.declEND) DO
       VisitType(f.typ);
-      f := f.next;
+      f := f.next
     END;
-    IF t.decl # NIL THEN VisitDecl(t.decl); END;
-  END;
+    IF t.decl # NIL THEN
+      VisitDecl(t.decl)
+    END
+  END
 END VisitType;
 
 PROCEDURE VisitExpr(e: AST.Expr);
@@ -752,9 +768,11 @@ BEGIN
     VisitExpr(e.lhs);
     VisitExpr(e.rhs);
     VisitType(e.typ);
-    IF e.decl # NIL THEN VisitDecl(e.decl); END;
-    e := e.next;
-  END;
+    IF e.decl # NIL THEN
+      VisitDecl(e.decl)
+    END;
+    e := e.next
+  END
 END VisitExpr;
 
 PROCEDURE VisitStatement(s: AST.Stmt);
@@ -763,13 +781,13 @@ BEGIN
     VisitExpr(s.cond);
     VisitStatement(s.body);
     VisitStatement(s.elsifs);
-    s := s.next;
-  END;
+    s := s.next
+  END
 END VisitStatement;
 
 PROCEDURE VisitDecl0(d: AST.Decl);
 VAR
-  p:         AST.Decl;
+  p: AST.Decl;
   reachable: ReachableDecl;
 BEGIN
   IF d.state = AST.stateUnresolved THEN
@@ -780,10 +798,10 @@ BEGIN
       p := d.next;
       WHILE p.kind # AST.declEND DO
         IF p.kind = AST.declImport THEN
-          VisitDecl(p.typ.fields);
+          VisitDecl(p.typ.fields)
         END;
-        p := p.next;
-      END;
+        p := p.next
+      END
     END;
     VisitType(d.typ);
     VisitStatement(d.body);
@@ -793,25 +811,25 @@ BEGIN
     reachable.d := d;
     reachable.next := NIL;
     IF reachableDecls = NIL THEN
-      reachableDecls := reachable;
+      reachableDecls := reachable
     ELSE
-      tailReachable.next := reachable;
+      tailReachable.next := reachable
     END;
-    tailReachable := reachable;
+    tailReachable := reachable
   ELSIF d.state = AST.stateResolving THEN
     IF d.kind # AST.declProcedure THEN
       (* Circular reference *)
-      ASSERT(FALSE);
-    END;
+      ASSERT(FALSE)
+    END
   ELSE
-    ASSERT(d.state = AST.stateResolved);
-  END;
+    ASSERT(d.state = AST.stateResolved)
+  END
 END VisitDecl0;
 
 PROCEDURE TestCleanup*;
 BEGIN
   scope := NIL;
-  globalScope := NIL;
+  globalScope := NIL
 END TestCleanup;
 
 PROCEDURE TestDecls;
@@ -847,7 +865,7 @@ BEGIN
   d := LookupDecl(l, Lex.Intern(l, "BYTE"));
   ASSERT(t = d.typ);
   TestCleanup;
-  Lex.InfoPrintLn("PASS: Decls test");
+  Lex.InfoPrintLn("PASS: Decls test")
 END TestDecls;
 
 PROCEDURE RunTests*;
@@ -860,5 +878,5 @@ BEGIN
   genSymNum := 0;
   reachableDecls := NIL;
   tailReachable := NIL;
-  globalScope := NIL;
+  globalScope := NIL
 END Decls.

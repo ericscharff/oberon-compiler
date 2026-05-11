@@ -1,3 +1,5 @@
+MODULE Lex;
+
 (*
  * This file is part of oberon-compiler
  *
@@ -18,23 +20,19 @@
  *
  *)
 
-MODULE Lex;
-
 IMPORT Out;
 
 CONST
   NumBuckets = 4096;
-  PoolSize   = 64 * 1024;
-  BufSize    = 128 * 1024;
-  KwdSize    = 10;
-
+  PoolSize = 64 * 1024;
+  BufSize = 128 * 1024;
+  KwdSize = 10;
   (* Token definitions *)
 
   (* Comments are special tokens. When encountered, they are ignored and     *)
   (* parsing continues at the next token. Whitespace characters are treated  *)
   (* as comments.                                                            *)
-  tCOMMENT      = -1;
-
+  tCOMMENT = -1;
   (* Keywords - Keywords are special because they are included in the string *)
   (* pool in a special way. The ARRAY keyword is inserted first into the     *)
   (* table, and it takes up 10 characters. Thus, ARRAY is at position 0,     *)
@@ -42,109 +40,104 @@ CONST
   (* keyword is looked up by PoolIndex DIV 10. Adding new keywords thus      *)
   (* requires that they be contiguous with each other, and before the        *)
   (* punctuation tokens, IN order to keep things consistent.                 *)
-  tARRAY*       =  0;
-  tBEGIN*       =  1;
-  tBITAND*      =  2;
-  tBITOR*       =  3;
-  tBITXOR*      =  4;
-  tBY*          =  5;
-  tCASE*        =  6;
-  tCONST*       =  7;
-  tDIV*         =  8;
-  tDO*          =  9;
-  tELSE*        = 10;
-  tELSIF*       = 11;
-  tEND*         = 12;
-  tFALSE*       = 13;
-  tFOR*         = 14;
-  tIF*          = 15;
-  tIMPORT*      = 16;
-  tIN*          = 17;
-  tIS*          = 18;
-  tMOD*         = 19;
-  tMODULE*      = 20;
-  tNATIVE*      = 21;
-  tNIL*         = 22;
-  tOF*          = 23;
-  tOR*          = 24;
-  tPOINTER*     = 25;
-  tPROCEDURE*   = 26;
-  tRECORD*      = 27;
-  tREPEAT*      = 28;
-  tRETURN*      = 29;
-  tTHEN*        = 30;
-  tTO*          = 31;
-  tTRUE*        = 32;
-  tTYPE*        = 33;
-  tUNTIL*       = 34;
-  tVAR*         = 35;
-  tWHILE*       = 36;
-  tLastKwd      = tWHILE * KwdSize;
-
-  tIDENT*       = 37;
-  tKEYWORD*     = 38;
-  tSTRING*      = 39;
-  tINT*         = 40;
-  tREAL*        = 41;
-  tPLUS*        = 42;
-  tMINUS*       = 43;
-  tSTAR*        = 44;
-  tSLASH*       = 45;
-  tTILDE*       = 46;
-  tAMP*         = 47;
-  tDOT*         = 48;
-  tCOMMA*       = 49;
-  tSEMI*        = 50;
-  tVBAR*        = 51;
-  tLPAREN*      = 52;
-  tRPAREN*      = 53;
-  tLBRACK*      = 54;
-  tRBRACK*      = 55;
-  tLBRACE*      = 56;
-  tRBRACE*      = 57;
-  tASSIGN*      = 58;
-  tCARET*       = 59;
-  tEQ*          = 60;
-  tPOUND*       = 61;
-  tLT*          = 62;
-  tGT*          = 63;
-  tLTEQ*        = 64;
-  tGTEQ*        = 65;
-  tDOTDOT*      = 66;
-  tCOLON*       = 67;
-  tAsSetElt*    = 68;
-  tCaseDotDot*  = 69;
-  tEOF*         = 70;
-
+  tARRAY* = 0;
+  tBEGIN* = 1;
+  tBITAND* = 2;
+  tBITOR* = 3;
+  tBITXOR* = 4;
+  tBY* = 5;
+  tCASE* = 6;
+  tCONST* = 7;
+  tDIV* = 8;
+  tDO* = 9;
+  tELSE* = 10;
+  tELSIF* = 11;
+  tEND* = 12;
+  tFALSE* = 13;
+  tFOR* = 14;
+  tIF* = 15;
+  tIMPORT* = 16;
+  tIN* = 17;
+  tIS* = 18;
+  tMOD* = 19;
+  tMODULE* = 20;
+  tNATIVE* = 21;
+  tNIL* = 22;
+  tOF* = 23;
+  tOR* = 24;
+  tPOINTER* = 25;
+  tPROCEDURE* = 26;
+  tRECORD* = 27;
+  tREPEAT* = 28;
+  tRETURN* = 29;
+  tTHEN* = 30;
+  tTO* = 31;
+  tTRUE* = 32;
+  tTYPE* = 33;
+  tUNTIL* = 34;
+  tVAR* = 35;
+  tWHILE* = 36;
+  tLastKwd = tWHILE * KwdSize;
+  tIDENT* = 37;
+  tKEYWORD* = 38;
+  tSTRING* = 39;
+  tINT* = 40;
+  tREAL* = 41;
+  tPLUS* = 42;
+  tMINUS* = 43;
+  tSTAR* = 44;
+  tSLASH* = 45;
+  tTILDE* = 46;
+  tAMP* = 47;
+  tDOT* = 48;
+  tCOMMA* = 49;
+  tSEMI* = 50;
+  tVBAR* = 51;
+  tLPAREN* = 52;
+  tRPAREN* = 53;
+  tLBRACK* = 54;
+  tRBRACK* = 55;
+  tLBRACE* = 56;
+  tRBRACE* = 57;
+  tASSIGN* = 58;
+  tCARET* = 59;
+  tEQ* = 60;
+  tPOUND* = 61;
+  tLT* = 62;
+  tGT* = 63;
+  tLTEQ* = 64;
+  tGTEQ* = 65;
+  tDOTDOT* = 66;
+  tCOLON* = 67;
+  tAsSetElt* = 68;
+  tCaseDotDot* = 69;
+  tEOF* = 70;
   (* Invalid char is a character that doesn't actually begin a token.        *)
-  tINVALIDCHAR  = 71;
-
-
+  tINVALIDCHAR = 71;
 TYPE
-  PoolIndex*  = INTEGER;
+  PoolIndex* = INTEGER;
   StringPool* = RECORD
-    buf:     ARRAY PoolSize OF CHAR;
-    last:    PoolIndex;
-    buckets: ARRAY NumBuckets OF PoolIndex;
+    buf: ARRAY PoolSize OF CHAR;
+    last: PoolIndex;
+    buckets: ARRAY NumBuckets OF PoolIndex
   END;
-  TokenKind*  = INTEGER;
-  Token*      = RECORD
+  TokenKind* = INTEGER;
+  Token* = RECORD
     kind*: TokenKind;
     sVal*: PoolIndex;
     iVal*: INTEGER;
-    rVal*: REAL;
+    rVal*: REAL
   END;
-  Lexer*      = RECORD
-    sp:       StringPool;
-    buf:      ARRAY BufSize OF CHAR;
+  Lexer* = RECORD
+    sp: StringPool;
+    buf: ARRAY BufSize OF CHAR;
     fileName: PoolIndex;
-    pos:      INTEGER;
-    t*:       Token;
+    pos: INTEGER;
+    t*: Token
   END;
   LexCallback* = PROCEDURE;
-
 VAR
-  TokenNames*: ARRAY tEOF+1, KwdSize OF CHAR;
+  TokenNames*: ARRAY tEOF + 1, KwdSize OF CHAR;
   fatal: BOOLEAN;
   baseDir: ARRAY 256 OF CHAR;
 
@@ -152,11 +145,11 @@ PROCEDURE PoolInit*(VAR sp: StringPool);
 VAR
   i: INTEGER;
 BEGIN
-  FOR i := 0 TO PoolSize-1 DO
+  FOR i := 0 TO PoolSize - 1 DO
     sp.buf[i] := 0X
   END;
   sp.last := 0;
-  FOR i := 0 TO NumBuckets-1 DO
+  FOR i := 0 TO NumBuckets - 1 DO
     sp.buckets[i] := -1
   END
 END PoolInit;
@@ -166,7 +159,9 @@ VAR
   l: INTEGER;
 BEGIN
   l := 0;
-  WHILE s[l] # 0X DO INC(l) END
+  WHILE s[l] # 0X DO
+    INC(l)
+  END;
   RETURN l
 END StringLen;
 
@@ -187,15 +182,21 @@ BEGIN
   END
 END StrCat;
 
-PROCEDURE StrEq(a: ARRAY OF CHAR; ai: INTEGER; b: ARRAY OF CHAR; bi: INTEGER; len: INTEGER): BOOLEAN;
+PROCEDURE StrEq(
+  a: ARRAY OF CHAR;
+  ai: INTEGER;
+  b: ARRAY OF CHAR;
+  bi: INTEGER;
+  len: INTEGER
+): BOOLEAN;
 BEGIN
   IF (len <= LEN(a)) & (len <= LEN(b)) THEN
     WHILE (len > 0) & (a[ai] = b[bi]) DO
       INC(ai);
       INC(bi);
-      DEC(len);
-    END;
-  END
+      DEC(len)
+    END
+  END;
   RETURN len = 0
 END StrEq;
 
@@ -222,12 +223,16 @@ END DirName;
 (* with 32-bit signed values. **HOWEVER** it will not work properly if   *)
 (* the INTEGER type is 64 bits. Thus, do not recompile the compiler      *)
 (* using 64-bit INTEGERs without changing this algorithm.                *)
-PROCEDURE StringInternRange(VAR sp: StringPool; s: ARRAY OF CHAR; offset, length: INTEGER): PoolIndex;
+PROCEDURE StringInternRange(
+  VAR sp: StringPool;
+  s: ARRAY OF CHAR;
+  offset, length: INTEGER
+): PoolIndex;
 VAR
-  i:    INTEGER;
+  i: INTEGER;
   hash: INTEGER;
-  g:    INTEGER;
-  b:    INTEGER;
+  g: INTEGER;
+  b: INTEGER;
 BEGIN
   ASSERT(sp.last + length < PoolSize);
   (* Copy and compute hash at the same time *)
@@ -250,11 +255,13 @@ BEGIN
     ASSERT(b >= 0);
     ASSERT(b < NumBuckets);
     INC(b);
-    IF b = NumBuckets THEN b := 0; END;
+    IF b = NumBuckets THEN
+      b := 0
+    END
   END;
   IF sp.buckets[b] < 0 THEN
     sp.buckets[b] := sp.last;
-    INC(sp.last, length+1);
+    INC(sp.last, length + 1)
   END;
   RETURN sp.buckets[b]
 END StringInternRange;
@@ -274,7 +281,7 @@ BEGIN
   s[2] := CHR((i MOD 10) + 48);
   i := i DIV 10;
   s[1] := CHR((i MOD 10) + 48);
-  s[5] := 0X;
+  s[5] := 0X
 END MakeDummy;
 
 PROCEDURE AddKeywords(VAR sp: StringPool);
@@ -328,7 +335,10 @@ VAR
   len: INTEGER;
 BEGIN
   len := 0;
-  WHILE l.sp.buf[s] # 0X DO INC(s); INC(len) END
+  WHILE l.sp.buf[s] # 0X DO
+    INC(s);
+    INC(len)
+  END;
   RETURN len
 END StringLenI;
 
@@ -344,7 +354,11 @@ BEGIN
   END
 END CopyLexToString;
 
-PROCEDURE CopyLexToPool*(l: Lexer; s: PoolIndex; VAR destPool: StringPool): PoolIndex;
+PROCEDURE CopyLexToPool*(
+  l: Lexer;
+  s: PoolIndex;
+  VAR destPool: StringPool
+): PoolIndex;
 BEGIN
   RETURN StringInternRange(destPool, l.sp.buf, s, StringLenI(l, s))
 END CopyLexToPool;
@@ -366,12 +380,12 @@ END FirstChar;
 
 PROCEDURE OutStr*(l: Lexer; s: PoolIndex);
 BEGIN
-  Out.StrI(l.sp.buf, s);
+  Out.StrI(l.sp.buf, s)
 END OutStr;
 
 PROCEDURE ErrOutStr*(l: Lexer; s: PoolIndex);
 BEGIN
-  Out.ErrStrI(l.sp.buf, s);
+  Out.ErrStrI(l.sp.buf, s)
 END ErrOutStr;
 
 PROCEDURE OutStrEscaped*(l: Lexer; s: PoolIndex);
@@ -382,20 +396,20 @@ BEGIN
   WHILE l.sp.buf[s] # 0X DO
     c := l.sp.buf[s];
     IF c = "\" THEN
-      Out.Str("\\");
+      Out.Str("\\")
     ELSIF c = 22X THEN
       Out.Str("\");
-      Out.Str(22X);
+      Out.Str(22X)
     ELSIF c = 0AX THEN
-      Out.Str("\n");
+      Out.Str("\n")
     ELSIF c = 09X THEN
-      Out.Str("\t");
+      Out.Str("\t")
     ELSE
-      Out.Char(c);
+      Out.Char(c)
     END;
-    INC(s);
+    INC(s)
   END;
-  Out.Str(22X);
+  Out.Str(22X)
 END OutStrEscaped;
 
 PROCEDURE OutPool*(sp: StringPool);
@@ -411,56 +425,60 @@ END OutPool;
 
 PROCEDURE IsOneChar*(l: Lexer; s: PoolIndex): BOOLEAN;
 BEGIN
-  RETURN (l.sp.buf[s] = 0X) OR (l.sp.buf[s+1] = 0X)
+  RETURN (l.sp.buf[s] = 0X) OR (l.sp.buf[s + 1] = 0X)
 END IsOneChar;
 
 PROCEDURE Mute*;
 BEGIN
-  fatal := FALSE;
+  fatal := FALSE
 END Mute;
 
 PROCEDURE Unmute*;
 BEGIN
-  fatal := TRUE;
+  fatal := TRUE
 END Unmute;
 
 PROCEDURE Str*(s: ARRAY OF CHAR);
 BEGIN
-  Out.Str(s);
+  Out.Str(s)
 END Str;
 
 PROCEDURE ErrStr*(s: ARRAY OF CHAR);
 BEGIN
-  Out.ErrStr(s);
+  Out.ErrStr(s)
 END ErrStr;
 
 PROCEDURE Int*(i: INTEGER);
 BEGIN
-  Out.Int(i);
+  Out.Int(i)
 END Int;
 
 PROCEDURE ErrInt*(i: INTEGER);
 BEGIN
-  Out.ErrInt(i);
+  Out.ErrInt(i)
 END ErrInt;
 
 PROCEDURE Ln*;
 BEGIN
   Out.Ln;
-  IF fatal THEN Out.Halt END
+  IF fatal THEN
+    Out.Halt
+  END
 END Ln;
 
 PROCEDURE PrintLnAndHalt*(s: ARRAY OF CHAR);
 BEGIN
   Out.ErrStr(s);
   Out.ErrLn;
-  IF fatal THEN Out.Halt END
+  IF fatal THEN
+    Out.Halt
+  END
 END PrintLnAndHalt;
 
 PROCEDURE InfoPrintLn*(s: ARRAY OF CHAR);
 BEGIN
   Out.Str(s);
-  Out.Ln;
+  Out.Ln
 END InfoPrintLn;
 
 PROCEDURE PosToLine(l: Lexer; pos: INTEGER; VAR line, col: INTEGER);
@@ -492,20 +510,22 @@ BEGIN
   Out.ErrStr(":");
   Out.ErrInt(col);
   Out.ErrStr(":");
-  Out.ErrStr(s);
+  Out.ErrStr(s)
 END Error;
 
 PROCEDURE ErrorLn*(l: Lexer; s: ARRAY OF CHAR);
 BEGIN
   Error(l, s);
   Out.ErrLn;
-  IF fatal THEN Out.Halt END
+  IF fatal THEN
+    Out.Halt
+  END
 END ErrorLn;
 
 PROCEDURE Next(VAR l: Lexer; VAR c: CHAR);
 BEGIN
   INC(l.pos);
-  c := l.buf[l.pos];
+  c := l.buf[l.pos]
 END Next;
 
 PROCEDURE LexerInitFromFile*(VAR l: Lexer; fileName: ARRAY OF CHAR);
@@ -514,7 +534,7 @@ BEGIN
   AddKeywords(l.sp);
   Out.ReadFile(fileName, l.buf);
   l.fileName := StringIntern(l.sp, fileName);
-  l.pos := 0;
+  l.pos := 0
 END LexerInitFromFile;
 
 PROCEDURE LexerInitFromString*(VAR l: Lexer; s: ARRAY OF CHAR);
@@ -524,7 +544,7 @@ BEGIN
   l.buf := s;
   l.buf[BufSize - 1] := 0X;
   l.fileName := StringIntern(l.sp, "<string>");
-  l.pos := 0;
+  l.pos := 0
 END LexerInitFromString;
 
 (*
@@ -536,14 +556,18 @@ the lexer. Once complete, the state of the lexer is restored. This allows
 temporarily lexing a new file (an imported MODULE) and THEN returning back
 to the original MODULE.
 *)
-PROCEDURE ImportHelper*(VAR l: Lexer; moduleName: PoolIndex; callback: LexCallback);
+PROCEDURE ImportHelper*(
+  VAR l: Lexer;
+  moduleName: PoolIndex;
+  callback: LexCallback
+);
 VAR
-  savedBuf:      ARRAY BufSize OF CHAR;
+  savedBuf: ARRAY BufSize OF CHAR;
   savedFileName: PoolIndex;
-  fileName:      ARRAY 128 OF CHAR;
-  moduleStr:     ARRAY 64 OF CHAR;
-  savedPos:      INTEGER;
-  savedToken:    Token;
+  fileName: ARRAY 128 OF CHAR;
+  moduleStr: ARRAY 64 OF CHAR;
+  savedPos: INTEGER;
+  savedToken: Token;
 BEGIN
   savedBuf := l.buf;
   savedFileName := l.fileName;
@@ -575,30 +599,32 @@ BEGIN
   l.t := savedToken;
   l.pos := savedPos;
   l.fileName := savedFileName;
-  l.buf := savedBuf;
+  l.buf := savedBuf
 END ImportHelper;
 
 PROCEDURE ScanIdent(VAR l: Lexer);
 VAR
-  start:   INTEGER;
-  scan:    BOOLEAN;
-  idx:     INTEGER;
+  start: INTEGER;
+  scan: BOOLEAN;
+  idx: INTEGER;
 BEGIN
   start := l.pos;
   scan := TRUE;
   WHILE scan DO
     scan := FALSE;
     CASE l.buf[l.pos] OF
-      "A" .. "Z", "a" .. "z", "0" .. "9", "_": scan := TRUE; INC(l.pos);
-    END;
+      "A".."Z", "a".."z", "0".."9", "_":
+        scan := TRUE;
+        INC(l.pos)
+    END
   END;
   idx := StringInternRange(l.sp, l.buf, start, l.pos - start);
   IF idx <= tLastKwd THEN
-    l.t.kind := idx DIV KwdSize;
+    l.t.kind := idx DIV KwdSize
   ELSE
     l.t.kind := tIDENT;
-    l.t.sVal := idx;
-  END;
+    l.t.sVal := idx
+  END
 END ScanIdent;
 
 PROCEDURE Ten(e: INTEGER): REAL;
@@ -624,27 +650,27 @@ BEGIN
   exp := 0;
   sgn := 1;
   REPEAT
-    digits :=  digits * 10 + (ORD(s[idx]) - ORD("0"));
-    INC(idx);
+    digits := digits * 10 + (ORD(s[idx]) - ORD("0"));
+    INC(idx)
   UNTIL s[idx] = ".";
   INC(idx);
   WHILE (s[idx] >= "0") & (s[idx] <= "9") DO
     DEC(e);
-    digits :=  digits * 10 + (ORD(s[idx]) - ORD("0"));
-    INC(idx);
+    digits := digits * 10 + (ORD(s[idx]) - ORD("0"));
+    INC(idx)
   END;
   IF (s[idx] = "e") OR (s[idx] = "E") THEN
     INC(idx);
     IF s[idx] = "-" THEN
       sgn := -1;
-      INC(idx);
+      INC(idx)
     END;
     WHILE (s[idx] >= "0") & (s[idx] <= "9") DO
       exp := exp * 10 + (ORD(s[idx]) - ORD("0"));
-      INC(idx);
+      INC(idx)
     END;
     exp := exp * sgn;
-    e := e + exp;
+    e := e + exp
   END;
   IF e > 0 THEN
     r := FLT(digits) * Ten(e)
@@ -656,84 +682,88 @@ END StrToReal;
 
 PROCEDURE ScanNumber(VAR l: Lexer);
 VAR
-  ch:          CHAR;
+  ch: CHAR;
   start, base: INTEGER;
-  needHorX:    BOOLEAN;
-  s:           ARRAY 2 OF CHAR;
+  needHorX: BOOLEAN;
+  s: ARRAY 2 OF CHAR;
 BEGIN
   start := l.pos;
   l.t.kind := tINT;
   base := 10;
   needHorX := FALSE;
   Next(l, ch);
-  WHILE (ch >= "0") & (ch <= "9") OR
-        (ch >= "A") & (ch <= "F") OR
-        (ch >= "a") & (ch <= "f") DO
+  WHILE (ch >= "0") &
+        (ch <= "9") OR
+        (ch >= "A") &
+        (ch <= "F") OR
+        (ch >= "a") &
+        (ch <= "f") DO
     IF (ch >= "A") & (ch <= "F") OR (ch >= "a") & (ch <= "f") THEN
-      needHorX := TRUE;
+      needHorX := TRUE
     END;
-    Next(l, ch);
+    Next(l, ch)
   END;
   (* Got letters and hex digits. Could be hex, char, or floating point *)
   IF (ch = "X") OR (ch = "x") THEN
     l.t.kind := tSTRING;
     base := 16;
     needHorX := FALSE;
-    Next(l, ch);
+    Next(l, ch)
   ELSIF (ch = "H") OR (ch = "h") THEN
     base := 16;
     needHorX := FALSE;
-    Next(l, ch);
-  ELSIF (ch = ".") & (l.buf[l.pos+1] # ".") THEN
+    Next(l, ch)
+  ELSIF (ch = ".") & (l.buf[l.pos + 1] # ".") THEN
     (* Special case - 10..20 is 10 TOKEN_DOTDOT 20 *)
     Next(l, ch);
     (* mantissa *)
     WHILE (ch >= "0") & (ch <= "9") DO
-      Next(l, ch);
+      Next(l, ch)
     END;
     IF (ch = "e") OR (ch = "E") THEN
-      Next(l, ch);
+      Next(l, ch)
     END;
     IF ch = "-" THEN
-      Next(l, ch);
+      Next(l, ch)
     END;
     WHILE (ch >= "0") & (ch <= "9") DO
-      Next(l, ch);
+      Next(l, ch)
     END;
-    l.t.kind := tREAL;
+    l.t.kind := tREAL
   ELSIF needHorX THEN
-    ErrorLn(l, "Hex digit must be followed by H or X");
+    ErrorLn(l, "Hex digit must be followed by H or X")
   END;
   l.t.iVal := 0;
   IF l.t.kind = tREAL THEN
-    l.t.rVal := StrToReal(l.buf, start);
+    l.t.rVal := StrToReal(l.buf, start)
   ELSE
     WHILE start # l.pos DO
       ch := l.buf[start];
       IF (ch >= "0") & (ch <= "9") THEN
-        l.t.iVal := l.t.iVal * base + (ORD(ch) - ORD("0"));
+        l.t.iVal := l.t.iVal * base + (ORD(ch) - ORD("0"))
       ELSIF (ch >= "A") & (ch <= "F") THEN
-        l.t.iVal := l.t.iVal * base + (ORD(ch) - ORD("A") + 10);
+        l.t.iVal := l.t.iVal * base + (ORD(ch) - ORD("A") + 10)
       ELSIF (ch >= "a") & (ch <= "f") THEN
-        l.t.iVal := l.t.iVal * base + (ORD(ch) - ORD("a") + 10);
+        l.t.iVal := l.t.iVal * base + (ORD(ch) - ORD("a") + 10)
       ELSIF (ch = "H") OR (ch = "h") OR (ch = "X") OR (ch = "x") THEN
+
       ELSE
-        ASSERT(FALSE);
+        ASSERT(FALSE)
       END;
-      INC(start);
-    END;
+      INC(start)
+    END
   END;
   IF l.t.kind = tSTRING THEN
     IF l.t.iVal > 255 THEN
       Error(l, "Character constant ");
       Out.Int(l.t.iVal);
-      Out.PrintLn(" > 255");
+      Out.PrintLn(" > 255")
     ELSE
       s[0] := CHR(l.t.iVal);
       s[1] := 0X;
-      l.t.sVal := StringIntern(l.sp, s);
-    END;
-  END;
+      l.t.sVal := StringIntern(l.sp, s)
+    END
+  END
 END ScanNumber;
 
 PROCEDURE ScanString(VAR l: Lexer);
@@ -750,12 +780,12 @@ BEGIN
   IF ch = quote THEN
     l.t.kind := tSTRING;
     l.t.sVal := StringInternRange(l.sp, l.buf, start + 1, l.pos - start - 1);
-    Next(l, ch);
+    Next(l, ch)
   ELSE
     l.pos := start;
     ErrorLn(l, "Unterminated string");
-    l.buf[l.pos] := 0X;
-  END;
+    l.buf[l.pos] := 0X
+  END
 END ScanString;
 
 PROCEDURE ScanComment(VAR l: Lexer);
@@ -763,23 +793,23 @@ VAR
   start: INTEGER;
 BEGIN
   start := l.pos;
-  ASSERT((l.buf[l.pos] = "(") & (l.buf[l.pos+1] = "*"));
+  ASSERT((l.buf[l.pos] = "(") & (l.buf[l.pos + 1] = "*"));
   INC(l.pos, 2);
   REPEAT
-    IF (l.buf[l.pos] = "(") & (l.buf[l.pos+1] = "*") THEN
+    IF (l.buf[l.pos] = "(") & (l.buf[l.pos + 1] = "*") THEN
       ScanComment(l)
     ELSE
-      INC(l.pos);
-    END;
-  UNTIL (l.buf[l.pos] = 0X) OR (l.buf[l.pos] = "*") & (l.buf[l.pos+1] = ")");
+      INC(l.pos)
+    END
+  UNTIL (l.buf[l.pos] = 0X) OR (l.buf[l.pos] = "*") & (l.buf[l.pos + 1] = ")");
   IF l.buf[l.pos] = 0X THEN
     l.pos := start;
     ErrorLn(l, "Unterminated comment");
-    l.buf[l.pos] := 0X;
+    l.buf[l.pos] := 0X
   ELSE
     (* l.pos IS pointing at terminating star *)
-    INC(l.pos, 2);
-  END;
+    INC(l.pos, 2)
+  END
 END ScanComment;
 
 PROCEDURE NextToken*(VAR l: Lexer);
@@ -787,150 +817,190 @@ BEGIN
   REPEAT
     l.t.kind := tINVALIDCHAR;
     CASE l.buf[l.pos] OF
-      0X: l.t.kind := tEOF;
-      (* space, newline, carriage return, newline, tab, vertical tab *)
-      | 09X, 0AX, 0BX, 0CX, 0DX, 20X: INC(l.pos); l.t.kind := tCOMMENT
-      | "A" .. "Z", "a" .. "z", "_": ScanIdent(l)
-      | "0" .. "9": ScanNumber(l)
-      | 22X: ScanString(l)
-      | "+": l.t.kind := tPLUS; INC(l.pos)
-      | "-": l.t.kind := tMINUS; INC(l.pos)
-      | "*": l.t.kind := tSTAR; INC(l.pos)
-      | "/": l.t.kind := tSLASH; INC(l.pos)
-      | "~": l.t.kind := tTILDE; INC(l.pos)
-      | "&": l.t.kind := tAMP; INC(l.pos)
+      0X:
+        l.t.kind := tEOF
+      | (* space, newline, carriage return, newline, tab, vertical tab *)
+      09X, 0AX, 0BX, 0CX, 0DX, 20X:
+        INC(l.pos);
+        l.t.kind := tCOMMENT
+      | "A".."Z", "a".."z", "_":
+        ScanIdent(l)
+      | "0".."9":
+        ScanNumber(l)
+      | 22X:
+        ScanString(l)
+      | "+":
+        l.t.kind := tPLUS;
+        INC(l.pos)
+      | "-":
+        l.t.kind := tMINUS;
+        INC(l.pos)
+      | "*":
+        l.t.kind := tSTAR;
+        INC(l.pos)
+      | "/":
+        l.t.kind := tSLASH;
+        INC(l.pos)
+      | "~":
+        l.t.kind := tTILDE;
+        INC(l.pos)
+      | "&":
+        l.t.kind := tAMP;
+        INC(l.pos)
       | ".":
-          l.t.kind := tDOT;
+        l.t.kind := tDOT;
+        INC(l.pos);
+        IF l.buf[l.pos] = "." THEN
           INC(l.pos);
-          IF l.buf[l.pos] = "." THEN
-            INC(l.pos);
-            l.t.kind := tDOTDOT;
-          END
-      | ",": l.t.kind := tCOMMA; INC(l.pos)
-      | ";": l.t.kind := tSEMI; INC(l.pos)
-      | "|": l.t.kind := tVBAR; INC(l.pos)
+          l.t.kind := tDOTDOT
+        END
+      | ",":
+        l.t.kind := tCOMMA;
+        INC(l.pos)
+      | ";":
+        l.t.kind := tSEMI;
+        INC(l.pos)
+      | "|":
+        l.t.kind := tVBAR;
+        INC(l.pos)
       | "(":
-          IF l.buf[l.pos+1] = "*" THEN
-            ScanComment(l);
-            l.t.kind := tCOMMENT
-          ELSE
-            l.t.kind := tLPAREN;
-            INC(l.pos);
-          END
-      | ")": l.t.kind := tRPAREN; INC(l.pos)
-      | "[": l.t.kind := tLBRACK; INC(l.pos)
-      | "]": l.t.kind := tRBRACK; INC(l.pos)
-      | "{": l.t.kind := tLBRACE; INC(l.pos)
-      | "}": l.t.kind := tRBRACE; INC(l.pos)
+        IF l.buf[l.pos + 1] = "*" THEN
+          ScanComment(l);
+          l.t.kind := tCOMMENT
+        ELSE
+          l.t.kind := tLPAREN;
+          INC(l.pos)
+        END
+      | ")":
+        l.t.kind := tRPAREN;
+        INC(l.pos)
+      | "[":
+        l.t.kind := tLBRACK;
+        INC(l.pos)
+      | "]":
+        l.t.kind := tRBRACK;
+        INC(l.pos)
+      | "{":
+        l.t.kind := tLBRACE;
+        INC(l.pos)
+      | "}":
+        l.t.kind := tRBRACE;
+        INC(l.pos)
       | ":":
-          l.t.kind := tCOLON;
+        l.t.kind := tCOLON;
+        INC(l.pos);
+        IF l.buf[l.pos] = "=" THEN
           INC(l.pos);
-          IF l.buf[l.pos] = "=" THEN
-            INC(l.pos);
-            l.t.kind := tASSIGN;
-          END
-      | "^": l.t.kind := tCARET; INC(l.pos)
-      | "=": l.t.kind := tEQ; INC(l.pos)
-      | "#": l.t.kind := tPOUND; INC(l.pos)
+          l.t.kind := tASSIGN
+        END
+      | "^":
+        l.t.kind := tCARET;
+        INC(l.pos)
+      | "=":
+        l.t.kind := tEQ;
+        INC(l.pos)
+      | "#":
+        l.t.kind := tPOUND;
+        INC(l.pos)
       | "<":
-          l.t.kind := tLT;
+        l.t.kind := tLT;
+        INC(l.pos);
+        IF l.buf[l.pos] = "=" THEN
           INC(l.pos);
-          IF l.buf[l.pos] = "=" THEN
-            INC(l.pos);
-            l.t.kind := tLTEQ;
-          END
+          l.t.kind := tLTEQ
+        END
       | ">":
-          l.t.kind := tGT;
+        l.t.kind := tGT;
+        INC(l.pos);
+        IF l.buf[l.pos] = "=" THEN
           INC(l.pos);
-          IF l.buf[l.pos] = "=" THEN
-            INC(l.pos);
-            l.t.kind := tGTEQ;
-          END
-    END;
+          l.t.kind := tGTEQ
+        END
+    END
   UNTIL l.t.kind >= 0;
   IF l.t.kind = tINVALIDCHAR THEN
-    ErrorLn(l, "Invalid character");
-  END;
+    ErrorLn(l, "Invalid character")
+  END
 END NextToken;
 
 PROCEDURE InitTokenNames;
 BEGIN
-  TokenNames[tARRAY]        :=  "ARRAY";
-  TokenNames[tBEGIN]        :=  "BEGIN";
-  TokenNames[tBITAND]       :=  "BITAND";
-  TokenNames[tBITOR]        :=  "BITOR";
-  TokenNames[tBITXOR]       :=  "BITXOR";
-  TokenNames[tBY]           :=  "BY";
-  TokenNames[tCASE]         :=  "CASE";
-  TokenNames[tCONST]        :=  "CONST";
-  TokenNames[tDIV]          :=  "DIV";
-  TokenNames[tDO]           :=  "DO";
-  TokenNames[tELSE]         :=  "ELSE";
-  TokenNames[tELSIF]        :=  "ELSIF";
-  TokenNames[tEND]          :=  "END";
-  TokenNames[tFALSE]        :=  "FALSE";
-  TokenNames[tFOR]          :=  "FOR";
-  TokenNames[tIF]           :=  "IF";
-  TokenNames[tIMPORT]       :=  "IMPORT";
-  TokenNames[tIN]           :=  "IN";
-  TokenNames[tIS]           :=  "IS";
-  TokenNames[tMOD]          :=  "MOD";
-  TokenNames[tMODULE]       :=  "MODULE";
-  TokenNames[tNATIVE]       :=  "NATIVE";
-  TokenNames[tNIL]          :=  "NIL";
-  TokenNames[tOF]           :=  "OF";
-  TokenNames[tOR]           :=  "OR";
-  TokenNames[tPOINTER]      :=  "POINTER";
-  TokenNames[tPROCEDURE]    :=  "PROCEDURE";
-  TokenNames[tRECORD]       :=  "RECORD";
-  TokenNames[tREPEAT]       :=  "REPEAT";
-  TokenNames[tRETURN]       :=  "RETURN";
-  TokenNames[tTHEN]         :=  "THEN";
-  TokenNames[tTO]           :=  "TO";
-  TokenNames[tTRUE]         :=  "TRUE";
-  TokenNames[tTYPE]         :=  "TYPE";
-  TokenNames[tUNTIL]        :=  "UNTIL";
-  TokenNames[tVAR]          :=  "VAR";
-  TokenNames[tWHILE]        :=  "WHILE";
-  TokenNames[tIDENT]        :=  "IDENT";
-  TokenNames[tKEYWORD]      :=  "KEYWORD";
-  TokenNames[tSTRING]       :=  "STRING";
-  TokenNames[tINT]          :=  "INT";
-  TokenNames[tREAL]         :=  "REAL";
-  TokenNames[tPLUS]         :=  "PLUS";
-  TokenNames[tMINUS]        :=  "MINUS";
-  TokenNames[tSTAR]         :=  "STAR";
-  TokenNames[tSLASH]        :=  "SLASH";
-  TokenNames[tTILDE]        :=  "TILDE";
-  TokenNames[tAMP]          :=  "AMP";
-  TokenNames[tDOT]          :=  "DOT";
-  TokenNames[tCOMMA]        :=  "COMMA";
-  TokenNames[tSEMI]         :=  "SEMI";
-  TokenNames[tVBAR]         :=  "VBAR";
-  TokenNames[tLPAREN]       :=  "LPAREN";
-  TokenNames[tRPAREN]       :=  "RPAREN";
-  TokenNames[tLBRACK]       :=  "LBRACK";
-  TokenNames[tRBRACK]       :=  "RBRACK";
-  TokenNames[tLBRACE]       :=  "LBRACE";
-  TokenNames[tRBRACE]       :=  "RBRACE";
-  TokenNames[tASSIGN]       :=  "ASSIGN";
-  TokenNames[tCARET]        :=  "CARET";
-  TokenNames[tEQ]           :=  "EQ";
-  TokenNames[tPOUND]        :=  "POUND";
-  TokenNames[tLT]           :=  "LT";
-  TokenNames[tGT]           :=  "GT";
-  TokenNames[tLTEQ]         :=  "LTEQ";
-  TokenNames[tGTEQ]         :=  "GTEQ";
-  TokenNames[tDOTDOT]       :=  "DOTDOT";
-  TokenNames[tCOLON]        :=  "COLON";
-  TokenNames[tAsSetElt]     :=  "AS_SET";
-  TokenNames[tCaseDotDot]   :=  "DOTDOT";
-  TokenNames[tEOF]          :=  "EOF";
+  TokenNames[tARRAY] := "ARRAY";
+  TokenNames[tBEGIN] := "BEGIN";
+  TokenNames[tBITAND] := "BITAND";
+  TokenNames[tBITOR] := "BITOR";
+  TokenNames[tBITXOR] := "BITXOR";
+  TokenNames[tBY] := "BY";
+  TokenNames[tCASE] := "CASE";
+  TokenNames[tCONST] := "CONST";
+  TokenNames[tDIV] := "DIV";
+  TokenNames[tDO] := "DO";
+  TokenNames[tELSE] := "ELSE";
+  TokenNames[tELSIF] := "ELSIF";
+  TokenNames[tEND] := "END";
+  TokenNames[tFALSE] := "FALSE";
+  TokenNames[tFOR] := "FOR";
+  TokenNames[tIF] := "IF";
+  TokenNames[tIMPORT] := "IMPORT";
+  TokenNames[tIN] := "IN";
+  TokenNames[tIS] := "IS";
+  TokenNames[tMOD] := "MOD";
+  TokenNames[tMODULE] := "MODULE";
+  TokenNames[tNATIVE] := "NATIVE";
+  TokenNames[tNIL] := "NIL";
+  TokenNames[tOF] := "OF";
+  TokenNames[tOR] := "OR";
+  TokenNames[tPOINTER] := "POINTER";
+  TokenNames[tPROCEDURE] := "PROCEDURE";
+  TokenNames[tRECORD] := "RECORD";
+  TokenNames[tREPEAT] := "REPEAT";
+  TokenNames[tRETURN] := "RETURN";
+  TokenNames[tTHEN] := "THEN";
+  TokenNames[tTO] := "TO";
+  TokenNames[tTRUE] := "TRUE";
+  TokenNames[tTYPE] := "TYPE";
+  TokenNames[tUNTIL] := "UNTIL";
+  TokenNames[tVAR] := "VAR";
+  TokenNames[tWHILE] := "WHILE";
+  TokenNames[tIDENT] := "IDENT";
+  TokenNames[tKEYWORD] := "KEYWORD";
+  TokenNames[tSTRING] := "STRING";
+  TokenNames[tINT] := "INT";
+  TokenNames[tREAL] := "REAL";
+  TokenNames[tPLUS] := "PLUS";
+  TokenNames[tMINUS] := "MINUS";
+  TokenNames[tSTAR] := "STAR";
+  TokenNames[tSLASH] := "SLASH";
+  TokenNames[tTILDE] := "TILDE";
+  TokenNames[tAMP] := "AMP";
+  TokenNames[tDOT] := "DOT";
+  TokenNames[tCOMMA] := "COMMA";
+  TokenNames[tSEMI] := "SEMI";
+  TokenNames[tVBAR] := "VBAR";
+  TokenNames[tLPAREN] := "LPAREN";
+  TokenNames[tRPAREN] := "RPAREN";
+  TokenNames[tLBRACK] := "LBRACK";
+  TokenNames[tRBRACK] := "RBRACK";
+  TokenNames[tLBRACE] := "LBRACE";
+  TokenNames[tRBRACE] := "RBRACE";
+  TokenNames[tASSIGN] := "ASSIGN";
+  TokenNames[tCARET] := "CARET";
+  TokenNames[tEQ] := "EQ";
+  TokenNames[tPOUND] := "POUND";
+  TokenNames[tLT] := "LT";
+  TokenNames[tGT] := "GT";
+  TokenNames[tLTEQ] := "LTEQ";
+  TokenNames[tGTEQ] := "GTEQ";
+  TokenNames[tDOTDOT] := "DOTDOT";
+  TokenNames[tCOLON] := "COLON";
+  TokenNames[tAsSetElt] := "AS_SET";
+  TokenNames[tCaseDotDot] := "DOTDOT";
+  TokenNames[tEOF] := "EOF"
 END InitTokenNames;
 
 PROCEDURE TestStringOps;
 VAR
-  s:    ARRAY 25 OF CHAR;
+  s: ARRAY 25 OF CHAR;
 BEGIN
   s := "Hello";
   ASSERT(5 = StringLen(s));
@@ -958,14 +1028,14 @@ BEGIN
   s := "alpha/file.txt";
   DirName(s);
   StrCat(s, "beta.txt");
-  ASSERT(StrEq(s, 0, "alpha/beta.txt", 0, 15));
+  ASSERT(StrEq(s, 0, "alpha/beta.txt", 0, 15))
 END TestStringOps;
 
 PROCEDURE TestPool;
 VAR
-  sp:   StringPool;
-  s:    ARRAY 25 OF CHAR;
-  i,j:  PoolIndex;
+  sp: StringPool;
+  s: ARRAY 25 OF CHAR;
+  i, j: PoolIndex;
 BEGIN
   PoolInit(sp);
   ASSERT(11 = StringLen("Hello world"));
@@ -986,15 +1056,14 @@ BEGIN
   s[1] := 0X;
   ASSERT(StringIntern(sp, s) = StringIntern(sp, "A"));
   ASSERT(StringIntern(sp, s) # StringIntern(sp, "B"));
-
   PoolInit(sp);
   FOR i := 1 TO 4000 DO
     MakeDummy(i, s);
-    StringIntern(sp, s);
+    StringIntern(sp, s)
   END;
   FOR i := 1 TO 4000 DO
     MakeDummy(i, s);
-    ASSERT(StringIntern(sp, s) = (i-1)*6);
+    ASSERT(StringIntern(sp, s) = (i - 1) * 6)
   END;
   ASSERT(sp.last = 24000);
   PoolInit(sp);
@@ -1004,7 +1073,7 @@ BEGIN
   ASSERT(StringIntern(sp, "A") = 0);
   ASSERT(StringIntern(sp, "PROCEDURE") = 10);
   ASSERT(StringIntern(sp, "B") = 20);
-  InfoPrintLn("PASS: String pool test");
+  InfoPrintLn("PASS: String pool test")
 END TestPool;
 
 PROCEDURE TestLexer;
@@ -1015,15 +1084,23 @@ BEGIN
   (* Error cases *)
   fatal := FALSE;
   Mute;
-  LexerInitFromString(l, "0C "); NextToken(l);
-  LexerInitFromString(l, "100X"); NextToken(l);
-  LexerInitFromString(l, "' "); NextToken(l);
-  LexerInitFromString(l, "   "); l.buf[0] := 22X; NextToken(l);
-  LexerInitFromString(l, "(* "); NextToken(l);
+  LexerInitFromString(l, "0C ");
+  NextToken(l);
+  LexerInitFromString(l, "100X");
+  NextToken(l);
+  LexerInitFromString(l, "' ");
+  NextToken(l);
+  LexerInitFromString(l, "   ");
+  l.buf[0] := 22X;
+  NextToken(l);
+  LexerInitFromString(l, "(* ");
+  NextToken(l);
   Unmute;
   (* Regular cases *)
   fatal := TRUE;
-  LexerInitFromString(l, "
+  LexerInitFromString(
+    l,
+    "
       Test Hello World Test alpha..beta
   ARRAY       BEGIN       BITAND      BITOR       BITXOR
   BY          CASE        CONST       DIV         DO
@@ -1040,60 +1117,111 @@ BEGIN
       <= >=  .. 10..20
       (* totally (* skipped *)*)
       BITXOR
-  ");
+  "
+  );
   (* Put quotes around Hello World *)
   l.buf[11] := 22X;
   l.buf[23] := 22X;
-  NextToken(l); ASSERT(l.t.kind = tIDENT); ASSERT(l.t.sVal = StringIntern(l.sp, "Test"));
-  NextToken(l); ASSERT(l.t.kind = tSTRING); ASSERT(l.t.sVal = StringIntern(l.sp, "Hello World"));
-  NextToken(l); ASSERT(l.t.kind = tIDENT); ASSERT(l.t.sVal = StringIntern(l.sp, "Test"));
-  NextToken(l); ASSERT(l.t.kind = tIDENT); ASSERT(l.t.sVal = StringIntern(l.sp, "alpha"));
-  NextToken(l); ASSERT(l.t.kind = tDOTDOT);
-  NextToken(l); ASSERT(l.t.kind = tIDENT); ASSERT(l.t.sVal = StringIntern(l.sp, "beta"));
+  NextToken(l);
+  ASSERT(l.t.kind = tIDENT);
+  ASSERT(l.t.sVal = StringIntern(l.sp, "Test"));
+  NextToken(l);
+  ASSERT(l.t.kind = tSTRING);
+  ASSERT(l.t.sVal = StringIntern(l.sp, "Hello World"));
+  NextToken(l);
+  ASSERT(l.t.kind = tIDENT);
+  ASSERT(l.t.sVal = StringIntern(l.sp, "Test"));
+  NextToken(l);
+  ASSERT(l.t.kind = tIDENT);
+  ASSERT(l.t.sVal = StringIntern(l.sp, "alpha"));
+  NextToken(l);
+  ASSERT(l.t.kind = tDOTDOT);
+  NextToken(l);
+  ASSERT(l.t.kind = tIDENT);
+  ASSERT(l.t.sVal = StringIntern(l.sp, "beta"));
   FOR k := tARRAY TO tWHILE DO
-    NextToken(l); ASSERT(l.t.kind = k)
+    NextToken(l);
+    ASSERT(l.t.kind = k)
   END;
-  NextToken(l); ASSERT(l.t.kind = tINT); ASSERT(l.t.iVal = 65490); ASSERT(l.t.iVal = 0FFD2H);
-  NextToken(l); ASSERT(l.t.kind = tSTRING); ASSERT(l.sp.buf[l.t.sVal] = "A");
-  NextToken(l); ASSERT(l.t.kind = tINT); ASSERT(l.t.iVal = 101);
-  NextToken(l); ASSERT(l.t.kind = tINT); ASSERT(l.t.iVal = 102);
-  NextToken(l); ASSERT(l.t.kind = tLPAREN);
-  NextToken(l); ASSERT(l.t.kind = tINT); ASSERT(l.t.iVal = 103);
-  NextToken(l); ASSERT(l.t.kind = tRPAREN);
-  NextToken(l); ASSERT(l.t.kind = tIDENT);
-  NextToken(l); ASSERT(l.t.kind = tINT); ASSERT(l.t.iVal = 104);
-  NextToken(l); ASSERT(l.t.kind = tIDENT);
-  NextToken(l); ASSERT(l.t.kind = tREAL); ASSERT(ABS(l.t.rVal - 0.1) < 0.00001);
-  NextToken(l); ASSERT(l.t.kind = tREAL); ASSERT(ABS(l.t.rVal - 0.1e4) < 0.00001);
-  NextToken(l); ASSERT(l.t.kind = tREAL); ASSERT(ABS(l.t.rVal - 0.08e-3) < 0.00001);
-  NextToken(l); ASSERT(l.t.kind = tREAL); ASSERT(ABS(l.t.rVal - 128.3) < 0.00001);
+  NextToken(l);
+  ASSERT(l.t.kind = tINT);
+  ASSERT(l.t.iVal = 65490);
+  ASSERT(l.t.iVal = 0FFD2H);
+  NextToken(l);
+  ASSERT(l.t.kind = tSTRING);
+  ASSERT(l.sp.buf[l.t.sVal] = "A");
+  NextToken(l);
+  ASSERT(l.t.kind = tINT);
+  ASSERT(l.t.iVal = 101);
+  NextToken(l);
+  ASSERT(l.t.kind = tINT);
+  ASSERT(l.t.iVal = 102);
+  NextToken(l);
+  ASSERT(l.t.kind = tLPAREN);
+  NextToken(l);
+  ASSERT(l.t.kind = tINT);
+  ASSERT(l.t.iVal = 103);
+  NextToken(l);
+  ASSERT(l.t.kind = tRPAREN);
+  NextToken(l);
+  ASSERT(l.t.kind = tIDENT);
+  NextToken(l);
+  ASSERT(l.t.kind = tINT);
+  ASSERT(l.t.iVal = 104);
+  NextToken(l);
+  ASSERT(l.t.kind = tIDENT);
+  NextToken(l);
+  ASSERT(l.t.kind = tREAL);
+  ASSERT(ABS(l.t.rVal - 0.1) < 0.00001);
+  NextToken(l);
+  ASSERT(l.t.kind = tREAL);
+  ASSERT(ABS(l.t.rVal - 0.1e4) < 0.00001);
+  NextToken(l);
+  ASSERT(l.t.kind = tREAL);
+  ASSERT(ABS(l.t.rVal - 0.08e-3) < 0.00001);
+  NextToken(l);
+  ASSERT(l.t.kind = tREAL);
+  ASSERT(ABS(l.t.rVal - 128.3) < 0.00001);
   FOR k := tPLUS TO tDOTDOT DO
-    NextToken(l); ASSERT(l.t.kind = k);
+    NextToken(l);
+    ASSERT(l.t.kind = k)
   END;
-  NextToken(l); ASSERT(l.t.kind = tINT); ASSERT(l.t.iVal = 10);
-  NextToken(l); ASSERT(l.t.kind = tDOTDOT);
-  NextToken(l); ASSERT(l.t.kind = tINT); ASSERT(l.t.iVal = 20);
-  NextToken(l); ASSERT(l.t.kind = tBITXOR);
-  NextToken(l); ASSERT(l.t.kind = tEOF);
-  NextToken(l); ASSERT(l.t.kind = tEOF);
-
+  NextToken(l);
+  ASSERT(l.t.kind = tINT);
+  ASSERT(l.t.iVal = 10);
+  NextToken(l);
+  ASSERT(l.t.kind = tDOTDOT);
+  NextToken(l);
+  ASSERT(l.t.kind = tINT);
+  ASSERT(l.t.iVal = 20);
+  NextToken(l);
+  ASSERT(l.t.kind = tBITXOR);
+  NextToken(l);
+  ASSERT(l.t.kind = tEOF);
+  NextToken(l);
+  ASSERT(l.t.kind = tEOF);
   LexerInitFromString(l, "upper case testing");
-  NextToken(l); ASSERT(l.t.kind = tIDENT); ASSERT(l.t.sVal = StringIntern(l.sp, "upper"));
-  NextToken(l); ASSERT(l.t.kind = tIDENT); ASSERT(l.t.sVal = StringIntern(l.sp, "case"));
-  NextToken(l); ASSERT(l.t.kind = tIDENT); ASSERT(l.t.sVal = StringIntern(l.sp, "testing"));
-
+  NextToken(l);
+  ASSERT(l.t.kind = tIDENT);
+  ASSERT(l.t.sVal = StringIntern(l.sp, "upper"));
+  NextToken(l);
+  ASSERT(l.t.kind = tIDENT);
+  ASSERT(l.t.sVal = StringIntern(l.sp, "case"));
+  NextToken(l);
+  ASSERT(l.t.kind = tIDENT);
+  ASSERT(l.t.sVal = StringIntern(l.sp, "testing"));
   LexerInitFromFile(l, "Lex.ob");
   REPEAT
-    NextToken(l);
+    NextToken(l)
   UNTIL l.t.kind = tEOF;
-  InfoPrintLn("PASS: Lexer test");
+  InfoPrintLn("PASS: Lexer test")
 END TestLexer;
 
 PROCEDURE RunTests*;
 BEGIN
   TestStringOps;
   TestPool;
-  TestLexer;
+  TestLexer
 END RunTests;
 
 BEGIN
