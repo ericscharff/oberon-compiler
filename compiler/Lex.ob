@@ -819,9 +819,8 @@ BEGIN
     CASE l.buf[l.pos] OF
       0X:
         l.t.kind := tEOF
-      | (* space, newline, carriage return, newline, tab, vertical tab *)
-      09X, 0AX, 0BX, 0CX, 0DX, 20X:
-        INC(l.pos);
+      | 09X, 0AX, 0BX, 0CX, 0DX, 20X:
+        INC(l.pos); (* space, newline, carriage return, newline, tab, vertical tab *)
         l.t.kind := tCOMMENT
       | "A".."Z", "a".."z", "_":
         ScanIdent(l)
