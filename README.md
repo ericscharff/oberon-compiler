@@ -51,9 +51,9 @@ used to compile the Oberon-based compiler. The Oberon compiler then compiles
 itself, so as a form of a "triple test" it compares the generated C code to
 ensure that the compiler is still generating correct code.
 
-The compiler has an extensive test suite. Invoking `make test` will run all
-of the Oberon tests in the `tests/` directory, and ensure that each produces
-the output as specified in the `tests/goldens/` directory.
+The compiler has an extensive test suite. Invoking `make test` will run all of
+the Oberon tests in the `tests/` directory, and ensure that each produces the
+output as specified in the `tests/goldens/` directory.
 
 ## Running the compiler
 
