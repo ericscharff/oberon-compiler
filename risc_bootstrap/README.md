@@ -1,4 +1,4 @@
-The file [risc\_code.txt](risc_code.txt) in this directory is a RISC binary
+The file [risc_code.txt](risc_code.txt) in this directory is a RISC binary
 produced by the compiler. It is effectivally the binary image of the rcompiler
 compiling itself.
 
