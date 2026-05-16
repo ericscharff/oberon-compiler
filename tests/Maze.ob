@@ -68,7 +68,7 @@ BEGIN
   Out.Ln;
 END PrintMaze;
 
-(* Return a random numger in the range [0, n) *)
+(* Return a random number in the range [0, n) *)
 PROCEDURE Rand(n: INTEGER): INTEGER;
 (* Use the Park Miller LCG which works with only 32 bit arithmetic *)
 CONST

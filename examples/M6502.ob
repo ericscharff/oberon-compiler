@@ -95,7 +95,7 @@ BEGIN
   RETURN (a BITAND 1) = 1
 END ODD;
 
-(* Convert a number in two's coplement to a signed integer *)
+(* Convert a number in two's complement to a signed integer *)
 PROCEDURE Comp(x: INTEGER): INTEGER;
 BEGIN
   IF x >= 128 THEN

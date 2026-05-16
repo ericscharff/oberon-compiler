@@ -29,7 +29,7 @@ IMPORT Out;
 
 PROCEDURE LFSR(VAR val, result: INTEGER);
 (* Tap bit 0, 2, 3, and 5 *)
-(* Implement as a 16 bit shfiter which should have the period 2^16-1 *)
+(* Implement as a 16 bit shifter which should have the period 2^16-1 *)
 BEGIN
   result := (val BITXOR (val DIV 4) BITXOR (val DIV 8) BITXOR (val DIV 32)) BITAND 1;
   val := (val DIV 2) + (result * 08000H);

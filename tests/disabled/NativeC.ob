@@ -20,7 +20,7 @@
 
 MODULE NativeC;
 
-(* Examples using laguage extensions *)
+(* Examples using language extensions *)
 
 IMPORT Out;
 

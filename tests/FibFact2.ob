@@ -19,7 +19,7 @@
  *)
 
 MODULE FibFact2;
-(* Same as FibFact.ob but exercising new RETHRN and VAR statements *)
+(* Same as FibFact.ob but exercising new RETURN and VAR statements *)
 
 IMPORT Out;
 
@@ -85,7 +85,7 @@ BEGIN
   ELSE
     RETURN FibRec(n-1) + FibRec(n-2)
   END
-  (* this is unreqchable but required *)
+  (* this is unreachable but required *)
   RETURN 10 
 END FibRec;
 

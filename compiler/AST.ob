@@ -144,9 +144,9 @@ TYPE
     nesting*: INTEGER;
     (* local scope for PROCEDURE decls *)
     procVars*: Decl;
-    (* native procuedres do not generate code *)
+    (* native procedures do not generate code *)
     isNative*: BOOLEAN;
-    (* handler for native procuedre calls *)
+    (* handler for native procedure calls *)
     resolver*: BuiltinResolver;
     state*: DeclState;
     (* Only used by codegen - offset of this decl from something *)
@@ -210,9 +210,9 @@ TYPE
     (* Binary: rhs (e.g., b for "a + b"                             *)
     (* arrayRef: expr for the ARRAY subscript (e.g., i for a[i]     *)
     (* Procedure call: first argument (actual parameter)            *)
-    (* Assignmnet: rvalue                                           *)
+    (* Assignment: rvalue                                           *)
     rhs*: Expr;
-    (* Procedure call: next argument (acutal parameter) in list     *)
+    (* Procedure call: next argument (actual parameter) in list     *)
     next*: Expr;
     (* identRef: declaration (e.g. decl of var i)                   *)
     (* typeGhard: type being guarded (e.g., MyType for p(MyType)    *)

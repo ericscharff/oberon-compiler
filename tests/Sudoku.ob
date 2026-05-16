@@ -96,7 +96,7 @@ END InitTables;
 PROCEDURE ValidRowOrColumn(start, stride: INTEGER): BOOLEAN;
   (* Determine if a row (or column only has the digits 1..9.   *)
   (* start is the starting board cell to search. Stride is 1   *)
-  (* to search the next cell (row), or 9 for searchng columns. *)
+  (* to search the next cell (row), or 9 for searching columns. *)
 VAR
   used: SET;
   idx, i, b: INTEGER;
@@ -150,7 +150,7 @@ END Valid;
 
 PROCEDURE NumberOfOneBits(s: SET): INTEGER;
 (* Counts 1 bits in a set. Note that because Sudoku only needs the *)
-(* number 1..9, those aree the only ones checked. *)
+(* number 1..9, those are the only ones checked. *)
 VAR
   a, i: INTEGER;
 BEGIN
@@ -174,7 +174,7 @@ BEGIN
 END RandomInt;
 
 PROCEDURE NthSetBit(s: SET; n: INTEGER): INTEGER;
-(* Returns the index of the nth slement of s that is set. *)
+(* Returns the index of the nth element of s that is set. *)
 VAR elt: INTEGER;
 BEGIN
   elt := -1;

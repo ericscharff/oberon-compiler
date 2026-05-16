@@ -22,7 +22,7 @@ MODULE ExpMod;
 
 IMPORT Out;
 
-(* Reverse the bits in an initeger *)
+(* Reverse the bits in an integer *)
 PROCEDURE Reverse(n: INTEGER; VAR d: INTEGER): INTEGER;
 VAR result: INTEGER;
 BEGIN
