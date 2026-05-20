@@ -49,8 +49,8 @@ CONST
   declBuiltin* = 9;
   declEND* = 1001;
   exprVal* = 1; (* CONST value *)
-  exprUnary* = 2;
-  exprBinary* = 3;
+  exprUnary* = 3;
+  exprBinary* = 2;
   exprIdentRef* = 4;
   exprProcCall* = 5;
   exprFieldRef* = 6;
