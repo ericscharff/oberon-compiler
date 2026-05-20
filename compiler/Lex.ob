@@ -123,8 +123,8 @@ TYPE
   END;
   TokenKind* = INTEGER;
   Token* = RECORD
-    sVal*: PoolIndex;
     kind*: TokenKind;
+    sVal*: PoolIndex;
     iVal*: INTEGER;
     rVal*: REAL
   END;
