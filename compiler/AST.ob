@@ -42,8 +42,8 @@ CONST
   declConst* = 2;
   declType* = 3;
   declVar* = 4;
-  declProcedure* = 5;
-  declParam* = 6;
+  declProcedure* = 6;
+  declParam* = 5;
   declVarParam* = 7;
   declField* = 8;
   declBuiltin* = 9;
