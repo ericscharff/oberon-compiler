@@ -5,8 +5,8 @@ CXXFLAGS=-g -Wall -Wextra -Wpedantic
 TEST_CXXFLAGS=$(CXXFLAGS) -Wno-unused-parameter
 
 RUNTIME=base/runtime.c
-TEST_SRCS=$(wildcard tests/*.ob)
 COMPILER_SRCS=$(wildcard compiler/*.ob) $(RUNTIME)
+TEST_SRCS=$(wildcard tests/*.ob)
 C_TEST_BINS=$(patsubst tests/%.ob, $(BUILDDIR)/c_test_%, $(TEST_SRCS))
 C_BOUNDS_TEST_BINS=$(patsubst tests/%.ob, $(BUILDDIR)/c_bounds_test_%, $(TEST_SRCS))
 CXX_TEST_BINS=$(patsubst tests/%.ob, $(BUILDDIR)/cpp_test_%, $(TEST_SRCS))
