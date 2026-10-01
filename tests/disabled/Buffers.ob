@@ -44,6 +44,17 @@ TYPE
   PairBuf = ARRAY * OF Pair;
   OopBuf = ARRAY * OF PtrHolder;
 
+PROCEDURE Describe(p: PBaseMessage);
+BEGIN
+  CASE p OF
+    PSubSub1Message: Out.Str("SubSub")
+  | PSub2Message: Out.Str("Sub2")
+  | PSub1Message: Out.Str("Sub1")
+  | PBaseMessage: Out.Str("Base")
+  END;
+  Out.Ln
+END Describe;
+
 PROCEDURE DumpBuffer(b: ARRAY OF INTEGER);
 VAR
   i: INTEGER;
@@ -140,6 +151,10 @@ BEGIN
   p.p := pSubSub1;
   PUSH(b, p);
 
+  Describe(b[0].p);
+  Describe(b[1].p);
+  Describe(b[2].p);
+  Describe(b[3].p);
   ASSERT(b[0].p IS PBaseMessage);
   ASSERT(b[1].p IS PBaseMessage);
   ASSERT(b[2].p IS PBaseMessage);
