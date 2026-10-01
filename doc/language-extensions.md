@@ -108,7 +108,7 @@ The type of the variable is determined by the right hand side of the assignment.
 Note that these variables are scoped to the entire function, unlike languages
 like C where they are scoped to the block.
 
-Variable length arrays (a.k.a. buffers)
+## Variable length arrays (a.k.a. buffers)
 
 A new type of array is allowed
 
@@ -124,7 +124,7 @@ just as it would with an open array. Similarly, buffer elements are referenced
 just like arrays - buf[2] := ...
 
 Before a buffer can be used, the user must call `NEW_ARRAY` on the buffer.
-INIT_ARRAY takes an additional argument, which is the initial capacity. This is
+NEW_ARRAY takes an additional argument, which is the initial capacity. This is
 how many elements can be added to the buffer before it must be grown (with a new
 call to malloc/new). Note that this sets capacity, not length, which starts
 at 0.
