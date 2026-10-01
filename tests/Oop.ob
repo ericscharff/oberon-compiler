@@ -180,6 +180,15 @@ BEGIN
   Out.Ln
 END PrintObject2;
 
+PROCEDURE PrintArray(a: ARRAY OF Object);
+VAR
+  i: INTEGER;
+BEGIN
+  FOR i := 0 TO LEN(a)-1 DO
+    PrintObject(a[i]);
+  END
+END PrintArray;
+
 PROCEDURE Broadcast(VAR m: Message; l: ListPtr);
 BEGIN
   PrintMessage(m);
@@ -196,31 +205,38 @@ VAR
   head, l: ListPtr;
   dm: DrawMessage;
   tm: TickMessage;
+  objArr: ARRAY 5 OF Object;
 BEGIN
   head := NIL;
   NEW(l);
   l.o := NewSquare(25);
   l.next := head;
   head := l;
+  objArr[0] := l.o;
   NEW(l);
   l.o := NewSquare(15);
   l.next := head;
   head := l;
+  objArr[1] := l.o;
   NEW(l);
   l.o := NewCircle(2.2);
   l.next := head;
   head := l;
+  objArr[2] := l.o;
   NEW(l);
   l.o := NewTriangle(3, 2);
   l.next := head;
   head := l;
+  objArr[3] := l.o;
   NEW(l);
   l.o := NewActor(5, 1);
   l.next := head;
+  objArr[4] := l.o;
   head := l;
   Out.Str("Actor velocity is ");
   Out.Int(l.o(Actor).velocity);
   Out.Ln;
+  PrintArray(objArr);
   Broadcast(dm, head);
   Broadcast(tm, head);
   Broadcast(dm, head);

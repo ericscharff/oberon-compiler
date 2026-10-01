@@ -1,4 +1,9 @@
 Actor velocity is 1
+Square sideLen=25
+Square sideLen=15
+Circle r=2.200000
+Triangle base=3 height=2
+Actor velocity=1
 DrawMessage
 Actor velocity=1
 Actor velocity=1
