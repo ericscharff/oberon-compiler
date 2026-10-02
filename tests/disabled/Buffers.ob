@@ -55,6 +55,15 @@ BEGIN
   Out.Ln
 END Describe;
 
+PROCEDURE DescribeAll(a: ARRAY OF PBaseMessage);
+VAR
+  i: INTEGER;
+BEGIN
+  FOR i := 0 TO LEN(a)-1 DO
+    Describe(a[i])
+  END
+END DescribeAll;
+
 PROCEDURE DumpBuffer(b: ARRAY OF INTEGER);
 VAR
   i: INTEGER;
@@ -128,6 +137,7 @@ END TestBuffers;
 PROCEDURE TestOopBuffers;
 VAR
   b: OopBuf;
+  b2: ARRAY * OF PBaseMessage;
   p: PtrHolder;
   pBase: PBaseMessage;
   pSub1: PSub1Message;
@@ -135,6 +145,7 @@ VAR
   pSubSub1: PSubSub1Message;
 BEGIN
   NEW_ARRAY(b, 4);
+  NEW_ARRAY(b2, 4);
   p.p := NIL;
 
   NEW(pBase);
@@ -144,17 +155,22 @@ BEGIN
 
   p.p := pBase;
   PUSH(b, p);
+  PUSH(b2, p.p);
   p.p := pSub1;
   PUSH(b, p);
+  PUSH(b2, p.p);
   p.p := pSub2;
   PUSH(b, p);
+  PUSH(b2, p.p);
   p.p := pSubSub1;
   PUSH(b, p);
+  PUSH(b2, p.p);
 
   Describe(b[0].p);
   Describe(b[1].p);
   Describe(b[2].p);
   Describe(b[3].p);
+  DescribeAll(b2);
   ASSERT(b[0].p IS PBaseMessage);
   ASSERT(b[1].p IS PBaseMessage);
   ASSERT(b[2].p IS PBaseMessage);
