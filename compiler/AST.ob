@@ -340,7 +340,7 @@ END IsOpenArray;
 (* b := "hello"; is legal if b is an array of char, but           *)
 (* "hello" := b would not be legal. When doing comparisons (e.g., *)
 (* for boolean =, it is necessary to compare a to b OR b to a     *)
-PROCEDURE AssignmentCompatable(
+PROCEDURE AssignmentCompatable*(
   l: Lex.Lexer;
   a, b: Type;
   aSval, bSval: StringId

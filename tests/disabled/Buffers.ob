@@ -152,6 +152,10 @@ BEGIN
   NEW(pSub1);
   NEW(pSub2);
   NEW(pSubSub1);
+  PUSH(b2, pBase);
+  PUSH(b2, pSub1);
+  PUSH(b2, pSub2);
+  PUSH(b2, pSubSub1);
 
   p.p := pBase;
   PUSH(b, p);

@@ -552,7 +552,7 @@ BEGIN
   IF ~args.assignable THEN
     Lex.ErrorLn(l, "First argument to PUSH must be assignable")
   END;
-  IF args.next.typ # args.typ.base THEN
+  IF ~AST.AssignmentCompatable(l, args.next.typ, args.typ.base, 0, 0) THEN
     Lex.ErrorLn(l, "Second arg to PUSH must have same type as ARRAY")
   END;
   IF args.typ.kind = AST.typeBuffer THEN

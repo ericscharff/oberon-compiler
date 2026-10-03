@@ -909,6 +909,11 @@ BEGIN
       GenStr("oberon_buf_push(");
       GenExpr(l, e.rhs);
       GenStr(", ");
+      IF e.rhs.typ.base # e.rhs.next.typ THEN
+        GenStr("(");
+        GenType(l, e.rhs.typ.base, q, FALSE, FALSE);
+        GenStr(")");
+      END;
       GenExpr(l, e.rhs.next);
       GenStr(", ");
       GenType(l, e.rhs.typ.base, q, FALSE, FALSE);
