@@ -1086,11 +1086,9 @@ BEGIN
   IF e.typ.kind = AST.typeString THEN
     item.kind := itemConst;
     item.offset := Lex.StringLenI(l, e.iVal) + 1;
-    Load(item)
   ELSIF e.typ.length > 0 THEN
     item.kind := itemConst;
     item.offset := e.typ.length;
-    Load(item)
   ELSIF e.typ.kind = AST.typeBuffer THEN
     (* TODO: buffer support *)
     ASSERT(FALSE)
@@ -1104,8 +1102,8 @@ BEGIN
     item.r := rSP;
     (* 4 is added to account for the extra length parameter *)
     item.offset := stackOffset + e.decl.offset + 4;
-    Load(item)
-  END
+  END;
+  Load(item)
 END GenLengthof;
 
 PROCEDURE GenTypeId(VAR item: Item; e: AST.Expr);
