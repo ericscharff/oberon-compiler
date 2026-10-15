@@ -6,8 +6,8 @@ can be found in the `tests` directory.
 
 ## Test6502
 
-`Test6502.ob` runs a regression test suite to make sure that the CPU emulation
-is accurate.
+`Test6502.ob` runs 6502 and 65C02 regression test suites to make sure that the
+CPU emulation is accurate.
 
 ## Apple1
 
