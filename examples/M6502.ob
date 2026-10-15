@@ -43,6 +43,8 @@ CONST
   mIndirect = 10; (* (16 bit absolute) for JMP *)
   mAccum = 11; (* Accumulator (eg ROR A) *)
   mImplied = 12; (* Implied (eg TYA) *)
+  mIndirectZp = 13; (* (zp) for 65C02 *)
+  mIndirectX16 = 14; (* (abs,X) for 65C02 *)
 TYPE
   ReadProc = PROCEDURE(where: INTEGER): INTEGER;
   WriteProc = PROCEDURE(where: INTEGER; what: INTEGER);
@@ -236,8 +238,12 @@ BEGIN
       a := Comp(Fetch(p)) + p.pc
     | mIndirect:
       a := WordAt(p, FetchWord(p))
+    | mIndirectX16:
+      a := WordAt(p, FetchWord(p) + p.x)
     | mAccum:
       a := p.a
+    | mIndirectZp:
+      a := WordAt(p, Fetch(p))
   END;
   RETURN a
 END EA;
@@ -280,8 +286,8 @@ BEGIN
       INC(r)
     END;
     SetC(p, r > 99);
-    SetNZ(p, r);
-    p.a := BINtoBCD(r)
+    p.a := BINtoBCD(r);
+    SetNZ(p, p.a);
   ELSE
     r := p.a + m;
     IF carrY IN p.flags THEN
@@ -327,6 +333,36 @@ BEGIN
   END
 END DoASL;
 
+(* BBR   Branch on Bit Reset *)
+PROCEDURE DoBBR(VAR p: CPU; mode: INTEGER);
+VAR
+  m, dst: INTEGER;
+BEGIN
+  (* This instruction has two args, the first is always a zp address *)
+  m := CEA(p, mZeroPage);
+  (* and the second is a branch offset *)
+  dst := EA(p, mRelative);
+  (* mode is used to encode which bit 0 .. 7 *)
+  IF DoBITBIT(m, mode) = 0 THEN
+    p.pc := dst
+  END
+END DoBBR;
+
+(* BBS   Branch on Bit Set *)
+PROCEDURE DoBBS(VAR p: CPU; mode: INTEGER);
+VAR
+  m, dst: INTEGER;
+BEGIN
+  (* This instruction has two args, the first is always a zp address *)
+  m := CEA(p, mZeroPage);
+  (* and the second is a branch offset *)
+  dst := EA(p, mRelative);
+  (* mode is used to encode which bit 0 .. 7 *)
+  IF DoBITBIT(m, mode) # 0 THEN
+    p.pc := dst
+  END
+END DoBBS;
+
 (* BCC   Branch on Carry Clear *)
 PROCEDURE DoBCC(VAR p: CPU; mode: INTEGER);
 VAR
@@ -366,11 +402,13 @@ VAR
   a: INTEGER;
 BEGIN
   a := CEA(p, mode);
-  SetV(p, DoBITBIT(a, 6) # 0);
-  IF DoBITBIT(a, 7) # 0 THEN
-    DoINCL(p.flags, negativE)
-  ELSE
-    DoEXCL(p.flags, negativE)
+  IF mode # mImmediate THEN
+    SetV(p, DoBITBIT(a, 6) # 0);
+    IF DoBITBIT(a, 7) # 0 THEN
+      DoINCL(p.flags, negativE)
+    ELSE
+      DoEXCL(p.flags, negativE)
+    END
   END;
   IF DoBITAND(p.a, a) = 0 THEN
     DoINCL(p.flags, zerO)
@@ -411,6 +449,15 @@ BEGIN
     p.pc := dst
   END
 END DoBPL;
+
+(* BRA   Branch Always *)
+PROCEDURE DoBRA(VAR p: CPU; mode: INTEGER);
+VAR
+  dst: INTEGER;
+BEGIN
+  dst := EA(p, mode);
+  p.pc := dst
+END DoBRA;
 
 (* BVC   Branch on Overflow Clear *)
 PROCEDURE DoBVC(VAR p: CPU; mode: INTEGER);
@@ -491,6 +538,13 @@ BEGIN
   SetNZ(p, m)
 END DoCPY;
 
+(* DEC A Decrement Accumulator by One *)
+PROCEDURE DoDEA(VAR p: CPU; mode: INTEGER);
+BEGIN
+  p.a := DoBITAND(255, p.a - 1);
+  SetNZ(p, p.a)
+END DoDEA;
+
 (* DEC   Decrement Memory by One *)
 PROCEDURE DoDEC(VAR p: CPU; mode: INTEGER);
 VAR
@@ -524,6 +578,13 @@ BEGIN
   p.a := DoBITAND(255, DoBITXOR(p.a, m));
   SetNZ(p, p.a)
 END DoEOR;
+
+(* INC A Increment Accumulator by One *)
+PROCEDURE DoINA(VAR p: CPU; mode: INTEGER);
+BEGIN
+  p.a := DoBITAND(255, p.a + 1);
+  SetNZ(p, p.a)
+END DoINA;
 
 (* INC   Increment Memory by One *)
 PROCEDURE DoINC(VAR p: CPU; mode: INTEGER);
@@ -623,6 +684,18 @@ BEGIN
   PushByte(p, p.a)
 END DoPHA;
 
+(* PHX   Push Index X on Stack *)
+PROCEDURE DoPHX(VAR p: CPU; mode: INTEGER);
+BEGIN
+  PushByte(p, p.x)
+END DoPHX;
+
+(* PHY   Push Index Y on Stack *)
+PROCEDURE DoPHY(VAR p: CPU; mode: INTEGER);
+BEGIN
+  PushByte(p, p.y)
+END DoPHY;
+
 (* PHP   Push Processor Status on Stack *)
 PROCEDURE DoPHP(VAR p: CPU; mode: INTEGER);
 BEGIN
@@ -635,6 +708,20 @@ BEGIN
   p.a := PopByte(p);
   SetNZ(p, p.a)
 END DoPLA;
+
+(* PLX   Pull Index X from Stack *)
+PROCEDURE DoPLX(VAR p: CPU; mode: INTEGER);
+BEGIN
+  p.x := PopByte(p);
+  SetNZ(p, p.x)
+END DoPLX;
+
+(* PLY   Pull Index Y from Stack *)
+PROCEDURE DoPLY(VAR p: CPU; mode: INTEGER);
+BEGIN
+  p.y := PopByte(p);
+  SetNZ(p, p.y)
+END DoPLY;
 
 (* PLP   Pull Processor Status from Stack *)
 PROCEDURE DoPLP(VAR p: CPU; mode: INTEGER);
@@ -668,6 +755,18 @@ BEGIN
     DoINCL(p.flags, negativE)
   END
 END DoPLP;
+
+(* RMB   Reset Memory Bit *)
+PROCEDURE DoRMB(VAR p: CPU; mode: INTEGER);
+VAR
+  a, m: INTEGER;
+BEGIN
+  (* This instruction always has a zp address *)
+  a := EA(p, mZeroPage);
+  (* mode is used to encode which bit 0 .. 7 *)
+  m := DoBITAND(p.readProc(a), DoBITXOR(255, ORD({mode})));
+  p.writeProc(a, m)
+END DoRMB;
 
 (* ROL   Rotate One Bit Left (Memory or Accumulator) *)
 PROCEDURE DoROL(VAR p: CPU; mode: INTEGER);
@@ -762,7 +861,7 @@ BEGIN
       r := r + 100
     END;
     p.a := BINtoBCD(r);
-    SetNZ(p, r)
+    SetNZ(p, p.a)
   ELSE
     r := p.a - m - 1;
     IF carrY IN p.flags THEN
@@ -797,6 +896,18 @@ BEGIN
   DoINCL(p.flags, interrupT)
 END DoSEI;
 
+(* SMB   Set Memory Bit *)
+PROCEDURE DoSMB(VAR p: CPU; mode: INTEGER);
+VAR
+  a, m: INTEGER;
+BEGIN
+  (* This instruction always has a zp address *)
+  a := EA(p, mZeroPage);
+  (* mode is used to encode which bit 0 .. 7 *)
+  m := DoBITOR(p.readProc(a), ORD({mode}));
+  p.writeProc(a, m)
+END DoSMB;
+
 (* STA   Store Accumulator in Memory *)
 PROCEDURE DoSTA(VAR p: CPU; mode: INTEGER);
 BEGIN
@@ -815,6 +926,12 @@ BEGIN
   p.writeProc(EA(p, mode), p.y)
 END DoSTY;
 
+(* STZ   Store Zero in Memory *)
+PROCEDURE DoSTZ(VAR p: CPU; mode: INTEGER);
+BEGIN
+  p.writeProc(EA(p, mode), 0)
+END DoSTZ;
+
 (* TAX   Transfer Accumulator to Index X *)
 PROCEDURE DoTAX(VAR p: CPU; mode: INTEGER);
 BEGIN
@@ -828,6 +945,36 @@ BEGIN
   p.y := p.a;
   SetNZ(p, p.a)
 END DoTAY;
+
+(* TRB   Test and Reset Bits *)
+PROCEDURE DoTRB(VAR p: CPU; mode: INTEGER);
+VAR
+  a, m: INTEGER;
+BEGIN
+  a := EA(p, mode);
+  m := p.readProc(a);
+  IF DoBITAND(p.a, m) = 0 THEN
+    DoINCL(p.flags, zerO)
+  ELSE
+    DoEXCL(p.flags, zerO)
+  END;
+  p.writeProc(a, DoBITAND(m, DoBITXOR(255, p.a)))
+END DoTRB;
+
+(* TSB   Test and Set Bits *)
+PROCEDURE DoTSB(VAR p: CPU; mode: INTEGER);
+VAR
+  a, m: INTEGER;
+BEGIN
+  a := EA(p, mode);
+  m := p.readProc(a);
+  IF DoBITAND(p.a, m) = 0 THEN
+    DoINCL(p.flags, zerO)
+  ELSE
+    DoEXCL(p.flags, zerO)
+  END;
+  p.writeProc(a, DoBITOR(p.a, m))
+END DoTSB;
 
 (* TSX   Transfer Stack Pointer to Index X *)
 PROCEDURE DoTSX(VAR p: CPU; mode: INTEGER);
@@ -859,7 +1006,15 @@ END DoTYA;
 (* ILL   Illegal instruction handler *)
 PROCEDURE DoILL(VAR p: CPU; mode: INTEGER);
 BEGIN
-  p.halt := TRUE
+  (* On the 65C02, illegal instructions are treated as NOPs  *)
+  (* However, they are 0, 1, or 2 bytes long, so the PC gets *)
+  (* advanced accoringly. Some might also perform memory     *)
+  (* reads, but this is not modeled yet                      *)
+
+  (* In the instruction encoding below, mImmediate is used   *)
+  (* to ignore a single byte, and mAbsolute to ignore two.   *)
+  (* mIpmplied is used for just a single byte.               *)
+  EA(p, mode)
 END DoILL;
 
 (* ================================================================ *)
@@ -881,6 +1036,7 @@ BEGIN
   PushWord(p, p.pc + 1);
   DoPHP(p, mImplied);
   DoINCL(p.flags, interrupT); (* BRK Disables interrupts *)
+  DoEXCL(p.flags, decimaL);
   p.pc := WordAt(p, 65534)
 END DoBRK;
 
@@ -901,17 +1057,17 @@ BEGIN
   dispatch[1] := DoORA;
   addrMode[1] := mIndirectX;
   dispatch[2] := DoILL;
-  addrMode[2] := mImplied;
+  addrMode[2] := mImmediate;
   dispatch[3] := DoILL;
   addrMode[3] := mImplied;
-  dispatch[4] := DoILL;
-  addrMode[4] := mImplied;
+  dispatch[4] := DoTSB;
+  addrMode[4] := mZeroPage;
   dispatch[5] := DoORA;
   addrMode[5] := mZeroPage;
   dispatch[6] := DoASL;
   addrMode[6] := mZeroPage;
-  dispatch[7] := DoILL;
-  addrMode[7] := mImplied;
+  dispatch[7] := DoRMB;
+  addrMode[7] := 0;
   dispatch[8] := DoPHP;
   addrMode[8] := mImplied;
   dispatch[9] := DoORA;
@@ -920,52 +1076,52 @@ BEGIN
   addrMode[10] := mAccum;
   dispatch[11] := DoILL;
   addrMode[11] := mImplied;
-  dispatch[12] := DoILL;
-  addrMode[12] := mImplied;
+  dispatch[12] := DoTSB;
+  addrMode[12] := mAbsolute;
   dispatch[13] := DoORA;
   addrMode[13] := mAbsolute;
   dispatch[14] := DoASL;
   addrMode[14] := mAbsolute;
-  dispatch[15] := DoILL;
-  addrMode[15] := mImplied;
+  dispatch[15] := DoBBR;
+  addrMode[15] := 0;
   dispatch[16] := DoBPL;
   addrMode[16] := mRelative;
   dispatch[17] := DoORA;
   addrMode[17] := mIndirectY;
-  dispatch[18] := DoILL;
-  addrMode[18] := mImplied;
+  dispatch[18] := DoORA;
+  addrMode[18] := mIndirectZp;
   dispatch[19] := DoILL;
   addrMode[19] := mImplied;
-  dispatch[20] := DoILL;
-  addrMode[20] := mImplied;
+  dispatch[20] := DoTRB;
+  addrMode[20] := mZeroPage;
   dispatch[21] := DoORA;
   addrMode[21] := mZeroPageX;
   dispatch[22] := DoASL;
   addrMode[22] := mZeroPageX;
-  dispatch[23] := DoILL;
-  addrMode[23] := mImplied;
+  dispatch[23] := DoRMB;
+  addrMode[23] := 1;
   dispatch[24] := DoCLC;
   addrMode[24] := mImplied;
   dispatch[25] := DoORA;
   addrMode[25] := mAbsoluteY;
-  dispatch[26] := DoILL;
-  addrMode[26] := mImplied;
+  dispatch[26] := DoINA;
+  addrMode[26] := mAccum;
   dispatch[27] := DoILL;
   addrMode[27] := mImplied;
-  dispatch[28] := DoILL;
-  addrMode[28] := mImplied;
+  dispatch[28] := DoTRB;
+  addrMode[28] := mAbsolute;
   dispatch[29] := DoORA;
   addrMode[29] := mAbsoluteX;
   dispatch[30] := DoASL;
   addrMode[30] := mAbsoluteX;
-  dispatch[31] := DoILL;
-  addrMode[31] := mImplied;
+  dispatch[31] := DoBBR;
+  addrMode[31] := 1;
   dispatch[32] := DoJSR;
   addrMode[32] := mAbsolute;
   dispatch[33] := DoAND;
   addrMode[33] := mIndirectX;
   dispatch[34] := DoILL;
-  addrMode[34] := mImplied;
+  addrMode[34] := mImmediate;
   dispatch[35] := DoILL;
   addrMode[35] := mImplied;
   dispatch[36] := DoBIT;
@@ -974,8 +1130,8 @@ BEGIN
   addrMode[37] := mZeroPage;
   dispatch[38] := DoROL;
   addrMode[38] := mZeroPage;
-  dispatch[39] := DoILL;
-  addrMode[39] := mImplied;
+  dispatch[39] := DoRMB;
+  addrMode[39] := 2;
   dispatch[40] := DoPLP;
   addrMode[40] := mImplied;
   dispatch[41] := DoAND;
@@ -990,56 +1146,56 @@ BEGIN
   addrMode[45] := mAbsolute;
   dispatch[46] := DoROL;
   addrMode[46] := mAbsolute;
-  dispatch[47] := DoILL;
-  addrMode[47] := mImplied;
+  dispatch[47] := DoBBR;
+  addrMode[47] := 2;
   dispatch[48] := DoBMI;
   addrMode[48] := mRelative;
   dispatch[49] := DoAND;
   addrMode[49] := mIndirectY;
-  dispatch[50] := DoILL;
-  addrMode[50] := mImplied;
+  dispatch[50] := DoAND;
+  addrMode[50] := mIndirectZp;
   dispatch[51] := DoILL;
   addrMode[51] := mImplied;
-  dispatch[52] := DoILL;
-  addrMode[52] := mImplied;
+  dispatch[52] := DoBIT;
+  addrMode[52] := mZeroPageX;
   dispatch[53] := DoAND;
   addrMode[53] := mZeroPageX;
   dispatch[54] := DoROL;
   addrMode[54] := mZeroPageX;
-  dispatch[55] := DoILL;
-  addrMode[55] := mImplied;
+  dispatch[55] := DoRMB;
+  addrMode[55] := 3;
   dispatch[56] := DoSEC;
   addrMode[56] := mImplied;
   dispatch[57] := DoAND;
   addrMode[57] := mAbsoluteY;
-  dispatch[58] := DoILL;
-  addrMode[58] := mImplied;
+  dispatch[58] := DoDEA;
+  addrMode[58] := mAccum;
   dispatch[59] := DoILL;
   addrMode[59] := mImplied;
-  dispatch[60] := DoILL;
-  addrMode[60] := mImplied;
+  dispatch[60] := DoBIT;
+  addrMode[60] := mAbsoluteX;
   dispatch[61] := DoAND;
   addrMode[61] := mAbsoluteX;
   dispatch[62] := DoROL;
   addrMode[62] := mAbsoluteX;
-  dispatch[63] := DoILL;
-  addrMode[63] := mImplied;
+  dispatch[63] := DoBBR;
+  addrMode[63] := 3;
   dispatch[64] := DoRTI;
   addrMode[64] := mImplied;
   dispatch[65] := DoEOR;
   addrMode[65] := mIndirectX;
   dispatch[66] := DoILL;
-  addrMode[66] := mImplied;
+  addrMode[66] := mImmediate;
   dispatch[67] := DoILL;
   addrMode[67] := mImplied;
   dispatch[68] := DoILL;
-  addrMode[68] := mImplied;
+  addrMode[68] := mImmediate;
   dispatch[69] := DoEOR;
   addrMode[69] := mZeroPage;
   dispatch[70] := DoLSR;
   addrMode[70] := mZeroPage;
-  dispatch[71] := DoILL;
-  addrMode[71] := mImplied;
+  dispatch[71] := DoRMB;
+  addrMode[71] := 4;
   dispatch[72] := DoPHA;
   addrMode[72] := mImplied;
   dispatch[73] := DoEOR;
@@ -1054,56 +1210,56 @@ BEGIN
   addrMode[77] := mAbsolute;
   dispatch[78] := DoLSR;
   addrMode[78] := mAbsolute;
-  dispatch[79] := DoILL;
-  addrMode[79] := mImplied;
+  dispatch[79] := DoBBR;
+  addrMode[79] := 4;
   dispatch[80] := DoBVC;
   addrMode[80] := mRelative;
   dispatch[81] := DoEOR;
   addrMode[81] := mIndirectY;
-  dispatch[82] := DoILL;
-  addrMode[82] := mImplied;
+  dispatch[82] := DoEOR;
+  addrMode[82] := mIndirectZp;
   dispatch[83] := DoILL;
   addrMode[83] := mImplied;
   dispatch[84] := DoILL;
-  addrMode[84] := mImplied;
+  addrMode[84] := mImmediate;
   dispatch[85] := DoEOR;
   addrMode[85] := mZeroPageX;
   dispatch[86] := DoLSR;
   addrMode[86] := mZeroPageX;
-  dispatch[87] := DoILL;
-  addrMode[87] := mImplied;
+  dispatch[87] := DoRMB;
+  addrMode[87] := 5;
   dispatch[88] := DoCLI;
   addrMode[88] := mImplied;
   dispatch[89] := DoEOR;
   addrMode[89] := mAbsoluteY;
-  dispatch[90] := DoILL;
+  dispatch[90] := DoPHY;
   addrMode[90] := mImplied;
   dispatch[91] := DoILL;
   addrMode[91] := mImplied;
   dispatch[92] := DoILL;
-  addrMode[92] := mImplied;
+  addrMode[92] := mAbsolute;
   dispatch[93] := DoEOR;
   addrMode[93] := mAbsoluteX;
   dispatch[94] := DoLSR;
   addrMode[94] := mAbsoluteX;
-  dispatch[95] := DoILL;
-  addrMode[95] := mImplied;
+  dispatch[95] := DoBBR;
+  addrMode[95] := 5;
   dispatch[96] := DoRTS;
   addrMode[96] := mImplied;
   dispatch[97] := DoADC;
   addrMode[97] := mIndirectX;
   dispatch[98] := DoILL;
-  addrMode[98] := mImplied;
+  addrMode[98] := mImmediate;
   dispatch[99] := DoILL;
   addrMode[99] := mImplied;
-  dispatch[100] := DoILL;
-  addrMode[100] := mImplied;
+  dispatch[100] := DoSTZ;
+  addrMode[100] := mZeroPage;
   dispatch[101] := DoADC;
   addrMode[101] := mZeroPage;
   dispatch[102] := DoROR;
   addrMode[102] := mZeroPage;
-  dispatch[103] := DoILL;
-  addrMode[103] := mImplied;
+  dispatch[103] := DoRMB;
+  addrMode[103] := 6;
   dispatch[104] := DoPLA;
   addrMode[104] := mImplied;
   dispatch[105] := DoADC;
@@ -1118,46 +1274,46 @@ BEGIN
   addrMode[109] := mAbsolute;
   dispatch[110] := DoROR;
   addrMode[110] := mAbsolute;
-  dispatch[111] := DoILL;
-  addrMode[111] := mImplied;
+  dispatch[111] := DoBBR;
+  addrMode[111] := 6;
   dispatch[112] := DoBVS;
   addrMode[112] := mRelative;
   dispatch[113] := DoADC;
   addrMode[113] := mIndirectY;
-  dispatch[114] := DoILL;
-  addrMode[114] := mImplied;
+  dispatch[114] := DoADC;
+  addrMode[114] := mIndirectZp;
   dispatch[115] := DoILL;
   addrMode[115] := mImplied;
-  dispatch[116] := DoILL;
-  addrMode[116] := mImplied;
+  dispatch[116] := DoSTZ;
+  addrMode[116] := mZeroPageX;
   dispatch[117] := DoADC;
   addrMode[117] := mZeroPageX;
   dispatch[118] := DoROR;
   addrMode[118] := mZeroPageX;
-  dispatch[119] := DoILL;
-  addrMode[119] := mImplied;
+  dispatch[119] := DoRMB;
+  addrMode[119] := 7;
   dispatch[120] := DoSEI;
   addrMode[120] := mImplied;
   dispatch[121] := DoADC;
   addrMode[121] := mAbsoluteY;
-  dispatch[122] := DoILL;
+  dispatch[122] := DoPLY;
   addrMode[122] := mImplied;
   dispatch[123] := DoILL;
   addrMode[123] := mImplied;
-  dispatch[124] := DoILL;
-  addrMode[124] := mImplied;
+  dispatch[124] := DoJMP;
+  addrMode[124] := mIndirectX16;
   dispatch[125] := DoADC;
   addrMode[125] := mAbsoluteX;
   dispatch[126] := DoROR;
   addrMode[126] := mAbsoluteX;
-  dispatch[127] := DoILL;
-  addrMode[127] := mImplied;
-  dispatch[128] := DoILL;
-  addrMode[128] := mImplied;
+  dispatch[127] := DoBBR;
+  addrMode[127] := 7;
+  dispatch[128] := DoBRA;
+  addrMode[128] := mRelative;
   dispatch[129] := DoSTA;
   addrMode[129] := mIndirectX;
   dispatch[130] := DoILL;
-  addrMode[130] := mImplied;
+  addrMode[130] := mImmediate;
   dispatch[131] := DoILL;
   addrMode[131] := mImplied;
   dispatch[132] := DoSTY;
@@ -1166,12 +1322,12 @@ BEGIN
   addrMode[133] := mZeroPage;
   dispatch[134] := DoSTX;
   addrMode[134] := mZeroPage;
-  dispatch[135] := DoILL;
-  addrMode[135] := mImplied;
+  dispatch[135] := DoSMB;
+  addrMode[135] := 0;
   dispatch[136] := DoDEY;
   addrMode[136] := mImplied;
-  dispatch[137] := DoILL;
-  addrMode[137] := mImplied;
+  dispatch[137] := DoBIT;
+  addrMode[137] := mImmediate;
   dispatch[138] := DoTXA;
   addrMode[138] := mImplied;
   dispatch[139] := DoILL;
@@ -1182,14 +1338,14 @@ BEGIN
   addrMode[141] := mAbsolute;
   dispatch[142] := DoSTX;
   addrMode[142] := mAbsolute;
-  dispatch[143] := DoILL;
-  addrMode[143] := mImplied;
+  dispatch[143] := DoBBS;
+  addrMode[143] := 0;
   dispatch[144] := DoBCC;
   addrMode[144] := mRelative;
   dispatch[145] := DoSTA;
   addrMode[145] := mIndirectY;
-  dispatch[146] := DoILL;
-  addrMode[146] := mImplied;
+  dispatch[146] := DoSTA;
+  addrMode[146] := mIndirectZp;
   dispatch[147] := DoILL;
   addrMode[147] := mImplied;
   dispatch[148] := DoSTY;
@@ -1198,8 +1354,8 @@ BEGIN
   addrMode[149] := mZeroPageX;
   dispatch[150] := DoSTX;
   addrMode[150] := mZeroPageY;
-  dispatch[151] := DoILL;
-  addrMode[151] := mImplied;
+  dispatch[151] := DoSMB;
+  addrMode[151] := 1;
   dispatch[152] := DoTYA;
   addrMode[152] := mImplied;
   dispatch[153] := DoSTA;
@@ -1208,14 +1364,14 @@ BEGIN
   addrMode[154] := mImplied;
   dispatch[155] := DoILL;
   addrMode[155] := mImplied;
-  dispatch[156] := DoILL;
-  addrMode[156] := mImplied;
+  dispatch[156] := DoSTZ;
+  addrMode[156] := mAbsolute;
   dispatch[157] := DoSTA;
   addrMode[157] := mAbsoluteX;
-  dispatch[158] := DoILL;
-  addrMode[158] := mImplied;
-  dispatch[159] := DoILL;
-  addrMode[159] := mImplied;
+  dispatch[158] := DoSTZ;
+  addrMode[158] := mAbsoluteX;
+  dispatch[159] := DoBBS;
+  addrMode[159] := 1;
   dispatch[160] := DoLDY;
   addrMode[160] := mImmediate;
   dispatch[161] := DoLDA;
@@ -1230,8 +1386,8 @@ BEGIN
   addrMode[165] := mZeroPage;
   dispatch[166] := DoLDX;
   addrMode[166] := mZeroPage;
-  dispatch[167] := DoILL;
-  addrMode[167] := mImplied;
+  dispatch[167] := DoSMB;
+  addrMode[167] := 2;
   dispatch[168] := DoTAY;
   addrMode[168] := mImplied;
   dispatch[169] := DoLDA;
@@ -1246,14 +1402,14 @@ BEGIN
   addrMode[173] := mAbsolute;
   dispatch[174] := DoLDX;
   addrMode[174] := mAbsolute;
-  dispatch[175] := DoILL;
-  addrMode[175] := mImplied;
+  dispatch[175] := DoBBS;
+  addrMode[175] := 2;
   dispatch[176] := DoBCS;
   addrMode[176] := mRelative;
   dispatch[177] := DoLDA;
   addrMode[177] := mIndirectY;
-  dispatch[178] := DoILL;
-  addrMode[178] := mImplied;
+  dispatch[178] := DoLDA;
+  addrMode[178] := mIndirectZp;
   dispatch[179] := DoILL;
   addrMode[179] := mImplied;
   dispatch[180] := DoLDY;
@@ -1262,8 +1418,8 @@ BEGIN
   addrMode[181] := mZeroPageX;
   dispatch[182] := DoLDX;
   addrMode[182] := mZeroPageY;
-  dispatch[183] := DoILL;
-  addrMode[183] := mImplied;
+  dispatch[183] := DoSMB;
+  addrMode[183] := 3;
   dispatch[184] := DoCLV;
   addrMode[184] := mImplied;
   dispatch[185] := DoLDA;
@@ -1278,14 +1434,14 @@ BEGIN
   addrMode[189] := mAbsoluteX;
   dispatch[190] := DoLDX;
   addrMode[190] := mAbsoluteY;
-  dispatch[191] := DoILL;
-  addrMode[191] := mImplied;
+  dispatch[191] := DoBBS;
+  addrMode[191] := 3;
   dispatch[192] := DoCPY;
   addrMode[192] := mImmediate;
   dispatch[193] := DoCMP;
   addrMode[193] := mIndirectX;
   dispatch[194] := DoILL;
-  addrMode[194] := mImplied;
+  addrMode[194] := mImmediate;
   dispatch[195] := DoILL;
   addrMode[195] := mImplied;
   dispatch[196] := DoCPY;
@@ -1294,8 +1450,8 @@ BEGIN
   addrMode[197] := mZeroPage;
   dispatch[198] := DoDEC;
   addrMode[198] := mZeroPage;
-  dispatch[199] := DoILL;
-  addrMode[199] := mImplied;
+  dispatch[199] := DoSMB;
+  addrMode[199] := 4;
   dispatch[200] := DoINY;
   addrMode[200] := mImplied;
   dispatch[201] := DoCMP;
@@ -1310,46 +1466,46 @@ BEGIN
   addrMode[205] := mAbsolute;
   dispatch[206] := DoDEC;
   addrMode[206] := mAbsolute;
-  dispatch[207] := DoILL;
-  addrMode[207] := mImplied;
+  dispatch[207] := DoBBS;
+  addrMode[207] := 4;
   dispatch[208] := DoBNE;
   addrMode[208] := mRelative;
   dispatch[209] := DoCMP;
   addrMode[209] := mIndirectY;
-  dispatch[210] := DoILL;
-  addrMode[210] := mImplied;
+  dispatch[210] := DoCMP;
+  addrMode[210] := mIndirectZp;
   dispatch[211] := DoILL;
   addrMode[211] := mImplied;
   dispatch[212] := DoILL;
-  addrMode[212] := mImplied;
+  addrMode[212] := mImmediate;
   dispatch[213] := DoCMP;
   addrMode[213] := mZeroPageX;
   dispatch[214] := DoDEC;
   addrMode[214] := mZeroPageX;
-  dispatch[215] := DoILL;
-  addrMode[215] := mImplied;
+  dispatch[215] := DoSMB;
+  addrMode[215] := 5;
   dispatch[216] := DoCLD;
   addrMode[216] := mImplied;
   dispatch[217] := DoCMP;
   addrMode[217] := mAbsoluteY;
-  dispatch[218] := DoILL;
+  dispatch[218] := DoPHX;
   addrMode[218] := mImplied;
   dispatch[219] := DoILL;
   addrMode[219] := mImplied;
   dispatch[220] := DoILL;
-  addrMode[220] := mImplied;
+  addrMode[220] := mAbsolute;
   dispatch[221] := DoCMP;
   addrMode[221] := mAbsoluteX;
   dispatch[222] := DoDEC;
   addrMode[222] := mAbsoluteX;
-  dispatch[223] := DoILL;
-  addrMode[223] := mImplied;
+  dispatch[223] := DoBBS;
+  addrMode[223] := 5;
   dispatch[224] := DoCPX;
   addrMode[224] := mImmediate;
   dispatch[225] := DoSBC;
   addrMode[225] := mIndirectX;
   dispatch[226] := DoILL;
-  addrMode[226] := mImplied;
+  addrMode[226] := mImmediate;
   dispatch[227] := DoILL;
   addrMode[227] := mImplied;
   dispatch[228] := DoCPX;
@@ -1358,8 +1514,8 @@ BEGIN
   addrMode[229] := mZeroPage;
   dispatch[230] := DoINC;
   addrMode[230] := mZeroPage;
-  dispatch[231] := DoILL;
-  addrMode[231] := mImplied;
+  dispatch[231] := DoSMB;
+  addrMode[231] := 6;
   dispatch[232] := DoINX;
   addrMode[232] := mImplied;
   dispatch[233] := DoSBC;
@@ -1374,38 +1530,38 @@ BEGIN
   addrMode[237] := mAbsolute;
   dispatch[238] := DoINC;
   addrMode[238] := mAbsolute;
-  dispatch[239] := DoILL;
-  addrMode[239] := mImplied;
+  dispatch[239] := DoBBS;
+  addrMode[239] := 6;
   dispatch[240] := DoBEQ;
   addrMode[240] := mRelative;
   dispatch[241] := DoSBC;
   addrMode[241] := mIndirectY;
-  dispatch[242] := DoILL;
-  addrMode[242] := mImplied;
+  dispatch[242] := DoSBC;
+  addrMode[242] := mIndirectZp;
   dispatch[243] := DoILL;
   addrMode[243] := mImplied;
   dispatch[244] := DoILL;
-  addrMode[244] := mImplied;
+  addrMode[244] := mImmediate;
   dispatch[245] := DoSBC;
   addrMode[245] := mZeroPageX;
   dispatch[246] := DoINC;
   addrMode[246] := mZeroPageX;
-  dispatch[247] := DoILL;
-  addrMode[247] := mImplied;
+  dispatch[247] := DoSMB;
+  addrMode[247] := 7;
   dispatch[248] := DoSED;
   addrMode[248] := mImplied;
   dispatch[249] := DoSBC;
   addrMode[249] := mAbsoluteY;
-  dispatch[250] := DoILL;
+  dispatch[250] := DoPLX;
   addrMode[250] := mImplied;
   dispatch[251] := DoILL;
   addrMode[251] := mImplied;
   dispatch[252] := DoILL;
-  addrMode[252] := mImplied;
+  addrMode[252] := mAbsolute;
   dispatch[253] := DoSBC;
   addrMode[253] := mAbsoluteX;
   dispatch[254] := DoINC;
   addrMode[254] := mAbsoluteX;
-  dispatch[255] := DoILL;
-  addrMode[255] := mImplied
+  dispatch[255] := DoBBS;
+  addrMode[255] := 7
 END M6502.

@@ -72,4 +72,5 @@ END RunTest;
 
 BEGIN
   RunTest("6502_functional_test.bin", 3469H);
+  RunTest("65C02_extended_opcodes_test.bin", 24F1H)
 END Test6502.
