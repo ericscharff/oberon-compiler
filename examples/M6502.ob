@@ -917,7 +917,7 @@ END DoSTA;
 (* STP   Stop the Processor *)
 PROCEDURE DoSTP(VAR p: CPU; mode: INTEGER);
 BEGIN
-  p.halt := TRUE;
+  p.halt := TRUE
 END DoSTP;
 
 (* STX   Store Index X in Memory *)

@@ -914,6 +914,12 @@ BEGIN
   p.writeProc(EA(p, mode), p.a)
 END DoSTA;
 
+(* STP   Stop the Processor *)
+PROCEDURE DoSTP(VAR p: CPU; mode: INTEGER);
+BEGIN
+  p.halt := TRUE
+END DoSTP;
+
 (* STX   Store Index X in Memory *)
 PROCEDURE DoSTX(VAR p: CPU; mode: INTEGER);
 BEGIN
@@ -1002,6 +1008,17 @@ BEGIN
   p.a := p.y;
   SetNZ(p, p.a)
 END DoTYA;
+
+(* WAI   Wait for Interrupt *)
+PROCEDURE DoWAI(VAR p: CPU; mode: INTEGER);
+BEGIN
+  (* This should put the CPU into a special mode where    *)
+  (* execution halts until an IRQ or NMI (or RESET) takes *)
+  (* place, at which point execution continues immediatly *)
+  (* following the WAI instruction. Since there isn't any *)
+  (* intterupt support yet, this just halts.              *)
+  p.halt := TRUE
+END DoWAI;
 
 (* ILL   Illegal instruction handler *)
 PROCEDURE DoILL(VAR p: CPU; mode: INTEGER);
@@ -1458,7 +1475,7 @@ BEGIN
   addrMode[201] := mImmediate;
   dispatch[202] := DoDEX;
   addrMode[202] := mImplied;
-  dispatch[203] := DoILL;
+  dispatch[203] := DoWAI;
   addrMode[203] := mImplied;
   dispatch[204] := DoCPY;
   addrMode[204] := mAbsolute;
@@ -1490,7 +1507,7 @@ BEGIN
   addrMode[217] := mAbsoluteY;
   dispatch[218] := DoPHX;
   addrMode[218] := mImplied;
-  dispatch[219] := DoILL;
+  dispatch[219] := DoSTP;
   addrMode[219] := mImplied;
   dispatch[220] := DoILL;
   addrMode[220] := mAbsolute;

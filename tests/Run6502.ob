@@ -57,4 +57,4 @@ BEGIN
     Out.Int(ORD(mem[0300H + i]) BITAND 255);
     IF ((i+1) MOD 16) = 0 THEN Out.Ln ELSE Out.Char(" ") END
   END;
-END Run6502.:
+END Run6502.
