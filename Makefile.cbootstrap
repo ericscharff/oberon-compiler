@@ -1,4 +1,8 @@
-# builds the Oberon compiler using a bootstrap Oberon -> C compiler written in C
+# Builds the Oberon compiler using a bootstrap Oberon -> C compiler written in C
+# This is no longer necessary because the Oberon compiler can bootstrap
+# itself to the object code of a RISC virtual machine, and the RISC virtual
+# machine generates the Oberon -> C compiler. this remains for historical
+# interest.
 BUILDDIR=build
 CFLAGS=-g -std=c17 -Wall -Wextra -Wpedantic -DC_BOOTSTRAP
 
